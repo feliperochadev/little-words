@@ -1,0 +1,44 @@
+{
+  "name": "palavrinhas",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "build:android": "eas build --platform android --profile preview",
+    "build:apk": "eas build --platform android --profile apk"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "~14.0.4",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/stack": "^6.4.1",
+    "@react-native-community/datetimepicker": "^8.0.1",
+    "axios": "^1.7.2",
+    "date-fns": "^3.6.0",
+    "expo": "~52.0.0",
+    "expo-auth-session": "~6.0.3",
+    "expo-crypto": "~14.0.2",
+    "expo-document-picker": "~13.0.3",
+    "expo-file-system": "~18.0.12",
+    "expo-router": "~4.0.22",
+    "expo-sharing": "~13.0.1",
+    "expo-sqlite": "~15.1.4",
+    "expo-status-bar": "~2.0.1",
+    "expo-web-browser": "~14.0.2",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-chart-kit": "^6.12.0",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
+    "react-native-svg": "15.8.0",
+    "react-native-vector-icons": "^10.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.79",
+    "typescript": "~5.3.3"
+  },
+  "private": true
+}
