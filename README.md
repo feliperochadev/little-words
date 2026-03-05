@@ -195,9 +195,3 @@ A linha com variante vazia é a palavra principal. As demais linhas com variante
 
 **Google Drive retorna 401**
 → O Access Token expirou (validade ~1h). Gere um novo no OAuth Playground.
-
----
-
-## 💕 Créditos
-
-Inspirado no app [Palavrinhas](https://palavrinhas-olivia.lovable.app/) para registrar o desenvolvimento de linguagem infantil.
