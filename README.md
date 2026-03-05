@@ -29,9 +29,10 @@ npm >= 9
 ### Instalação
 
 ```bash
-cd palavrinhas
-npm install
-npx expo start
+cd little-words
+npm install --legacy-peer-deps
+npx expo install --fix -- --legacy-peer-deps
+npx expo start 
 ```
 
 Isso abre o Expo Dev Server. Escaneie o QR code com o **Expo Go** (disponível na Play Store) para testar no seu celular.
