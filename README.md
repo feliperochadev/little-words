@@ -31,6 +31,8 @@ npm >= 9
 ```bash
 cd little-words
 npm install --legacy-peer-deps
+npm install expo-asset
+npm install expo
 npx expo install --fix -- --legacy-peer-deps
 npx expo start 
 ```
