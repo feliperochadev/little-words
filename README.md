@@ -30,10 +30,9 @@ npm >= 9
 
 ```bash
 cd little-words
-npm install --legacy-peer-deps
+npm install
 npm install expo-asset
 npm install expo
-npx expo install --fix -- --legacy-peer-deps
 npx expo start 
 ```
 
@@ -41,9 +40,9 @@ Isso abre o Expo Dev Server. Escaneie o QR code com o **Expo Go** (disponível n
 
 ---
 
-## 📦 Gerar APK (3 formas)
+## 📦 Gerar APK
 
-### Opção 1 — EAS Build (Recomendado, gratuito)
+### EAS Build (gratuito)
 
 Esta é a forma mais fácil e gera um APK real.
 
@@ -64,58 +63,6 @@ eas build --platform android --profile preview
 O APK será compilado na nuvem e você receberá o link para download por e-mail e no dashboard do Expo.
 
 > 💡 **Conta Expo gratuita** tem 30 builds/mês, o que é mais do que suficiente.
-
----
-
-### Opção 2 — Build local com Expo Prebuild + Gradle
-
-Se você tem o **Android Studio** instalado:
-
-```bash
-# 1. Gere os arquivos nativos
-npx expo prebuild --platform android
-
-# 2. Entre na pasta android e gere o APK
-cd android
-./gradlew assembleRelease
-
-# O APK estará em:
-# android/app/build/outputs/apk/release/app-release.apk
-```
-
----
-
-### Opção 3 — Expo Application Services (EAS) com APK direto
-
-```bash
-# Defina o profile 'apk' no eas.json (já configurado) e rode:
-eas build --platform android --profile apk
-```
-
----
-
-## ☁️ Configurar Google Drive Sync
-
-O app usa OAuth2 para sincronizar com o Google Drive. Para ativar:
-
-### Passo a Passo
-
-1. **Crie um projeto** em [console.cloud.google.com](https://console.cloud.google.com)
-2. **Ative a Google Drive API**:
-   - Menu → APIs & Services → Library → procure "Google Drive API" → Enable
-3. **Crie credenciais OAuth2**:
-   - APIs & Services → Credentials → Create Credentials → OAuth Client ID
-   - Tipo: Web application (para testes use o Playground)
-4. **Obtenha um Access Token** via [OAuth Playground](https://developers.google.com/oauthplayground):
-   - Passo 1: selecione `https://www.googleapis.com/auth/drive.file`
-   - Passo 2: Exchange authorization code for tokens
-   - Copie o **Access Token**
-5. **No app**: Configurações → Google Drive → Conectar → Cole o token
-
-### Para produção
-
-Integre o SDK do Google Sign-In (`@react-native-google-signin/google-signin`) e substitua o fluxo manual de token pela autenticação OAuth automática.
-
 ---
 
 ## 📁 Estrutura do Projeto
