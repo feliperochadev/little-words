@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8,
   },
   title: { fontSize: 26, fontWeight: '900', color: COLORS.text },
-  addBtn: { backgroundColor: COLORS.secondary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, elevation: 4 },
+  addBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   addBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
   searchContainer: { paddingHorizontal: 20 },
   sortBar: {

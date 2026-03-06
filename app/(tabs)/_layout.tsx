@@ -1,5 +1,25 @@
 import { Tabs } from 'expo-router';
+import { View, Text, Image } from 'react-native';
 import { COLORS } from '../../src/utils/theme';
+
+function HeaderTitle() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <Image
+        source={require('@/assets/icon.png')}
+        style={{ width: 52, height: 52, borderRadius: 8 }}
+      />
+      <View>
+        <Text style={{ fontSize: 20, fontWeight: '900', color: COLORS.text, lineHeight: 22 }}>
+          Palavrinhas
+        </Text>
+        <Text style={{ fontSize: 12, color: COLORS.textLight, fontStyle: 'italic', lineHeight: 15 }}>
+          cada palavra, uma memória
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -37,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Início',
           tabBarIcon: ({ color }) => <TabIcon emoji="🏠" color={color} />,
-          headerTitle: '👶 Palavrinhas',
+          headerTitle: () => <HeaderTitle />,
         }}
       />
       <Tabs.Screen
@@ -69,6 +89,5 @@ export default function TabLayout() {
 }
 
 function TabIcon({ emoji, color }: { emoji: string; color: string }) {
-  const { Text } = require('react-native');
   return <Text style={{ fontSize: 22, opacity: color === COLORS.primary ? 1 : 0.5 }}>{emoji}</Text>;
 }
