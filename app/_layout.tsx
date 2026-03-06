@@ -2,7 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { initDatabase, getSetting } from '../src/database/database';
-import { isGoogleConnected, performSync } from '../src/utils/googleDrive';
+import { configureGoogleSignIn, isGoogleConnected, performSync } from '../src/utils/googleDrive';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -10,6 +10,9 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Configure Google Sign-In once at startup
+    configureGoogleSignIn();
+
     initDatabase().then(async () => {
       const done = await getSetting('onboarding_done');
       const inOnboarding = segments[0] === 'onboarding';

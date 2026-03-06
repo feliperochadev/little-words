@@ -137,3 +137,26 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Native builds
+android/
+ios/
+
+# Misc
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+package-lock.json

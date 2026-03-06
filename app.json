@@ -14,14 +14,14 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.palavrinhas.app"
+      "bundleIdentifier": "com.littlewords.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFF0F5"
       },
-      "package": "com.palavrinhas.app",
+      "package": "com.littlewords.app",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
