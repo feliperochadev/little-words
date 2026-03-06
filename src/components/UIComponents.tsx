@@ -18,10 +18,11 @@ interface ButtonProps {
   disabled?: boolean;
   icon?: string;
   style?: any;
+  textStyle?: any;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  title, onPress, variant = 'primary', loading, disabled, style
+  title, onPress, variant = 'primary', loading, disabled, style, textStyle
 }) => {
   const styles = getButtonStyles(variant);
   return (
@@ -34,7 +35,7 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.white} />
       ) : (
-        <Text style={styles.text}>{title}</Text>
+        <Text style={[styles.text, textStyle]} numberOfLines={1}>{title}</Text>
       )}
     </TouchableOpacity>
   );

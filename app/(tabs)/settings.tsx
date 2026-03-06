@@ -6,7 +6,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSetting, clearAllData } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
-import { exportCSV } from '../../src/utils/csvExport';
+import { saveCSVToDevice, shareCSV } from '../../src/utils/csvExport';
 import {
   isGoogleConnected, signInWithGoogle, signOutGoogle,
   performSync, getGoogleUserEmail, isNativeBuild,
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   const [syncing, setSyncing] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
   const load = async () => {
@@ -52,11 +53,22 @@ export default function SettingsScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
-  const handleExport = async () => {
+  const handleShare = async () => {
     setExporting(true);
-    const result = await exportCSV();
+    const result = await shareCSV();
     setExporting(false);
-    if (!result.success) Alert.alert('Erro', result.error || 'Não foi possível exportar.');
+    if (!result.success) Alert.alert('Erro', result.error || 'Não foi possível compartilhar.');
+  };
+
+  const handleSaveToDevice = async () => {
+    setSaving(true);
+    const result = await saveCSVToDevice();
+    setSaving(false);
+    if (result.success) {
+      Alert.alert('✅ Salvo!', 'Arquivo CSV salvo na pasta escolhida.');
+    } else if (result.error !== 'cancelled') {
+      Alert.alert('Erro', result.error || 'Não foi possível salvar.');
+    }
   };
 
   const handleSync = async () => {
@@ -166,29 +178,40 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>📥 Importar Palavras</Text>
           <Text style={styles.sectionDesc}>
-            Importe palavras via texto ou arquivo CSV. Categorias e variantes são opcionais.
+            Importe palavras via texto ou arquivo CSV. Data, categorias e variantes são opcionais.
           </Text>
-          <Button title="Importar Palavras" onPress={() => setShowImport(true)} style={styles.actionButton} />
+          <Button title="📥 Importar Palavras" onPress={() => setShowImport(true)} style={styles.actionButton} />
         </Card>
 
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>📤 Exportar Dados</Text>
           <Text style={styles.sectionDesc}>
-            Baixe um arquivo CSV com todas as palavras, categorias, datas e variantes.
+            Exporte um CSV com todas as palavras, categorias, datas e variantes.
           </Text>
-          <Button
-            title={exporting ? 'Exportando...' : 'Exportar CSV'}
-            onPress={handleExport}
-            loading={exporting}
-            style={styles.actionButton}
-          />
+          <View style={styles.buttonRow}>
+            <Button
+              title={saving ? 'Salvando...' : '💾 Salvar'}
+              onPress={handleSaveToDevice}
+              loading={saving}
+              style={[styles.flexBtn, styles.exportBtn]}
+              textStyle={{ fontSize: 12, fontWeight: '700' }}
+            />
+            <Button
+              title={exporting ? 'Aguarde...' : '📤 Compartilhar'}
+              onPress={handleShare}
+              loading={exporting}
+              variant="outline"
+              style={[styles.flexBtn, styles.exportBtn]}
+              textStyle={{ fontSize: 12, fontWeight: '700' }}
+            />
+          </View>
         </Card>
 
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <SvgXml xml={GOOGLE_DRIVE_SVG} width={20} height={20} />
-              <Text style={styles.sectionTitle}>Backup com Google Drive</Text>
+              <Text style={styles.sectionTitle}>Google Drive</Text>
             </View>
             <View style={[styles.statusDot, { backgroundColor: googleConnected ? COLORS.success : COLORS.textLight }]} />
           </View>
@@ -228,7 +251,7 @@ export default function SettingsScreen() {
                 Faça backup automático das palavras no seu Google Drive. Sincroniza a cada nova palavra adicionada.
               </Text>
               <Button
-                title={signingIn ? 'Conectando...' : '🔗 Conectar com Google Drive'}
+                title={signingIn ? 'Conectando...' : '🔗 Conectar com Google'}
                 onPress={handleSignIn}
                 loading={signingIn}
                 style={styles.actionButton}
@@ -281,6 +304,7 @@ const styles = StyleSheet.create({
   actionButton: { marginTop: 4 },
   buttonRow: { flexDirection: 'row', gap: 10 },
   flexBtn: { flex: 1 },
+  exportBtn: { paddingVertical: 10, paddingHorizontal: 8 },
   connectedRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   connectedIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.success + '20', alignItems: 'center', justifyContent: 'center' },
   connectedIconText: { fontSize: 18, color: COLORS.success, fontWeight: '800' },
