@@ -12,7 +12,18 @@ import {
   performSync, getGoogleUserEmail, isNativeBuild,
 } from '../../src/utils/googleDrive';
 import { Card, Button } from '../../src/components/UIComponents';
+import { SvgXml } from 'react-native-svg';
 import { ImportModal } from '../../src/components/ImportModal';
+
+
+const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
+  <path fill="#4285f4" d="M29.5,21l-3.1708,5.5489A3.07,3.07,0,0,1,23.6459,28H8.3541a3.07,3.07,0,0,1-2.6833-1.4511L4.3687,24.27,9.7578,21Z"/>
+  <path fill="#00ac47" d="M12.3822,4.13a3.2262,3.2262,0,0,0-1.7067,1.4276L2.9591,18.76a3.07,3.07,0,0,0-.1012,3.0489l1.53,2.4658L9.7579,21,16,10.32Z"/>
+  <path fill="#0066da" d="M9.7578,21H2.568a2.6543,2.6543,0,0,0,.29.8089L4.38,24.2632l-.0115.007L5.6709,26.549A2.8267,2.8267,0,0,0,7.008,27.6974L9.7578,21l-.0081.0049Z"/>
+  <path fill="#ffba00" d="M19.6068,4.13a3.2256,3.2256,0,0,1,1.7066,1.4276L29.03,18.76a3.07,3.07,0,0,1,.1013,3.0489l-1.5295,2.4658L22.2311,21,15.9889,10.32Z"/>
+  <path fill="#ea4435" d="M22.2311,21h7.19a2.6541,2.6541,0,0,1-.29.8089l-1.5224,2.4544.0116.007L26.3181,26.549a2.8272,2.8272,0,0,1-1.3371,1.1484L22.2312,21l.0081.0049Z"/>
+  <path fill="#188038" d="M19.6155,4.1342l.0023-.004a2.7726,2.7726,0,0,0-.3609-.0983L16,4l-3.2569.0319a2.7726,2.7726,0,0,0-.3609.0983,3.0224,3.0224,0,0,0-.367.1666L15.9889,10.32,19.977,4.2993A3.03,3.03,0,0,0,19.6155,4.1342Z"/>
+</svg>`;
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,7 +56,7 @@ export default function SettingsScreen() {
     setExporting(true);
     const result = await exportCSV();
     setExporting(false);
-    if (!result.success) Alert.alert('Erro', result.error || 'Nao foi possivel exportar.');
+    if (!result.success) Alert.alert('Erro', result.error || 'Não foi possível exportar.');
   };
 
   const handleSync = async () => {
@@ -54,7 +65,7 @@ export default function SettingsScreen() {
     setSyncing(false);
     if (result.success) {
       setLastSync(result.lastSync || null);
-      Alert.alert('Sincronizado!', 'Backup salvo no Google Drive.');
+      Alert.alert('✅ Sincronizado!', 'Backup salvo no Google Drive.');
     } else if (result.error !== 'cancelled') {
       Alert.alert('Erro', result.error || 'Falha ao sincronizar.');
       if (result.error?.includes('expirada')) {
@@ -79,7 +90,7 @@ export default function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert(
       'Desconectar Google Drive',
-      'Tem certeza? Os dados locais nao serao removidos.',
+      'Tem certeza? Os dados locais não serão removidos.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -97,18 +108,18 @@ export default function SettingsScreen() {
 
   const handleClearData = () => {
     Alert.alert(
-      'Apagar todos os dados',
-      'Isso vai remover TODAS as palavras, variantes e categorias permanentemente. Esta acao nao pode ser desfeita.\n\nTem certeza?',
+      '⚠️ Apagar todos os dados',
+      'Isso vai remover TODAS as palavras, variantes e categorias permanentemente. Esta ação não pode ser desfeita.\n\nTem certeza?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Apagar tudo', style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Confirmar exclusao',
-              'Ultima chance - apagar tudo mesmo?',
+              'Confirmar exclusão',
+              'Última chance — apagar tudo mesmo?',
               [
-                { text: 'Nao, cancelar', style: 'cancel' },
+                { text: 'Não, cancelar', style: 'cancel' },
                 {
                   text: 'Sim, apagar tudo', style: 'destructive',
                   onPress: async () => {
@@ -132,20 +143,20 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={['top']}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>Configuracoes</Text>
+        <Text style={styles.pageTitle}>⚙️ Configurações</Text>
 
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {childSex === 'girl' ? '👧' : childSex === 'boy' ? '👦' : '👶'} Perfil do Bebe
+              {childSex === 'girl' ? '👧' : childSex === 'boy' ? '👦' : '👶'} Perfil do Bebê
             </Text>
             <TouchableOpacity onPress={() => router.push('/onboarding')} style={styles.editProfileBtn}>
-              <Text style={styles.editProfileText}>Editar</Text>
+              <Text style={styles.editProfileText}>✏️ Editar</Text>
             </TouchableOpacity>
           </View>
           {childName ? (
             <Text style={styles.sectionDesc}>
-              {childName} · {childSex === 'girl' ? 'Menina' : childSex === 'boy' ? 'Menino' : ''}
+              {childName} · {childSex === 'girl' ? 'Menina' : childSex === 'boy' ? 'Menino' : '—'}
             </Text>
           ) : (
             <Text style={styles.sectionDesc}>Nenhum perfil configurado.</Text>
@@ -153,15 +164,15 @@ export default function SettingsScreen() {
         </Card>
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Importar Palavras</Text>
+          <Text style={styles.sectionTitle}>📥 Importar Palavras</Text>
           <Text style={styles.sectionDesc}>
-            Importe palavras via texto ou arquivo CSV. Categorias e variantes sao opcionais.
+            Importe palavras via texto ou arquivo CSV. Categorias e variantes são opcionais.
           </Text>
           <Button title="Importar Palavras" onPress={() => setShowImport(true)} style={styles.actionButton} />
         </Card>
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Exportar Dados</Text>
+          <Text style={styles.sectionTitle}>📤 Exportar Dados</Text>
           <Text style={styles.sectionDesc}>
             Baixe um arquivo CSV com todas as palavras, categorias, datas e variantes.
           </Text>
@@ -175,7 +186,10 @@ export default function SettingsScreen() {
 
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Google Drive</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <SvgXml xml={GOOGLE_DRIVE_SVG} width={20} height={20} />
+              <Text style={styles.sectionTitle}>Backup com Google Drive</Text>
+            </View>
             <View style={[styles.statusDot, { backgroundColor: googleConnected ? COLORS.success : COLORS.textLight }]} />
           </View>
 
@@ -186,16 +200,16 @@ export default function SettingsScreen() {
                   <Text style={styles.connectedIconText}>✓</Text>
                 </View>
                 <View style={styles.connectedInfo}>
-                  <Text style={styles.connectedLabel}>Backup automatico ativo</Text>
+                  <Text style={styles.connectedLabel}>Backup automático ativo</Text>
                   {googleEmail ? <Text style={styles.connectedEmail}>{googleEmail}</Text> : null}
                 </View>
               </View>
               {lastSync ? (
-                <Text style={styles.lastSync}>Ultima sincronizacao: {formatDate(lastSync)}</Text>
+                <Text style={styles.lastSync}>🕐 Última sincronização: {formatDate(lastSync)}</Text>
               ) : null}
               <View style={styles.buttonRow}>
                 <Button
-                  title={syncing ? 'Sincronizando...' : 'Sincronizar'}
+                  title={syncing ? 'Sincronizando...' : '🔄 Sincronizar'}
                   onPress={handleSync}
                   loading={syncing}
                   style={styles.flexBtn}
@@ -211,10 +225,10 @@ export default function SettingsScreen() {
           ) : (
             <>
               <Text style={styles.sectionDesc}>
-                Faca backup automatico das palavras no seu Google Drive. Sincroniza a cada nova palavra adicionada.
+                Faça backup automático das palavras no seu Google Drive. Sincroniza a cada nova palavra adicionada.
               </Text>
               <Button
-                title={signingIn ? 'Conectando...' : 'Conectar com Google'}
+                title={signingIn ? 'Conectando...' : '🔗 Conectar com Google Drive'}
                 onPress={handleSignIn}
                 loading={signingIn}
                 style={styles.actionButton}
@@ -224,21 +238,21 @@ export default function SettingsScreen() {
         </Card>
 
         <Card style={[styles.section, styles.dangerCard]}>
-          <Text style={styles.sectionTitle}>Zona de Perigo</Text>
+          <Text style={styles.sectionTitle}>⚠️ Zona de Perigo</Text>
           <Text style={styles.sectionDesc}>
-            Apaga todas as palavras, variantes e categorias. As categorias padrao serao recriadas. Esta acao e irreversivel.
+            Apaga todas as palavras, variantes e categorias. As categorias padrão serão recriadas. Esta ação é irreversível.
           </Text>
           <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-            <Text style={styles.dangerBtnText}>Apagar todos os dados</Text>
+            <Text style={styles.dangerBtnText}>🗑️ Apagar todos os dados</Text>
           </TouchableOpacity>
         </Card>
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Sobre</Text>
+          <Text style={styles.sectionTitle}>ℹ️ Sobre</Text>
           <Text style={styles.aboutText}>
             Palavrinhas v1.0.0{'\n'}
-            Diario de desenvolvimento de linguagem infantil.{'\n\n'}
-            Registre cada nova palavra que seu filho aprende, acompanhe o progresso e guarde memorias preciosas.
+            Diário de desenvolvimento de linguagem infantil.{'\n\n'}
+            Registre cada nova palavra que seu filho aprende, acompanhe o progresso e guarde memórias preciosas. 💕
           </Text>
         </Card>
 
