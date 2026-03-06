@@ -6,10 +6,9 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  getCategories, addCategory, deleteCategory, updateCategory,
-  Category, getSetting, setSetting, clearAllData,
+  getSetting, setSetting, clearAllData,
 } from '../../src/database/database';
-import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../../src/utils/theme';
+import { COLORS } from '../../src/utils/theme';
 import { exportCSV } from '../../src/utils/csvExport';
 import {
   isGoogleConnected, performSync, clearGoogleAuth,
@@ -22,23 +21,15 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [childName, setChildName] = useState('');
   const [childSex, setChildSex] = useState<'boy' | 'girl' | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [showCatModal, setShowCatModal] = useState(false);
-  const [editCat, setEditCat] = useState<Category | null>(null);
-  const [catName, setCatName] = useState('');
-  const [catColor, setCatColor] = useState(CATEGORY_COLORS[0]);
-  const [catEmoji, setCatEmoji] = useState(CATEGORY_EMOJIS[0]);
   const [googleTokenInput, setGoogleTokenInput] = useState('');
   const [showTokenModal, setShowTokenModal] = useState(false);
 
   const load = async () => {
-    const cats = await getCategories();
-    setCategories(cats);
     const connected = await isGoogleConnected();
     setGoogleConnected(connected);
     const config = await getGoogleDriveConfig();
@@ -100,47 +91,6 @@ export default function SettingsScreen() {
     setShowTokenModal(false);
     setGoogleTokenInput('');
     Alert.alert('Conectado!', 'Agora você pode sincronizar com o Google Drive.');
-  };
-
-  const handleAddCategory = () => {
-    setEditCat(null);
-    setCatName('');
-    setCatColor(CATEGORY_COLORS[0]);
-    setCatEmoji(CATEGORY_EMOJIS[0]);
-    setShowCatModal(true);
-  };
-
-  const handleEditCategory = (cat: Category) => {
-    setEditCat(cat);
-    setCatName(cat.name);
-    setCatColor(cat.color);
-    setCatEmoji(cat.emoji);
-    setShowCatModal(true);
-  };
-
-  const handleSaveCategory = async () => {
-    if (!catName.trim()) return;
-    if (editCat) {
-      await updateCategory(editCat.id, catName.trim(), catColor, catEmoji);
-    } else {
-      await addCategory(catName.trim(), catColor, catEmoji);
-    }
-    setShowCatModal(false);
-    load();
-  };
-
-  const handleDeleteCategory = (cat: Category) => {
-    Alert.alert(
-      'Remover Categoria',
-      `Remover "${cat.name}"? As palavras nesta categoria ficarão sem categoria.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover', style: 'destructive',
-          onPress: async () => { await deleteCategory(cat.id); load(); },
-        },
-      ]
-    );
   };
 
   const handleClearData = () => {
@@ -283,33 +233,6 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
-      {/* Categories */}
-      <Card style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🏷️ Categorias</Text>
-          <TouchableOpacity style={styles.addCatBtn} onPress={handleAddCategory}>
-            <Text style={styles.addCatBtnText}>+ Nova</Text>
-          </TouchableOpacity>
-        </View>
-
-        {categories.map(cat => (
-          <View key={cat.id} style={styles.catRow}>
-            <View style={[styles.catDot, { backgroundColor: cat.color }]}>
-              <Text style={styles.catEmoji}>{cat.emoji}</Text>
-            </View>
-            <Text style={styles.catName}>{cat.name}</Text>
-            <View style={styles.catActions}>
-              <TouchableOpacity onPress={() => handleEditCategory(cat)} style={styles.catActionBtn}>
-                <Text>✏️</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteCategory(cat)} style={styles.catActionBtn}>
-                <Text>🗑️</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-      </Card>
-
       {/* Danger zone */}
       <Card style={[styles.section, styles.dangerCard]}>
         <Text style={styles.sectionTitle}>⚠️ Zona de Perigo</Text>
@@ -330,54 +253,6 @@ export default function SettingsScreen() {
           Registre cada nova palavra que seu filho aprende, acompanhe o progresso e guarde memórias preciosas. 💕
         </Text>
       </Card>
-
-      {/* Category Modal */}
-      <Modal visible={showCatModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{editCat ? 'Editar Categoria' : 'Nova Categoria'}</Text>
-
-            <Text style={styles.fieldLabel}>Nome</Text>
-            <TextInput
-              style={styles.fieldInput}
-              value={catName}
-              onChangeText={setCatName}
-              placeholder="Ex: Animais, Comida..."
-              placeholderTextColor={COLORS.textLight}
-              autoFocus
-            />
-
-            <Text style={styles.fieldLabel}>Emoji</Text>
-            <ScrollView horizontal style={styles.emojiRow} showsHorizontalScrollIndicator={false}>
-              {CATEGORY_EMOJIS.map(e => (
-                <TouchableOpacity
-                  key={e}
-                  style={[styles.emojiBtn, catEmoji === e && styles.emojiBtnSelected]}
-                  onPress={() => setCatEmoji(e)}
-                >
-                  <Text style={styles.emojiText}>{e}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <Text style={styles.fieldLabel}>Cor</Text>
-            <View style={styles.colorGrid}>
-              {CATEGORY_COLORS.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  style={[styles.colorSwatch, { backgroundColor: c }, catColor === c && styles.colorSwatchSelected]}
-                  onPress={() => setCatColor(c)}
-                />
-              ))}
-            </View>
-
-            <View style={styles.modalActions}>
-              <Button title="Cancelar" onPress={() => setShowCatModal(false)} variant="outline" style={styles.flexBtn} />
-              <Button title="Salvar" onPress={handleSaveCategory} style={styles.flexBtn} />
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Google Token Modal */}
       <Modal visible={showTokenModal} animationType="slide" transparent>
@@ -436,21 +311,6 @@ const styles = StyleSheet.create({
   },
   infoTitle: { fontSize: 13, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
   infoText: { fontSize: 12, color: COLORS.text, lineHeight: 20 },
-  addCatBtn: {
-    backgroundColor: COLORS.primary + '20',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 12,
-  },
-  addCatBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
-  catRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  catDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  catEmoji: { fontSize: 18 },
-  catName: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.text },
-  catActions: { flexDirection: 'row', gap: 8 },
-  catActionBtn: { padding: 6 },
   aboutText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
@@ -468,18 +328,6 @@ const styles = StyleSheet.create({
     fontSize: 16, color: COLORS.text,
     borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16,
   },
-  emojiRow: { marginBottom: 16 },
-  emojiBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.white, marginRight: 8,
-    borderWidth: 2, borderColor: 'transparent',
-  },
-  emojiBtnSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight + '30' },
-  emojiText: { fontSize: 24 },
-  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  colorSwatch: { width: 36, height: 36, borderRadius: 18 },
-  colorSwatchSelected: { borderWidth: 3, borderColor: COLORS.text },
   dangerCard: { borderWidth: 1.5, borderColor: COLORS.error + '40' },
   dangerBtn: {
     backgroundColor: COLORS.error + '15',

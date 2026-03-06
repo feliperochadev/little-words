@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Palavrinhas",
-    "slug": "palavrinhas",
+    "slug": "little-words",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -39,10 +39,10 @@
         }
       ]
     ],
-    "scheme": "palavrinhas",
+    "scheme": "little-words",
     "extra": {
       "eas": {
-        "projectId": "palavrinhas-app"
+        "projectId": "8b714eaf-faf2-4a5c-8716-051982971422"
       }
     }
   }

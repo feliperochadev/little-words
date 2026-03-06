@@ -40,7 +40,6 @@ export default function VariantsScreen() {
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
   const [words, setWords] = useState<Word[]>([]);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
-  const [showWordPicker, setShowWordPicker] = useState(false);
 
   const load = async () => {
     const data = await getAllVariants();
@@ -121,7 +120,7 @@ export default function VariantsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>🗣️ Variantes</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowWordPicker(true)}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => { setSelectedWord(null); setEditVariant(null); setShowAddVariant(true); }}>
           <Text style={styles.addBtnText}>+ Nova</Text>
         </TouchableOpacity>
       </View>
@@ -173,32 +172,6 @@ export default function VariantsScreen() {
           />
         }
       />
-
-      {/* Word picker modal */}
-      {showWordPicker && (
-        <View style={styles.wordPickerOverlay}>
-          <View style={styles.wordPickerContainer}>
-            <Text style={styles.wordPickerTitle}>Para qual palavra?</Text>
-            <FlatList
-              data={words}
-              keyExtractor={w => w.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.wordPickerItem}
-                  onPress={() => { setSelectedWord(item); setEditVariant(null); setShowWordPicker(false); setShowAddVariant(true); }}
-                >
-                  <Text style={styles.wordPickerItemText}>{item.word}</Text>
-                  {item.category_name && <Text style={styles.wordPickerCat}>{item.category_emoji} {item.category_name}</Text>}
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={<Text style={styles.wordPickerEmpty}>Adicione palavras primeiro!</Text>}
-            />
-            <TouchableOpacity style={styles.wordPickerClose} onPress={() => setShowWordPicker(false)}>
-              <Text style={styles.wordPickerCloseText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       <AddVariantModal
         visible={showAddVariant}

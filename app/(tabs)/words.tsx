@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  getWords, deleteWord, getVariantsByWord, deleteVariant,
+  getWords, deleteWord, getVariantsByWord, getAllVariants, deleteVariant,
   Word, Variant,
 } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
@@ -52,8 +52,18 @@ export default function WordsScreen() {
   const [expandedVariants, setExpandedVariants] = useState<Record<number, Variant[]>>({});
 
   const load = async (searchQuery?: string) => {
-    const data = await getWords(searchQuery ?? search);
+    const [data, allVariants] = await Promise.all([
+      getWords(searchQuery ?? search),
+      getAllVariants(),
+    ]);
     setWords(data);
+    // Pre-group variants by word_id so chips show without needing to expand first
+    const grouped: Record<number, Variant[]> = {};
+    for (const v of allVariants) {
+      if (!grouped[v.word_id]) grouped[v.word_id] = [];
+      grouped[v.word_id].push(v);
+    }
+    setExpandedVariants(grouped);
   };
 
   useFocusEffect(useCallback(() => { load(); }, []));
@@ -152,11 +162,18 @@ export default function WordsScreen() {
                   />
                 )}
                 <Text style={styles.wordDate}>📅 {formatDate(item.date_added)}</Text>
-                {(item.variant_count ?? 0) > 0 && (
-                  <View style={styles.variantBadge}>
-                    <Text style={styles.variantBadgeText}>🗣️ {item.variant_count}</Text>
-                  </View>
-                )}
+                {(expandedVariants[item.id] ?? []).length > 0
+                  ? expandedVariants[item.id].map(v => (
+                    <View key={v.id} style={styles.variantChip}>
+                      <Text style={styles.variantChipText}>🗣️ {v.variant}</Text>
+                    </View>
+                  ))
+                  : (item.variant_count ?? 0) > 0 && (
+                    <View style={styles.variantBadge}>
+                      <Text style={styles.variantBadgeText}>🗣️ {item.variant_count}</Text>
+                    </View>
+                  )
+                }
               </View>
               {item.notes && !isExpanded && (
                 <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
@@ -304,6 +321,7 @@ export default function WordsScreen() {
         onClose={() => { setShowAddWord(false); setEditWord(null); }}
         onSave={handleSaved}
         editWord={editWord}
+        onEditDuplicate={(w) => { setShowAddWord(false); setTimeout(() => { setEditWord(w); setShowAddWord(true); }, 300); }}
       />
 
       <AddVariantModal
@@ -397,4 +415,8 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 8 },
   actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 12, alignItems: 'center' },
   actionBtnText: { fontSize: 12, fontWeight: '700' },
+  variantBadge: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  variantBadgeText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
+  variantChip: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  variantChipText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
 });
