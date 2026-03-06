@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getDashboardStats, getSetting, DashboardStats } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
+import { BrandHeader } from '../../src/components/BrandHeader';
 
 interface ChildProfile {
   name: string;
@@ -36,7 +37,8 @@ function getAgeText(birth: string): string {
 function getGreeting(name: string, sex: 'boy' | 'girl' | null): string {
   const hour = new Date().getHours();
   const period = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  return `${period}! Registre as palavras de ${name} 💕`;
+  const article = sex === 'girl' ? 'da' : sex === 'boy' ? 'do' : 'de';
+  return `${period}! Registre as palavras ${article} ${name} 💕`;
 }
 
 export default function DashboardScreen() {
@@ -77,30 +79,19 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerEmoji}>{emoji}</Text>
-          <View style={styles.headerText}>
-            {profile ? (
-              <>
-                <Text style={[styles.headerTitle, { color: accentColor }]}>
-                  {profile.name}
-                </Text>
-                {ageText && (
-                  <Text style={styles.headerAge}>🎂 {ageText}</Text>
-                )}
-                <Text style={styles.headerSubtitle} numberOfLines={1}>
-                  {getGreeting(profile.name, profile.sex)}
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.headerTitle}>Palavrinhas</Text>
-                <Text style={styles.headerSubtitle}>Diário de palavras</Text>
-              </>
-            )}
+        <BrandHeader />
+        {profile && (
+          <View style={styles.profileBlock}>
+            <View style={styles.profileRow}>
+              <Text style={styles.profileEmoji}>{emoji}</Text>
+              <View>
+                <Text style={[styles.profileName, { color: accentColor }]}>{profile.name}</Text>
+                {ageText && <Text style={styles.profileAge}>🎂 {ageText}</Text>}
+              </View>
+            </View>
+            <Text style={styles.profileGreeting}>{getGreeting(profile.name, profile.sex)}</Text>
           </View>
-        </View>
+        )}
 
         {/* Main stats */}
         <View style={styles.statsGrid}>
@@ -196,15 +187,16 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20 },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    marginBottom: 24, paddingTop: 4,
+  profileBlock: {
+    alignItems: 'center', marginBottom: 20,
   },
-  headerEmoji: { fontSize: 52, marginRight: 14 },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: 26, fontWeight: '900', color: COLORS.text },
-  headerAge: { fontSize: 13, color: COLORS.textSecondary, marginTop: 1, fontWeight: '600' },
-  headerSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  profileRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8,
+  },
+  profileEmoji: { fontSize: 40 },
+  profileName: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  profileAge: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, fontWeight: '600' },
+  profileGreeting: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 18 },
   statsGrid: { flexDirection: 'row', marginBottom: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 16 },
   chartCard: { marginBottom: 12 },

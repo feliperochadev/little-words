@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { setSetting } from '../src/database/database';
 import { COLORS } from '../src/utils/theme';
+import { BrandHeader } from '../src/components/BrandHeader';
 
 /* ───────── constants ───────── */
 const ITEM_HEIGHT = 44;
@@ -150,6 +151,7 @@ export default function OnboardingScreen() {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   // Temp picker state
   const defaultDate = new Date();
@@ -161,8 +163,17 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
+  const birthArticle = isBoy ? 'nascido' : 'nascida'
   const accentColor = isGirl ? '#FF6B9D' : isBoy ? '#74B9FF' : COLORS.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
+
+  useEffect(() => {
+    if (allFilled) {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    }
+  }, [allFilled]);
 
   // Clamp day when month/year changes
   const maxDay = daysInMonth(pickerMonth, pickerYear);
@@ -220,7 +231,10 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        <BrandHeader />
+
         <Text style={styles.emoji}>{isGirl ? '👧' : isBoy ? '👦' : '👶'}</Text>
         <Text style={styles.title}>Bem-vindo ao{'\n'}Palavrinhas! 💕</Text>
         <Text style={styles.subtitle}>Vamos personalizar o app para o seu bebê</Text>
@@ -280,7 +294,7 @@ export default function OnboardingScreen() {
             <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
             <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
             <Text style={styles.previewDate}>
-              nascido em {formatDisplayDate(birthDate!)}
+              {birthArticle} em {formatDisplayDate(birthDate!)}
             </Text>
           </View>
         )}
@@ -422,12 +436,12 @@ const styles = StyleSheet.create({
   dateBtnPlaceholder: { color: COLORS.textLight, fontWeight: '400' },
   dateBtnArrow: { fontSize: 16 },
   preview: {
-    width: '100%', alignItems: 'center', padding: 16,
-    backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, marginBottom: 20,
+    width: '75%', alignItems: 'center', padding: 10,
+    backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, marginBottom: 16,
   },
-  previewEmoji: { fontSize: 40, marginBottom: 4 },
-  previewName: { fontSize: 20, fontWeight: '900', marginBottom: 2 },
-  previewDate: { fontSize: 13, color: COLORS.textSecondary },
+  previewEmoji: { fontSize: 28, marginBottom: 2 },
+  previewName: { fontSize: 15, fontWeight: '900', marginBottom: 1 },
+  previewDate: { fontSize: 11, color: COLORS.textSecondary },
   continueBtn: {
     width: '100%', paddingVertical: 18, borderRadius: 18, alignItems: 'center',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
