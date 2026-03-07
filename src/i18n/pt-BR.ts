@@ -133,6 +133,7 @@ export default {
     emptySearchSubtitle: 'Não encontramos "{{search}}"',
     addFirstWord: '+ Adicionar Palavra',
     deleteTitle: 'Remover Palavra',
+    deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
     deleteMessage: 'Tem certeza que quer remover "{{word}}"? Todas as variantes também serão removidas.',
     addVariant: '🗣️ + Variante',
     observations: 'Observações',
@@ -152,6 +153,7 @@ export default {
     emptySearchTitle: 'Nenhuma variante encontrada',
     emptySearchSubtitle: 'Não encontramos "{{search}}"',
     deleteTitle: 'Remover Variante',
+    deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
     deleteMessage: 'Remover "{{variant}}"?',
     count: '{{count}} variante',
     countPlural: '{{count}} variantes',
@@ -177,6 +179,8 @@ export default {
     googleDrive: 'Google Drive',
     autoBackupActive: 'Backup automático ativo',
     lastSync: '🕐 Última sincronização: {{date}}',
+    categories: 'Categorias',
+    categoriesDesc: 'Gerencie suas categorias de palavras.',
     sync: '🔄 Sincronizar',
     syncing: 'Sincronizando...',
     disconnect: 'Desconectar',
@@ -261,6 +265,8 @@ export default {
     errorDuplicate: 'Já existe uma categoria com esse nome.',
     btnCancel: 'Cancelar',
     btnCreate: 'Criar Categoria',
+    titleEdit: 'Editar Categoria',
+    btnSave: 'Salvar',
   },
 
   // ── Date Picker ──────────────────────────────────────────────────────────────
@@ -298,5 +304,13 @@ export default {
     resultVariants: '🗣️ {{count}} variante(s) adicionada(s)',
     resultSkipped: '⏭️ {{count}} já existia(m): {{words}}',
     resultErrors: '❌ {{count}} erro(s)',
+  },
+
+  manageCategory: {
+    edit: 'Editar categoria',
+    delete: 'Excluir categoria',
+    deleteTitle: 'Excluir categoria',
+    deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
+    deleteMessage: 'Tem certeza que deseja excluir "{{name}}"?',
   },
 };
