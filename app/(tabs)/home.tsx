@@ -8,7 +8,7 @@ import { getDashboardStats, getSetting, DashboardStats } from '../../src/databas
 import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
-import { useI18n } from '../../src/i18n/i18n';
+import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 
 interface ChildProfile {
   name: string;
@@ -56,6 +56,7 @@ function getGreeting(
 
 export default function DashboardScreen() {
   const { t } = useI18n();
+  const categoryName = useCategoryName();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -154,7 +155,7 @@ export default function DashboardScreen() {
                   <Text style={styles.catEmoji}>{cat.emoji}</Text>
                   <View style={styles.catInfo}>
                     <View style={styles.catHeader}>
-                      <Text style={styles.catName}>{cat.name}</Text>
+                      <Text style={styles.catName}>{categoryName(cat.name)}</Text>
                       <Text style={[styles.catCount, { color: cat.color }]}>{cat.count}</Text>
                     </View>
                     <View style={styles.progressBg}>

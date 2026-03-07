@@ -311,18 +311,21 @@ export default function OnboardingScreen() {
         {/* ── Preview ── */}
         {allFilled && (
           <View style={[styles.preview, { borderColor: accentColor }]}>
-            <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
-            <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
+            <View style={styles.previewRow}>
+              <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
+              <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
+            </View>
             <Text style={styles.previewDate}>
               {birthArticle} {formatDisplayDate(birthDate!)}
             </Text>
           </View>
         )}
 
+        {allFilled && (
         <TouchableOpacity
-          style={[styles.continueBtn, { backgroundColor: accentColor }, !allFilled && styles.continueBtnDisabled]}
+          style={[styles.continueBtn, { backgroundColor: accentColor }]}
           onPress={handleContinue}
-          disabled={loading || !allFilled}
+          disabled={loading}
         >
           <Text style={styles.continueBtnText}>
             {loading
@@ -330,6 +333,7 @@ export default function OnboardingScreen() {
               : t('onboarding.continueBtn', { name: name || t('common.ok') })}
           </Text>
         </TouchableOpacity>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -459,14 +463,14 @@ const styles = StyleSheet.create({
     width: '75%', alignItems: 'center', padding: 10,
     backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, marginBottom: 16,
   },
-  previewEmoji: { fontSize: 28, marginBottom: 2 },
-  previewName: { fontSize: 15, fontWeight: '900', marginBottom: 1 },
-  previewDate: { fontSize: 11, color: COLORS.textSecondary },
+  previewRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  previewEmoji: { fontSize: 28 },
+  previewName:  { fontSize: 15, fontWeight: '900' },
+  previewDate:  { fontSize: 11, color: COLORS.textSecondary },
   // Button
   continueBtn: {
     width: '100%', paddingVertical: 18, borderRadius: 18, alignItems: 'center',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
-  continueBtnDisabled: { opacity: 0.5, shadowOpacity: 0 },
   continueBtnText: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
 });
