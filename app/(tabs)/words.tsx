@@ -15,28 +15,32 @@ import { AddWordModal } from '../../src/components/AddWordModal';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import { AddCategoryModal } from '../../src/components/AddCategoryModal';
 import { performSync, isGoogleConnected } from '../../src/utils/googleDrive';
+import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 
 type SortKey = 'date_desc' | 'date_asc' | 'alpha_asc' | 'alpha_desc';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'date_desc', label: '📅 Mais recente' },
-  { key: 'date_asc',  label: '📅 Mais antigo'  },
-  { key: 'alpha_asc', label: '🔤 A → Z'         },
-  { key: 'alpha_desc',label: '🔤 Z → A'         },
-];
 
 function sortWords(words: Word[], sort: SortKey): Word[] {
   return [...words].sort((a, b) => {
     switch (sort) {
       case 'date_desc': return b.date_added.localeCompare(a.date_added);
       case 'date_asc':  return a.date_added.localeCompare(b.date_added);
-      case 'alpha_asc': return a.word.localeCompare(b.word, 'pt');
-      case 'alpha_desc':return b.word.localeCompare(a.word, 'pt');
+      case 'alpha_asc': return a.word.localeCompare(b.word);
+      case 'alpha_desc':return b.word.localeCompare(a.word);
     }
   });
 }
 
 export default function WordsScreen() {
+  const { t, tc } = useI18n();
+  const categoryName = useCategoryName();
+
+  const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+    { key: 'date_desc', label: t('words.sortRecent') },
+    { key: 'date_asc',  label: t('words.sortOldest') },
+    { key: 'alpha_asc', label: t('words.sortAZ') },
+    { key: 'alpha_desc',label: t('words.sortZA') },
+  ];
+
   const [words, setWords] = useState<Word[]>([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('date_desc');
@@ -57,7 +61,6 @@ export default function WordsScreen() {
       getAllVariants(),
     ]);
     setWords(data);
-    // Pre-group variants by word_id so chips show without needing to expand first
     const grouped: Record<number, Variant[]> = {};
     for (const v of allVariants) {
       if (!grouped[v.word_id]) grouped[v.word_id] = [];
@@ -86,25 +89,18 @@ export default function WordsScreen() {
     await load();
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  };
+  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const handleSearch = (text: string) => {
-    setSearch(text);
-    load(text);
-  };
+  const handleSearch = (text: string) => { setSearch(text); load(text); };
 
   const handleDelete = (word: Word) => {
     Alert.alert(
-      'Remover Palavra',
-      `Tem certeza que quer remover "${word.word}"? Todas as variantes também serão removidas.`,
+      t('words.deleteTitle'),
+      t('words.deleteMessage', { word: word.word }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Remover', style: 'destructive',
+          text: t('common.remove'), style: 'destructive',
           onPress: async () => {
             await deleteWord(word.id);
             load();
@@ -117,13 +113,17 @@ export default function WordsScreen() {
   };
 
   const handleDeleteVariant = (variant: Variant, wordId: number) => {
-    Alert.alert('Remover Variante', `Remover "${variant.variant}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Remover', style: 'destructive',
-        onPress: async () => { await deleteVariant(variant.id); reloadVariants(wordId); },
-      },
-    ]);
+    Alert.alert(
+      t('variants.deleteTitle'),
+      t('variants.deleteMessage', { variant: variant.variant }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.remove'), style: 'destructive',
+          onPress: async () => { await deleteVariant(variant.id); reloadVariants(wordId); },
+        },
+      ]
+    );
   };
 
   const handleSaved = async () => {
@@ -155,7 +155,7 @@ export default function WordsScreen() {
               <View style={styles.wordMeta}>
                 {item.category_name && (
                   <CategoryBadge
-                    name={item.category_name}
+                    name={categoryName(item.category_name)}
                     color={item.category_color || COLORS.primary}
                     emoji={item.category_emoji || '📝'}
                     size="small"
@@ -187,15 +187,14 @@ export default function WordsScreen() {
           <View style={styles.expandedContent}>
             {item.notes && (
               <View style={styles.notesBox}>
-                <Text style={styles.notesLabel}>Observações</Text>
+                <Text style={styles.notesLabel}>{t('words.observationsLabel')}</Text>
                 <Text style={styles.notesText}>{item.notes}</Text>
               </View>
             )}
 
-            {/* Inline variants */}
             {variants.length > 0 && (
               <View style={styles.variantsSection}>
-                <Text style={styles.variantsSectionTitle}>🗣️ Variantes</Text>
+                <Text style={styles.variantsSectionTitle}>🗣️ {t('tabs.variants').toUpperCase()}</Text>
                 {variants.map(v => (
                   <View key={v.id} style={styles.variantRow}>
                     <View style={styles.variantInfo}>
@@ -231,19 +230,19 @@ export default function WordsScreen() {
                 style={[styles.actionBtn, { backgroundColor: COLORS.secondary + '20' }]}
                 onPress={() => { setEditVariant(null); setSelectedWord(item); setShowAddVariant(true); }}
               >
-                <Text style={[styles.actionBtnText, { color: COLORS.secondary }]}>🗣️ + Variante</Text>
+                <Text style={[styles.actionBtnText, { color: COLORS.secondary }]}>{t('words.addVariant')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionBtn, { backgroundColor: COLORS.accent + '20' }]}
                 onPress={() => { setEditWord(item); setShowAddWord(true); }}
               >
-                <Text style={[styles.actionBtnText, { color: COLORS.accent }]}>✏️ Editar</Text>
+                <Text style={[styles.actionBtnText, { color: COLORS.accent }]}>✏️ {t('common.edit')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionBtn, { backgroundColor: COLORS.error + '20' }]}
                 onPress={() => handleDelete(item)}
               >
-                <Text style={[styles.actionBtnText, { color: COLORS.error }]}>🗑️ Remover</Text>
+                <Text style={[styles.actionBtnText, { color: COLORS.error }]}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -255,33 +254,32 @@ export default function WordsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>📚 Palavras</Text>
+        <Text style={styles.title}>{t('words.title')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={[styles.addBtn, styles.addCategoryBtn]}
             onPress={() => setShowAddCategory(true)}
           >
-            <Text style={styles.addCategoryBtnText}>+ Categoria</Text>
+            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => { setEditWord(null); setShowAddWord(true); }}
           >
-            <Text style={styles.addBtnText}>+ Nova</Text>
+            <Text style={styles.addBtnText}>{t('words.addWord')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.searchContainer}>
-        <SearchBar value={search} onChangeText={handleSearch} placeholder="Buscar palavras..." />
+        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('words.searchPlaceholder')} />
       </View>
 
-      {/* Sort bar */}
       <View style={styles.sortBar}>
         <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)}>
           <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
-        <Text style={styles.countText}>{words.length} palavra{words.length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.countText}>{tc('words.count', words.length)}</Text>
       </View>
 
       {showSortMenu && (
@@ -309,9 +307,9 @@ export default function WordsScreen() {
         ListEmptyComponent={
           <EmptyState
             emoji={search ? '🔍' : '📝'}
-            title={search ? 'Nenhuma palavra encontrada' : 'Nenhuma palavra ainda'}
-            subtitle={search ? `Não encontramos "${search}"` : 'Adicione a primeira palavrinha do seu bebê!'}
-            action={!search ? { label: '+ Adicionar Palavra', onPress: () => setShowAddWord(true) } : undefined}
+            title={search ? t('words.emptySearchTitle') : t('words.emptyTitle')}
+            subtitle={search ? t('words.emptySearchSubtitle', { search }) : t('words.emptySubtitle')}
+            action={!search ? { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true) } : undefined}
           />
         }
       />
@@ -398,7 +396,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.secondary + '0D', borderRadius: 12,
     padding: 10, marginBottom: 12,
   },
-  variantsSectionTitle: { fontSize: 11, fontWeight: '700', color: COLORS.secondary, marginBottom: 8, textTransform: 'uppercase' },
+  variantsSectionTitle: { fontSize: 11, fontWeight: '700', color: COLORS.secondary, marginBottom: 8 },
   variantRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.white, borderRadius: 10,
@@ -415,8 +413,6 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 8 },
   actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 12, alignItems: 'center' },
   actionBtnText: { fontSize: 12, fontWeight: '700' },
-  variantBadge: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  variantBadgeText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
   variantChip: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   variantChipText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
 });

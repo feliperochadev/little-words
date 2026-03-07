@@ -2,27 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert, Platform, Modal,
-  FlatList, Dimensions,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { setSetting } from '../src/database/database';
 import { COLORS } from '../src/utils/theme';
 import { BrandHeader } from '../src/components/BrandHeader';
+import { useI18n, LANGUAGES, type Locale } from '../src/i18n/i18n';
 
 /* ───────── constants ───────── */
 const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
-
-const MONTHS_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-];
-
-const currentYear = new Date().getFullYear();
-const MIN_YEAR = currentYear - 8;
-const MAX_YEAR = currentYear;
 
 /* ───────── helpers ───────── */
 function formatDisplayDate(date: Date): string {
@@ -44,7 +36,7 @@ function daysInMonth(month: number, year: number): number {
 }
 
 /* ─────────────────────────────────────────────
-   WheelColumn – a single scrollable wheel column
+   WheelColumn
    ───────────────────────────────────────────── */
 interface WheelColumnProps {
   data: { label: string; value: number }[];
@@ -80,7 +72,6 @@ function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }:
 
   return (
     <View style={[wheelStyles.column, width ? { width } : { flex: 1 }]}>
-      {/* Highlight bar */}
       <View
         style={[
           wheelStyles.highlight,
@@ -128,14 +119,8 @@ function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }:
 const wheelStyles = StyleSheet.create({
   column: { height: PICKER_HEIGHT, overflow: 'hidden' },
   highlight: {
-    position: 'absolute',
-    left: 4,
-    right: 4,
-    height: ITEM_HEIGHT,
-    borderRadius: 10,
-    borderWidth: 2,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    zIndex: 1,
+    position: 'absolute', left: 4, right: 4, height: ITEM_HEIGHT,
+    borderRadius: 10, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1,
   },
   item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' },
   itemText: { fontSize: 16, color: COLORS.textSecondary, fontWeight: '500' },
@@ -146,6 +131,15 @@ const wheelStyles = StyleSheet.create({
    ───────────────────────────────────────────── */
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { t, ta, locale, setLocale } = useI18n();
+
+  // Months come from the translation catalogue so they're locale-aware
+  const MONTHS: string[] = ta('datePicker.months');
+
+  const currentYear = new Date().getFullYear();
+  const MIN_YEAR = currentYear - 8;
+  const MAX_YEAR = currentYear;
+
   const [name, setName] = useState('');
   const [sex, setSex] = useState<'boy' | 'girl' | null>(null);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
@@ -153,7 +147,6 @@ export default function OnboardingScreen() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Temp picker state
   const defaultDate = new Date();
   defaultDate.setFullYear(defaultDate.getFullYear() - 1);
 
@@ -163,7 +156,6 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
-  const birthArticle = isBoy ? 'nascido' : 'nascida'
   const accentColor = isGirl ? '#FF6B9D' : isBoy ? '#74B9FF' : COLORS.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
 
@@ -175,7 +167,6 @@ export default function OnboardingScreen() {
     }
   }, [allFilled]);
 
-  // Clamp day when month/year changes
   const maxDay = daysInMonth(pickerMonth, pickerYear);
   const clampedDay = Math.min(pickerDay, maxDay);
 
@@ -183,9 +174,7 @@ export default function OnboardingScreen() {
     label: String(i + 1).padStart(2, '0'),
     value: i + 1,
   }));
-
-  const monthData = MONTHS_PT.map((label, i) => ({ label, value: i }));
-
+  const monthData = MONTHS.map((label: string, i: number) => ({ label, value: i }));
   const yearData = Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => {
     const y = MAX_YEAR - i;
     return { label: String(y), value: y };
@@ -202,23 +191,20 @@ export default function OnboardingScreen() {
   const confirmPicker = () => {
     const finalDay = Math.min(clampedDay, daysInMonth(pickerMonth, pickerYear));
     const chosen = new Date(pickerYear, pickerMonth, finalDay);
-
-    // Don't allow future dates
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     if (chosen > today) {
-      Alert.alert('Data inválida', 'A data não pode ser no futuro.');
+      Alert.alert(t('common.attention'), t('onboarding.errorFutureDate'));
       return;
     }
-
     setBirthDate(chosen);
     setShowPicker(false);
   };
 
   const handleContinue = async () => {
-    if (!name.trim()) { Alert.alert('Atenção', 'Digite o nome do bebê.'); return; }
-    if (!sex) { Alert.alert('Atenção', 'Selecione o sexo.'); return; }
-    if (!birthDate) { Alert.alert('Atenção', 'Selecione a data de nascimento.'); return; }
+    if (!name.trim()) { Alert.alert(t('common.attention'), t('onboarding.errorName')); return; }
+    if (!sex) { Alert.alert(t('common.attention'), t('onboarding.errorSex')); return; }
+    if (!birthDate) { Alert.alert(t('common.attention'), t('onboarding.errorBirth')); return; }
 
     setLoading(true);
     await setSetting('child_name', name.trim());
@@ -229,6 +215,8 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
+  const birthArticle = isBoy ? t('onboarding.bornOnMale') : t('onboarding.bornOn');
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -236,98 +224,138 @@ export default function OnboardingScreen() {
         <BrandHeader />
 
         <Text style={styles.emoji}>{isGirl ? '👧' : isBoy ? '👦' : '👶'}</Text>
-        <Text style={styles.title}>Bem-vindo ao{'\n'}Palavrinhas! 💕</Text>
-        <Text style={styles.subtitle}>Vamos personalizar o app para o seu bebê</Text>
+        <Text style={styles.title}>{t('onboarding.welcome')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
 
-        {/* Name */}
+        {/* ── Language selector ── */}
         <View style={styles.field}>
-          <Text style={styles.label}>Nome do bebê</Text>
+          <Text style={styles.label}>{t('onboarding.language').toUpperCase()}</Text>
+          <View style={styles.langRow}>
+            {LANGUAGES.map(lang => (
+              <TouchableOpacity
+                key={lang.locale}
+                style={[
+                  styles.langBtn,
+                  locale === lang.locale && { borderColor: accentColor, backgroundColor: accentColor + '12' },
+                ]}
+                onPress={() => setLocale(lang.locale as Locale)}
+              >
+                <Text style={styles.langFlag}>{lang.flag}</Text>
+                <Text style={[
+                  styles.langLabel,
+                  locale === lang.locale && { color: accentColor, fontWeight: '800' },
+                ]}>
+                  {lang.label}
+                </Text>
+                {locale === lang.locale && (
+                  <Text style={[styles.langCheck, { color: accentColor }]}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Name ── */}
+        <View style={styles.field}>
+          <Text style={styles.label}>{t('onboarding.babyName').toUpperCase()}</Text>
           <TextInput
             style={[styles.input, { borderColor: name ? accentColor : COLORS.border }]}
             value={name}
             onChangeText={setName}
-            placeholder="Ex: Sofia, Miguel..."
+            placeholder={t('onboarding.babyNamePlaceholder')}
             placeholderTextColor={COLORS.textLight}
             autoCapitalize="words"
           />
         </View>
 
-        {/* Sex */}
+        {/* ── Sex ── */}
         <View style={styles.field}>
-          <Text style={styles.label}>Sexo</Text>
+          <Text style={styles.label}>{t('onboarding.sex').toUpperCase()}</Text>
           <View style={styles.sexRow}>
             <TouchableOpacity
               style={[styles.sexBtn, isGirl && styles.sexBtnGirl]}
               onPress={() => setSex('girl')}
             >
               <Text style={styles.sexEmoji}>👧</Text>
-              <Text style={[styles.sexLabel, isGirl && { color: '#FF6B9D', fontWeight: '800' }]}>Menina</Text>
+              <Text style={[styles.sexLabel, isGirl && { color: '#FF6B9D', fontWeight: '800' }]}>
+                {t('onboarding.girl')}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.sexBtn, isBoy && styles.sexBtnBoy]}
               onPress={() => setSex('boy')}
             >
               <Text style={styles.sexEmoji}>👦</Text>
-              <Text style={[styles.sexLabel, isBoy && { color: '#74B9FF', fontWeight: '800' }]}>Menino</Text>
+              <Text style={[styles.sexLabel, isBoy && { color: '#74B9FF', fontWeight: '800' }]}>
+                {t('onboarding.boy')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Birth date */}
+        {/* ── Birth date ── */}
         <View style={styles.field}>
-          <Text style={styles.label}>Data de nascimento</Text>
+          <Text style={styles.label}>{t('onboarding.birthDate').toUpperCase()}</Text>
           <TouchableOpacity
             style={[styles.dateBtn, { borderColor: birthDate ? accentColor : COLORS.border }]}
             onPress={openPicker}
           >
             <Text style={styles.dateBtnIcon}>📅</Text>
             <Text style={[styles.dateBtnText, !birthDate && styles.dateBtnPlaceholder]}>
-              {birthDate ? formatDisplayDate(birthDate) : 'Selecionar data'}
+              {birthDate ? formatDisplayDate(birthDate) : t('onboarding.selectDate')}
             </Text>
             {birthDate && <Text style={[styles.dateBtnArrow, { color: accentColor }]}>▾</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* Preview */}
+        {/* ── Preview ── */}
         {allFilled && (
           <View style={[styles.preview, { borderColor: accentColor }]}>
-            <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
-            <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
+            <View style={styles.previewRow}>
+              <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
+              <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
+            </View>
             <Text style={styles.previewDate}>
-              {birthArticle} em {formatDisplayDate(birthDate!)}
+              {birthArticle} {formatDisplayDate(birthDate!)}
             </Text>
           </View>
         )}
 
+        {allFilled && (
         <TouchableOpacity
-          style={[styles.continueBtn, { backgroundColor: accentColor }, !allFilled && styles.continueBtnDisabled]}
+          style={[styles.continueBtn, { backgroundColor: accentColor }]}
           onPress={handleContinue}
-          disabled={loading || !allFilled}
+          disabled={loading}
         >
           <Text style={styles.continueBtnText}>
-            {loading ? 'Salvando...' : `Começar com ${name || 'meu bebê'} 💕`}
+            {loading
+              ? t('onboarding.saving')
+              : t('onboarding.continueBtn', { name: name || t('common.ok') })}
           </Text>
         </TouchableOpacity>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* ── JS-only Date Picker Modal ── */}
+      {/* ── Date Picker Modal ── */}
       <Modal visible={showPicker} transparent animationType="slide">
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
-            {/* Header */}
             <View style={modalStyles.header}>
               <TouchableOpacity onPress={() => setShowPicker(false)}>
-                <Text style={[modalStyles.headerBtn, { color: COLORS.textSecondary }]}>Cancelar</Text>
+                <Text style={[modalStyles.headerBtn, { color: COLORS.textSecondary }]}>
+                  {t('onboarding.datePicker.cancel')}
+                </Text>
               </TouchableOpacity>
-              <Text style={modalStyles.headerTitle}>Data de Nascimento</Text>
+              <Text style={modalStyles.headerTitle}>{t('onboarding.datePicker.title')}</Text>
               <TouchableOpacity onPress={confirmPicker}>
-                <Text style={[modalStyles.headerBtn, { color: accentColor }]}>Confirmar</Text>
+                <Text style={[modalStyles.headerBtn, { color: accentColor }]}>
+                  {t('onboarding.datePicker.confirm')}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Wheels */}
             <View style={modalStyles.wheelsRow}>
               <WheelColumn
                 data={dayData}
@@ -351,9 +379,8 @@ export default function OnboardingScreen() {
               />
             </View>
 
-            {/* Preview inside modal */}
             <Text style={modalStyles.previewText}>
-              {String(clampedDay).padStart(2, '0')} de {MONTHS_PT[pickerMonth]} de {pickerYear}
+              {String(clampedDay).padStart(2, '0')} {MONTHS[pickerMonth]} {pickerYear}
             </Text>
           </View>
         </View>
@@ -364,38 +391,22 @@ export default function OnboardingScreen() {
 
 /* ───────── Modal styles ───────── */
 const modalStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     backgroundColor: COLORS.white ?? '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    paddingHorizontal: 16,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee',
   },
   headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
   headerBtn: { fontSize: 15, fontWeight: '600' },
-  wheelsRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
+  wheelsRow: { flexDirection: 'row', marginTop: 8 },
   previewText: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    paddingVertical: 12,
+    textAlign: 'center', fontSize: 15, fontWeight: '600',
+    color: COLORS.textSecondary, paddingVertical: 12,
   },
 });
 
@@ -405,17 +416,29 @@ const styles = StyleSheet.create({
   content: { padding: 28, alignItems: 'center' },
   emoji: { fontSize: 72, marginBottom: 16, marginTop: 8 },
   title: { fontSize: 30, fontWeight: '900', color: COLORS.text, textAlign: 'center', lineHeight: 36, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 32 },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
   field: { width: '100%', marginBottom: 24 },
   label: {
     fontSize: 13, fontWeight: '700', color: COLORS.textSecondary,
-    marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5,
+    marginBottom: 10, letterSpacing: 0.5,
   },
+  // Language
+  langRow: { flexDirection: 'row', gap: 10 },
+  langBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16,
+    backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.border,
+  },
+  langFlag: { fontSize: 22 },
+  langLabel: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
+  langCheck: { fontSize: 13, fontWeight: '900' },
+  // Name
   input: {
     backgroundColor: COLORS.white, borderRadius: 14,
     paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 18, color: COLORS.text, borderWidth: 2,
   },
+  // Sex
   sexRow: { flexDirection: 'row', gap: 12 },
   sexBtn: {
     flex: 1, alignItems: 'center', paddingVertical: 18,
@@ -425,27 +448,29 @@ const styles = StyleSheet.create({
   sexBtnBoy: { borderColor: '#74B9FF', backgroundColor: '#F0F7FF' },
   sexEmoji: { fontSize: 36, marginBottom: 6 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
+  // Date
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.white, borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 16,
-    borderWidth: 2,
+    paddingHorizontal: 16, paddingVertical: 16, borderWidth: 2,
   },
   dateBtnIcon: { fontSize: 22, marginRight: 12 },
   dateBtnText: { flex: 1, fontSize: 18, fontWeight: '600', color: COLORS.text },
   dateBtnPlaceholder: { color: COLORS.textLight, fontWeight: '400' },
   dateBtnArrow: { fontSize: 16 },
+  // Preview
   preview: {
     width: '75%', alignItems: 'center', padding: 10,
     backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, marginBottom: 16,
   },
-  previewEmoji: { fontSize: 28, marginBottom: 2 },
-  previewName: { fontSize: 15, fontWeight: '900', marginBottom: 1 },
-  previewDate: { fontSize: 11, color: COLORS.textSecondary },
+  previewRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  previewEmoji: { fontSize: 28 },
+  previewName:  { fontSize: 15, fontWeight: '900' },
+  previewDate:  { fontSize: 11, color: COLORS.textSecondary },
+  // Button
   continueBtn: {
     width: '100%', paddingVertical: 18, borderRadius: 18, alignItems: 'center',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
-  continueBtnDisabled: { opacity: 0.5, shadowOpacity: 0 },
   continueBtnText: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
 });

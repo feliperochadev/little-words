@@ -8,40 +8,55 @@ import { getDashboardStats, getSetting, DashboardStats } from '../../src/databas
 import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
+import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 
 interface ChildProfile {
   name: string;
   sex: 'boy' | 'girl' | null;
-  birth: string; // YYYY-MM-01
+  birth: string;
 }
 
-function getAgeText(birth: string): string {
+function getAgeText(
+  birth: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const now = new Date();
   const [y, m, d] = birth.split('-').map(Number);
   const bDate = new Date(y, m - 1, d);
 
   let years = now.getFullYear() - bDate.getFullYear();
   let months = now.getMonth() - bDate.getMonth();
-
-  // If we haven't reached the birth day this month yet, subtract a month
   if (now.getDate() < bDate.getDate()) months--;
-
-  // Adjust if months went negative
   if (months < 0) { years--; months += 12; }
 
-  if (years === 0) return `${months} ${months === 1 ? 'mês' : 'meses'}`;
-  if (months === 0) return `${years} ${years === 1 ? 'ano' : 'anos'}`;
-  return `${years} ${years === 1 ? 'ano' : 'anos'} e ${months} ${months === 1 ? 'mês' : 'meses'}`;
+  const yearStr = years === 1 ? t('dashboard.age.year') : t('dashboard.age.years');
+  const monthStr = months === 1 ? t('dashboard.age.month') : t('dashboard.age.months');
+  const andStr = t('dashboard.age.and');
+
+  if (years === 0) return `${months} ${monthStr}`;
+  if (months === 0) return `${years} ${yearStr}`;
+  return `${years} ${yearStr} ${andStr} ${months} ${monthStr}`;
 }
 
-function getGreeting(name: string, sex: 'boy' | 'girl' | null): string {
+function getGreeting(
+  name: string,
+  sex: 'boy' | 'girl' | null,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const hour = new Date().getHours();
-  const period = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  const article = sex === 'girl' ? 'da' : sex === 'boy' ? 'do' : 'de';
-  return `${period}! Registre as palavras ${article} ${name} 💕`;
+  const periodKey = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  const period = t(`dashboard.greeting.${periodKey}`);
+  const msgKey = sex === 'girl'
+    ? 'dashboard.greeting.messageFemale'
+    : sex === 'boy'
+      ? 'dashboard.greeting.messageMale'
+      : 'dashboard.greeting.messageNeutral';
+  return t(msgKey, { period, name });
 }
 
 export default function DashboardScreen() {
+  const { t } = useI18n();
+  const categoryName = useCategoryName();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,14 +78,17 @@ export default function DashboardScreen() {
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  // Map numeric month index (1-based) to the short label key
+  const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const formatMonth = (monthStr: string) => {
     const [, month] = monthStr.split('-');
-    return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(month) - 1];
+    const key = MONTH_KEYS[parseInt(month) - 1];
+    return t(`dashboard.months.${key}`);
   };
 
   const emoji = profile?.sex === 'girl' ? '👧' : profile?.sex === 'boy' ? '👦' : '👶';
   const accentColor = profile?.sex === 'girl' ? '#FF6B9D' : profile?.sex === 'boy' ? '#74B9FF' : COLORS.primary;
-  const ageText = profile?.birth ? getAgeText(profile.birth) : null;
+  const ageText = profile?.birth ? getAgeText(profile.birth, t) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -80,6 +98,7 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
       >
         <BrandHeader />
+
         {profile && (
           <View style={styles.profileBlock}>
             <View style={styles.profileRow}>
@@ -89,25 +108,25 @@ export default function DashboardScreen() {
                 {ageText && <Text style={styles.profileAge}>🎂 {ageText}</Text>}
               </View>
             </View>
-            <Text style={styles.profileGreeting}>{getGreeting(profile.name, profile.sex)}</Text>
+            <Text style={styles.profileGreeting}>{getGreeting(profile.name, profile.sex, t)}</Text>
           </View>
         )}
 
         {/* Main stats */}
         <View style={styles.statsGrid}>
-          <StatCard emoji="📝" value={stats?.totalWords ?? 0} label="Total de palavras" color={accentColor} />
-          <StatCard emoji="🗣️" value={stats?.totalVariants ?? 0} label="Variantes" color={COLORS.secondary} />
+          <StatCard emoji="📝" value={stats?.totalWords ?? 0} label={t('dashboard.totalWords')} color={accentColor} />
+          <StatCard emoji="🗣️" value={stats?.totalVariants ?? 0} label={t('dashboard.variants')} color={COLORS.secondary} />
         </View>
         <View style={styles.statsGrid}>
-          <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label="Hoje" color={COLORS.accent} />
-          <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label="Esta semana" color={COLORS.success} />
-          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label="Este mês" color="#6C5CE7" />
+          <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} />
+          <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} />
+          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color="#6C5CE7" />
         </View>
 
         {/* Monthly progress */}
         {stats && stats.monthlyProgress.length > 0 && (
           <Card style={styles.chartCard}>
-            <Text style={styles.sectionTitle}>📈 Progresso Mensal</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.monthlyProgress')}</Text>
             <View style={styles.barChart}>
               {(() => {
                 const max = Math.max(...stats.monthlyProgress.map(m => m.count), 1);
@@ -128,7 +147,7 @@ export default function DashboardScreen() {
         {/* Categories breakdown */}
         {stats && stats.categoryCounts.filter(c => c.count > 0).length > 0 && (
           <Card>
-            <Text style={styles.sectionTitle}>🏷️ Por Categoria</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.byCategory')}</Text>
             {stats.categoryCounts.filter(c => c.count > 0).map((cat, i) => {
               const max = stats.categoryCounts[0].count || 1;
               return (
@@ -136,7 +155,7 @@ export default function DashboardScreen() {
                   <Text style={styles.catEmoji}>{cat.emoji}</Text>
                   <View style={styles.catInfo}>
                     <View style={styles.catHeader}>
-                      <Text style={styles.catName}>{cat.name}</Text>
+                      <Text style={styles.catName}>{categoryName(cat.name)}</Text>
                       <Text style={[styles.catCount, { color: cat.color }]}>{cat.count}</Text>
                     </View>
                     <View style={styles.progressBg}>
@@ -152,7 +171,7 @@ export default function DashboardScreen() {
         {/* Recent words */}
         {stats && stats.recentWords.length > 0 && (
           <Card>
-            <Text style={styles.sectionTitle}>🆕 Palavras Recentes</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
             <View style={styles.wordCloud}>
               {stats.recentWords.map((w, i) => (
                 <View key={i} style={[styles.wordChip, { backgroundColor: (w.category_color || accentColor) + '20' }]}>
@@ -168,11 +187,11 @@ export default function DashboardScreen() {
         {!stats?.totalWords && (
           <View style={styles.emptyHero}>
             <Text style={styles.emptyEmoji}>🌟</Text>
-            <Text style={styles.emptyTitle}>Comece a registrar!</Text>
+            <Text style={styles.emptyTitle}>{t('dashboard.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
               {profile
-                ? `Vá para "Palavras" e adicione a primeira palavra de ${profile.name}!`
-                : 'Vá para a aba "Palavras" e adicione a primeira palavra do seu bebê.'}
+                ? t('dashboard.emptyTextWithName', { name: profile.name })
+                : t('dashboard.emptyText')}
             </Text>
           </View>
         )}
@@ -187,12 +206,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20 },
-  profileBlock: {
-    alignItems: 'center', marginBottom: 20,
-  },
-  profileRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8,
-  },
+  profileBlock: { alignItems: 'center', marginBottom: 20 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   profileEmoji: { fontSize: 40 },
   profileName: { fontSize: 20, fontWeight: '900', color: COLORS.text },
   profileAge: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, fontWeight: '600' },

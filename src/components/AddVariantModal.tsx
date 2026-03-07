@@ -7,25 +7,27 @@ import { COLORS } from '../utils/theme';
 import { addVariant, updateVariant, getWords, Variant, Word } from '../database/database';
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
+import { useI18n, useCategoryName } from '../i18n/i18n';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: () => void;
-  word: Word | null;          // pre-selected word (from words screen); null = show search
+  word: Word | null;
   editVariant?: Variant | null;
 }
 
 export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, word, editVariant }) => {
+  const { t } = useI18n();
+  const categoryName = useCategoryName();
   const today = new Date().toISOString().split('T')[0];
 
-  const [variant, setVariant]       = useState('');
-  const [dateAdded, setDateAdded]   = useState(today);
-  const [notes, setNotes]           = useState('');
-  const [loading, setLoading]       = useState(false);
+  const [variant, setVariant]     = useState('');
+  const [dateAdded, setDateAdded] = useState(today);
+  const [notes, setNotes]         = useState('');
+  const [loading, setLoading]     = useState(false);
 
-  // word search state — only used when word prop is null and not editing
-  const [allWords, setAllWords]     = useState<Word[]>([]);
+  const [allWords, setAllWords]   = useState<Word[]>([]);
   const [wordSearch, setWordSearch] = useState('');
   const [chosenWord, setChosenWord] = useState<Word | null>(null);
 
@@ -52,8 +54,8 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
     : allWords;
 
   const handleSave = async () => {
-    if (!variant.trim()) { Alert.alert('Atenção', 'Digite a variante.'); return; }
-    if (!editVariant && !effectiveWord) { Alert.alert('Atenção', 'Selecione uma palavra.'); return; }
+    if (!variant.trim()) { Alert.alert(t('common.attention'), t('addVariant.errorVariant')); return; }
+    if (!editVariant && !effectiveWord) { Alert.alert(t('common.attention'), t('addVariant.errorSelectWord')); return; }
     setLoading(true);
     try {
       if (editVariant) {
@@ -72,31 +74,28 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
       <View style={s.overlay}>
         <View style={s.container}>
           <View style={s.handle} />
-          <Text style={s.title}>{editVariant ? '✏️ Editar Variante' : '🗣️ Nova Variante'}</Text>
+          <Text style={s.title}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-            {/* ── Word search (only when no word pre-selected) ── */}
+            {/* ── Word search ── */}
             {showSearch && (
               <View style={s.searchSection}>
-                <Text style={s.label}>Palavra *</Text>
-
+                <Text style={s.label}>{t('addVariant.wordLabel')}</Text>
                 {chosenWord ? (
-                  /* chosen chip */
                   <TouchableOpacity style={s.chosenChip} onPress={() => setChosenWord(null)}>
                     <Text style={s.chosenText}>{chosenWord.word}</Text>
-                    <Text style={s.chosenClear}>✕ trocar</Text>
+                    <Text style={s.chosenClear}>{t('addVariant.changeWord')}</Text>
                   </TouchableOpacity>
                 ) : (
                   <>
-                    {/* search box */}
                     <View style={s.searchBox}>
                       <Text style={s.searchIcon}>🔍</Text>
                       <TextInput
                         style={s.searchInput}
                         value={wordSearch}
                         onChangeText={setWordSearch}
-                        placeholder="Buscar palavra..."
+                        placeholder={t('addVariant.wordSearchPlaceholder')}
                         placeholderTextColor={COLORS.textLight}
                         autoCapitalize="none"
                       />
@@ -106,11 +105,9 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
                         </TouchableOpacity>
                       )}
                     </View>
-
-                    {/* results list */}
                     <View style={s.wordList}>
                       {filtered.length === 0
-                        ? <Text style={s.noWords}>Nenhuma palavra encontrada</Text>
+                        ? <Text style={s.noWords}>{t('addVariant.noWordsFound')}</Text>
                         : filtered.slice(0, 7).map(w => (
                           <TouchableOpacity
                             key={w.id} style={s.wordItem}
@@ -118,7 +115,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
                           >
                             <Text style={s.wordItemText}>{w.word}</Text>
                             {w.category_name && (
-                              <Text style={s.wordItemCat}>{w.category_emoji} {w.category_name}</Text>
+                              <Text style={s.wordItemCat}>{w.category_emoji} {categoryName(w.category_name)}</Text>
                             )}
                           </TouchableOpacity>
                         ))
@@ -129,38 +126,42 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
               </View>
             )}
 
-            {/* context label when word is pre-selected */}
             {effectiveWord && !editVariant && (
               <View style={s.contextRow}>
-                <Text style={s.contextLabel}>Para a palavra </Text>
+                <Text style={s.contextLabel}>{t('addVariant.forWord')}</Text>
                 <Text style={s.contextWord}>"{effectiveWord.word}"</Text>
               </View>
             )}
 
             {/* ── Variant text ── */}
-            <Text style={s.label}>Variante *</Text>
+            <Text style={s.label}>{t('addVariant.variantLabel')}</Text>
             <TextInput
               style={s.input}
               value={variant} onChangeText={setVariant}
-              placeholder={effectiveWord ? `Como a criança diz "${effectiveWord.word}"` : 'Como a criança pronuncia...'}
+              placeholder={effectiveWord
+                ? t('addVariant.variantPlaceholder', { word: effectiveWord.word })
+                : t('addVariant.variantPlaceholderGeneric')}
               placeholderTextColor={COLORS.textLight}
               autoCapitalize="none"
             />
 
             {/* ── Date ── */}
-            <DatePickerField label="Data" value={dateAdded} onChange={setDateAdded} accentColor={COLORS.secondary} />
+            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={COLORS.secondary} />
 
             {/* ── Notes ── */}
-            <Text style={s.label}>Observações</Text>
+            <Text style={s.label}>{t('common.notes').toUpperCase()}</Text>
             <TextInput
               style={[s.input, s.textArea]} value={notes} onChangeText={setNotes}
-              placeholder="Contexto em que falou..."
+              placeholder={t('addVariant.notesPlaceholder')}
               placeholderTextColor={COLORS.textLight} multiline numberOfLines={3}
             />
 
             <View style={s.actions}>
-              <Button title="Cancelar" onPress={onClose} variant="outline" style={s.actionBtn} />
-              <Button title={editVariant ? 'Salvar' : 'Adicionar'} onPress={handleSave} loading={loading} style={s.actionBtn} />
+              <Button title={t('common.cancel')} onPress={onClose} variant="outline" style={s.actionBtn} />
+              <Button
+                title={editVariant ? t('addVariant.btnSave') : t('addVariant.btnAdd')}
+                onPress={handleSave} loading={loading} style={s.actionBtn}
+              />
             </View>
           </ScrollView>
         </View>
@@ -179,8 +180,6 @@ const s = StyleSheet.create({
   textArea:     { height: 80, textAlignVertical: 'top' },
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
-
-  // word search
   searchSection:{ marginBottom: 16 },
   searchBox:    { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 6 },
   searchIcon:   { fontSize: 16, marginRight: 8 },
@@ -194,8 +193,6 @@ const s = StyleSheet.create({
   chosenChip:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.secondary + '15', borderRadius: 14, borderWidth: 2, borderColor: COLORS.secondary, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 4 },
   chosenText:   { fontSize: 17, fontWeight: '800', color: COLORS.secondary },
   chosenClear:  { fontSize: 13, color: COLORS.secondary, fontWeight: '600' },
-
-  // context
   contextRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: COLORS.secondary + '10', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   contextLabel: { fontSize: 14, color: COLORS.textSecondary },
   contextWord:  { fontSize: 14, fontWeight: '800', color: COLORS.text },
