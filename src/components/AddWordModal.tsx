@@ -6,6 +6,7 @@ import {
 import { COLORS } from '../utils/theme';
 import { Category, getCategories, addWord, updateWord, addVariant, deleteVariant, getVariantsByWord, findWordByName, Word, Variant } from '../database/database';
 import { Button, CategoryBadge } from './UIComponents';
+import { AddCategoryModal, CategoryToEdit } from './AddCategoryModal';
 import { DatePickerField } from './DatePickerField';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
@@ -31,6 +32,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dateAdded, setDateAdded]               = useState(today);
   const [notes, setNotes]                       = useState('');
+  const [editCategory, setEditCategory]         = useState<CategoryToEdit | null>(null);
   const [categories, setCategories]             = useState<Category[]>([]);
   const [loading, setLoading]                   = useState(false);
   const [duplicate, setDuplicate]               = useState<Word | null>(null);
@@ -98,6 +100,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" transparent>
       <View style={s.overlay}>
         <View style={s.container}>
@@ -153,6 +156,8 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                   key={cat.id}
                   style={[s.catChip, { borderColor: cat.color }, selectedCategory === cat.id && { backgroundColor: cat.color }]}
                   onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                  onLongPress={() => setEditCategory({ id: cat.id, name: cat.name, color: cat.color, emoji: cat.emoji })}
+                  delayLongPress={400}
                 >
                   <Text style={s.catEmoji}>{cat.emoji}</Text>
                   <Text style={[s.catName, selectedCategory === cat.id && { color: COLORS.white }]}>{categoryName(cat.name)}</Text>
@@ -233,6 +238,15 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
         </View>
       </View>
     </Modal>
+
+    <AddCategoryModal
+      visible={!!editCategory}
+      editCategory={editCategory}
+      onClose={() => setEditCategory(null)}
+      onSave={async () => { setEditCategory(null); const cats = await getCategories(); setCategories(cats); }}
+      onDeleted={async () => { setEditCategory(null); const cats = await getCategories(); setCategories(cats); setSelectedCategory(null); }}
+    />
+    </>
   );
 };
 

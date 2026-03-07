@@ -13,7 +13,7 @@ import { COLORS } from '../../src/utils/theme';
 import { SearchBar, Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
-import { AddCategoryModal } from '../../src/components/AddCategoryModal';
+import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { performSync, isGoogleConnected } from '../../src/utils/googleDrive';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 
@@ -49,6 +49,7 @@ export default function WordsScreen() {
   const [showAddWord, setShowAddWord] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [editWord, setEditWord] = useState<Word | null>(null);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
@@ -154,12 +155,23 @@ export default function WordsScreen() {
               <Text style={styles.wordText}>{item.word}</Text>
               <View style={styles.wordMeta}>
                 {item.category_name && (
-                  <CategoryBadge
-                    name={categoryName(item.category_name)}
-                    color={item.category_color || COLORS.primary}
-                    emoji={item.category_emoji || '📝'}
-                    size="small"
-                  />
+                  <TouchableOpacity
+                    onLongPress={() => setEditCategory({
+                      id: item.category_id!,
+                      name: item.category_name!,
+                      color: item.category_color || COLORS.primary,
+                      emoji: item.category_emoji || '🏷️',
+                    })}
+                    delayLongPress={400}
+                    activeOpacity={1}
+                  >
+                    <CategoryBadge
+                      name={categoryName(item.category_name)}
+                      color={item.category_color || COLORS.primary}
+                      emoji={item.category_emoji || '📝'}
+                      size="small"
+                    />
+                  </TouchableOpacity>
                 )}
                 <Text style={styles.wordDate}>📅 {formatDate(item.date_added)}</Text>
                 {(expandedVariants[item.id] ?? []).length > 0
@@ -331,10 +343,13 @@ export default function WordsScreen() {
       />
 
       <AddCategoryModal
-        visible={showAddCategory}
-        onClose={() => setShowAddCategory(false)}
-        onSave={handleSaved}
+        visible={showAddCategory || !!editCategory}
+        onClose={() => { setShowAddCategory(false); setEditCategory(null); }}
+        onSave={() => { load(); setEditCategory(null); }}
+        onDeleted={() => { load(); setEditCategory(null); }}
+        editCategory={editCategory}
       />
+
     </SafeAreaView>
   );
 }

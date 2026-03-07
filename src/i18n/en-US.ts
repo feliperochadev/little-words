@@ -133,6 +133,7 @@ export default {
     emptySearchSubtitle: 'We couldn\'t find "{{search}}"',
     addFirstWord: '+ Add Word',
     deleteTitle: 'Remove Word',
+    deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Are you sure you want to remove "{{word}}"? All variants will also be removed.',
     addVariant: '🗣️ + Variant',
     observations: 'Notes',
@@ -152,6 +153,7 @@ export default {
     emptySearchTitle: 'No variants found',
     emptySearchSubtitle: 'We couldn\'t find "{{search}}"',
     deleteTitle: 'Remove Variant',
+    deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Remove "{{variant}}"?',
     count: '{{count}} variant',
     countPlural: '{{count}} variants',
@@ -177,6 +179,8 @@ export default {
     googleDrive: 'Google Drive',
     autoBackupActive: 'Automatic backup active',
     lastSync: '🕐 Last sync: {{date}}',
+    categories: 'Categories',
+    categoriesDesc: 'Manage your word categories.',
     sync: '🔄 Sync',
     syncing: 'Syncing...',
     disconnect: 'Disconnect',
@@ -261,6 +265,8 @@ export default {
     errorDuplicate: 'A category with this name already exists.',
     btnCancel: 'Cancel',
     btnCreate: 'Create Category',
+    titleEdit: 'Edit Category',
+    btnSave: 'Save',
   },
 
   // ── Date Picker ──────────────────────────────────────────────────────────────
@@ -298,5 +304,13 @@ export default {
     resultVariants: '🗣️ {{count}} variant(s) added',
     resultSkipped: '⏭️ {{count}} already existed: {{words}}',
     resultErrors: '❌ {{count}} error(s)',
+  },
+
+  manageCategory: {
+    edit: 'Edit category',
+    delete: 'Delete category',
+    deleteTitle: 'Delete category',
+    deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
+    deleteMessage: 'Are you sure you want to delete "{{name}}"?',
   },
 };
