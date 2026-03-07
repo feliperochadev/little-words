@@ -6,15 +6,16 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSetting, clearAllData } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
-import { saveCSVToDevice, shareCSV } from '../../src/utils/csvExport';
+import { saveCSVToDevice, shareCSV, buildCategoryResolver } from '../../src/utils/csvExport';
 import {
   isGoogleConnected, signInWithGoogle, signOutGoogle,
-  performSync, getGoogleUserEmail, isNativeBuild,
+  performSync, getGoogleUserEmail,
 } from '../../src/utils/googleDrive';
 import { Card, Button } from '../../src/components/UIComponents';
+import Constants from 'expo-constants';
 import { SvgXml } from 'react-native-svg';
 import { ImportModal } from '../../src/components/ImportModal';
-
+import { useI18n, LANGUAGES, type Locale } from '../../src/i18n/i18n';
 
 const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
   <path fill="#4285f4" d="M29.5,21l-3.1708,5.5489A3.07,3.07,0,0,1,23.6459,28H8.3541a3.07,3.07,0,0,1-2.6833-1.4511L4.3687,24.27,9.7578,21Z"/>
@@ -27,6 +28,9 @@ const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" hei
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, locale, setLocale } = useI18n();
+  const categoryResolver = buildCategoryResolver(t);
+
   const [childName, setChildName] = useState('');
   const [childSex, setChildSex] = useState<'boy' | 'girl' | null>(null);
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -55,19 +59,19 @@ export default function SettingsScreen() {
 
   const handleShare = async () => {
     setExporting(true);
-    const result = await shareCSV();
+    const result = await shareCSV(categoryResolver);
     setExporting(false);
-    if (!result.success) Alert.alert('Erro', result.error || 'Não foi possível compartilhar.');
+    if (!result.success) Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
   };
 
   const handleSaveToDevice = async () => {
     setSaving(true);
-    const result = await saveCSVToDevice();
+    const result = await saveCSVToDevice(categoryResolver);
     setSaving(false);
     if (result.success) {
-      Alert.alert('✅ Salvo!', 'Arquivo CSV salvo na pasta escolhida.');
+      Alert.alert(t('settings.saveCsvSuccess'), t('settings.saveCsvMsg'));
     } else if (result.error !== 'cancelled') {
-      Alert.alert('Erro', result.error || 'Não foi possível salvar.');
+      Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
     }
   };
 
@@ -77,10 +81,10 @@ export default function SettingsScreen() {
     setSyncing(false);
     if (result.success) {
       setLastSync(result.lastSync || null);
-      Alert.alert('✅ Sincronizado!', 'Backup salvo no Google Drive.');
+      Alert.alert(t('settings.syncSuccess'), t('settings.syncSuccessMsg'));
     } else if (result.error !== 'cancelled') {
-      Alert.alert('Erro', result.error || 'Falha ao sincronizar.');
-      if (result.error?.includes('expirada')) {
+      Alert.alert(t('common.error'), result.error || t('settings.errorSync'));
+      if (result.error?.includes('expirada') || result.error?.includes('expired')) {
         setGoogleConnected(false);
         setGoogleEmail(null);
       }
@@ -95,18 +99,18 @@ export default function SettingsScreen() {
       await load();
       performSync().catch(console.error);
     } else if (result.error && result.error !== 'cancelled' && result.error !== 'in_progress') {
-      Alert.alert('Erro ao conectar', result.error);
+      Alert.alert(t('common.error'), result.error);
     }
   };
 
   const handleSignOut = () => {
     Alert.alert(
-      'Desconectar Google Drive',
-      'Tem certeza? Os dados locais não serão removidos.',
+      t('settings.disconnectTitle'),
+      t('settings.disconnectMsg'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Desconectar', style: 'destructive',
+          text: t('settings.disconnect'), style: 'destructive',
           onPress: async () => {
             await signOutGoogle();
             setGoogleConnected(false);
@@ -120,20 +124,20 @@ export default function SettingsScreen() {
 
   const handleClearData = () => {
     Alert.alert(
-      '⚠️ Apagar todos os dados',
-      'Isso vai remover TODAS as palavras, variantes e categorias permanentemente. Esta ação não pode ser desfeita.\n\nTem certeza?',
+      t('settings.deleteAllTitle'),
+      t('settings.deleteAllMsg'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Apagar tudo', style: 'destructive',
+          text: t('settings.deleteAll'), style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Confirmar exclusão',
-              'Última chance — apagar tudo mesmo?',
+              t('settings.deleteAllConfirmTitle'),
+              t('settings.deleteAllConfirmMsg'),
               [
-                { text: 'Não, cancelar', style: 'cancel' },
+                { text: t('settings.deleteAllNo'), style: 'cancel' },
                 {
-                  text: 'Sim, apagar tudo', style: 'destructive',
+                  text: t('settings.deleteAllYes'), style: 'destructive',
                   onPress: async () => {
                     await clearAllData();
                     router.replace('/onboarding');
@@ -148,56 +152,88 @@ export default function SettingsScreen() {
   };
 
   const formatDate = (iso: string) => {
-    try { return new Date(iso).toLocaleString('pt-BR'); }
+    try { return new Date(iso).toLocaleString(locale === 'pt-BR' ? 'pt-BR' : 'en-US'); }
     catch { return iso; }
   };
+
+  const sexLabel = childSex === 'girl'
+    ? t('settings.girl')
+    : childSex === 'boy'
+      ? t('settings.boy')
+      : '—';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={['top']}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>⚙️ Configurações</Text>
+        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
 
+        {/* Baby Profile */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {childSex === 'girl' ? '👧' : childSex === 'boy' ? '👦' : '👶'} Perfil do Bebê
+              {childSex === 'girl' ? '👧' : childSex === 'boy' ? '👦' : '👶'} {t('settings.babyProfile')}
             </Text>
             <TouchableOpacity onPress={() => router.push('/onboarding')} style={styles.editProfileBtn}>
-              <Text style={styles.editProfileText}>✏️ Editar</Text>
+              <Text style={styles.editProfileText}>{t('settings.editProfile')}</Text>
             </TouchableOpacity>
           </View>
           {childName ? (
-            <Text style={styles.sectionDesc}>
-              {childName} · {childSex === 'girl' ? 'Menina' : childSex === 'boy' ? 'Menino' : '—'}
-            </Text>
+            <Text style={styles.sectionDesc}>{childName} · {sexLabel}</Text>
           ) : (
-            <Text style={styles.sectionDesc}>Nenhum perfil configurado.</Text>
+            <Text style={styles.sectionDesc}>{t('settings.noProfile')}</Text>
           )}
         </Card>
 
+        {/* Language */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>📥 Importar Palavras</Text>
-          <Text style={styles.sectionDesc}>
-            Importe palavras via texto ou arquivo CSV. Data, categorias e variantes são opcionais.
-          </Text>
-          <Button title="📥 Importar Palavras" onPress={() => setShowImport(true)} style={styles.actionButton} />
+          <Text style={styles.sectionTitle}>🌐 {t('settings.language')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.languageDesc')}</Text>
+          <View style={styles.languageRow}>
+            {LANGUAGES.map(lang => (
+              <TouchableOpacity
+                key={lang.locale}
+                style={[
+                  styles.langBtn,
+                  locale === lang.locale && styles.langBtnActive,
+                ]}
+                onPress={() => setLocale(lang.locale as Locale)}
+              >
+                <Text style={styles.langFlag}>{lang.flag}</Text>
+                <Text style={[
+                  styles.langLabel,
+                  locale === lang.locale && styles.langLabelActive,
+                ]}>
+                  {lang.label}
+                </Text>
+                {locale === lang.locale && (
+                  <Text style={styles.langCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </Card>
 
+        {/* Import */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>📤 Exportar Dados</Text>
-          <Text style={styles.sectionDesc}>
-            Exporte um CSV com todas as palavras, categorias, datas e variantes.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('settings.importWords')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.importDesc')}</Text>
+          <Button title={t('settings.importBtn')} onPress={() => setShowImport(true)} style={styles.actionButton} />
+        </Card>
+
+        {/* Export */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.exportData')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.exportDesc')}</Text>
           <View style={styles.buttonRow}>
             <Button
-              title={saving ? 'Salvando...' : '💾 Salvar'}
+              title={saving ? t('settings.saving') : t('settings.saveToDrive')}
               onPress={handleSaveToDevice}
               loading={saving}
               style={[styles.flexBtn, styles.exportBtn]}
               textStyle={{ fontSize: 12, fontWeight: '700' }}
             />
             <Button
-              title={exporting ? 'Aguarde...' : '📤 Compartilhar'}
+              title={exporting ? t('settings.sharing') : t('settings.shareExport')}
               onPress={handleShare}
               loading={exporting}
               variant="outline"
@@ -207,11 +243,12 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {/* Google Drive */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <SvgXml xml={GOOGLE_DRIVE_SVG} width={20} height={20} />
-              <Text style={styles.sectionTitle}>Google Drive</Text>
+              <Text style={styles.sectionTitle}>{t('settings.googleDrive')}</Text>
             </View>
             <View style={[styles.statusDot, { backgroundColor: googleConnected ? COLORS.success : COLORS.textLight }]} />
           </View>
@@ -223,22 +260,22 @@ export default function SettingsScreen() {
                   <Text style={styles.connectedIconText}>✓</Text>
                 </View>
                 <View style={styles.connectedInfo}>
-                  <Text style={styles.connectedLabel}>Backup automático ativo</Text>
+                  <Text style={styles.connectedLabel}>{t('settings.autoBackupActive')}</Text>
                   {googleEmail ? <Text style={styles.connectedEmail}>{googleEmail}</Text> : null}
                 </View>
               </View>
               {lastSync ? (
-                <Text style={styles.lastSync}>🕐 Última sincronização: {formatDate(lastSync)}</Text>
+                <Text style={styles.lastSync}>{t('settings.lastSync', { date: formatDate(lastSync) })}</Text>
               ) : null}
               <View style={styles.buttonRow}>
                 <Button
-                  title={syncing ? 'Sincronizando...' : '🔄 Sincronizar'}
+                  title={syncing ? t('settings.syncing') : t('settings.sync')}
                   onPress={handleSync}
                   loading={syncing}
                   style={styles.flexBtn}
                 />
                 <Button
-                  title="Desconectar"
+                  title={t('settings.disconnect')}
                   onPress={handleSignOut}
                   variant="outline"
                   style={styles.flexBtn}
@@ -247,11 +284,9 @@ export default function SettingsScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.sectionDesc}>
-                Faça backup automático das palavras no seu Google Drive. Sincroniza a cada nova palavra adicionada.
-              </Text>
+              <Text style={styles.sectionDesc}>{t('settings.googleDesc')}</Text>
               <Button
-                title={signingIn ? 'Conectando...' : '🔗 Conectar com Google'}
+                title={signingIn ? t('settings.connecting') : t('settings.connectGoogle')}
                 onPress={handleSignIn}
                 loading={signingIn}
                 style={styles.actionButton}
@@ -260,22 +295,21 @@ export default function SettingsScreen() {
           )}
         </Card>
 
+        {/* Danger Zone */}
         <Card style={[styles.section, styles.dangerCard]}>
-          <Text style={styles.sectionTitle}>⚠️ Zona de Perigo</Text>
-          <Text style={styles.sectionDesc}>
-            Apaga todas as palavras, variantes e categorias. As categorias padrão serão recriadas. Esta ação é irreversível.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('settings.dangerZone')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.dangerDesc')}</Text>
           <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-            <Text style={styles.dangerBtnText}>🗑️ Apagar todos os dados</Text>
+            <Text style={styles.dangerBtnText}>{t('settings.deleteAll')}</Text>
           </TouchableOpacity>
         </Card>
 
+        {/* About */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>ℹ️ Sobre</Text>
-          <Text style={styles.aboutText}>
-            Palavrinhas v1.0.0{'\n'}
-            Diário de desenvolvimento de linguagem infantil.{'\n\n'}
-            Registre cada nova palavra que seu filho aprende, acompanhe o progresso e guarde memórias preciosas. 💕
+          <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+          <Text style={styles.aboutText}>{t('settings.aboutText')}</Text>
+          <Text style={styles.versionText}>
+            {t('settings.version')} {Constants.expoConfig?.version ?? Constants.manifest?.version ?? '—'}
           </Text>
         </Card>
 
@@ -311,11 +345,23 @@ const styles = StyleSheet.create({
   connectedInfo: { flex: 1 },
   connectedLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
   connectedEmail: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  googleBtn: { width: '100%', height: 48, marginTop: 4 },
   aboutText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  versionText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 8, opacity: 0.6 },
   dangerCard: { borderWidth: 1.5, borderColor: COLORS.error + '40' },
   dangerBtn: { backgroundColor: COLORS.error + '15', borderWidth: 1.5, borderColor: COLORS.error, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   dangerBtnText: { color: COLORS.error, fontWeight: '700', fontSize: 15 },
   editProfileBtn: { backgroundColor: COLORS.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  // Language picker
+  languageRow: { flexDirection: 'row', gap: 10 },
+  langBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12, borderRadius: 14,
+    backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.border,
+  },
+  langBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '10' },
+  langFlag: { fontSize: 20 },
+  langLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
+  langLabelActive: { color: COLORS.primary, fontWeight: '800' },
+  langCheck: { fontSize: 13, color: COLORS.primary, fontWeight: '900' },
 });

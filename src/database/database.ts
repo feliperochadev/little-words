@@ -1,4 +1,5 @@
 import { openDatabaseSync } from 'expo-sqlite';
+import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 
 const db = openDatabaseSync('palavrinhas.db');
 
@@ -7,7 +8,6 @@ const db = openDatabaseSync('palavrinhas.db');
 export const initDatabase = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
-      // PRAGMA must run outside a transaction
       db.execSync(`PRAGMA journal_mode = WAL;`);
 
       db.withTransactionSync(() => {
@@ -52,24 +52,16 @@ export const initDatabase = (): Promise<void> => {
           );
         `);
 
-        // INSERT OR IGNORE is idempotent — safe to run every time
-        const defaultCats: [string, string, string][] = [
-          ['Animais', '#FF6B9D', '🐾'],
-          ['Comida', '#FF9F43', '🍎'],
-          ['Família', '#A29BFE', '👨‍👩‍👧'],
-          ['Objetos', '#00CEC9', '🧸'],
-          ['Ações', '#6C5CE7', '🏃'],
-          ['Natureza', '#55EFC4', '🌿'],
-          ['Corpo', '#FD79A8', '👶'],
-          ['Outros', '#B2BEC3', '✨'],
-          ['Lugares', '#74B9FF', '📍'],
-        ];
-        for (const [name, color, emoji] of defaultCats) {
+        // Seed default categories using locale-neutral keys.
+        // The display name is resolved at render time via useCategoryName().
+        for (const { key, color, emoji } of DEFAULT_CATEGORIES) {
           db.runSync(
             `INSERT OR IGNORE INTO categories (name, color, emoji) VALUES (?, ?, ?);`,
-            [name, color, emoji]
+            [key, color, emoji]
           );
         }
+
+
       });
       resolve();
     } catch (error) {
@@ -148,6 +140,7 @@ export const getWords = (search?: string): Promise<Word[]> => {
   }
   return query<Word>(base + ' ORDER BY w.created_at DESC');
 };
+
 export const findWordByName = (word: string): Promise<Word | null> =>
   query<Word>(`
     SELECT w.*, c.name as category_name, c.color as category_color, c.emoji as category_emoji,
@@ -226,11 +219,11 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-  const [totalWordsRow] = await query<any>('SELECT COUNT(*) as count FROM words');
+  const [totalWordsRow]    = await query<any>('SELECT COUNT(*) as count FROM words');
   const [totalVariantsRow] = await query<any>('SELECT COUNT(*) as count FROM variants');
-  const [todayRow] = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added = ?', [todayStr]);
-  const [weekRow] = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [weekAgo]);
-  const [monthRow] = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [monthStart]);
+  const [todayRow]         = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added = ?', [todayStr]);
+  const [weekRow]          = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [weekAgo]);
+  const [monthRow]         = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [monthStart]);
 
   const categoryCounts = await query<any>(`
     SELECT c.name, c.color, c.emoji, COUNT(w.id) as count
@@ -250,11 +243,11 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
   `);
 
   return {
-    totalWords: totalWordsRow?.count ?? 0,
-    totalVariants: totalVariantsRow?.count ?? 0,
-    wordsToday: todayRow?.count ?? 0,
-    wordsThisWeek: weekRow?.count ?? 0,
-    wordsThisMonth: monthRow?.count ?? 0,
+    totalWords:      totalWordsRow?.count ?? 0,
+    totalVariants:   totalVariantsRow?.count ?? 0,
+    wordsToday:      todayRow?.count ?? 0,
+    wordsThisWeek:   weekRow?.count ?? 0,
+    wordsThisMonth:  monthRow?.count ?? 0,
     categoryCounts,
     recentWords,
     monthlyProgress,
@@ -273,7 +266,7 @@ export const setSetting = (key: string, value: string) =>
 
 // ─── CSV ──────────────────────────────────────────────────────────────────────
 
-export const getAllDataForCSV = async (): Promise<string> => {
+export const getAllDataForCSV = async (resolveCategoryName: (name: string) => string): Promise<string> => {
   const rows = await query<any>(`
     SELECT w.word, c.name as categoria, w.date_added as data, '' as variante
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
@@ -287,7 +280,7 @@ export const getAllDataForCSV = async (): Promise<string> => {
 
   const header = 'palavra,categoria,data,variante\n';
   const body = rows.map((r: any) =>
-    `"${(r.word || '').replace(/"/g, '""')}","${(r.categoria || '').replace(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replace(/"/g, '""')}"`
+    `"${(r.word || '').replace(/"/g, '""')}","${(resolveCategoryName(r.categoria || '') || '').replace(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replace(/"/g, '""')}"`
   ).join('\n');
 
   return header + body;
@@ -303,22 +296,11 @@ export const clearAllData = (): Promise<void> => {
         db.execSync('DELETE FROM words;');
         db.execSync('DELETE FROM categories;');
         db.execSync('DELETE FROM settings;');
-        // Re-seed default categories
-        const defaultCats: [string, string, string][] = [
-          ['Animais', '#FF6B9D', '🐾'],
-          ['Comida', '#FF9F43', '🍎'],
-          ['Família', '#A29BFE', '👨‍👩‍👧'],
-          ['Objetos', '#00CEC9', '🧸'],
-          ['Ações', '#6C5CE7', '🏃'],
-          ['Natureza', '#55EFC4', '🌿'],
-          ['Corpo', '#FD79A8', '👶'],
-          ['Outros', '#B2BEC3', '✨'],
-          ['Lugares', '#74B9FF', '📍'],
-        ];
-        for (const [name, color, emoji] of defaultCats) {
+        // Re-seed using locale-neutral keys
+        for (const { key, color, emoji } of DEFAULT_CATEGORIES) {
           db.runSync(
             'INSERT INTO categories (name, color, emoji) VALUES (?, ?, ?);',
-            [name, color, emoji]
+            [key, color, emoji]
           );
         }
       });

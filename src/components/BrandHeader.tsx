@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { useI18n } from '../i18n/i18n';
 
 export function BrandHeader() {
+  const { t } = useI18n();
+
   return (
     <View style={styles.container}>
       <Image source={require('@/assets/icon.png')} style={styles.icon} />
       <View>
-        <Text style={styles.title}>Palavrinhas</Text>
-        <Text style={styles.tagline}>cada palavra, uma memória</Text>
+        <Text style={styles.title}>{t('brandHeader.appName')}</Text>
+        <Text style={styles.tagline}>{t('brandHeader.tagline')}</Text>
       </View>
     </View>
   );

@@ -1,7 +1,5 @@
 /**
- * DatePickerField — shared wheel date picker, same feel as onboarding.
- * Usage: <DatePickerField label="Data" value="2024-03-29" onChange={v => setDate(v)} accentColor="#FF6B9D" />
- * value and onChange both use YYYY-MM-DD strings.
+ * DatePickerField — shared wheel date picker, locale-aware via i18n.
  */
 import React, { useRef, useEffect, useState } from 'react';
 import {
@@ -9,17 +7,13 @@ import {
   StyleSheet, FlatList, Platform,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { useI18n } from '../i18n/i18n';
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const ITEM_H = 44;
 const VISIBLE = 5;
 const WHEEL_H = ITEM_H * VISIBLE;
 const PAD = ITEM_H * Math.floor(VISIBLE / 2);
-
-const MONTHS_PT = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function daysInMonth(month: number, year: number) {
@@ -28,18 +22,20 @@ function daysInMonth(month: number, year: number) {
 
 function parseDate(s: string): { d: number; m: number; y: number } {
   const [y, m, d] = s.split('-').map(Number);
-  return { y: isNaN(y) ? new Date().getFullYear() : y,
-           m: isNaN(m) ? new Date().getMonth() : m - 1,
-           d: isNaN(d) ? new Date().getDate() : d };
+  return {
+    y: isNaN(y) ? new Date().getFullYear() : y,
+    m: isNaN(m) ? new Date().getMonth() : m - 1,
+    d: isNaN(d) ? new Date().getDate() : d,
+  };
 }
 
 function toStorage(d: number, m: number, y: number) {
-  return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 function toDisplay(s: string) {
   const { d, m, y } = parseDate(s);
-  return `${String(d).padStart(2,'0')}/${String(m + 1).padStart(2,'0')}/${y}`;
+  return `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y}`;
 }
 
 // ── WheelColumn ───────────────────────────────────────────────────────────────
@@ -111,6 +107,10 @@ interface Props {
 export const DatePickerField: React.FC<Props> = ({
   value, onChange, accentColor = COLORS.primary, label,
 }) => {
+  const { t, ta } = useI18n();
+  // Pull locale-aware month names from catalogue
+  const MONTHS: string[] = ta('datePicker.months');
+
   const [open, setOpen] = useState(false);
   const parsed = parseDate(value);
   const [pd, setPd] = useState(parsed.d);
@@ -133,8 +133,8 @@ export const DatePickerField: React.FC<Props> = ({
   const maxD     = daysInMonth(pm, py);
   const clampedD = Math.min(pd, maxD);
 
-  const dayData   = Array.from({ length: maxD }, (_, i) => ({ label: String(i+1).padStart(2,'0'), value: i+1 }));
-  const monthData = MONTHS_PT.map((l, i) => ({ label: l, value: i }));
+  const dayData   = Array.from({ length: maxD }, (_, i) => ({ label: String(i + 1).padStart(2, '0'), value: i + 1 }));
+  const monthData = MONTHS.map((l: string, i: number) => ({ label: l, value: i }));
   const yearData  = Array.from({ length: 9 }, (_, i) => { const y = curYear - i; return { label: String(y), value: y }; });
 
   return (
@@ -150,18 +150,16 @@ export const DatePickerField: React.FC<Props> = ({
       <Modal visible={open} transparent animationType="slide">
         <View style={f.overlay}>
           <View style={f.sheet}>
-            {/* header */}
             <View style={f.header}>
               <TouchableOpacity onPress={() => setOpen(false)}>
-                <Text style={[f.hBtn, { color: COLORS.textSecondary }]}>Cancelar</Text>
+                <Text style={[f.hBtn, { color: COLORS.textSecondary }]}>{t('datePicker.cancel')}</Text>
               </TouchableOpacity>
-              <Text style={f.hTitle}>Selecionar Data</Text>
+              <Text style={f.hTitle}>{t('datePicker.title')}</Text>
               <TouchableOpacity onPress={confirm}>
-                <Text style={[f.hBtn, { color: accentColor }]}>Confirmar</Text>
+                <Text style={[f.hBtn, { color: accentColor }]}>{t('datePicker.confirm')}</Text>
               </TouchableOpacity>
             </View>
 
-            {/* wheels */}
             <View style={f.wheels}>
               <WheelColumn data={dayData}   selected={clampedD} onChange={setPd} accent={accentColor} width={64} />
               <WheelColumn data={monthData} selected={pm}       onChange={setPm} accent={accentColor} />
@@ -169,7 +167,7 @@ export const DatePickerField: React.FC<Props> = ({
             </View>
 
             <Text style={f.preview}>
-              {String(clampedD).padStart(2,'0')} de {MONTHS_PT[pm]} de {py}
+              {String(clampedD).padStart(2, '0')} {MONTHS[pm]} {py}
             </Text>
           </View>
         </View>

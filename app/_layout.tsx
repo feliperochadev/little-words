@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { initDatabase, getSetting } from '../src/database/database';
 import { configureGoogleSignIn, isGoogleConnected, performSync } from '../src/utils/googleDrive';
+import { I18nProvider } from '../src/i18n/i18n';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -10,7 +11,6 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Configure Google Sign-In once at startup
     configureGoogleSignIn();
 
     initDatabase().then(async () => {
@@ -28,12 +28,12 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <I18nProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
       </Stack>
-    </>
+    </I18nProvider>
   );
 }

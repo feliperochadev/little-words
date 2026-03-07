@@ -1,12 +1,28 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { getAllDataForCSV } from '../database/database';
+import { DEFAULT_CATEGORY_KEY_SET } from './categoryKeys';
 
 const getFilename = () => `palavrinhas_${new Date().toISOString().split('T')[0]}.csv`;
 
-// Write CSV to a temp file and return its URI
-const writeTempFile = async (): Promise<string> => {
-  const csvContent = await getAllDataForCSV();
+/**
+ * Builds a category resolver that translates built-in keys using the
+ * provided t() function, and passes user-created names through unchanged.
+ * Kept here so csvExport has no direct React dependency.
+ */
+export function buildCategoryResolver(
+  t: (key: string) => string
+): (name: string) => string {
+  return (name: string) => {
+    if (name && DEFAULT_CATEGORY_KEY_SET.has(name)) {
+      return t(`categories.${name}`);
+    }
+    return name;
+  };
+}
+
+const writeTempFile = async (resolveCategoryName: (name: string) => string): Promise<string> => {
+  const csvContent = await getAllDataForCSV(resolveCategoryName);
   const fileUri = FileSystem.cacheDirectory + getFilename();
   await FileSystem.writeAsStringAsync(fileUri, csvContent, {
     encoding: FileSystem.EncodingType.UTF8,
@@ -14,46 +30,40 @@ const writeTempFile = async (): Promise<string> => {
   return fileUri;
 };
 
-// Save directly to a user-chosen folder via Android SAF
-export const saveCSVToDevice = async (): Promise<{ success: boolean; error?: string }> => {
+export const saveCSVToDevice = async (
+  resolveCategoryName: (name: string) => string
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    const csvContent = await getAllDataForCSV();
+    const csvContent = await getAllDataForCSV(resolveCategoryName);
     const filename = getFilename();
 
-    // Ask user to pick a destination folder
     const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-    if (!permissions.granted) {
-      return { success: false, error: 'cancelled' };
-    }
+    if (!permissions.granted) return { success: false, error: 'cancelled' };
 
-    // Create the file in the chosen folder
     const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
       permissions.directoryUri,
       filename,
       'text/csv'
     );
-
     await FileSystem.writeAsStringAsync(fileUri, csvContent, {
       encoding: FileSystem.EncodingType.UTF8,
     });
-
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 };
 
-// Share via system share sheet (WhatsApp, email, etc.)
-export const shareCSV = async (): Promise<{ success: boolean; error?: string }> => {
+export const shareCSV = async (
+  resolveCategoryName: (name: string) => string
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    const fileUri = await writeTempFile();
+    const fileUri = await writeTempFile(resolveCategoryName);
     const canShare = await Sharing.isAvailableAsync();
-    if (!canShare) {
-      return { success: false, error: 'Compartilhamento não disponível neste dispositivo.' };
-    }
+    if (!canShare) return { success: false, error: 'Sharing not available on this device.' };
     await Sharing.shareAsync(fileUri, {
       mimeType: 'text/csv',
-      dialogTitle: 'Compartilhar Palavrinhas CSV',
+      dialogTitle: 'Share Palavrinhas CSV',
       UTI: 'public.comma-separated-values-text',
     });
     return { success: true };
@@ -62,5 +72,4 @@ export const shareCSV = async (): Promise<{ success: boolean; error?: string }> 
   }
 };
 
-// Legacy export kept for backward compat
 export const exportCSV = shareCSV;

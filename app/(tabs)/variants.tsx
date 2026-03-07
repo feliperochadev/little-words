@@ -8,28 +8,31 @@ import { getAllVariants, deleteVariant, getWords, Variant, Word } from '../../sr
 import { COLORS } from '../../src/utils/theme';
 import { Card, EmptyState, SearchBar } from '../../src/components/UIComponents';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
+import { useI18n } from '../../src/i18n/i18n';
 
 type SortKey = 'date_desc' | 'date_asc' | 'alpha_asc' | 'alpha_desc';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'date_desc', label: '📅 Mais recente' },
-  { key: 'date_asc',  label: '📅 Mais antigo'  },
-  { key: 'alpha_asc', label: '🔤 A → Z'         },
-  { key: 'alpha_desc',label: '🔤 Z → A'         },
-];
 
 function sortVariants(variants: Variant[], sort: SortKey): Variant[] {
   return [...variants].sort((a, b) => {
     switch (sort) {
       case 'date_desc': return b.date_added.localeCompare(a.date_added);
       case 'date_asc':  return a.date_added.localeCompare(b.date_added);
-      case 'alpha_asc': return a.variant.localeCompare(b.variant, 'pt');
-      case 'alpha_desc':return b.variant.localeCompare(a.variant, 'pt');
+      case 'alpha_asc': return a.variant.localeCompare(b.variant);
+      case 'alpha_desc':return b.variant.localeCompare(a.variant);
     }
   });
 }
 
 export default function VariantsScreen() {
+  const { t, tc } = useI18n();
+
+  const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+    { key: 'date_desc', label: t('words.sortRecent') },
+    { key: 'date_asc',  label: t('words.sortOldest') },
+    { key: 'alpha_asc', label: t('words.sortAZ') },
+    { key: 'alpha_desc',label: t('words.sortZA') },
+  ];
+
   const [variants, setVariants] = useState<Variant[]>([]);
   const [filteredVariants, setFilteredVariants] = useState<Variant[]>([]);
   const [search, setSearch] = useState('');
@@ -67,14 +70,17 @@ export default function VariantsScreen() {
   const handleSearch = (text: string) => { setSearch(text); applySearch(variants, text); };
 
   const handleDelete = (variant: Variant) => {
-    Alert.alert('Remover Variante', `Remover "${variant.variant}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: async () => { await deleteVariant(variant.id); load(); } },
-    ]);
+    Alert.alert(
+      t('variants.deleteTitle'),
+      t('variants.deleteMessage', { variant: variant.variant }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.remove'), style: 'destructive', onPress: async () => { await deleteVariant(variant.id); load(); } },
+      ]
+    );
   };
 
   const handleEditVariant = (variant: Variant) => {
-    // Find the parent word so AddVariantModal has context
     const parentWord = words.find(w => w.id === variant.word_id) || null;
     setSelectedWord(parentWord);
     setEditVariant(variant);
@@ -119,22 +125,21 @@ export default function VariantsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>🗣️ Variantes</Text>
+        <Text style={styles.title}>{t('variants.title')}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => { setSelectedWord(null); setEditVariant(null); setShowAddVariant(true); }}>
-          <Text style={styles.addBtnText}>+ Nova</Text>
+          <Text style={styles.addBtnText}>{t('variants.addNew')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
-        <SearchBar value={search} onChangeText={handleSearch} placeholder="Buscar variantes..." />
+        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('variants.searchPlaceholder')} />
       </View>
 
-      {/* Sort bar */}
       <View style={styles.sortBar}>
         <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)}>
           <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
-        <Text style={styles.countText}>{filteredVariants.length} variante{filteredVariants.length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.countText}>{tc('variants.count', filteredVariants.length)}</Text>
       </View>
 
       {showSortMenu && (
@@ -160,15 +165,13 @@ export default function VariantsScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} />}
         ListHeaderComponent={
-          <Text style={styles.hint}>
-            💡 Variantes são como a criança pronuncia cada palavra antes de aprender o correto
-          </Text>
+          <Text style={styles.hint}>{t('variants.hint')}</Text>
         }
         ListEmptyComponent={
           <EmptyState
             emoji="🗣️"
-            title={search ? 'Nenhuma variante encontrada' : 'Nenhuma variante ainda'}
-            subtitle={search ? `Não encontramos "${search}"` : 'Registre como o seu bebê pronuncia as palavras!'}
+            title={search ? t('variants.emptySearchTitle') : t('variants.emptyTitle')}
+            subtitle={search ? t('variants.emptySearchSubtitle', { search }) : t('variants.emptySubtitle')}
           />
         }
       />
@@ -236,26 +239,4 @@ const styles = StyleSheet.create({
   actionBtn: { padding: 8, borderRadius: 8 },
   editIcon: { fontSize: 18 },
   deleteIcon: { fontSize: 18 },
-  wordPickerOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
-  },
-  wordPickerContainer: {
-    backgroundColor: COLORS.background, borderTopLeftRadius: 28,
-    borderTopRightRadius: 28, padding: 24, maxHeight: '70%',
-  },
-  wordPickerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 16, textAlign: 'center' },
-  wordPickerItem: {
-    paddingVertical: 14, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
-  wordPickerItemText: { fontSize: 18, fontWeight: '700', color: COLORS.text },
-  wordPickerCat: { fontSize: 12, color: COLORS.textSecondary },
-  wordPickerEmpty: { textAlign: 'center', color: COLORS.textSecondary, padding: 20 },
-  wordPickerClose: {
-    marginTop: 16, padding: 14, borderRadius: 16,
-    backgroundColor: COLORS.border, alignItems: 'center',
-  },
-  wordPickerCloseText: { fontSize: 16, fontWeight: '700', color: COLORS.textSecondary },
 });

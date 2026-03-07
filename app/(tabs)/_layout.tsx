@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import { COLORS } from '../../src/utils/theme';
+import { useI18n } from '../../src/i18n/i18n';
 
 export default function TabLayout() {
+  const { t } = useI18n();
+
   return (
     <Tabs
       screenOptions={{
@@ -26,28 +29,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: t('tabs.home'),
           tabBarIcon: ({ color }) => <TabIcon emoji="🏠" color={color} />,
         }}
       />
       <Tabs.Screen
         name="words"
         options={{
-          title: 'Palavras',
+          title: t('tabs.words'),
           tabBarIcon: ({ color }) => <TabIcon emoji="📚" color={color} />,
         }}
       />
       <Tabs.Screen
         name="variants"
         options={{
-          title: 'Variantes',
+          title: t('tabs.variants'),
           tabBarIcon: ({ color }) => <TabIcon emoji="🗣️" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Config.',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color }) => <TabIcon emoji="⚙️" color={color} />,
         }}
       />
