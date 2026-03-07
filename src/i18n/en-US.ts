@@ -203,7 +203,7 @@ export default {
     deleteAllNo: 'No, cancel',
     deleteAllYes: 'Yes, delete everything',
     about: 'ℹ️ About',
-        aboutText: 'Baby language development diary.\\n\\nRecord every new word your child learns, track progress and keep precious memories. 💕',
+    aboutText: 'Baby language development diary.\n\nRecord every new word your child learns, track progress and keep precious memories. 💕',
     version: 'Version',
     errorShare: 'Could not share the file.',
     errorSync: 'Sync failed.',
