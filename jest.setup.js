@@ -1,0 +1,108 @@
+// Mock expo-sqlite — singleton so database.ts and tests share the same instance
+const mockDbInstance = {
+  execSync: jest.fn(),
+  runSync: jest.fn(() => ({ lastInsertRowId: 1, changes: 1 })),
+  getAllSync: jest.fn(() => []),
+  getFirstSync: jest.fn(() => null),
+  withTransactionSync: jest.fn((fn) => fn()),
+};
+jest.mock('expo-sqlite', () => ({
+  openDatabaseSync: jest.fn(() => mockDbInstance),
+}));
+global.__mockDb = mockDbInstance;
+
+// Mock expo-file-system
+jest.mock('expo-file-system', () => ({
+  cacheDirectory: '/mock/cache/',
+  documentDirectory: '/mock/documents/',
+  EncodingType: { UTF8: 'utf8' },
+  writeAsStringAsync: jest.fn(),
+  readAsStringAsync: jest.fn(),
+  StorageAccessFramework: {
+    requestDirectoryPermissionsAsync: jest.fn(() => ({ granted: false })),
+    createFileAsync: jest.fn(),
+  },
+}));
+
+// Mock expo-sharing
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  shareAsync: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    executionEnvironment: 'storeClient',
+    expoConfig: { version: '2.0.0' },
+    manifest: { version: '2.0.0' },
+  },
+}));
+
+// Mock expo-document-picker
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn(),
+}));
+
+// Mock expo-router
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const StackComponent = ({ children }) => React.createElement(React.Fragment, null, children);
+  StackComponent.Screen = () => null;
+  const TabsComponent = ({ children }) => React.createElement(React.Fragment, null, children);
+  TabsComponent.Screen = () => null;
+  return {
+    useRouter: jest.fn(() => ({
+      replace: jest.fn(),
+      push: jest.fn(),
+      back: jest.fn(),
+    })),
+    useFocusEffect: jest.fn((cb) => {
+      const React = require('react');
+      React.useEffect(() => { const cleanup = cb(); return typeof cleanup === 'function' ? cleanup : undefined; }, []);
+    }),
+    Stack: StackComponent,
+    Tabs: TabsComponent,
+  };
+});
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }) => children,
+  SafeAreaProvider: ({ children }) => children,
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+// Mock react-native-svg
+jest.mock('react-native-svg', () => ({
+  SvgXml: 'SvgXml',
+}));
+
+// Mock @react-native-google-signin/google-signin
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    signInSilently: jest.fn(),
+    getTokens: jest.fn(() => ({ accessToken: 'mock-token' })),
+  },
+  statusCodes: {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+  },
+}));
+
+// Mock expo-asset
+jest.mock('expo-asset', () => ({}));
+
+// Mock expo-status-bar
+jest.mock('expo-status-bar', () => ({
+  StatusBar: 'StatusBar',
+}));
+
+// Suppress console warnings in tests
+jest.spyOn(console, 'warn').mockImplementation(() => {});

@@ -8,35 +8,13 @@ import {
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { useI18n } from '../i18n/i18n';
+import { daysInMonth, parseDate, toStorage, toDisplay } from '../utils/dateHelpers';
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const ITEM_H = 44;
 const VISIBLE = 5;
 const WHEEL_H = ITEM_H * VISIBLE;
 const PAD = ITEM_H * Math.floor(VISIBLE / 2);
-
-// ── helpers ───────────────────────────────────────────────────────────────────
-function daysInMonth(month: number, year: number) {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function parseDate(s: string): { d: number; m: number; y: number } {
-  const [y, m, d] = s.split('-').map(Number);
-  return {
-    y: isNaN(y) ? new Date().getFullYear() : y,
-    m: isNaN(m) ? new Date().getMonth() : m - 1,
-    d: isNaN(d) ? new Date().getDate() : d,
-  };
-}
-
-function toStorage(d: number, m: number, y: number) {
-  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-
-function toDisplay(s: string) {
-  const { d, m, y } = parseDate(s);
-  return `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y}`;
-}
 
 // ── WheelColumn ───────────────────────────────────────────────────────────────
 interface WheelProps {
