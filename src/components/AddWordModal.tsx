@@ -94,7 +94,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     setEditingVariantTexts({});
     setShowNewCategory(false);
     setDuplicate(null);
-  }, [visible, editWord]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible, editWord, today]);
 
   useEffect(() => {
     if (editWord || !word.trim()) { setDuplicate(null); return; }

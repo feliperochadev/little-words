@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl,
@@ -43,6 +43,8 @@ export default function WordsScreen() {
 
   const [words, setWords] = useState<Word[]>([]);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(search);
+  searchRef.current = search;
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,12 +56,12 @@ export default function WordsScreen() {
   const [selectedWord] = useState<Word | null>(null);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
 
-  const load = async (searchQuery?: string) => {
-    const data = await getWords(searchQuery ?? search);
+  const load = useCallback(async (searchQuery?: string) => {
+    const data = await getWords(searchQuery ?? searchRef.current);
     setWords(data);
-  };
+  }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [])); // eslint-disable-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
 
 

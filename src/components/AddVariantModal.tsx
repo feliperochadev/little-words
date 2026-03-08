@@ -48,7 +48,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
       setChosenWord(null); setWordSearch('');
       getWords().then(setAllWords);
     }
-  }, [visible, editVariant, word]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible, editVariant, word, today, showSearch]);
 
   const filtered = wordSearch.trim()
     ? allWords.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))

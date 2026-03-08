@@ -20,7 +20,7 @@ export default function Index() {
         router.replace('/onboarding');
       }
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router]);
 
   return (
     <View style={styles.splash}>
