@@ -48,13 +48,13 @@ interface WheelColumnProps {
 
 function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }: WheelColumnProps) {
   const flatListRef = useRef<FlatList>(null);
-  const selectedIndex = data.findIndex((item) => item.value === selectedValue);
+  const initialIndexRef = useRef(data.findIndex((item) => item.value === selectedValue));
 
   useEffect(() => {
-    if (flatListRef.current && selectedIndex >= 0) {
+    if (flatListRef.current && initialIndexRef.current >= 0) {
       setTimeout(() => {
         flatListRef.current?.scrollToOffset({
-          offset: selectedIndex * ITEM_HEIGHT,
+          offset: initialIndexRef.current * ITEM_HEIGHT,
           animated: false,
         });
       }, 50);

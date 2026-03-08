@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { getSetting, setSetting, getAllDataForCSV } from '../database/database';
 import Constants from 'expo-constants';
 
@@ -5,8 +6,7 @@ const CSV_FILENAME = 'palavrinhas_backup.csv';
 
 // True when running inside a real APK/IPA build (not Expo Go)
 export const isNativeBuild = (): boolean => {
-  return Constants.executionEnvironment !== 'storeClient' &&
-    Constants.executionEnvironment !== 'expo';
+  return Constants.executionEnvironment !== 'storeClient';
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
     return { success: false, error: 'Disponivel apenas no app instalado (nao no Expo Go).' };
   }
   try {
-    const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
+    const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     const email = userInfo?.data?.user?.email ?? userInfo?.user?.email ?? '';
@@ -79,7 +79,7 @@ const uploadToDrive = async (
   existingFileId: string | null,
 ): Promise<{ fileId: string; success: boolean; error?: string }> => {
   try {
-    const csvContent = await getAllDataForCSV();
+    const csvContent = await getAllDataForCSV((name: string) => name);
     const boundary = '-------palavrinhas314159';
     const body =
       `\r\n--${boundary}\r\n` +

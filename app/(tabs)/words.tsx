@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
-  Alert, RefreshControl,
+  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  getWords, deleteWord, deleteVariant,
+  getWords,
   Word, Variant,
 } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
@@ -31,7 +31,7 @@ function sortWords(words: Word[], sort: SortKey): Word[] {
 }
 
 export default function WordsScreen() {
-  const { t, tc, locale } = useI18n();
+  const { t, tc } = useI18n();
   const categoryName = useCategoryName();
 
   const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -43,6 +43,8 @@ export default function WordsScreen() {
 
   const [words, setWords] = useState<Word[]>([]);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(search);
+  searchRef.current = search;
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,15 +53,15 @@ export default function WordsScreen() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [editWord, setEditWord] = useState<Word | null>(null);
-  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
+  const [selectedWord] = useState<Word | null>(null);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
 
-  const load = async (searchQuery?: string) => {
-    const data = await getWords(searchQuery ?? search);
+  const load = useCallback(async (searchQuery?: string) => {
+    const data = await getWords(searchQuery ?? searchRef.current);
     setWords(data);
-  };
+  }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
 
 

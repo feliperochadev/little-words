@@ -20,7 +20,7 @@ export default function Index() {
         router.replace('/onboarding');
       }
     });
-  }, []);
+  }, [router]);
 
   return (
     <View style={styles.splash}>

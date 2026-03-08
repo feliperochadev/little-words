@@ -55,13 +55,13 @@ function getGreeting(
 }
 
 export default function DashboardScreen() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const categoryName = useCategoryName();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [data, name, sex, birth] = await Promise.all([
       getDashboardStats(),
       getSetting('child_name'),
@@ -72,9 +72,9 @@ export default function DashboardScreen() {
     if (name) {
       setProfile({ name, sex: (sex as 'boy' | 'girl' | null), birth: birth || '' });
     }
-  };
+  }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 

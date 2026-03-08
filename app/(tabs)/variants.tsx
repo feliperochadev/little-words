@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
@@ -36,6 +36,8 @@ export default function VariantsScreen() {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [filteredVariants, setFilteredVariants] = useState<Variant[]>([]);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(search);
+  searchRef.current = search;
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,15 +46,7 @@ export default function VariantsScreen() {
   const [words, setWords] = useState<Word[]>([]);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
 
-  const load = async () => {
-    const data = await getAllVariants();
-    setVariants(data);
-    applySearch(data, search);
-    const wordData = await getWords();
-    setWords(wordData);
-  };
-
-  const applySearch = (data: Variant[], text: string) => {
+  const applySearch = useCallback((data: Variant[], text: string) => {
     if (!text.trim()) {
       setFilteredVariants(data);
     } else {
@@ -61,9 +55,17 @@ export default function VariantsScreen() {
         (v.main_word || '').toLowerCase().includes(text.toLowerCase())
       ));
     }
-  };
+  }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  const load = useCallback(async () => {
+    const data = await getAllVariants();
+    setVariants(data);
+    applySearch(data, searchRef.current);
+    const wordData = await getWords();
+    setWords(wordData);
+  }, [applySearch]);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
@@ -90,7 +92,7 @@ export default function VariantsScreen() {
       <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8}>
         <View style={styles.variantRow}>
           <View style={styles.variantBubble}>
-            <Text style={styles.variantText}>"{item.variant}"</Text>
+            <Text style={styles.variantText}>&ldquo;{item.variant}&rdquo;</Text>
           </View>
           <View style={styles.variantMeta}>
             <Text style={styles.arrow}>→</Text>

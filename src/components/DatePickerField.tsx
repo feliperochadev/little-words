@@ -55,7 +55,7 @@ function WheelColumn({ data, selected, onChange, accent, width }: WheelProps) {
     if (ref.current && idx >= 0) {
       setTimeout(() => ref.current?.scrollToOffset({ offset: idx * ITEM_H, animated: false }), 60);
     }
-  }, [selected]);
+  }, [selected, idx]);
 
   return (
     <View style={[wh.col, width ? { width } : { flex: 1 }]}>

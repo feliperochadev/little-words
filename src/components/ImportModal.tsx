@@ -302,7 +302,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
                     <Text style={styles.previewWord}>{row.word}</Text>
                     {row.category && <Text style={styles.previewMeta}>{row.category}</Text>}
                     {row.date && <Text style={styles.previewMeta}>{row.date}</Text>}
-                    {row.variant && <Text style={styles.previewVariant}>→ "{row.variant}"</Text>}
+                    {row.variant && <Text style={styles.previewVariant}>→ &ldquo;{row.variant}&rdquo;</Text>}
                   </View>
                 ))}
                 {wordCount > 5 && (
