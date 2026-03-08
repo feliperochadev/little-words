@@ -114,16 +114,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
           {/* Header row */}
           <View style={styles.header}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.title}>
+            <Text style={[styles.title, isEditing && styles.titleLeft]}>
               {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
             </Text>
-            {isEditing ? (
+            {isEditing && (
               <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
                 <Text style={styles.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
-            ) : (
-              <View style={styles.headerSpacer} />
             )}
           </View>
 
@@ -194,8 +191,8 @@ const styles = StyleSheet.create({
   container:        { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },
   handle:           { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  headerSpacer:     { width: 80 },
   title:            { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  titleLeft:      { textAlign: 'left' },
   deleteBtn:        { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
   deleteBtnText:    { fontSize: 13, fontWeight: '700', color: COLORS.error },
   preview:          { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, padding: 14, marginBottom: 20, gap: 10 },

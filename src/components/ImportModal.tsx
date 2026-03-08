@@ -14,13 +14,17 @@ import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 import enUS from '../i18n/en-US';
 import ptBR from '../i18n/pt-BR';
 
+// Strips accents and lowercases — used for fuzzy category matching on import
+const deaccent = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 // Build a reverse map: any translated category label (any locale) → canonical key
-// e.g. "Animals" → "animals", "Animais" → "animals"
+// e.g. "Animals" → "animals", "Animais" → "animals", "Família" → "family"
 const labelToKey = new Map<string, string>();
 for (const { key } of DEFAULT_CATEGORIES) {
   for (const catalogue of [enUS, ptBR]) {
     const label = (catalogue.categories as Record<string, string>)[key];
-    if (label) labelToKey.set(label.toLowerCase(), key);
+    if (label) labelToKey.set(deaccent(label), key);
   }
   // also map the key to itself so "animals" → "animals" works too
   labelToKey.set(key, key);
@@ -110,12 +114,12 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   const result: ImportResult = { wordsAdded: 0, variantsAdded: 0, skipped: [], errors: [] };
   const existingCats = await getCategories();
   const catMap = new Map<string, number>();
-  for (const c of existingCats) catMap.set(c.name.toLowerCase(), c.id);
+  for (const c of existingCats) catMap.set(deaccent(c.name), c.id);
 
   const getOrCreateCat = async (name: string): Promise<number> => {
-    // Normalize any locale's label to the canonical key (e.g. "Animais" or "Animals" → "animals")
-    const normalized = labelToKey.get(name.toLowerCase()) ?? name;
-    const key = normalized.toLowerCase();
+    // Normalize accents + case, then resolve to canonical key if it's a known label
+    const normalized = labelToKey.get(deaccent(name)) ?? name;
+    const key = deaccent(normalized);
     if (catMap.has(key)) return catMap.get(key)!;
     const id = await addCategory(normalized, '#B2BEC3', '🏷️');
     catMap.set(key, id);

@@ -221,30 +221,6 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Categories */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>🏷️ {t('settings.categories')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
-          {categories.map(cat => (
-            <TouchableOpacity
-              key={cat.id}
-              style={styles.categoryRow}
-              onPress={() => setEditCategory({ id: cat.id, name: cat.name, color: cat.color, emoji: cat.emoji })}
-            >
-              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-              </View>
-              <Text style={styles.categoryRowName} numberOfLines={1}>
-                {categoryName(cat.name)}
-              </Text>
-              <Text style={styles.categoryChevron}>›</Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
-            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
-          </TouchableOpacity>
-        </Card>
-
         {/* Import */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.importWords')}</Text>
@@ -325,6 +301,30 @@ export default function SettingsScreen() {
               />
             </>
           )}
+        </Card>
+
+        {/* Categories */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>🏷️ {t('settings.categories')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
+          {categories.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryRow}
+              onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
+            >
+              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
+                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              </View>
+              <Text style={styles.categoryRowName} numberOfLines={1}>
+                {categoryName(cat.name)}
+              </Text>
+              <Text style={styles.categoryChevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
+            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
+          </TouchableOpacity>
         </Card>
 
         {/* Danger Zone */}
