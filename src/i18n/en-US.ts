@@ -220,7 +220,7 @@ export default {
     wordPlaceholder: 'E.g.: mommy, doggy...',
     categoryLabel: 'Category',
     variantsLabel: 'Variants',
-    addVariant: '＋ Add',
+    addVariant: '＋ Add variant',
     addAnother: '＋ Another variant',
     variantHint: 'How does the child pronounce this word?',
     variantPlaceholder: 'How they say "{{word}}"',
