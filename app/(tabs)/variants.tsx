@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, StyleSheet, Alert, TouchableOpacity, RefreshControl,
+  View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getAllVariants, deleteVariant, getWords, Variant, Word } from '../../src/database/database';
+import { getAllVariants, getWords, Variant, Word } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
 import { Card, EmptyState, SearchBar } from '../../src/components/UIComponents';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
@@ -69,17 +69,6 @@ export default function VariantsScreen() {
 
   const handleSearch = (text: string) => { setSearch(text); applySearch(variants, text); };
 
-  const handleDelete = (variant: Variant) => {
-    Alert.alert(
-      t('variants.deleteTitle'),
-      t('variants.deleteMessage', { variant: variant.variant }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.remove'), style: 'destructive', onPress: async () => { await deleteVariant(variant.id); load(); } },
-      ]
-    );
-  };
-
   const handleEditVariant = (variant: Variant) => {
     const parentWord = words.find(w => w.id === variant.word_id) || null;
     setSelectedWord(parentWord);
@@ -98,27 +87,19 @@ export default function VariantsScreen() {
 
   const renderVariant = ({ item }: { item: Variant }) => (
     <Card style={styles.variantCard}>
-      <View style={styles.variantRow}>
-        <View style={styles.variantLeft}>
+      <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8}>
+        <View style={styles.variantRow}>
           <View style={styles.variantBubble}>
             <Text style={styles.variantText}>"{item.variant}"</Text>
           </View>
-          <View style={styles.arrowRow}>
+          <View style={styles.variantMeta}>
             <Text style={styles.arrow}>→</Text>
             <Text style={styles.mainWord}>{item.main_word}</Text>
+            <Text style={styles.date}>{formatDate(item.date_added)}</Text>
           </View>
-          <Text style={styles.date}>📅 {formatDate(item.date_added)}</Text>
-          {item.notes && <Text style={styles.notes} numberOfLines={2}>💬 {item.notes}</Text>}
         </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity onPress={() => handleEditVariant(item)} style={styles.actionBtn}>
-            <Text style={styles.editIcon}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDelete(item)} style={styles.actionBtn}>
-            <Text style={styles.deleteIcon}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        {item.notes && <Text style={styles.notes} numberOfLines={2}>💬 {item.notes}</Text>}
+      </TouchableOpacity>
     </Card>
   );
 
@@ -223,20 +204,15 @@ const styles = StyleSheet.create({
     padding: 12, borderRadius: 12, marginBottom: 12, lineHeight: 18,
   },
   variantCard: { marginBottom: 10 },
-  variantRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  variantLeft: { flex: 1 },
+  variantRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   variantBubble: {
     backgroundColor: COLORS.primaryLight + '30', paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 16, alignSelf: 'flex-start', marginBottom: 6,
+    borderRadius: 16,
   },
   variantText: { fontSize: 18, fontWeight: '700', color: COLORS.primaryDark, fontStyle: 'italic' },
-  arrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  arrow: { fontSize: 16, color: COLORS.textSecondary, marginRight: 6 },
+  variantMeta: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 6, flexWrap: 'wrap' },
+  arrow: { fontSize: 14, color: COLORS.textSecondary },
   mainWord: { fontSize: 15, fontWeight: '700', color: COLORS.text },
-  date: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 2 },
+  date: { fontSize: 12, color: COLORS.textSecondary, flex: 1, textAlign: 'right' },
   notes: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, lineHeight: 16 },
-  cardActions: { flexDirection: 'column', gap: 4, marginLeft: 8 },
-  actionBtn: { padding: 8, borderRadius: 8 },
-  editIcon: { fontSize: 18 },
-  deleteIcon: { fontSize: 18 },
 });

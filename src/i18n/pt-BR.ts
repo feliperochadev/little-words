@@ -215,12 +215,12 @@ export default {
   // ── Add Word Modal ───────────────────────────────────────────────────────────
   addWord: {
     titleNew: '✨ Nova Palavra',
-    titleEdit: '✏️ Editar Palavra',
+    titleEdit: '✨ Editar Palavra',
     wordLabel: 'Palavra *',
     wordPlaceholder: 'Ex: mamãe, cachorro...',
     categoryLabel: 'Categoria',
     variantsLabel: 'Variantes',
-    addVariant: '＋ Adicionar',
+    addVariant: '＋ Adicionar variante',
     addAnother: '＋ Outra variante',
     variantHint: 'Como a criança pronuncia esta palavra?',
     variantPlaceholder: 'Como disse "{{word}}"',
@@ -237,7 +237,7 @@ export default {
   // ── Add Variant Modal ────────────────────────────────────────────────────────
   addVariant: {
     titleNew: '🗣️ Nova Variante',
-    titleEdit: '✏️ Editar Variante',
+    titleEdit: '🗣️ Editar Variante',
     wordLabel: 'Palavra *',
     wordSearchPlaceholder: 'Buscar palavra...',
     noWordsFound: 'Nenhuma palavra encontrada',
@@ -265,7 +265,7 @@ export default {
     errorDuplicate: 'Já existe uma categoria com esse nome.',
     btnCancel: 'Cancelar',
     btnCreate: 'Criar Categoria',
-    titleEdit: 'Editar Categoria',
+    titleEdit: '🏷️ Editar Categoria',
     btnSave: 'Salvar',
   },
 
@@ -307,7 +307,7 @@ export default {
   },
 
   manageCategory: {
-    edit: 'Editar categoria',
+    edit: '🏷️ Editar categoria',
     delete: 'Excluir categoria',
     deleteTitle: 'Excluir categoria',
     deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',

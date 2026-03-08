@@ -203,7 +203,7 @@ export default {
     deleteAllNo: 'No, cancel',
     deleteAllYes: 'Yes, delete everything',
     about: 'ℹ️ About',
-        aboutText: 'Baby language development diary.\\n\\nRecord every new word your child learns, track progress and keep precious memories. 💕',
+    aboutText: 'Baby language development diary.\n\nRecord every new word your child learns, track progress and keep precious memories. 💕',
     version: 'Version',
     errorShare: 'Could not share the file.',
     errorSync: 'Sync failed.',
@@ -215,12 +215,12 @@ export default {
   // ── Add Word Modal ───────────────────────────────────────────────────────────
   addWord: {
     titleNew: '✨ New Word',
-    titleEdit: '✏️ Edit Word',
+    titleEdit: '✨ Edit Word',
     wordLabel: 'Word *',
     wordPlaceholder: 'E.g.: mommy, doggy...',
     categoryLabel: 'Category',
     variantsLabel: 'Variants',
-    addVariant: '＋ Add',
+    addVariant: '＋ Add variant',
     addAnother: '＋ Another variant',
     variantHint: 'How does the child pronounce this word?',
     variantPlaceholder: 'How they say "{{word}}"',
@@ -237,7 +237,7 @@ export default {
   // ── Add Variant Modal ────────────────────────────────────────────────────────
   addVariant: {
     titleNew: '🗣️ New Variant',
-    titleEdit: '✏️ Edit Variant',
+    titleEdit: '🗣️ Edit Variant',
     wordLabel: 'Word *',
     wordSearchPlaceholder: 'Search word...',
     noWordsFound: 'No words found',
@@ -265,7 +265,7 @@ export default {
     errorDuplicate: 'A category with this name already exists.',
     btnCancel: 'Cancel',
     btnCreate: 'Create Category',
-    titleEdit: 'Edit Category',
+    titleEdit: '🏷️ Edit Category',
     btnSave: 'Save',
   },
 
@@ -307,7 +307,7 @@ export default {
   },
 
   manageCategory: {
-    edit: 'Edit category',
+    edit: '🏷️ Edit category',
     delete: 'Delete category',
     deleteTitle: 'Delete category',
     deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',

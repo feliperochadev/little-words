@@ -61,7 +61,32 @@ export const initDatabase = (): Promise<void> => {
           );
         }
 
-
+        // Clean up any legacy PT-BR category names that may exist from older builds.
+        // Reassign their words to the canonical key row, then delete the legacy row.
+        const legacyMap: [string, string][] = [
+          ['Animais', 'animals'], ['Comida', 'food'], ['Família', 'family'],
+          ['Familia', 'family'], ['família', 'family'], ['familia', 'family'],
+          ['Objetos', 'objects'], ['Ações', 'actions'], ['Acoes', 'actions'],
+          ['Natureza', 'nature'], ['Corpo', 'body'], ['Outros', 'others'],
+          ['Lugares', 'places'],
+        ];
+        for (const [legacy, canonical] of legacyMap) {
+          const legacyRow = db.getFirstSync<{ id: number }>(
+            `SELECT id FROM categories WHERE name = ?`, [legacy]
+          );
+          if (!legacyRow) continue;
+          const canonicalRow = db.getFirstSync<{ id: number }>(
+            `SELECT id FROM categories WHERE name = ?`, [canonical]
+          );
+          if (canonicalRow) {
+            // Reassign words from legacy to canonical, then delete legacy
+            db.runSync(`UPDATE words SET category_id = ? WHERE category_id = ?`, [canonicalRow.id, legacyRow.id]);
+            db.runSync(`DELETE FROM categories WHERE id = ?`, [legacyRow.id]);
+          } else {
+            // No canonical key row yet — just rename in place
+            db.runSync(`UPDATE categories SET name = ? WHERE id = ?`, [canonical, legacyRow.id]);
+          }
+        }
       });
       resolve();
     } catch (error) {
@@ -135,12 +160,14 @@ export interface Word {
   notes: string | null;
   created_at: string;
   variant_count?: number;
+  variant_texts?: string;
 }
 
 export const getWords = (search?: string): Promise<Word[]> => {
   const base = `
     SELECT w.*, c.name as category_name, c.color as category_color, c.emoji as category_emoji,
-           (SELECT COUNT(*) FROM variants v WHERE v.word_id = w.id) as variant_count
+           (SELECT COUNT(*) FROM variants v WHERE v.word_id = w.id) as variant_count,
+           (SELECT GROUP_CONCAT(v.variant, '|||') FROM variants v WHERE v.word_id = w.id ORDER BY v.created_at ASC) as variant_texts
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
   `;
   if (search && search.trim()) {

@@ -4,7 +4,7 @@ import {
   Alert, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { addVariant, updateVariant, getWords, Variant, Word } from '../database/database';
+import { addVariant, updateVariant, deleteVariant, getWords, Variant, Word } from '../database/database';
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
 import { useI18n, useCategoryName } from '../i18n/i18n';
@@ -13,11 +13,12 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: () => void;
+  onDeleted?: () => void;
   word: Word | null;
   editVariant?: Variant | null;
 }
 
-export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, word, editVariant }) => {
+export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onDeleted, word, editVariant }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const today = new Date().toISOString().split('T')[0];
@@ -53,6 +54,22 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
     ? allWords.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
     : allWords;
 
+  const handleDelete = () => {
+    if (!editVariant) return;
+    Alert.alert(
+      t('variants.deleteTitle'),
+      t('variants.deleteMessage', { variant: editVariant.variant }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.remove'), style: 'destructive', onPress: async () => {
+          await deleteVariant(editVariant.id);
+          onClose();
+          onDeleted?.();
+        }},
+      ]
+    );
+  };
+
   const handleSave = async () => {
     if (!variant.trim()) { Alert.alert(t('common.attention'), t('addVariant.errorVariant')); return; }
     if (!editVariant && !effectiveWord) { Alert.alert(t('common.attention'), t('addVariant.errorSelectWord')); return; }
@@ -74,7 +91,14 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, wor
       <View style={s.overlay}>
         <View style={s.container}>
           <View style={s.handle} />
-          <Text style={s.title}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+          <View style={s.header}>
+            <Text style={[s.title, editVariant && s.titleLeft]}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            {editVariant && (
+              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete}>
+                <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -174,7 +198,11 @@ const s = StyleSheet.create({
   overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   container:    { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
   handle:       { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  title:        { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 16, textAlign: 'center' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title:        { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  titleLeft:    { textAlign: 'left' },
+  deleteBtn:    { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
+  deleteBtnText:{ fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:        { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:        { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
   textArea:     { height: 80, textAlignVertical: 'top' },

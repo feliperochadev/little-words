@@ -212,7 +212,7 @@ export default function OnboardingScreen() {
     await setSetting('child_birth', toStorageDate(birthDate));
     await setSetting('onboarding_done', '1');
     setLoading(false);
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   };
 
   const birthArticle = isBoy ? t('onboarding.bornOnMale') : t('onboarding.bornOn');

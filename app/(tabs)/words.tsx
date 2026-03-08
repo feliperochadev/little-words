@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  getWords, deleteWord, getVariantsByWord, getAllVariants, deleteVariant,
+  getWords, deleteWord, deleteVariant,
   Word, Variant,
 } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
@@ -31,7 +31,7 @@ function sortWords(words: Word[], sort: SortKey): Word[] {
 }
 
 export default function WordsScreen() {
-  const { t, tc } = useI18n();
+  const { t, tc, locale } = useI18n();
   const categoryName = useCategoryName();
 
   const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -53,83 +53,24 @@ export default function WordsScreen() {
   const [editWord, setEditWord] = useState<Word | null>(null);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
-  const [expandedWord, setExpandedWord] = useState<number | null>(null);
-  const [expandedVariants, setExpandedVariants] = useState<Record<number, Variant[]>>({});
 
   const load = async (searchQuery?: string) => {
-    const [data, allVariants] = await Promise.all([
-      getWords(searchQuery ?? search),
-      getAllVariants(),
-    ]);
+    const data = await getWords(searchQuery ?? search);
     setWords(data);
-    const grouped: Record<number, Variant[]> = {};
-    for (const v of allVariants) {
-      if (!grouped[v.word_id]) grouped[v.word_id] = [];
-      grouped[v.word_id].push(v);
-    }
-    setExpandedVariants(grouped);
   };
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
-  const handleExpand = async (wordId: number, isExpanded: boolean) => {
-    if (isExpanded) {
-      setExpandedWord(null);
-    } else {
-      setExpandedWord(wordId);
-      if (!expandedVariants[wordId]) {
-        const variants = await getVariantsByWord(wordId);
-        setExpandedVariants(prev => ({ ...prev, [wordId]: variants }));
-      }
-    }
-  };
 
-  const reloadVariants = async (wordId: number) => {
-    const variants = await getVariantsByWord(wordId);
-    setExpandedVariants(prev => ({ ...prev, [wordId]: variants }));
-    await load();
-  };
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const handleSearch = (text: string) => { setSearch(text); load(text); };
 
-  const handleDelete = (word: Word) => {
-    Alert.alert(
-      t('words.deleteTitle'),
-      t('words.deleteMessage', { word: word.word }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.remove'), style: 'destructive',
-          onPress: async () => {
-            await deleteWord(word.id);
-            load();
-            const connected = await isGoogleConnected();
-            if (connected) performSync();
-          },
-        },
-      ]
-    );
-  };
 
-  const handleDeleteVariant = (variant: Variant, wordId: number) => {
-    Alert.alert(
-      t('variants.deleteTitle'),
-      t('variants.deleteMessage', { variant: variant.variant }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.remove'), style: 'destructive',
-          onPress: async () => { await deleteVariant(variant.id); reloadVariants(wordId); },
-        },
-      ]
-    );
-  };
 
   const handleSaved = async () => {
     await load();
-    if (expandedWord) reloadVariants(expandedWord);
     const connected = await isGoogleConnected();
     if (connected) performSync();
   };
@@ -144,21 +85,24 @@ export default function WordsScreen() {
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? '';
 
   const renderWord = ({ item }: { item: Word }) => {
-    const isExpanded = expandedWord === item.id;
-    const variants = expandedVariants[item.id] || [];
 
     return (
-      <Card style={[styles.wordCard, isExpanded && styles.wordCardExpanded]}>
-        <TouchableOpacity onPress={() => handleExpand(item.id, isExpanded)} activeOpacity={0.8}>
+      <Card style={[styles.wordCard]}>
+        <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
           <View style={styles.wordRow}>
             <View style={styles.wordMain}>
-              <Text style={styles.wordText}>{item.word}</Text>
+              <View style={styles.wordHeader}>
+                <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
+                  <Text style={styles.wordText}>{item.word}</Text>
+                </TouchableOpacity>
+                <Text style={styles.wordDate}>{formatDate(item.date_added)}</Text>
+              </View>
               <View style={styles.wordMeta}>
                 {item.category_name && (
                   <TouchableOpacity
                     onLongPress={() => setEditCategory({
                       id: item.category_id!,
-                      name: item.category_name!,
+                      name: categoryName(item.category_name!),
                       color: item.category_color || COLORS.primary,
                       emoji: item.category_emoji || '🏷️',
                     })}
@@ -173,92 +117,18 @@ export default function WordsScreen() {
                     />
                   </TouchableOpacity>
                 )}
-                <Text style={styles.wordDate}>📅 {formatDate(item.date_added)}</Text>
-                {(expandedVariants[item.id] ?? []).length > 0
-                  ? expandedVariants[item.id].map(v => (
-                    <View key={v.id} style={styles.variantChip}>
-                      <Text style={styles.variantChipText}>🗣️ {v.variant}</Text>
-                    </View>
-                  ))
-                  : (item.variant_count ?? 0) > 0 && (
-                    <View style={styles.variantBadge}>
-                      <Text style={styles.variantBadgeText}>🗣️ {item.variant_count}</Text>
-                    </View>
-                  )
-                }
-              </View>
-              {item.notes && !isExpanded && (
-                <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
-              )}
-            </View>
-            <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {isExpanded && (
-          <View style={styles.expandedContent}>
-            {item.notes && (
-              <View style={styles.notesBox}>
-                <Text style={styles.notesLabel}>{t('words.observationsLabel')}</Text>
-                <Text style={styles.notesText}>{item.notes}</Text>
-              </View>
-            )}
-
-            {variants.length > 0 && (
-              <View style={styles.variantsSection}>
-                <Text style={styles.variantsSectionTitle}>🗣️ {t('tabs.variants').toUpperCase()}</Text>
-                {variants.map(v => (
-                  <View key={v.id} style={styles.variantRow}>
-                    <View style={styles.variantInfo}>
-                      <Text style={styles.variantText}>"{v.variant}"</Text>
-                      <Text style={styles.variantDate}>📅 {formatDate(v.date_added)}</Text>
-                      {v.notes && <Text style={styles.variantNotes} numberOfLines={1}>💬 {v.notes}</Text>}
-                    </View>
-                    <View style={styles.variantActions}>
-                      <TouchableOpacity
-                        style={styles.variantActionBtn}
-                        onPress={() => {
-                          setEditVariant(v);
-                          setSelectedWord(item);
-                          setShowAddVariant(true);
-                        }}
-                      >
-                        <Text style={styles.variantActionEdit}>✏️</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.variantActionBtn}
-                        onPress={() => handleDeleteVariant(v, item.id)}
-                      >
-                        <Text style={styles.variantActionDelete}>🗑️</Text>
-                      </TouchableOpacity>
-                    </View>
+                {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
+                  <View key={i} style={styles.variantChip}>
+                    <Text style={styles.variantChipText}>🗣️ {v}</Text>
                   </View>
                 ))}
               </View>
-            )}
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: COLORS.secondary + '20' }]}
-                onPress={() => { setEditVariant(null); setSelectedWord(item); setShowAddVariant(true); }}
-              >
-                <Text style={[styles.actionBtnText, { color: COLORS.secondary }]}>{t('words.addVariant')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: COLORS.accent + '20' }]}
-                onPress={() => { setEditWord(item); setShowAddWord(true); }}
-              >
-                <Text style={[styles.actionBtnText, { color: COLORS.accent }]}>✏️ {t('common.edit')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: COLORS.error + '20' }]}
-                onPress={() => handleDelete(item)}
-              >
-                <Text style={[styles.actionBtnText, { color: COLORS.error }]}>🗑️ {t('common.remove')}</Text>
-              </TouchableOpacity>
+              {item.notes && (
+                <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
+              )}
             </View>
           </View>
-        )}
+        </TouchableOpacity>
       </Card>
     );
   };
@@ -268,12 +138,6 @@ export default function WordsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>{t('words.title')}</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.addBtn, styles.addCategoryBtn]}
-            onPress={() => setShowAddCategory(true)}
-          >
-            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => { setEditWord(null); setShowAddWord(true); }}
@@ -330,6 +194,7 @@ export default function WordsScreen() {
         visible={showAddWord}
         onClose={() => { setShowAddWord(false); setEditWord(null); }}
         onSave={handleSaved}
+        onDeleted={() => { setShowAddWord(false); setEditWord(null); load(); }}
         editWord={editWord}
         onEditDuplicate={(w) => { setShowAddWord(false); setTimeout(() => { setEditWord(w); setShowAddWord(true); }, 300); }}
       />
@@ -338,6 +203,7 @@ export default function WordsScreen() {
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
         onSave={handleSaved}
+        onDeleted={() => { setShowAddVariant(false); setEditVariant(null); load(); }}
         word={selectedWord}
         editVariant={editVariant}
       />
@@ -393,10 +259,10 @@ const styles = StyleSheet.create({
   sortMenuTextActive: { color: COLORS.primary, fontWeight: '700' },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
   wordCard: { marginBottom: 10 },
-  wordCardExpanded: { borderWidth: 1.5, borderColor: COLORS.primaryLight },
   wordRow: { flexDirection: 'row', alignItems: 'flex-start' },
   wordMain: { flex: 1 },
-  wordText: { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
+  wordHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 },
+  wordText: { fontSize: 20, fontWeight: '800', color: COLORS.text },
   wordMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   wordDate: { fontSize: 12, color: COLORS.textSecondary },
   variantBadge: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
@@ -421,10 +287,6 @@ const styles = StyleSheet.create({
   variantText: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   variantDate: { fontSize: 11, color: COLORS.textSecondary },
   variantNotes: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
-  variantActions: { flexDirection: 'row', gap: 4 },
-  variantActionBtn: { padding: 6, borderRadius: 8 },
-  variantActionEdit: { fontSize: 16 },
-  variantActionDelete: { fontSize: 16 },
   actionRow: { flexDirection: 'row', gap: 8 },
   actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 12, alignItems: 'center' },
   actionBtnText: { fontSize: 12, fontWeight: '700' },

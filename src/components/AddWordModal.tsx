@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { Category, getCategories, addWord, updateWord, addVariant, deleteVariant, getVariantsByWord, findWordByName, Word, Variant } from '../database/database';
+import { Category, getCategories, addWord, updateWord, deleteWord, addVariant, updateVariant, deleteVariant, getVariantsByWord, findWordByName, Word, Variant } from '../database/database';
 import { Button, CategoryBadge } from './UIComponents';
 import { AddCategoryModal, CategoryToEdit } from './AddCategoryModal';
 import { DatePickerField } from './DatePickerField';
@@ -14,6 +14,7 @@ interface AddWordModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: () => void;
+  onDeleted?: () => void;
   editWord?: Word | null;
   onEditDuplicate?: (word: Word) => void;
 }
@@ -23,25 +24,60 @@ interface VariantEntry {
   text: string;
 }
 
-export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, onSave, editWord, onEditDuplicate }) => {
+export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const today = new Date().toISOString().split('T')[0];
+
+  const handleDelete = () => {
+    if (!editWord) return;
+    Alert.alert(
+      t('words.deleteTitle'),
+      t('words.deleteMessage', { word: editWord.word }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.remove'), style: 'destructive', onPress: async () => {
+          await deleteWord(editWord.id);
+          onClose();
+          onDeleted?.();
+        }},
+      ]
+    );
+  };
 
   const [word, setWord]                         = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dateAdded, setDateAdded]               = useState(today);
   const [notes, setNotes]                       = useState('');
   const [editCategory, setEditCategory]         = useState<CategoryToEdit | null>(null);
+  const [showNewCategory, setShowNewCategory]   = useState(false);
   const [categories, setCategories]             = useState<Category[]>([]);
   const [loading, setLoading]                   = useState(false);
   const [duplicate, setDuplicate]               = useState<Word | null>(null);
   const [variants, setVariants]                 = useState<VariantEntry[]>([]);
   const [existingVariants, setExistingVariants] = useState<Variant[]>([]);
+  const [editingVariantIds, setEditingVariantIds]   = useState<Set<number>>(new Set());
+  const [editingVariantTexts, setEditingVariantTexts] = useState<Record<number, string>>({});
+
+  const catScrollRef = useRef<ScrollView>(null);
+  const catScrollWidth = useRef(0);
+  const catItemWidth = 110; // approximate chip width + gap
 
   useEffect(() => {
     if (!visible) return;
-    getCategories().then(setCategories);
+    getCategories().then(cats => {
+      setCategories(cats);
+      // Scroll to selected category when editing
+      if (editWord?.category_id) {
+        const idx = cats.findIndex(c => c.id === editWord.category_id);
+        if (idx > 0) {
+          setTimeout(() => {
+            const offset = idx * catItemWidth - catScrollWidth.current / 2 + catItemWidth / 2;
+            catScrollRef.current?.scrollTo({ x: Math.max(0, offset), animated: true });
+          }, 300);
+        }
+      }
+    });
     if (editWord) {
       setWord(editWord.word);
       setSelectedCategory(editWord.category_id);
@@ -54,6 +90,9 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       setDateAdded(today); setNotes(''); setVariants([]);
       setExistingVariants([]);
     }
+    setEditingVariantIds(new Set());
+    setEditingVariantTexts({});
+    setShowNewCategory(false);
     setDuplicate(null);
   }, [visible, editWord]);
 
@@ -90,6 +129,14 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       } else {
         wordId = await addWord(word.trim(), selectedCategory, dateAdded, notes);
       }
+      // Flush any inline variant edits still open
+      for (const id of editingVariantIds) {
+        const text = (editingVariantTexts[id] ?? '').trim();
+        const original = existingVariants.find(v => v.id === id);
+        if (text && original && text !== original.variant) {
+          await updateVariant(id, text, today, original.notes || '');
+        }
+      }
       for (const v of variants.filter(v => v.text.trim())) {
         await addVariant(wordId, v.text.trim(), dateAdded);
       }
@@ -105,7 +152,14 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       <View style={s.overlay}>
         <View style={s.container}>
           <View style={s.handle} />
-          <Text style={s.title}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
+          <View style={s.header}>
+            <Text style={[s.title, editWord && s.titleLeft]}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
+            {editWord && (
+              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete}>
+                <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -116,7 +170,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               value={word} onChangeText={setWord}
               placeholder={t('addWord.wordPlaceholder')}
               placeholderTextColor={COLORS.textLight}
-              autoFocus autoCapitalize="none"
+              autoFocus={!editWord} autoCapitalize="none"
             />
 
             {duplicate && (
@@ -150,44 +204,84 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 
             {/* ── Category ── */}
             <Text style={s.label}>{t('addWord.categoryLabel')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.catScroll}>
+            <ScrollView
+              ref={catScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={s.catScroll}
+              onLayout={e => { catScrollWidth.current = e.nativeEvent.layout.width; }}
+            >
               {categories.map(cat => (
                 <TouchableOpacity
                   key={cat.id}
                   style={[s.catChip, { borderColor: cat.color }, selectedCategory === cat.id && { backgroundColor: cat.color }]}
                   onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                  onLongPress={() => setEditCategory({ id: cat.id, name: cat.name, color: cat.color, emoji: cat.emoji })}
+                  onLongPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
                   delayLongPress={400}
                 >
                   <Text style={s.catEmoji}>{cat.emoji}</Text>
                   <Text style={[s.catName, selectedCategory === cat.id && { color: COLORS.white }]}>{categoryName(cat.name)}</Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={s.catChipAdd}
+                onPress={() => setShowNewCategory(true)}
+              >
+                <Text style={s.catChipAddText}>{t('words.addCategory')}</Text>
+              </TouchableOpacity>
             </ScrollView>
 
             {/* ── Variants ── */}
             <View style={s.varHeader}>
               <Text style={s.label}>{t('addWord.variantsLabel')}</Text>
-              <TouchableOpacity style={s.addVarBtn} onPress={addVariantRow}>
-                <Text style={s.addVarBtnText}>{t('addWord.addVariant')}</Text>
-              </TouchableOpacity>
             </View>
 
-            {existingVariants.map(v => (
-              <View key={v.id} style={s.existingVarRow}>
-                <Text style={s.existingVarText}>🗣️ {v.variant}</Text>
+            {existingVariants.map((v, i) => {
+              const isEditing = editingVariantIds.has(v.id);
+              return isEditing ? (
+                <View key={v.id} style={s.varRow}>
+                  <View style={s.varBadge}><Text style={s.varBadgeText}>{i + 1}</Text></View>
+                  <TextInput
+                    style={s.varInput}
+                    value={editingVariantTexts[v.id] ?? v.variant}
+                    onChangeText={txt => setEditingVariantTexts(prev => ({ ...prev, [v.id]: txt }))}
+                    placeholder={v.variant}
+                    placeholderTextColor={COLORS.textLight}
+                    autoCapitalize="none"
+                    autoFocus
+                    onBlur={async () => {
+                      const text = (editingVariantTexts[v.id] ?? v.variant).trim();
+                      if (text && text !== v.variant) {
+                        await updateVariant(v.id, text, today, v.notes || '');
+                        if (editWord) getVariantsByWord(editWord.id).then(setExistingVariants);
+                      }
+                      setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
+                    }}
+                  />
+                  <TouchableOpacity style={s.varRemove} onPress={async () => {
+                    await deleteVariant(v.id);
+                    setExistingVariants(prev => prev.filter(e => e.id !== v.id));
+                    setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
+                  }}>
+                    <Text style={s.varRemoveText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
                 <TouchableOpacity
-                  style={s.varRemove}
+                  key={v.id}
+                  style={s.existingVarRow}
                   onPress={() => {
-                    deleteVariant(v.id).then(() =>
-                      setExistingVariants(prev => prev.filter(e => e.id !== v.id))
-                    );
+                    setEditingVariantTexts(prev => ({ ...prev, [v.id]: v.variant }));
+                    setEditingVariantIds(prev => new Set(prev).add(v.id));
                   }}
                 >
-                  <Text style={s.varRemoveText}>✕</Text>
+                  <Text style={s.existingVarText}>🗣️ {v.variant}</Text>
+                  <Text style={s.existingVarChevron}>›</Text>
                 </TouchableOpacity>
-              </View>
-            ))}
+              );
+            })}
+
+            <Text style={s.varHint}>{t('addWord.variantHint')}</Text>
 
             {variants.map((v, i) => (
               <View key={v.key} style={s.varRow}>
@@ -208,15 +302,11 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               </View>
             ))}
 
-            {existingVariants.length === 0 && variants.length === 0 && (
-              <Text style={s.varHint}>{t('addWord.variantHint')}</Text>
-            )}
-
-            {(existingVariants.length > 0 || variants.length > 0) && (
-              <TouchableOpacity style={s.addAnotherBtn} onPress={addVariantRow}>
-                <Text style={s.addAnotherText}>{t('addWord.addAnother')}</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={s.addAnotherBtn} onPress={addVariantRow}>
+              <Text style={s.addAnotherText}>
+                {variants.length === 0 ? t('addWord.addVariant') : t('addWord.addAnother')}
+              </Text>
+            </TouchableOpacity>
 
             {/* ── Notes ── */}
             <Text style={s.label}>{t('common.notes').toUpperCase()}</Text>
@@ -240,12 +330,13 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     </Modal>
 
     <AddCategoryModal
-      visible={!!editCategory}
+      visible={showNewCategory || !!editCategory}
       editCategory={editCategory}
-      onClose={() => setEditCategory(null)}
-      onSave={async () => { setEditCategory(null); const cats = await getCategories(); setCategories(cats); }}
-      onDeleted={async () => { setEditCategory(null); const cats = await getCategories(); setCategories(cats); setSelectedCategory(null); }}
+      onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
+      onSave={async () => { setEditCategory(null); setShowNewCategory(false); const cats = await getCategories(); setCategories(cats); }}
+      onDeleted={async () => { setEditCategory(null); setShowNewCategory(false); const cats = await getCategories(); setCategories(cats); setSelectedCategory(null); }}
     />
+
     </>
   );
 };
@@ -254,7 +345,11 @@ const s = StyleSheet.create({
   overlay:        { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   container:      { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
   handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  title:          { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 20, textAlign: 'center' },
+  title:          { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  titleLeft:      { textAlign: 'left' },
+  header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  deleteBtn:      { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
+  deleteBtnText:  { fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:          { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:          { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
   inputDup:       { borderColor: '#E17055', backgroundColor: '#FFF5F4' },
@@ -271,6 +366,8 @@ const s = StyleSheet.create({
   textArea:       { height: 80, textAlignVertical: 'top' },
   catScroll:      { marginBottom: 16 },
   catChip:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 2, marginRight: 8, backgroundColor: COLORS.white },
+  catChipAdd:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', borderColor: COLORS.primary, marginRight: 8, backgroundColor: COLORS.white },
+  catChipAddText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   catEmoji:       { fontSize: 16, marginRight: 6 },
   catName:        { fontSize: 13, fontWeight: '600', color: COLORS.text },
   varHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
@@ -279,6 +376,7 @@ const s = StyleSheet.create({
   varHint:        { fontSize: 13, color: COLORS.textLight, fontStyle: 'italic', marginBottom: 16 },
   existingVarRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.secondary + '10', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 8, borderWidth: 1.5, borderColor: COLORS.secondary + '30' },
   existingVarText:{ flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.text },
+  existingVarChevron: { fontSize: 22, color: COLORS.textLight, fontWeight: '300' },
   varRow:         { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
   varBadge:       { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.secondary + '20', alignItems: 'center', justifyContent: 'center' },
   varBadgeText:   { fontSize: 13, fontWeight: '700', color: COLORS.secondary },
