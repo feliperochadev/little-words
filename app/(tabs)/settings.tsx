@@ -4,7 +4,9 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSetting, clearAllData } from '../../src/database/database';
+import { getSetting, clearAllData, getCategories, Category } from '../../src/database/database';
+import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
+import { useCategoryName } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver } from '../../src/utils/csvExport';
 import {
@@ -29,7 +31,12 @@ const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" hei
 export default function SettingsScreen() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
+  const categoryName = useCategoryName();
   const categoryResolver = buildCategoryResolver(t);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
 
   const [childName, setChildName] = useState('');
   const [childSex, setChildSex] = useState<'boy' | 'girl' | null>(null);
@@ -53,6 +60,7 @@ export default function SettingsScreen() {
     const sex = await getSetting('child_sex');
     if (name) setChildName(name);
     if (sex) setChildSex(sex as 'boy' | 'girl');
+    setCategories(await getCategories());
   };
 
   useFocusEffect(useCallback(() => { load(); }, []));
@@ -213,6 +221,30 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {/* Categories */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>🏷️ {t('settings.categories')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
+          {categories.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryRow}
+              onPress={() => setEditCategory({ id: cat.id, name: cat.name, color: cat.color, emoji: cat.emoji })}
+            >
+              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
+                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              </View>
+              <Text style={styles.categoryRowName} numberOfLines={1}>
+                {categoryName(cat.name)}
+              </Text>
+              <Text style={styles.categoryChevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
+            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
+          </TouchableOpacity>
+        </Card>
+
         {/* Import */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.importWords')}</Text>
@@ -320,6 +352,14 @@ export default function SettingsScreen() {
           onClose={() => setShowImport(false)}
           onImported={load}
         />
+
+        <AddCategoryModal
+          visible={showAddCategory || !!editCategory}
+          onClose={() => { setShowAddCategory(false); setEditCategory(null); }}
+          onSave={() => { load(); setEditCategory(null); }}
+          onDeleted={() => { load(); setEditCategory(null); }}
+          editCategory={editCategory}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -350,6 +390,13 @@ const styles = StyleSheet.create({
   dangerCard: { borderWidth: 1.5, borderColor: COLORS.error + '40' },
   dangerBtn: { backgroundColor: COLORS.error + '15', borderWidth: 1.5, borderColor: COLORS.error, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   dangerBtnText: { color: COLORS.error, fontWeight: '700', fontSize: 15 },
+  categoryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
+  categoryDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  categoryEmoji: { fontSize: 18 },
+  categoryRowName: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '500' },
+  categoryChevron: { fontSize: 22, color: COLORS.textLight, fontWeight: '300' },
+  addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  addCategoryBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
   editProfileBtn: { backgroundColor: COLORS.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   // Language picker

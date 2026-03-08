@@ -1,34 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert,
 } from 'react-native';
 import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
-import { addCategory } from '../database/database';
+import { addCategory, updateCategory, unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
 import { Button } from './UIComponents';
-import { useI18n } from '../i18n/i18n';
+import { useI18n, useCategoryName } from '../i18n/i18n';
+
+export interface CategoryToEdit {
+  id: number;
+  name: string;
+  color: string;
+  emoji: string;
+}
 
 interface AddCategoryModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: () => void;
+  onDeleted?: () => void;
+  editCategory?: CategoryToEdit | null;
 }
 
-export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ visible, onClose, onSave }) => {
+export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
+  visible, onClose, onSave, onDeleted, editCategory,
+}) => {
   const { t } = useI18n();
+  const categoryName = useCategoryName();
+  const isEditing = !!editCategory;
 
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState(CATEGORY_COLORS[0]);
   const [selectedEmoji, setSelectedEmoji] = useState(CATEGORY_EMOJIS[0]);
   const [loading, setLoading] = useState(false);
 
-  const reset = () => {
+  useEffect(() => {
+    if (editCategory) {
+      setName(editCategory.name);
+      setSelectedColor(editCategory.color);
+      setSelectedEmoji(editCategory.emoji);
+    } else {
+      setName('');
+      setSelectedColor(CATEGORY_COLORS[0]);
+      setSelectedEmoji(CATEGORY_EMOJIS[0]);
+    }
+  }, [editCategory, visible]);
+
+  const handleClose = () => {
     setName('');
     setSelectedColor(CATEGORY_COLORS[0]);
     setSelectedEmoji(CATEGORY_EMOJIS[0]);
+    onClose();
   };
 
-  const handleClose = () => { reset(); onClose(); };
+  const handleDelete = async () => {
+    if (!editCategory) return;
+    const displayName = categoryName(editCategory.name);
+    const count = await getWordCountByCategory(editCategory.id);
+    const message = count > 0
+      ? t('manageCategory.deleteMessageWithWords', { name: displayName, count })
+      : t('manageCategory.deleteMessage', { name: displayName });
+
+    Alert.alert(
+      t('manageCategory.deleteTitle'),
+      message,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.remove'),
+          style: 'destructive',
+          onPress: async () => {
+            await unlinkWordsFromCategory(editCategory.id);
+            await deleteCategory(editCategory.id);
+            handleClose();
+            onDeleted?.();
+          },
+        },
+      ]
+    );
+  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -37,11 +88,14 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ visible, onC
     }
     setLoading(true);
     try {
-      await addCategory(name.trim(), selectedColor, selectedEmoji);
+      if (isEditing && editCategory) {
+        await updateCategory(editCategory.id, name.trim(), selectedColor, selectedEmoji);
+      } else {
+        await addCategory(name.trim(), selectedColor, selectedEmoji);
+      }
       onSave();
       handleClose();
     } catch (e: any) {
-      console.error('addCategory error:', e);
       const msg = e?.message || '';
       Alert.alert(
         t('common.error'),
@@ -57,7 +111,21 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ visible, onC
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.handle} />
-          <Text style={styles.title}>{t('addCategory.title')}</Text>
+
+          {/* Header row */}
+          <View style={styles.header}>
+            <View style={styles.headerSpacer} />
+            <Text style={styles.title}>
+              {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
+            </Text>
+            {isEditing ? (
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                <Text style={styles.deleteBtnText}>🗑️ {t('common.remove')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.headerSpacer} />
+            )}
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Preview */}
@@ -107,7 +175,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ visible, onC
 
             <View style={styles.actions}>
               <Button title={t('addCategory.btnCancel')} onPress={handleClose} variant="outline" style={styles.actionBtn} />
-              <Button title={t('addCategory.btnCreate')} onPress={handleSave} loading={loading} style={styles.actionBtn} />
+              <Button
+                title={isEditing ? t('addCategory.btnSave') : t('addCategory.btnCreate')}
+                onPress={handleSave}
+                loading={loading}
+                style={styles.actionBtn}
+              />
             </View>
           </ScrollView>
         </View>
@@ -120,7 +193,11 @@ const styles = StyleSheet.create({
   overlay:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   container:        { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },
   handle:           { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  title:            { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 20, textAlign: 'center' },
+  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  headerSpacer:     { width: 80 },
+  title:            { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  deleteBtn:        { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
+  deleteBtnText:    { fontSize: 13, fontWeight: '700', color: COLORS.error },
   preview:          { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, padding: 14, marginBottom: 20, gap: 10 },
   previewEmoji:     { fontSize: 28 },
   previewName:      { fontSize: 18, fontWeight: '700' },

@@ -111,6 +111,14 @@ export const addCategory = async (name: string, color: string, emoji: string): P
 export const updateCategory = (id: number, name: string, color: string, emoji: string) =>
   run('UPDATE categories SET name=?, color=?, emoji=? WHERE id=?', [name, color, emoji, id]);
 
+export const unlinkWordsFromCategory = (id: number) =>
+  run('UPDATE words SET category_id = NULL WHERE category_id = ?', [id]);
+
+export const getWordCountByCategory = async (id: number): Promise<number> => {
+  const rows = await query<{ count: number }>('SELECT COUNT(*) as count FROM words WHERE category_id = ?', [id]);
+  return rows[0]?.count ?? 0;
+};
+
 export const deleteCategory = (id: number) =>
   run('DELETE FROM categories WHERE id=?', [id]);
 
