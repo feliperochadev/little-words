@@ -13,6 +13,7 @@ import React, {
   type ReactNode,
 } from 'react';
 import { getSetting, setSetting } from '../database/database';
+import { DEFAULT_CATEGORY_KEY_SET } from '../utils/categoryKeys';
 import ptBR from './pt-BR';
 import enUS from './en-US';
 
@@ -143,8 +144,6 @@ export const useI18n = (): I18nContextValue => {
 };
 
 // ── Category name resolver ────────────────────────────────────────────────────
-
-import { DEFAULT_CATEGORY_KEY_SET } from '../utils/categoryKeys';
 
 /**
  * Resolves a category's display name.

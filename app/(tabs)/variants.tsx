@@ -63,7 +63,7 @@ export default function VariantsScreen() {
     }
   };
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { load(); }, [])); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
@@ -90,7 +90,7 @@ export default function VariantsScreen() {
       <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8}>
         <View style={styles.variantRow}>
           <View style={styles.variantBubble}>
-            <Text style={styles.variantText}>"{item.variant}"</Text>
+            <Text style={styles.variantText}>&ldquo;{item.variant}&rdquo;</Text>
           </View>
           <View style={styles.variantMeta}>
             <Text style={styles.arrow}>→</Text>

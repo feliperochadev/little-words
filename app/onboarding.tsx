@@ -59,7 +59,7 @@ function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }:
         });
       }, 50);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMomentumEnd = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;

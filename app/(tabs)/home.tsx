@@ -55,7 +55,7 @@ function getGreeting(
 }
 
 export default function DashboardScreen() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const categoryName = useCategoryName();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [profile, setProfile] = useState<ChildProfile | null>(null);

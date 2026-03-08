@@ -48,7 +48,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
       setChosenWord(null); setWordSearch('');
       getWords().then(setAllWords);
     }
-  }, [visible, editVariant, word]);
+  }, [visible, editVariant, word]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = wordSearch.trim()
     ? allWords.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
@@ -153,7 +153,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
             {effectiveWord && !editVariant && (
               <View style={s.contextRow}>
                 <Text style={s.contextLabel}>{t('addVariant.forWord')}</Text>
-                <Text style={s.contextWord}>"{effectiveWord.word}"</Text>
+                <Text style={s.contextWord}>&ldquo;{effectiveWord.word}&rdquo;</Text>
               </View>
             )}
 
