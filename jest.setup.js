@@ -1,3 +1,16 @@
+// Jest 30 wraps the global object in a Proxy. expo/src/winter/runtime.native.ts installs lazy
+// property getters that call require() on first access. When the Proxy fires after leaveTestCode()
+// sets isInsideTestCode=false, jest-runtime throws "outside of scope" errors.
+// Pre-warm all expo lazy globals now (during setupFiles, isInsideTestCode is undefined, not false)
+// so they resolve to cached plain values before any test scope transitions.
+void global.__ExpoImportMetaRegistry;
+void global.TextDecoder;
+void global.TextDecoderStream;
+void global.TextEncoderStream;
+void global.URL;
+void global.URLSearchParams;
+void global.structuredClone;
+
 // Mock expo-sqlite — singleton so database.ts and tests share the same instance
 const mockDbInstance = {
   execSync: jest.fn(),
