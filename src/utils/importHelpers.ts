@@ -23,12 +23,17 @@ export interface ParsedRow {
 export function parseTextInput(text: string): ParsedRow[] {
   const rows: ParsedRow[] = [];
   for (const line of text.split('\n').map(l => l.trim()).filter(Boolean)) {
-    const parts = line.split(',').map(p => p.trim());
-    if (!parts[0]) continue;
+    const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+    const word = parts[0];
+    if (!word) continue;
+    // Skip CSV header rows
+    const wordLower = word.toLowerCase();
+    if (wordLower === 'palavra' || wordLower === 'word') continue;
     rows.push({
-      word: parts[0],
+      word,
       category: parts[1] || undefined,
       date: parts[2] ? parseDateStr(parts[2]) : undefined,
+      variant: parts[3] || undefined,
     });
   }
   return rows;

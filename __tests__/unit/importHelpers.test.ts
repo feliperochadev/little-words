@@ -84,6 +84,42 @@ describe('importHelpers', () => {
       expect(result[0].word).toBe('mamãe');
       expect(result[1].word).toBe('água');
     });
+
+    it('strips surrounding quotes from fields when CSV is pasted', () => {
+      const result = parseTextInput('"Mama","Family","2025-12-01",""\n"cavalo","Animals","2025-12-05","Cacá"');
+      expect(result).toHaveLength(2);
+      expect(result[0].word).toBe('Mama');
+      expect(result[0].category).toBe('Family');
+      expect(result[0].date).toBe('2025-12-01');
+      expect(result[0].variant).toBeUndefined();
+      expect(result[1].word).toBe('cavalo');
+      expect(result[1].category).toBe('Animals');
+      expect(result[1].variant).toBe('Cacá');
+    });
+
+    it('skips CSV header row (Portuguese)', () => {
+      const csv = 'palavra,categoria,data,variante\n"Mama","Family","2025-12-01",""';
+      const result = parseTextInput(csv);
+      expect(result).toHaveLength(1);
+      expect(result[0].word).toBe('Mama');
+    });
+
+    it('skips CSV header row (English)', () => {
+      const csv = 'word,category,date,variant\n"hello","Food","2025-01-01",""';
+      const result = parseTextInput(csv);
+      expect(result).toHaveLength(1);
+      expect(result[0].word).toBe('hello');
+    });
+
+    it('parses variant column', () => {
+      const result = parseTextInput('cachorro, Animais, 15/03/2025, Cacó');
+      expect(result[0].variant).toBe('Cacó');
+    });
+
+    it('empty variant field becomes undefined', () => {
+      const result = parseTextInput('"Mama","Family","2025-12-01",""');
+      expect(result[0].variant).toBeUndefined();
+    });
   });
 
   describe('parseCSV', () => {
