@@ -10,30 +10,12 @@ import { setSetting } from '../src/database/database';
 import { COLORS } from '../src/utils/theme';
 import { BrandHeader } from '../src/components/BrandHeader';
 import { useI18n, LANGUAGES, type Locale } from '../src/i18n/i18n';
+import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
 
 /* ───────── constants ───────── */
 const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
-
-/* ───────── helpers ───────── */
-function formatDisplayDate(date: Date): string {
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
-}
-
-function toStorageDate(date: Date): string {
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const y = date.getFullYear();
-  return `${y}-${m}-${d}`;
-}
-
-function daysInMonth(month: number, year: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
 
 /* ─────────────────────────────────────────────
    WheelColumn

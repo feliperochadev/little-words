@@ -1,0 +1,95 @@
+appId: com.littlewords.app
+name: "CRUD Variant - Add, edit, and delete variants"
+---
+
+- waitForAnimationToEnd
+
+# Navigate to Variants tab
+- tapOn: "Variants"
+- waitForAnimationToEnd
+
+# ============================
+# ADD VARIANT
+# ============================
+
+- tapOn: "+ New"
+- assertVisible: "New Variant"
+
+# Select a word from the search list
+- assertVisible: "Search word..."
+- tapOn: "mama"
+
+# Enter variant text
+- tapOn:
+    id: "variant-input"
+- inputText: "ma-ma"
+
+# Add a note
+- tapOn:
+    text: "Context"
+- inputText: "Morning greeting"
+
+# Press Add
+- tapOn: "Add"
+- waitForAnimationToEnd
+
+# Verify variant appears
+- assertVisible: "ma-ma"
+- assertVisible: "mama"
+
+# ============================
+# ADD SECOND VARIANT
+# ============================
+
+- tapOn: "+ New"
+- tapOn: "water"
+- tapOn:
+    id: "variant-input"
+- inputText: "wa-wa"
+- tapOn: "Add"
+- waitForAnimationToEnd
+
+- assertVisible: "wa-wa"
+- assertVisible: "2 variants"
+
+# ============================
+# EDIT VARIANT
+# ============================
+
+# Tap on the variant to edit
+- tapOn: "ma-ma"
+- assertVisible: "Edit Variant"
+
+# Clear and update the variant text
+- tapOn:
+    id: "variant-input"
+- eraseText: 5
+- inputText: "maa-maa"
+
+# Press Save
+- tapOn: "Save"
+- waitForAnimationToEnd
+
+# Verify updated variant
+- assertVisible: "maa-maa"
+
+# ============================
+# DELETE VARIANT
+# ============================
+
+# Tap on variant to edit
+- tapOn: "wa-wa"
+- assertVisible: "Edit Variant"
+
+# Press Remove
+- tapOn: "Remove"
+
+# Confirm deletion in alert
+- tapOn:
+    text: "Remove"
+    index: 0
+- waitForAnimationToEnd
+
+# Verify variant is gone
+- assertNotVisible: "wa-wa"
+- assertVisible: "1 variant"

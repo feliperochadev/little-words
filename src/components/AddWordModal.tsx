@@ -166,6 +166,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
             {/* ── Word ── */}
             <Text style={s.label}>{t('addWord.wordLabel')}</Text>
             <TextInput
+              testID="word-input"
               style={[s.input, duplicate && s.inputDup]}
               value={word} onChangeText={setWord}
               placeholder={t('addWord.wordPlaceholder')}

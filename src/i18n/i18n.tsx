@@ -41,7 +41,7 @@ const catalogues: Record<Locale, Record<string, unknown>> = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Deep-traverse a nested object with a dot-separated key path. */
-function deepGet(obj: Record<string, unknown>, path: string): unknown {
+export function deepGet(obj: Record<string, unknown>, path: string): unknown {
   return path.split('.').reduce<unknown>((cur, k) => {
     if (cur && typeof cur === 'object') return (cur as Record<string, unknown>)[k];
     return undefined;
@@ -49,7 +49,7 @@ function deepGet(obj: Record<string, unknown>, path: string): unknown {
 }
 
 /** Interpolate {{placeholder}} tokens in a string. */
-function interpolate(str: string, params?: Record<string, string | number>): string {
+export function interpolate(str: string, params?: Record<string, string | number>): string {
   if (!params) return str;
   return str.replace(/\{\{(\w+)\}\}/g, (_, k) =>
     params[k] !== undefined ? String(params[k]) : `{{${k}}}`

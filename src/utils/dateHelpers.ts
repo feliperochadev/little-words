@@ -1,0 +1,45 @@
+/**
+ * Shared date helper functions used across the app.
+ */
+
+export function formatDisplayDate(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+export function toStorageDate(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${y}-${m}-${d}`;
+}
+
+export function daysInMonth(month: number, year: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+export function parseDate(s: string): { d: number; m: number; y: number } {
+  const [y, m, d] = s.split('-').map(Number);
+  return {
+    y: isNaN(y) ? new Date().getFullYear() : y,
+    m: isNaN(m) ? new Date().getMonth() : m - 1,
+    d: isNaN(d) ? new Date().getDate() : d,
+  };
+}
+
+export function toStorage(d: number, m: number, y: number): string {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+export function toDisplay(s: string): string {
+  const { d, m, y } = parseDate(s);
+  return `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y}`;
+}
+
+export function formatDateDMY(date: string): string {
+  if (!date) return '';
+  const [year, month, day] = date.split('-');
+  return `${day}/${month}/${year}`;
+}

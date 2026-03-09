@@ -1,0 +1,45 @@
+appId: com.littlewords.app
+name: "Full E2E - Complete app journey"
+---
+
+# ============================
+# 1. ONBOARDING
+# ============================
+- clearState
+- launchApp
+- runFlow: onboarding.yaml
+
+# ============================
+# 2. CRUD CATEGORY (in Settings)
+# ============================
+- runFlow: crud-category.yaml
+
+# ============================
+# 3. CRUD WORD (in Words tab)
+# ============================
+- runFlow: crud-word.yaml
+
+# ============================
+# 4. CRUD VARIANT (in Variants tab)
+# ============================
+- runFlow: crud-variant.yaml
+
+# ============================
+# 5. SEARCH & SORT WORDS
+# ============================
+- runFlow: search-sort-words.yaml
+
+# ============================
+# 6. SEARCH & SORT VARIANTS
+# ============================
+- runFlow: search-sort-variants.yaml
+
+# ============================
+# 7. IMPORT WORDS
+# ============================
+- runFlow: import-words.yaml
+
+# ============================
+# 8. EXPORT WORDS
+# ============================
+- runFlow: export-words.yaml

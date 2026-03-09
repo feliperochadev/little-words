@@ -160,6 +160,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
             {/* ── Variant text ── */}
             <Text style={s.label}>{t('addVariant.variantLabel')}</Text>
             <TextInput
+              testID="variant-input"
               style={s.input}
               value={variant} onChangeText={setVariant}
               placeholder={effectiveWord
