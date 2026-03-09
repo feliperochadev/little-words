@@ -6,6 +6,7 @@ import {
 import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
 import { addCategory, updateCategory, unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
 import { Button } from './UIComponents';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
 export interface CategoryToEdit {
@@ -28,6 +29,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
+  const insets = useSafeAreaInsets();
   const isEditing = !!editCategory;
 
   const [name, setName] = useState('');
@@ -109,7 +111,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: 24 + insets.bottom }]}>
           <View style={styles.handle} />
 
           {/* Header row */}

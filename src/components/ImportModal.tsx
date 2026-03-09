@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 import {
   getCategories, addCategory, findWordByName, addWord, addVariant,
@@ -87,6 +88,7 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
 
 export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onImported }) => {
   const { t, tc } = useI18n();
+  const insets = useSafeAreaInsets();
 
   const [tab, setTab]               = useState<'text' | 'csv'>('text');
   const [textInput, setTextInput]   = useState('');
@@ -161,7 +163,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: 24 + insets.bottom }]}>
           <View style={styles.handle} />
 
           <View style={styles.titleRow}>
