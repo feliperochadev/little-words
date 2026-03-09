@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories, with optional Google Drive backup. Targets Android (APK via EAS Build); built with Expo SDK 52.
 
+The `main` branch is SDK 52. There is a pending `update-dependencies` branch that upgrades to Expo SDK 55 (React 19, React Native 0.83.2, Jest 30).
+
 ## Commands
 
 ```bash
@@ -21,7 +23,25 @@ npm run build:apk        # → eas build --platform android --profile apk
 npm run build:android    # → eas build --platform android --profile preview
 ```
 
-There are no tests in this project.
+```bash
+# Run unit/integration tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+## Testing
+
+The project uses **Jest** (via `jest-expo`) with **@testing-library/react-native**.
+
+- Tests live in `__tests__/` with three subdirectories:
+  - `unit/` — pure logic (helpers, i18n catalogues, date utils, import helpers)
+  - `integration/` — component tests (modals, UI components, database layer)
+  - `screens/` — full screen render tests
+- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `@react-native-google-signin/google-signin`, `expo-asset`.
+- The shared mock DB instance is exposed as `global.__mockDb` — reset mocks with `jest.clearAllMocks()` in `beforeEach`.
+- `react-test-renderer` version must exactly match the installed `react` version (enforced by RNTL at runtime).
 
 ## Architecture
 
@@ -53,3 +73,4 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 - `src/utils/googleDrive.ts` — Google Sign-In + Drive v3 REST API for CSV backup. **Only works in native builds**, not in Expo Go (`isNativeBuild()` guard throughout). Tokens stored in the `settings` table.
 - `src/utils/csvExport.ts` — CSV generation helpers.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
+- `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
