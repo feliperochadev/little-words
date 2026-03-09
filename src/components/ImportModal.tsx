@@ -4,7 +4,7 @@ import {
   StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { File as FSFile } from 'expo-file-system';
 import { COLORS } from '../utils/theme';
 import {
   getCategories, addCategory, findWordByName, addWord, addVariant,
@@ -111,7 +111,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
       });
       if (result.canceled) return;
       const file = result.assets[0];
-      const content = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.UTF8 });
+      const content = await new FSFile(file.uri).text();
       setCsvFileName(file.name);
       setCsvContent(content);
       setPreview(parseCSV(content).slice(0, 5));

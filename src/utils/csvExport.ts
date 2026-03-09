@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { File as FSFile, Directory, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { getAllDataForCSV } from '../database/database';
 import { DEFAULT_CATEGORY_KEY_SET } from './categoryKeys';
@@ -23,11 +23,9 @@ export function buildCategoryResolver(
 
 const writeTempFile = async (resolveCategoryName: (name: string) => string): Promise<string> => {
   const csvContent = await getAllDataForCSV(resolveCategoryName);
-  const fileUri = FileSystem.cacheDirectory + getFilename();
-  await FileSystem.writeAsStringAsync(fileUri, csvContent, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
-  return fileUri;
+  const file = new FSFile(Paths.cache, getFilename());
+  file.write(csvContent);
+  return file.uri;
 };
 
 export const saveCSVToDevice = async (
@@ -37,17 +35,15 @@ export const saveCSVToDevice = async (
     const csvContent = await getAllDataForCSV(resolveCategoryName);
     const filename = getFilename();
 
-    const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-    if (!permissions.granted) return { success: false, error: 'cancelled' };
+    let dir: Directory;
+    try {
+      dir = await Directory.pickDirectoryAsync();
+    } catch {
+      return { success: false, error: 'cancelled' };
+    }
 
-    const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-      permissions.directoryUri,
-      filename,
-      'text/csv'
-    );
-    await FileSystem.writeAsStringAsync(fileUri, csvContent, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    const file = dir.createFile(filename, 'text/csv');
+    file.write(csvContent);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

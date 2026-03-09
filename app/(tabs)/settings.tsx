@@ -341,7 +341,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
           <Text style={styles.aboutText}>{t('settings.aboutText')}</Text>
           <Text style={styles.versionText}>
-            {t('settings.version')} {Constants.expoConfig?.version ?? Constants.manifest?.version ?? '—'}
+            {t('settings.version')} {Constants.expoConfig?.version ?? '—'}
           </Text>
         </Card>
 

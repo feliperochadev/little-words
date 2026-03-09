@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "Export - Share and save CSV export"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 15000
 
 # Navigate to Settings tab
 - tapOn: "Settings"

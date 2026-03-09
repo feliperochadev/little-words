@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "CRUD Variant - Add, edit, and delete variants"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Variants"
+    timeout: 15000
 
 # Navigate to Variants tab
 - tapOn: "Variants"

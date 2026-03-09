@@ -2,21 +2,21 @@ appId: com.littlewords.app
 name: "Onboarding - Complete first-run setup"
 ---
 
-# Wait for the app to load and redirect to onboarding
-- waitForAnimationToEnd
+# Poll until the onboarding screen is ready (async DB init + routing)
+- extendedWaitUntil:
+    visible: "English"
+    timeout: 15000
 
-# Verify onboarding screen appears
-- assertVisible: "Welcome"
-
-# -- Language selector --
+# Verify both language options are visible
 - assertVisible: "English"
-- assertVisible: "Portugu"
+- assertVisible: "Português"
 
 # -- Enter baby name --
 - tapOn:
     text: "E.g.*"
     optional: true
 - inputText: "Luna"
+- hideKeyboard
 
 # -- Select sex --
 - tapOn: "Girl"
@@ -30,8 +30,9 @@ name: "Onboarding - Complete first-run setup"
 - assertVisible: "Luna"
 
 # -- Press continue --
-- tapOn: "Start with Luna"
+- tapOn: "Start with Luna 💕"
 
 # -- Verify we land on the home/dashboard screen --
-- waitForAnimationToEnd
-- assertVisible: "Home"
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 15000

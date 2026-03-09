@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "build:android": "eas build --platform android --profile preview",
     "build:apk": "eas build --platform android --profile apk",
+    "build:apk-local": "expo prebuild --clean --platform android && cd android && ./gradlew assembleRelease",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest",

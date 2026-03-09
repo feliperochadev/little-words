@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "CRUD Category - Add, edit, and delete a category"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 15000
 
 # Navigate to Settings tab
 - tapOn: "Settings"
