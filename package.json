@@ -4,14 +4,21 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "build:android": "eas build --platform android --profile preview",
     "build:apk": "eas build --platform android --profile apk",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "e2e": "maestro test .maestro/full-e2e.yaml",
+    "e2e:onboarding": "maestro test .maestro/onboarding.yaml",
+    "e2e:crud-word": "maestro test .maestro/crud-word.yaml",
+    "e2e:crud-variant": "maestro test .maestro/crud-variant.yaml",
+    "e2e:crud-category": "maestro test .maestro/crud-category.yaml",
+    "e2e:import": "maestro test .maestro/import-words.yaml",
+    "e2e:export": "maestro test .maestro/export-words.yaml"
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",

@@ -1,0 +1,37 @@
+appId: com.littlewords.app
+name: "Onboarding - Complete first-run setup"
+---
+
+# Wait for the app to load and redirect to onboarding
+- waitForAnimationToEnd
+
+# Verify onboarding screen appears
+- assertVisible: "Welcome"
+
+# -- Language selector --
+- assertVisible: "English"
+- assertVisible: "Portugu"
+
+# -- Enter baby name --
+- tapOn:
+    text: "E.g.*"
+    optional: true
+- inputText: "Luna"
+
+# -- Select sex --
+- tapOn: "Girl"
+
+# -- Select birth date --
+- tapOn: "Select date"
+- assertVisible: "Date of Birth"
+- tapOn: "Confirm"
+
+# -- Verify preview appears --
+- assertVisible: "Luna"
+
+# -- Press continue --
+- tapOn: "Start with Luna"
+
+# -- Verify we land on the home/dashboard screen --
+- waitForAnimationToEnd
+- assertVisible: "Home"

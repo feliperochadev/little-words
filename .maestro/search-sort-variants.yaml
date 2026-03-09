@@ -1,0 +1,67 @@
+appId: com.littlewords.app
+name: "Variants - Search and sort functionality"
+---
+
+- waitForAnimationToEnd
+
+# Navigate to Variants tab
+- tapOn: "Variants"
+- waitForAnimationToEnd
+
+# Verify variants are visible
+- assertVisible: "maa-maa"
+
+# ============================
+# SEARCH
+# ============================
+
+# Search for a specific variant
+- tapOn: "Search variants..."
+- inputText: "maa"
+- assertVisible: "maa-maa"
+- assertVisible: "1 variant"
+
+# Clear search
+- eraseText: 3
+
+# Search with no results
+- inputText: "xyznotfound"
+- assertVisible: "No variants found"
+- eraseText: 11
+
+# ============================
+# SORT - A to Z
+# ============================
+
+- tapOn:
+    text: "Most recent"
+- assertVisible: "A → Z"
+- tapOn: "A → Z"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Z to A
+# ============================
+
+- tapOn:
+    text: "A → Z"
+- tapOn: "Z → A"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Oldest first
+# ============================
+
+- tapOn:
+    text: "Z → A"
+- tapOn: "Oldest"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Most recent (back to default)
+# ============================
+
+- tapOn:
+    text: "Oldest"
+- tapOn: "Most recent"
+- waitForAnimationToEnd

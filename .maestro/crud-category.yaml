@@ -1,0 +1,81 @@
+appId: com.littlewords.app
+name: "CRUD Category - Add, edit, and delete a category"
+---
+
+- waitForAnimationToEnd
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- assertVisible: "Categories"
+
+# ============================
+# ADD CATEGORY
+# ============================
+
+- scrollUntilVisible:
+    element: "+ Category"
+    direction: DOWN
+- tapOn: "+ Category"
+- assertVisible: "New Category"
+
+# Enter category name
+- tapOn:
+    text: "Toys*"
+- inputText: "Fruits"
+
+# Pick a different emoji (tap the 2nd emoji in the list)
+- tapOn: "🍎"
+
+# Press Create
+- tapOn: "Create Category"
+- waitForAnimationToEnd
+
+# Verify category appears in settings list
+- scrollUntilVisible:
+    element: "Fruits"
+    direction: DOWN
+- assertVisible: "Fruits"
+
+# ============================
+# EDIT CATEGORY
+# ============================
+
+# Tap on the category row to open edit modal
+- tapOn: "Fruits"
+- assertVisible: "Edit Category"
+
+# Clear and change the name
+- tapOn:
+    text: "Fruits"
+    index: 1
+- eraseText: 6
+- inputText: "Veggies"
+
+# Press Save
+- tapOn: "Save"
+- waitForAnimationToEnd
+
+# Verify updated name in settings
+- scrollUntilVisible:
+    element: "Veggies"
+    direction: DOWN
+- assertVisible: "Veggies"
+
+# ============================
+# DELETE CATEGORY
+# ============================
+
+# Tap on the category to open edit modal
+- tapOn: "Veggies"
+- assertVisible: "Edit Category"
+
+# Press Remove button
+- tapOn: "Remove"
+
+# Confirm deletion in alert
+- tapOn: "Remove"
+- waitForAnimationToEnd
+
+# Verify category is gone
+- assertNotVisible: "Veggies"

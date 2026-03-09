@@ -197,6 +197,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
                   <Text style={styles.example}>cachorro, Animais, 15/03/2025</Text>
                 </View>
                 <TextInput
+                  testID="import-text-input"
                   style={styles.textBox}
                   value={textInput}
                   onChangeText={updateTextPreview}

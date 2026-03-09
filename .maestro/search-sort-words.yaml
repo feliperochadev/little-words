@@ -1,0 +1,71 @@
+appId: com.littlewords.app
+name: "Words - Search and sort functionality"
+---
+
+- waitForAnimationToEnd
+
+# Navigate to Words tab
+- tapOn: "Words"
+- waitForAnimationToEnd
+
+# Verify words are visible
+- assertVisible: "mama"
+- assertVisible: "water"
+
+# ============================
+# SEARCH
+# ============================
+
+# Search for a specific word
+- tapOn: "Search words..."
+- inputText: "mama"
+- assertVisible: "mama"
+- assertVisible: "1 word"
+
+# Clear search
+- eraseText: 4
+- assertVisible: "mama"
+- assertVisible: "water"
+
+# Search with no results
+- inputText: "xyznotfound"
+- assertVisible: "No words found"
+- eraseText: 11
+
+# ============================
+# SORT - A to Z
+# ============================
+
+# Tap the sort button (shows current sort label with triangle)
+- tapOn:
+    text: "Most recent"
+- assertVisible: "A → Z"
+- tapOn: "A → Z"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Z to A
+# ============================
+
+- tapOn:
+    text: "A → Z"
+- tapOn: "Z → A"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Oldest first
+# ============================
+
+- tapOn:
+    text: "Z → A"
+- tapOn: "Oldest"
+- waitForAnimationToEnd
+
+# ============================
+# SORT - Most recent (back to default)
+# ============================
+
+- tapOn:
+    text: "Oldest"
+- tapOn: "Most recent"
+- waitForAnimationToEnd
