@@ -9,11 +9,14 @@ import * as database from '../../src/database/database';
 
 // Mock database functions
 jest.mock('../../src/database/database', () => ({
+  ...jest.requireActual('../../src/database/database'),
   getCategories: jest.fn(),
   addCategory: jest.fn(),
   findWordByName: jest.fn(),
   addWord: jest.fn(),
   addVariant: jest.fn(),
+  getSetting: jest.fn().mockResolvedValue(null),
+  setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockGetCategories = database.getCategories as jest.MockedFunction<typeof database.getCategories>;
@@ -94,7 +97,7 @@ describe('ImportModal', () => {
   });
 
   it('switches back to text tab and clears preview', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     // Switch to CSV then back to text
@@ -115,10 +118,10 @@ describe('ImportModal', () => {
 
   // ── Text input and preview ─────────────────────────────────────────────
   it('shows preview when text is entered', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello\nworld');
     expect(await findByText('hello')).toBeTruthy();
     expect(await findByText('world')).toBeTruthy();
@@ -127,10 +130,10 @@ describe('ImportModal', () => {
   });
 
   it('shows preview with category and date', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'dog, Animals, 15/03/2025');
     expect(await findByText('dog')).toBeTruthy();
     expect(await findByText('Animals')).toBeTruthy();
@@ -138,30 +141,30 @@ describe('ImportModal', () => {
   });
 
   it('clears preview when text is emptied', async () => {
-    const { queryByText, getByPlaceholderText } = renderWithProvider(
+    const { queryByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello');
     fireEvent.changeText(input, '');
     expect(queryByText('hello')).toBeNull();
   });
 
   it('limits preview to 5 items and shows "and more"', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'a\nb\nc\nd\ne\nf\ng');
     expect(await findByText(/and 2 more/)).toBeTruthy();
     expect(await findByText(/Import 7 words/)).toBeTruthy();
   });
 
   it('shows singular "Import 1 word" for single word', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello');
     expect(await findByText(/Import 1 word\b/)).toBeTruthy();
   });
@@ -251,10 +254,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -276,10 +279,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'dog, MyCategory');
 
     await act(async () => {
@@ -297,10 +300,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -320,10 +323,10 @@ describe('ImportModal', () => {
     mockGetCategories.mockRejectedValueOnce(new Error('DB error'));
     const onImported = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -358,7 +361,7 @@ describe('ImportModal', () => {
   });
 
   it('alerts noWordsFound when text parses to empty rows', async () => {
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     // Note: the button is disabled when wordCount=0, so this path is technically
@@ -439,10 +442,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'badword');
 
     await act(async () => {
@@ -464,10 +467,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'dog, Animals');
 
     await act(async () => {
@@ -491,10 +494,10 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, getByPlaceholderText } = renderWithProvider(
+    const { findByText, findByPlaceholderText } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = getByPlaceholderText(/mamãe/);
+    const input = await findByPlaceholderText(/mamãe/);
     fireEvent.changeText(input, 'a\nb\nc\nd');
 
     await act(async () => {

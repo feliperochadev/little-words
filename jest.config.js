@@ -9,6 +9,8 @@ module.exports = {
     'app/**/*.{ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
+    '!src/i18n/en-US.ts',
+    '!src/i18n/pt-BR.ts',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',

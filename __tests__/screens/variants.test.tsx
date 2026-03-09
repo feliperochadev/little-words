@@ -100,4 +100,42 @@ describe('VariantsScreen', () => {
     );
     expect(await findByText(/Variants are how the child/i)).toBeTruthy();
   });
+
+  it('filters variants by search', async () => {
+    const { findByPlaceholderText, findByText, queryByText } = render(
+      <I18nProvider><VariantsScreen /></I18nProvider>
+    );
+    // Wait for data to load
+    await findByText(/mamá/);
+    const searchInput = await findByPlaceholderText(/Search variants/);
+    fireEvent.changeText(searchInput, 'mamá');
+    expect(await findByText(/mamá/)).toBeTruthy();
+    // 'mama' (without accent) should be filtered out if search is strict
+  });
+
+  it('toggles sort menu and selects option', async () => {
+    const { findByText } = render(
+      <I18nProvider><VariantsScreen /></I18nProvider>
+    );
+    fireEvent.press(await findByText(/Most recent/));
+    expect(await findByText(/A → Z/)).toBeTruthy();
+    fireEvent.press(await findByText(/A → Z/));
+  });
+
+  it('opens add variant modal', async () => {
+    const { findByText } = render(
+      <I18nProvider><VariantsScreen /></I18nProvider>
+    );
+    fireEvent.press(await findByText('+ New'));
+    expect(await findByText(/New Variant/)).toBeTruthy();
+  });
+
+  it('opens edit variant modal on variant press', async () => {
+    const { findByText } = render(
+      <I18nProvider><VariantsScreen /></I18nProvider>
+    );
+    fireEvent.press(await findByText(/mamá/));
+    // Should open AddVariantModal in edit mode
+    expect(await findByText(/Edit Variant/)).toBeTruthy();
+  });
 });
