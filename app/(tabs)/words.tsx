@@ -108,7 +108,7 @@ export default function WordsScreen() {
                   </TouchableOpacity>
                 )}
                 {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
-                  <View key={i} style={styles.variantChip}>
+                  <View key={i} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
                     <Text style={styles.variantChipText}>🗣️ {v}</Text>
                   </View>
                 ))}
@@ -138,11 +138,11 @@ export default function WordsScreen() {
       </View>
 
       <View style={styles.searchContainer}>
-        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('words.searchPlaceholder')} />
+        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('words.searchPlaceholder')} testID="words-search" />
       </View>
 
       <View style={styles.sortBar}>
-        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)}>
+        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)} testID="words-sort-btn">
           <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
         <Text style={styles.countText}>{tc('words.count', words.length)}</Text>
@@ -155,6 +155,7 @@ export default function WordsScreen() {
               key={opt.key}
               style={[styles.sortMenuItem, sort === opt.key && styles.sortMenuItemActive]}
               onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
+              testID={`sort-option-${opt.key}`}
             >
               <Text style={[styles.sortMenuText, sort === opt.key && styles.sortMenuTextActive]}>
                 {opt.label}

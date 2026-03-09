@@ -11,34 +11,49 @@ name: "Variants - Search and sort functionality"
 - waitForAnimationToEnd
 
 # Verify variants are visible
-- assertVisible: "maa-maa"
+- assertVisible:
+    id: "variant-item-maa-maa"
 
 # ============================
 # SEARCH
 # ============================
 
 # Search for a specific variant
-- tapOn: "Search variants..."
+- tapOn:
+    id: "variants-search"
 - inputText: "maa"
-- assertVisible: "maa-maa"
+- hideKeyboard
+- assertVisible:
+    id: "variant-item-maa-maa"
 - assertVisible: "1 variant"
 
 # Clear search
+- tapOn:
+    id: "variants-search"
 - eraseText: 3
+- hideKeyboard
 
 # Search with no results
+- tapOn:
+    id: "variants-search"
 - inputText: "xyznotfound"
+- hideKeyboard
 - assertVisible: "No variants found"
+- tapOn:
+    id: "variants-search"
 - eraseText: 11
+- hideKeyboard
 
 # ============================
 # SORT - A to Z
 # ============================
 
 - tapOn:
-    text: "Most recent"
-- assertVisible: "A → Z"
-- tapOn: "A → Z"
+    id: "variants-sort-btn"
+- assertVisible:
+    id: "sort-option-alpha_asc"
+- tapOn:
+    id: "sort-option-alpha_asc"
 - waitForAnimationToEnd
 
 # ============================
@@ -46,8 +61,9 @@ name: "Variants - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "A → Z"
-- tapOn: "Z → A"
+    id: "variants-sort-btn"
+- tapOn:
+    id: "sort-option-alpha_desc"
 - waitForAnimationToEnd
 
 # ============================
@@ -55,8 +71,9 @@ name: "Variants - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "Z → A"
-- tapOn: "Oldest"
+    id: "variants-sort-btn"
+- tapOn:
+    id: "sort-option-date_asc"
 - waitForAnimationToEnd
 
 # ============================
@@ -64,6 +81,7 @@ name: "Variants - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "Oldest"
-- tapOn: "Most recent"
+    id: "variants-sort-btn"
+- tapOn:
+    id: "sort-option-date_desc"
 - waitForAnimationToEnd

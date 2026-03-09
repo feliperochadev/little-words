@@ -61,6 +61,10 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
+  const catContentWidth = useRef(0);
+  const catScrollX = useRef(0);
+  const [catScrolled, setCatScrolled] = useState(false);
+  const [catAtEnd, setCatAtEnd] = useState(false);
   const catItemWidth = 110; // approximate chip width + gap
 
   useEffect(() => {
@@ -89,6 +93,10 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       setWord(''); setSelectedCategory(null);
       setDateAdded(today); setNotes(''); setVariants([]);
       setExistingVariants([]);
+      setCatScrolled(false);
+      setCatAtEnd(false);
+      catScrollX.current = 0;
+      catScrollRef.current?.scrollTo({ x: 0, animated: false });
     }
     setEditingVariantIds(new Set());
     setEditingVariantTexts({});
@@ -153,9 +161,9 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
         <View style={s.container}>
           <View style={s.handle} />
           <View style={s.header}>
-            <Text style={[s.title, editWord && s.titleLeft]}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
+            <Text style={[s.title, editWord && s.titleLeft]} testID={editWord ? 'modal-title-edit-word' : 'modal-title-new-word'}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
             {editWord && (
-              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete}>
+              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete} testID="word-delete-btn">
                 <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             )}
@@ -200,37 +208,68 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               </TouchableOpacity>
             )}
 
-            {/* ── Date ── */}
-            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={COLORS.primary} />
-
             {/* ── Category ── */}
             <Text style={s.label}>{t('addWord.categoryLabel')}</Text>
-            <ScrollView
-              ref={catScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={s.catScroll}
-              onLayout={e => { catScrollWidth.current = e.nativeEvent.layout.width; }}
-            >
-              {categories.map(cat => (
+            <View testID="category-section" style={s.carouselWrapper}>
+              {catScrolled && (
                 <TouchableOpacity
-                  key={cat.id}
-                  style={[s.catChip, { borderColor: cat.color }, selectedCategory === cat.id && { backgroundColor: cat.color }]}
-                  onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                  onLongPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
-                  delayLongPress={400}
+                  style={s.carouselArrow}
+                  onPress={() => catScrollRef.current?.scrollTo({ x: Math.max(0, catScrollX.current - catScrollWidth.current), animated: true })}
+                  testID="category-scroll-left"
                 >
-                  <Text style={s.catEmoji}>{cat.emoji}</Text>
-                  <Text style={[s.catName, selectedCategory === cat.id && { color: COLORS.white }]}>{categoryName(cat.name)}</Text>
+                  <Text style={s.carouselArrowText}>‹</Text>
                 </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={s.catChipAdd}
-                onPress={() => setShowNewCategory(true)}
+              )}
+              <ScrollView
+                ref={catScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={s.catScroll}
+                onLayout={e => { catScrollWidth.current = e.nativeEvent.layout.width; }}
+                onScroll={e => {
+                  const x = e.nativeEvent.contentOffset.x;
+                  catScrollX.current = x;
+                  setCatScrolled(x > 10);
+                  setCatAtEnd(x + catScrollWidth.current >= catContentWidth.current - 10);
+                }}
+                onContentSizeChange={(w) => {
+                  catContentWidth.current = w;
+                  setCatAtEnd(catScrollX.current + catScrollWidth.current >= w - 10);
+                }}
+                scrollEventThrottle={16}
+                testID="category-scroll"
               >
-                <Text style={s.catChipAddText}>{t('words.addCategory')}</Text>
-              </TouchableOpacity>
-            </ScrollView>
+                {categories.map(cat => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[s.catChip, { borderColor: cat.color }, selectedCategory === cat.id && { backgroundColor: cat.color }]}
+                    onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                    onLongPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
+                    delayLongPress={400}
+                    testID={`category-chip-${cat.name}`}
+                  >
+                    <Text style={s.catEmoji}>{cat.emoji}</Text>
+                    <Text style={[s.catName, selectedCategory === cat.id && { color: COLORS.white }]}>{categoryName(cat.name)}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={s.catChipAdd}
+                  onPress={() => setShowNewCategory(true)}
+                  testID="category-add-btn"
+                >
+                  <Text style={s.catChipAddText}>{t('words.addCategory')}</Text>
+                </TouchableOpacity>
+              </ScrollView>
+              {!catAtEnd && (
+                <TouchableOpacity
+                  style={s.carouselArrow}
+                  onPress={() => catScrollRef.current?.scrollTo({ x: catScrollX.current + catScrollWidth.current, animated: true })}
+                  testID="category-scroll-right"
+                >
+                  <Text style={s.carouselArrowText}>›</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* ── Variants ── */}
             <View style={s.varHeader}>
@@ -259,7 +298,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                       setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
                     }}
                   />
-                  <TouchableOpacity style={s.varRemove} onPress={async () => {
+                  <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={async () => {
                     await deleteVariant(v.id);
                     setExistingVariants(prev => prev.filter(e => e.id !== v.id));
                     setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
@@ -271,6 +310,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                 <TouchableOpacity
                   key={v.id}
                   style={s.existingVarRow}
+                  testID={`existing-variant-row-${v.variant}`}
                   onPress={() => {
                     setEditingVariantTexts(prev => ({ ...prev, [v.id]: v.variant }));
                     setEditingVariantIds(prev => new Set(prev).add(v.id));
@@ -296,6 +336,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                     : t('addWord.variantPlaceholderGeneric')}
                   placeholderTextColor={COLORS.textLight}
                   autoCapitalize="none"
+                  testID={`word-variant-input-${i}`}
                 />
                 <TouchableOpacity style={s.varRemove} onPress={() => removeVariantRow(v.key)}>
                   <Text style={s.varRemoveText}>✕</Text>
@@ -303,11 +344,14 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               </View>
             ))}
 
-            <TouchableOpacity style={s.addAnotherBtn} onPress={addVariantRow}>
+            <TouchableOpacity style={s.addAnotherBtn} onPress={addVariantRow} testID="word-add-variant-btn">
               <Text style={s.addAnotherText}>
                 {variants.length === 0 ? t('addWord.addVariant') : t('addWord.addAnother')}
               </Text>
             </TouchableOpacity>
+
+            {/* ── Date ── */}
+            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={COLORS.primary} />
 
             {/* ── Notes ── */}
             <Text style={s.label}>{t('common.notes').toUpperCase()}</Text>
@@ -315,6 +359,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               style={[s.input, s.textArea]} value={notes} onChangeText={setNotes}
               placeholder={t('addWord.notesPlaceholder')}
               placeholderTextColor={COLORS.textLight} multiline numberOfLines={3}
+              testID="word-notes-input"
             />
 
             <View style={s.actions}>
@@ -365,7 +410,10 @@ const s = StyleSheet.create({
   dupVariants:    { fontSize: 12, color: COLORS.secondary, fontWeight: '600' },
   dupNotes:       { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
   textArea:       { height: 80, textAlignVertical: 'top' },
-  catScroll:      { marginBottom: 16 },
+  carouselWrapper:{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  catScroll:      { flex: 1 },
+  carouselArrow:  { paddingHorizontal: 6, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },
+  carouselArrowText: { fontSize: 22, color: COLORS.textSecondary, fontWeight: '300' },
   catChip:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 2, marginRight: 8, backgroundColor: COLORS.white },
   catChipAdd:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', borderColor: COLORS.primary, marginRight: 8, backgroundColor: COLORS.white },
   catChipAddText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },

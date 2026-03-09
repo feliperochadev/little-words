@@ -15,20 +15,24 @@ name: "CRUD Word - Add, edit, and delete words"
 # ============================
 
 - tapOn: "+ New"
-- assertVisible: "New Word"
+- assertVisible:
+    id: "modal-title-new-word"
 
 # Enter word
 - tapOn:
     id: "word-input"
 - inputText: "mommy"
+- hideKeyboard
 
-# Select a category (Animals should be in default categories)
-- tapOn: "Animals"
+# Select a category
+- tapOn:
+    id: "category-chip-family"
 
 # Add a note
 - tapOn:
-    text: "Context"
+    id: "word-notes-input"
 - inputText: "First word ever said"
+- hideKeyboard
 
 # Press Add
 - tapOn: "Add"
@@ -36,7 +40,7 @@ name: "CRUD Word - Add, edit, and delete words"
 
 # Verify word appears in the list
 - assertVisible: "mommy"
-- assertVisible: "Animals"
+- assertVisible: "Family"
 
 # ============================
 # ADD SECOND WORD
@@ -46,6 +50,7 @@ name: "CRUD Word - Add, edit, and delete words"
 - tapOn:
     id: "word-input"
 - inputText: "daddy"
+- hideKeyboard
 - tapOn: "Add"
 - waitForAnimationToEnd
 - assertVisible: "daddy"
@@ -58,8 +63,12 @@ name: "CRUD Word - Add, edit, and delete words"
 - tapOn:
     id: "word-input"
 - inputText: "water"
+- hideKeyboard
+- waitForAnimationToEnd
 - tapOn:
-    text: "Food"
+    id: "category-scroll-right"
+- tapOn:
+    id: "category-chip-food"
 - tapOn: "Add"
 - waitForAnimationToEnd
 - assertVisible: "water"
@@ -73,13 +82,15 @@ name: "CRUD Word - Add, edit, and delete words"
 
 # Tap on the word to open edit modal
 - tapOn: "mommy"
-- assertVisible: "Edit Word"
+- assertVisible:
+    id: "modal-title-edit-word"
 
 # Clear and change the word text
 - tapOn:
     id: "word-input"
 - eraseText: 5
 - inputText: "mama"
+- hideKeyboard
 
 # Press Save
 - tapOn: "Save"
@@ -94,10 +105,12 @@ name: "CRUD Word - Add, edit, and delete words"
 
 # Tap on "daddy" to edit
 - tapOn: "daddy"
-- assertVisible: "Edit Word"
+- assertVisible:
+    id: "modal-title-edit-word"
 
-# Press Remove
-- tapOn: "Remove"
+# Press Remove button in modal
+- tapOn:
+    id: "word-delete-btn"
 
 # Confirm deletion in alert
 - tapOn:
@@ -108,3 +121,166 @@ name: "CRUD Word - Add, edit, and delete words"
 # Verify word is gone
 - assertNotVisible: "daddy"
 - assertVisible: "2 words"
+
+# ============================
+# ADD WORD WITH NEW CATEGORY
+# ============================
+
+- tapOn: "+ New"
+- assertVisible:
+    id: "modal-title-new-word"
+- tapOn:
+    id: "word-input"
+- inputText: "ball"
+- hideKeyboard
+
+# Open add category modal from within the word modal
+- tapOn:
+    id: "category-add-btn"
+- assertVisible:
+    id: "modal-title-new-category"
+- tapOn:
+    id: "category-name-input"
+- inputText: "Toys"
+- hideKeyboard
+- tapOn:
+    id: "category-save-btn"
+- waitForAnimationToEnd
+
+# Scroll carousel right to find the new Toys category and select it
+- tapOn:
+    id: "category-scroll-right"
+- tapOn:
+    id: "category-scroll-right"
+- tapOn:
+    id: "category-chip-Toys"
+
+- tapOn: "Add"
+- waitForAnimationToEnd
+- assertVisible: "ball"
+- assertVisible: "Toys"
+
+# ============================
+# ADD TWO VARIANTS TO A WORD
+# ============================
+
+- tapOn: "mama"
+- assertVisible:
+    id: "modal-title-edit-word"
+
+# Scroll down to the variants section
+- scrollUntilVisible:
+    element:
+      id: "word-add-variant-btn"
+    direction: DOWN
+    timeout: 3000
+
+# Add first variant
+- tapOn:
+    id: "word-add-variant-btn"
+- tapOn:
+    id: "word-variant-input-0"
+- inputText: "maa-maa"
+- hideKeyboard
+
+# Add second variant
+- tapOn:
+    id: "word-add-variant-btn"
+- tapOn:
+    id: "word-variant-input-1"
+- inputText: "ma-ma"
+- hideKeyboard
+
+- tapOn: "Save"
+- waitForAnimationToEnd
+
+# Verify 2 variant chips appear on the word card
+- assertVisible:
+    id: "word-variant-chip-maa-maa"
+- assertVisible:
+    id: "word-variant-chip-ma-ma"
+
+# ============================
+# DELETE ONE VARIANT
+# ============================
+
+- tapOn: "mama"
+- assertVisible:
+    id: "modal-title-edit-word"
+
+# Scroll down to existing variant rows
+- scrollUntilVisible:
+    element:
+      id: "existing-variant-row-maa-maa"
+    direction: DOWN
+    timeout: 3000
+
+# Tap the variant row to enter inline edit mode, then delete
+- tapOn:
+    id: "existing-variant-row-maa-maa"
+- hideKeyboard
+- tapOn:
+    id: "existing-variant-delete-maa-maa"
+- waitForAnimationToEnd
+
+- tapOn: "Save"
+- waitForAnimationToEnd
+
+# Verify only one variant remains
+- assertNotVisible:
+    id: "word-variant-chip-maa-maa"
+- assertVisible:
+    id: "word-variant-chip-ma-ma"
+
+# ============================
+# CHANGE DATE VIA DATE PICKER
+# ============================
+
+- tapOn: "+ New"
+- assertVisible:
+    id: "modal-title-new-word"
+- tapOn:
+    id: "word-input"
+- inputText: "teddy"
+- hideKeyboard
+
+# Scroll down to the date picker field
+- scrollUntilVisible:
+    element:
+      id: "date-picker-btn"
+    direction: DOWN
+    timeout: 3000
+
+# Open the date picker
+- tapOn:
+    id: "date-picker-btn"
+
+# Swipe UP on the year wheel to move from current year to previous year
+- swipe:
+    startElement:
+      id: "date-picker-year-wheel"
+    direction: UP
+    duration: 200
+- waitForAnimationToEnd
+
+# Verify the preview shows the previous year
+- assertVisible:
+    id: "date-picker-preview"
+- assertVisible: "2025"
+
+# Confirm date selection
+- tapOn:
+    id: "date-picker-confirm"
+
+# Scroll down to the Add button and save
+- scrollUntilVisible:
+    element:
+      text: "Add"
+    direction: DOWN
+    timeout: 3000
+- tapOn: "Add"
+- waitForAnimationToEnd
+
+# Verify the word was saved with the updated year
+- assertVisible: "teddy"
+- assertVisible: "2025"

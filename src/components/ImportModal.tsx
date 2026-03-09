@@ -165,8 +165,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
           <View style={styles.handle} />
 
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{t('importModal.title')}</Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+            <Text style={styles.title} testID="modal-title-import">{t('importModal.title')}</Text>
+            <TouchableOpacity onPress={handleClose} style={styles.closeBtn} testID="import-close-btn">
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -175,12 +175,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
             <TouchableOpacity
               style={[styles.tab, tab === 'text' && styles.tabActive]}
               onPress={() => { setTab('text'); setPreview([]); }}
+              testID="import-tab-text"
             >
               <Text style={[styles.tabText, tab === 'text' && styles.tabTextActive]}>{t('importModal.tabText')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, tab === 'csv' && styles.tabActive]}
               onPress={() => { setTab('csv'); setPreview([]); }}
+              testID="import-tab-csv"
             >
               <Text style={[styles.tabText, tab === 'csv' && styles.tabTextActive]}>{t('importModal.tabCSV')}</Text>
             </TouchableOpacity>
@@ -223,7 +225,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
 
             {preview.length > 0 && (
               <View style={styles.previewBox}>
-                <Text style={styles.previewTitle}>
+                <Text style={styles.previewTitle} testID="import-preview-title">
                   {tc('importModal.previewTitle', wordCount)}
                 </Text>
                 {preview.map((row, i) => (
@@ -244,6 +246,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
               style={[styles.importBtn, (loading || wordCount === 0) && styles.importBtnDisabled]}
               onPress={handleImport}
               disabled={loading || wordCount === 0}
+              testID="import-submit-btn"
             >
               {loading
                 ? <ActivityIndicator color={COLORS.white} />

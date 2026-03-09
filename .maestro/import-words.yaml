@@ -16,33 +16,38 @@ name: "Import - Import words via text input"
 
 # Scroll to and tap Import button
 - scrollUntilVisible:
-    element: "Import Words"
+    element:
+      id: "settings-import-title"
     direction: DOWN
 
-# Tap the Import Words button (not the section title)
+# Tap the Import Words button
 - tapOn:
-    text: "Import Words"
-    index: 1
+    id: "settings-import-btn"
 
 # Verify import modal opened
-- assertVisible: "Import words"
+- assertVisible:
+    id: "modal-title-import"
 
 # Verify tabs are present
-- assertVisible: "Text"
-- assertVisible: "CSV"
+- assertVisible:
+    id: "import-tab-text"
+- assertVisible:
+    id: "import-tab-csv"
 
 # Tap the text area and type words
 - tapOn:
     id: "import-text-input"
 - inputText: "banana\napple, Food\norange, Food"
+- hideKeyboard
 
 # Verify preview section appears
-- assertVisible: "Preview"
+- assertVisible:
+    id: "import-preview-title"
 - assertVisible: "banana"
 
 # Press import button
 - tapOn:
-    text: "Import 3"
+    id: "import-submit-btn"
 
 # Verify result alert appears
 - waitForAnimationToEnd
@@ -50,7 +55,8 @@ name: "Import - Import words via text input"
 - tapOn: "OK"
 
 # Close the import modal
-- tapOn: "✕"
+- tapOn:
+    id: "import-close-btn"
 - waitForAnimationToEnd
 
 # Navigate to Words tab to verify imports

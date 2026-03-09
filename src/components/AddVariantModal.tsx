@@ -92,9 +92,9 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
         <View style={s.container}>
           <View style={s.handle} />
           <View style={s.header}>
-            <Text style={[s.title, editVariant && s.titleLeft]}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            <Text style={[s.title, editVariant && s.titleLeft]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
             {editVariant && (
-              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete}>
+              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete} testID="variant-delete-btn">
                 <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             )}
@@ -122,6 +122,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
                         placeholder={t('addVariant.wordSearchPlaceholder')}
                         placeholderTextColor={COLORS.textLight}
                         autoCapitalize="none"
+                        testID="variant-word-search"
                       />
                       {wordSearch.length > 0 && (
                         <TouchableOpacity onPress={() => setWordSearch('')}>
@@ -179,6 +180,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
               style={[s.input, s.textArea]} value={notes} onChangeText={setNotes}
               placeholder={t('addVariant.notesPlaceholder')}
               placeholderTextColor={COLORS.textLight} multiline numberOfLines={3}
+              testID="variant-notes-input"
             />
 
             <View style={s.actions}>

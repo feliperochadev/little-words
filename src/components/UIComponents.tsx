@@ -19,10 +19,11 @@ interface ButtonProps {
   icon?: string;
   style?: any;
   textStyle?: any;
+  testID?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  title, onPress, variant = 'primary', loading, disabled, style, textStyle
+  title, onPress, variant = 'primary', loading, disabled, style, textStyle, testID
 }) => {
   const styles = getButtonStyles(variant);
   return (
@@ -31,6 +32,7 @@ export const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.white} />
@@ -106,9 +108,10 @@ interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  testID?: string;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, placeholder }) => (
+export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, placeholder, testID }) => (
   <View style={searchStyles.container}>
     <Text style={searchStyles.icon}>🔍</Text>
     <TextInput
@@ -117,6 +120,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, place
       onChangeText={onChangeText}
       placeholder={placeholder || 'Buscar palavras...'}
       placeholderTextColor={COLORS.textLight}
+      testID={testID}
     />
     {value.length > 0 && (
       <TouchableOpacity onPress={() => onChangeText('')}>

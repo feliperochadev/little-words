@@ -16,12 +16,15 @@ name: "Export - Share and save CSV export"
 
 # Scroll to export section
 - scrollUntilVisible:
-    element: "Export Data"
+    element:
+      id: "settings-export-title"
     direction: DOWN
-- assertVisible: "Export Data"
+- assertVisible:
+    id: "settings-export-title"
 
 # Tap Share button
-- tapOn: "Share"
+- tapOn:
+    id: "settings-share-btn"
 - waitForAnimationToEnd
 
 # The share sheet will appear (OS-level) - dismiss it
@@ -34,7 +37,8 @@ name: "Export - Share and save CSV export"
 # ============================
 
 # Tap Save button
-- tapOn: "Save"
+- tapOn:
+    id: "settings-save-btn"
 - waitForAnimationToEnd
 
 # A file picker / save dialog may appear (OS-level) - dismiss it

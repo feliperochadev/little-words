@@ -23,9 +23,10 @@ interface WheelProps {
   onChange: (v: number) => void;
   accent: string;
   width?: number;
+  testID?: string;
 }
 
-function WheelColumn({ data, selected, onChange, accent, width }: WheelProps) {
+function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelProps) {
   const ref = useRef<FlatList>(null);
   const idx = data.findIndex(i => i.value === selected);
 
@@ -36,7 +37,7 @@ function WheelColumn({ data, selected, onChange, accent, width }: WheelProps) {
   }, [selected, idx]);
 
   return (
-    <View style={[wh.col, width ? { width } : { flex: 1 }]}>
+    <View style={[wh.col, width ? { width } : { flex: 1 }]} testID={testID}>
       <View style={[wh.highlight, { top: ITEM_H * Math.floor(VISIBLE / 2), borderColor: accent }]} pointerEvents="none" />
       <FlatList
         ref={ref}
@@ -119,7 +120,7 @@ export const DatePickerField: React.FC<Props> = ({
     <>
       {label && <Text style={f.label}>{label}</Text>}
 
-      <TouchableOpacity style={[f.btn, { borderColor: accentColor }]} onPress={openPicker}>
+      <TouchableOpacity style={[f.btn, { borderColor: accentColor }]} onPress={openPicker} testID="date-picker-btn">
         <Text style={f.icon}>📅</Text>
         <Text style={f.val}>{toDisplay(value)}</Text>
         <Text style={[f.arrow, { color: accentColor }]}>▾</Text>
@@ -129,22 +130,22 @@ export const DatePickerField: React.FC<Props> = ({
         <View style={f.overlay}>
           <View style={f.sheet}>
             <View style={f.header}>
-              <TouchableOpacity onPress={() => setOpen(false)}>
+              <TouchableOpacity onPress={() => setOpen(false)} testID="date-picker-cancel">
                 <Text style={[f.hBtn, { color: COLORS.textSecondary }]}>{t('datePicker.cancel')}</Text>
               </TouchableOpacity>
               <Text style={f.hTitle}>{t('datePicker.title')}</Text>
-              <TouchableOpacity onPress={confirm}>
+              <TouchableOpacity onPress={confirm} testID="date-picker-confirm">
                 <Text style={[f.hBtn, { color: accentColor }]}>{t('datePicker.confirm')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={f.wheels}>
-              <WheelColumn data={dayData}   selected={clampedD} onChange={setPd} accent={accentColor} width={64} />
-              <WheelColumn data={monthData} selected={pm}       onChange={setPm} accent={accentColor} />
-              <WheelColumn data={yearData}  selected={py}       onChange={setPy} accent={accentColor} width={76} />
+              <WheelColumn data={dayData}   selected={clampedD} onChange={setPd} accent={accentColor} width={64}  testID="date-picker-day-wheel" />
+              <WheelColumn data={monthData} selected={pm}       onChange={setPm} accent={accentColor}              testID="date-picker-month-wheel" />
+              <WheelColumn data={yearData}  selected={py}       onChange={setPy} accent={accentColor} width={76}  testID="date-picker-year-wheel" />
             </View>
 
-            <Text style={f.preview}>
+            <Text style={f.preview} testID="date-picker-preview">
               {String(clampedD).padStart(2, '0')} {MONTHS[pm]} {py}
             </Text>
           </View>

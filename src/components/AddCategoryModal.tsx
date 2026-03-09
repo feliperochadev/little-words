@@ -114,11 +114,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
           {/* Header row */}
           <View style={styles.header}>
-            <Text style={[styles.title, isEditing && styles.titleLeft]}>
+            <Text style={[styles.title, isEditing && styles.titleLeft]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
               {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
             </Text>
             {isEditing && (
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} testID="category-delete-btn">
                 <Text style={styles.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             )}
@@ -142,6 +142,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               placeholderTextColor={COLORS.textLight}
               autoFocus
               autoCapitalize="words"
+              testID="category-name-input"
             />
 
             <Text style={styles.label}>{t('addCategory.emojiLabel')}</Text>
@@ -177,6 +178,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 onPress={handleSave}
                 loading={loading}
                 style={styles.actionBtn}
+                testID="category-save-btn"
               />
             </View>
           </ScrollView>

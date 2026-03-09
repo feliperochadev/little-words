@@ -77,7 +77,7 @@ export default function VariantsScreen() {
 
   const renderVariant = ({ item }: { item: Variant }) => (
     <Card style={styles.variantCard}>
-      <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8}>
+      <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
         <View style={styles.variantRow}>
           <View style={styles.variantBubble}>
             <Text style={styles.variantText}>&ldquo;{item.variant}&rdquo;</Text>
@@ -103,11 +103,11 @@ export default function VariantsScreen() {
       </View>
 
       <View style={styles.searchContainer}>
-        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('variants.searchPlaceholder')} />
+        <SearchBar value={search} onChangeText={handleSearch} placeholder={t('variants.searchPlaceholder')} testID="variants-search" />
       </View>
 
       <View style={styles.sortBar}>
-        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)}>
+        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)} testID="variants-sort-btn">
           <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
         <Text style={styles.countText}>{tc('variants.count', filteredVariants.length)}</Text>
@@ -120,6 +120,7 @@ export default function VariantsScreen() {
               key={opt.key}
               style={[styles.sortMenuItem, sort === opt.key && styles.sortMenuItemActive]}
               onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
+              testID={`sort-option-${opt.key}`}
             >
               <Text style={[styles.sortMenuText, sort === opt.key && styles.sortMenuTextActive]}>
                 {opt.label}
@@ -151,6 +152,7 @@ export default function VariantsScreen() {
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
         onSave={load}
+        onDeleted={load}
         word={selectedWord}
         editVariant={editVariant}
       />
