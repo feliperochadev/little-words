@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "Words - Search and sort functionality"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Words"
+    timeout: 15000
 
 # Navigate to Words tab
 - tapOn: "Words"

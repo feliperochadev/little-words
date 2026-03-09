@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "CRUD Word - Add, edit, and delete words"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Words"
+    timeout: 15000
 
 # Navigate to Words tab
 - tapOn: "Words"

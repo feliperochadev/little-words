@@ -71,7 +71,6 @@ describe('googleDrive', () => {
       configureGoogleSignIn();
       expect(GoogleSignin.configure).toHaveBeenCalledWith({
         scopes: ['https://www.googleapis.com/auth/drive.file'],
-        androidClientId: expect.any(String),
       });
     });
   });

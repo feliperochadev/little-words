@@ -5,6 +5,7 @@ import { I18nProvider } from '../../src/i18n/i18n';
 import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+const mockTextFn: jest.Mock = (FileSystem as any)._fileMock?.text;
 import * as database from '../../src/database/database';
 
 // Mock database functions
@@ -25,7 +26,6 @@ const mockFindWordByName = database.findWordByName as jest.MockedFunction<typeof
 const mockAddWord = database.addWord as jest.MockedFunction<typeof database.addWord>;
 const mockAddVariant = database.addVariant as jest.MockedFunction<typeof database.addVariant>;
 const mockGetDocumentAsync = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof DocumentPicker.getDocumentAsync>;
-const mockReadAsStringAsync = FileSystem.readAsStringAsync as jest.MockedFunction<typeof FileSystem.readAsStringAsync>;
 
 function renderWithProvider(ui: React.ReactElement) {
   return render(<I18nProvider>{ui}</I18nProvider>);
@@ -175,7 +175,7 @@ describe('ImportModal', () => {
       canceled: false,
       assets: [{ uri: 'file:///test.csv', name: 'test.csv', size: 100, mimeType: 'text/csv' }],
     } as any);
-    mockReadAsStringAsync.mockResolvedValueOnce('word,category\nhello,Animals\nworld,Food');
+    mockTextFn.mockResolvedValueOnce('word,category\nhello,Animals\nworld,Food');
 
     const { findByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
@@ -229,7 +229,7 @@ describe('ImportModal', () => {
       canceled: false,
       assets: [{ uri: 'file:///test.csv', name: 'test.csv', size: 100, mimeType: 'text/csv' }],
     } as any);
-    mockReadAsStringAsync.mockResolvedValueOnce('word\nhello');
+    mockTextFn.mockResolvedValueOnce('word\nhello');
 
     const { findByText, queryByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
@@ -374,7 +374,7 @@ describe('ImportModal', () => {
       canceled: false,
       assets: [{ uri: 'file:///test.csv', name: 'data.csv', size: 100, mimeType: 'text/csv' }],
     } as any);
-    mockReadAsStringAsync.mockResolvedValueOnce('word,category\nhello,Animals');
+    mockTextFn.mockResolvedValueOnce('word,category\nhello,Animals');
 
     const onImported = jest.fn();
     const onClose = jest.fn();
@@ -406,7 +406,7 @@ describe('ImportModal', () => {
       canceled: false,
       assets: [{ uri: 'file:///test.csv', name: 'data.csv', size: 100, mimeType: 'text/csv' }],
     } as any);
-    mockReadAsStringAsync.mockResolvedValueOnce(
+    mockTextFn.mockResolvedValueOnce(
       'word,category,date,variant\nhello,Animals,,helo\nhello,Animals,,hewwo'
     );
 

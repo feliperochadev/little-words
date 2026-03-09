@@ -1,3 +1,16 @@
+// Jest 30 wraps the global object in a Proxy. expo/src/winter/runtime.native.ts installs lazy
+// property getters that call require() on first access. When the Proxy fires after leaveTestCode()
+// sets isInsideTestCode=false, jest-runtime throws "outside of scope" errors.
+// Pre-warm all expo lazy globals now (during setupFiles, isInsideTestCode is undefined, not false)
+// so they resolve to cached plain values before any test scope transitions.
+void global.__ExpoImportMetaRegistry;
+void global.TextDecoder;
+void global.TextDecoderStream;
+void global.TextEncoderStream;
+void global.URL;
+void global.URLSearchParams;
+void global.structuredClone;
+
 // Mock expo-sqlite — singleton so database.ts and tests share the same instance
 const mockDbInstance = {
   execSync: jest.fn(),
@@ -11,18 +24,20 @@ jest.mock('expo-sqlite', () => ({
 }));
 global.__mockDb = mockDbInstance;
 
-// Mock expo-file-system
-jest.mock('expo-file-system', () => ({
-  cacheDirectory: '/mock/cache/',
-  documentDirectory: '/mock/documents/',
-  EncodingType: { UTF8: 'utf8' },
-  writeAsStringAsync: jest.fn(),
-  readAsStringAsync: jest.fn(),
-  StorageAccessFramework: {
-    requestDirectoryPermissionsAsync: jest.fn(() => ({ granted: false })),
-    createFileAsync: jest.fn(),
-  },
-}));
+// Mock expo-file-system (new API)
+jest.mock('expo-file-system', () => {
+  const _textMock = jest.fn(() => Promise.resolve(''));
+  const _writeMock = jest.fn();
+  const _fileMock = { text: _textMock, write: _writeMock, uri: 'file:///mock/cache/test.csv' };
+  const _dirMock = { createFile: jest.fn(() => _fileMock) };
+  return {
+    _fileMock,
+    _dirMock,
+    File: jest.fn(() => _fileMock),
+    Directory: { pickDirectoryAsync: jest.fn(() => Promise.resolve(_dirMock)) },
+    Paths: { cache: _dirMock, join: (...parts) => parts.filter(Boolean).join('/') },
+  };
+});
 
 // Mock expo-sharing
 jest.mock('expo-sharing', () => ({

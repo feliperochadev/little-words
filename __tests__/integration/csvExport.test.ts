@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { Directory } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { saveCSVToDevice, shareCSV, exportCSV } from '../../src/utils/csvExport';
 
@@ -12,7 +12,6 @@ describe('csvExport', () => {
   describe('shareCSV', () => {
     it('returns success when sharing works', async () => {
       mockDb.getAllSync.mockReturnValue([{ word: 'hello', categoria: 'test', data: '2024-01-01', variante: '' }]);
-      (FileSystem.writeAsStringAsync as jest.Mock).mockResolvedValue(undefined);
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
       (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
       const result = await shareCSV(resolver);
@@ -21,7 +20,6 @@ describe('csvExport', () => {
 
     it('returns error when sharing not available', async () => {
       mockDb.getAllSync.mockReturnValue([]);
-      (FileSystem.writeAsStringAsync as jest.Mock).mockResolvedValue(undefined);
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(false);
       const result = await shareCSV(resolver);
       expect(result.success).toBe(false);
@@ -38,21 +36,15 @@ describe('csvExport', () => {
   });
 
   describe('saveCSVToDevice', () => {
-    it('returns success when granted', async () => {
+    it('returns success when directory is picked', async () => {
       mockDb.getAllSync.mockReturnValue([]);
-      (FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync as jest.Mock)
-        .mockResolvedValue({ granted: true, directoryUri: 'content://dir' });
-      (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock)
-        .mockResolvedValue('content://file');
-      (FileSystem.writeAsStringAsync as jest.Mock).mockResolvedValue(undefined);
       const result = await saveCSVToDevice(resolver);
       expect(result.success).toBe(true);
     });
 
-    it('returns cancelled when not granted', async () => {
+    it('returns cancelled when picker is dismissed', async () => {
       mockDb.getAllSync.mockReturnValue([]);
-      (FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync as jest.Mock)
-        .mockResolvedValue({ granted: false });
+      (Directory.pickDirectoryAsync as jest.Mock).mockRejectedValueOnce(new Error('User cancelled'));
       const result = await saveCSVToDevice(resolver);
       expect(result.success).toBe(false);
       expect(result.error).toBe('cancelled');

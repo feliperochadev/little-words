@@ -16,7 +16,6 @@ export const configureGoogleSignIn = () => {
   const { GoogleSignin } = require('@react-native-google-signin/google-signin');
   GoogleSignin.configure({
     scopes: ['https://www.googleapis.com/auth/drive.file'],
-    androidClientId: '341926382456-ju9cu3b2i6tjhm5g242d7967vmh5qsph.apps.googleusercontent.com',
   });
 };
 

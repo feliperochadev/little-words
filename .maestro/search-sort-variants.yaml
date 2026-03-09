@@ -2,7 +2,9 @@ appId: com.littlewords.app
 name: "Variants - Search and sort functionality"
 ---
 
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Variants"
+    timeout: 15000
 
 # Navigate to Variants tab
 - tapOn: "Variants"
