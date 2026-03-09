@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, Modal, StyleSheet,
   Alert, TouchableOpacity, ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 import { addVariant, updateVariant, deleteVariant, getWords, Variant, Word } from '../database/database';
 import { Button } from './UIComponents';
@@ -21,6 +22,7 @@ interface Props {
 export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onDeleted, word, editVariant }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
+  const insets = useSafeAreaInsets();
   const today = new Date().toISOString().split('T')[0];
 
   const [variant, setVariant]     = useState('');
@@ -89,7 +91,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={s.overlay}>
-        <View style={s.container}>
+        <View style={[s.container, { paddingBottom: 24 + insets.bottom }]}>
           <View style={s.handle} />
           <View style={s.header}>
             <Text style={[s.title, editVariant && s.titleLeft]}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>

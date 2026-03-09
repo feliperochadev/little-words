@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
 export interface CategoryItem {
@@ -26,6 +27,7 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
 }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
+  const insets = useSafeAreaInsets();
 
   if (!category) return null;
 
@@ -59,7 +61,7 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity style={styles.sheet} activeOpacity={1}>
+        <TouchableOpacity style={[styles.sheet, { paddingBottom: 36 + insets.bottom }]} activeOpacity={1}>
           <View style={styles.handle} />
 
           {/* Category preview */}

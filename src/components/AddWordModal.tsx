@@ -8,6 +8,7 @@ import { Category, getCategories, addWord, updateWord, deleteWord, addVariant, u
 import { Button, CategoryBadge } from './UIComponents';
 import { AddCategoryModal, CategoryToEdit } from './AddCategoryModal';
 import { DatePickerField } from './DatePickerField';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
 interface AddWordModalProps {
@@ -27,6 +28,7 @@ interface VariantEntry {
 export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }) => {
   const { t } = useI18n();
   const categoryName = useCategoryName();
+  const insets = useSafeAreaInsets();
   const today = new Date().toISOString().split('T')[0];
 
   const handleDelete = () => {
@@ -150,7 +152,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     <>
     <Modal visible={visible} animationType="slide" transparent>
       <View style={s.overlay}>
-        <View style={s.container}>
+        <View style={[s.container, { paddingBottom: 24 + insets.bottom }]}>
           <View style={s.handle} />
           <View style={s.header}>
             <Text style={[s.title, editWord && s.titleLeft]}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
