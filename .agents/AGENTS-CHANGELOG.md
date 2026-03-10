@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_38
+
+**[config] Fix Android adaptive icon — wire icon_1024.png into the build**
+- `adaptive-icon.png` was a blank image, causing the Android launcher icon to appear empty
+- Changed `android.adaptiveIcon.foregroundImage` to `./assets/icon_1024.png` (the full branded icon)
+- Aligned `backgroundColor` to the brand cream `#FAF4EC` (was `#FFF0F5`)
+
 ### 2026-03-10_37
 
 **[fix] Fix flaky CI failure in `WordsScreen › renders words list`**
