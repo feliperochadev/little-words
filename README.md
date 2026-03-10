@@ -1,147 +1,66 @@
-# 👶 Palavrinhas — Diário de Palavras
+# Palavrinhas
 
-Aplicativo Android para registrar as primeiras palavras do seu bebê, acompanhar o progresso, exportar dados e sincronizar com o Google Drive.
+English | [Português (Brasil)](./README.pt-BR.md)
 
----
+Palavrinhas is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
 
-## ✨ Funcionalidades
+## Features
 
-- **📝 Registro de palavras** com categoria, data e observações
-- **🗣️ Variantes** — registre como a criança pronuncia antes de aprender o correto
-- **📊 Dashboard** com estatísticas, gráfico de progresso mensal e palavras por categoria
-- **🔍 Busca** rápida nas palavras
-- **🏷️ Categorias** personalizáveis (nome, cor, emoji)
-- **📤 Exportar CSV** — compartilhe o arquivo `palavra,categoria,data,variante`
-- **☁️ Sync com Google Drive** — backup automático ao abrir o app ou adicionar palavras
-- **📱 100% offline** — banco SQLite local (similar ao Room Database do Android nativo)
+- Record words with category, date, and notes
+- Track pronunciation variants for each word
+- Bilingual UI: `en-US` and `pt-BR`, with locale persisted in SQLite
+- Import from pasted text or CSV with preview before saving
+- Export CSV with locale-aware column headers
+- Save or share exports from the device
+- Optional Google Drive backup on supported native builds
+- Swipeable bottom-sheet modals and dashboard statistics
 
----
+## Tech Stack
 
-## 🚀 Como rodar localmente
+- Expo SDK 55, Expo Router 55
+- React 19.2.0, React Native 0.83.2
+- TypeScript 5.9
+- SQLite via `expo-sqlite`
+- Jest 30 + React Native Testing Library
+- Maestro for E2E flows
 
-### Pré-requisitos
+## Project Structure
 
-```bash
-node >= 18
-npm >= 9
+```text
+app/                 Expo Router screens and layouts
+app/(tabs)/          Home, words, variants, settings tabs
+src/components/      Shared UI and modal components
+src/database/        SQLite schema and data access
+src/i18n/            en-US / pt-BR catalogues and provider
+src/utils/           CSV, Google Drive, theme, and helper utilities
+__tests__/           unit, integration, screen, and e2e coverage
+assets/              icons, splash, and branding assets
 ```
 
-### Instalação
+## Development
 
 ```bash
-cd little-words
 npm install
-npm install expo-asset
-npm install expo
-npx expo start 
+npm start
+npm run android
 ```
 
-Isso abre o Expo Dev Server. Escaneie o QR code com o **Expo Go** (disponível na Play Store) para testar no seu celular.
+Useful commands:
 
----
+- `npm run ci` runs lint, typecheck, and Jest; treat it as the required completion gate
+- `npm test` runs unit, integration, and screen tests
+- `npm run test:coverage` runs Jest with coverage output
+- `npm run e2e:import` and `npm run e2e:export` run focused Maestro flows
+- `npm run build:apk` builds an Android APK with EAS
 
-## 📦 Gerar APK
+## Architecture Notes
 
-### EAS Build (gratuito)
+- `app/index.tsx` initializes the database, checks onboarding, and routes into the app
+- Built-in categories are stored as locale-neutral English keys and translated at render time
+- `src/utils/csvExport.ts` builds locale-aware CSV headers and category labels
+- `src/utils/importHelpers.ts` parses both plain text and CSV input
+- Google Drive backup is guarded by `isNativeBuild()` and does not work in Expo Go
 
-Esta é a forma mais fácil e gera um APK real.
+## Testing
 
-```bash
-# 1. Instale o EAS CLI
-npm install -g eas-cli
-
-# 2. Faça login na sua conta Expo (gratuita)
-eas login
-
-# 3. Configure o projeto (só na primeira vez)
-eas build:configure
-
-# 4. Gere o APK
-eas build --platform android --profile preview
-```
-
-O APK será compilado na nuvem e você receberá o link para download por e-mail e no dashboard do Expo.
-
-> 💡 **Conta Expo gratuita** tem 30 builds/mês, o que é mais do que suficiente.
----
-
-## 📁 Estrutura do Projeto
-
-```
-palavrinhas/
-├── app/
-│   ├── _layout.tsx          # Root layout, inicialização do DB e sync
-│   └── (tabs)/
-│       ├── _layout.tsx      # Configuração das abas
-│       ├── index.tsx        # Dashboard / Início
-│       ├── words.tsx        # Lista de palavras + busca
-│       ├── variants.tsx     # Lista de variantes
-│       └── settings.tsx     # Categorias, export, Google Drive
-├── src/
-│   ├── database/
-│   │   └── database.ts      # SQLite (todas as queries)
-│   ├── components/
-│   │   ├── UIComponents.tsx # Button, Card, SearchBar, etc.
-│   │   ├── AddWordModal.tsx  # Modal de adicionar/editar palavra
-│   │   └── AddVariantModal.tsx
-│   └── utils/
-│       ├── theme.ts         # Cores e constantes
-│       ├── googleDrive.ts   # Sync com Google Drive
-│       └── csvExport.ts     # Exportação CSV
-├── app.json                 # Configuração Expo
-├── eas.json                 # EAS Build profiles
-└── package.json
-```
-
----
-
-## 🗄️ Banco de Dados (SQLite offline)
-
-```sql
-categories (id, name, color, emoji, created_at)
-words      (id, word, category_id, date_added, notes, created_at)
-variants   (id, word_id, variant, date_added, notes, created_at)
-settings   (key, value)  -- para tokens e preferências
-```
-
-O banco é criado automaticamente no primeiro acesso e persiste localmente no dispositivo.
-
----
-
-## 📤 Formato do CSV Exportado
-
-```csv
-palavra,categoria,data,variante
-mamãe,Família,2024-01-15,
-cachorro,Animais,2024-01-20,
-cachorro,Animais,2024-01-22,cacaco
-```
-
-A linha com variante vazia é a palavra principal. As demais linhas com variante são pronuncias alternativas registradas.
-
----
-
-## 🛠️ Tecnologias
-
-| Tecnologia | Uso |
-|---|---|
-| **Expo / React Native** | Framework mobile multiplataforma |
-| **expo-sqlite** | Banco de dados local (equivalente ao Room) |
-| **expo-file-system** | Manipulação de arquivos para export CSV |
-| **expo-sharing** | Compartilhamento de arquivos |
-| **expo-router** | Navegação baseada em arquivos |
-| **Google Drive API v3** | Backup na nuvem via REST |
-| **EAS Build** | Build e distribuição do APK |
-
----
-
-## 🆘 Problemas Comuns
-
-**Expo Go não consegue ler QR code**
-→ Verifique se o celular e o computador estão na mesma rede Wi-Fi.
-
-**Build falha com "No account found"**
-→ Execute `eas login` antes de `eas build`.
-
-**Google Drive retorna 401**
-→ O Access Token expirou (validade ~1h). Gere um novo no OAuth Playground.
+Tests live in `__tests__/unit`, `__tests__/integration`, `__tests__/screens`, and `__tests__/e2e`. Current repo rules expect tests for every code change and a passing `npm run ci` before work is considered complete. Maestro flows should prefer `testID`-based `id:` selectors over visible text where possible.

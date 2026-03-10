@@ -4,6 +4,14 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_5
+
+**[config] README localization refresh**
+- Rewrote `README.md` in English based on the current codebase, `CLAUDE.md`, and recent changelog entries instead of the previous older Portuguese-only overview
+- Added `README.pt-BR.md` as the dedicated Brazilian Portuguese version with matching structure and current feature descriptions
+
+---
+
 ### 2026-03-10_4
 
 **[fix] Modal animation hook warnings**
