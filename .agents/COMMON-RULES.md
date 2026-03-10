@@ -14,4 +14,6 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - `[test]` — new tests or test expansions with no production code change
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
 
-4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**  
+4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**
+   - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
+   - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.  

@@ -2,7 +2,7 @@
 
 Commit all staged/unstaged changes and push to the remote branch. The commit message is built from every `.agents/AGENTS-CHANGELOG.md` entry that has not yet appeared in the git log.
 
-> **`(apsg)`** — *Agent-Programmed Source Gemini*. A marker appended to every commit subject to identify commits where the code changes were authored by an AI agent (Gemini). It is not a co-author credit — the human remains the sole git author — but serves as an internal audit trail distinguishing agent-driven work from manually written commits.
+> **`(apsc - gi)`** — *Agent-Programmed Source Gemini*. A marker appended to every commit subject to identify commits where the code changes were authored by an AI agent (Gemini). It is not a co-author credit — the human remains the sole git author — but serves as an internal audit trail distinguishing agent-driven work from manually written commits.
 
 ## Steps
 
@@ -19,7 +19,7 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
 3. **Stage changes** — run `git status` to see what is modified/untracked. Stage relevant files (prefer specific file names over `git add -A`; exclude secrets like `.env`).
 
 4. **Commit** — build the commit message from the collected unshipped entries:
-   - **Subject line**: titles from every unshipped entry (e.g. `[tag] Description`), joined with ` / `, followed by ` (apsg)`. **Strip the `**` bold markers.** Trim to 72 characters if needed.
+   - **Subject line**: titles from every unshipped entry (e.g. `[tag] Description`), joined with ` / `, followed by ` (apsc - gi)`. **Strip the `**` bold markers.** Trim to 72 characters if needed.
    - **Body**: the full content of every unshipped entry, in chronological order (most recent first), separated by blank lines. **Strip Markdown formatting** (`###` from headings, `**` from bold text).
    - Use a HEREDOC to pass the message so formatting is preserved.
 

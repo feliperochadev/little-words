@@ -24,7 +24,12 @@ Every code change must include tests. Changed code should reach 99% line coverag
 Recent history uses short, imperative subjects such as `fix test` and `fix import from text box`. Keep commits focused and descriptive. Pull requests should summarize user-visible changes, list tests run, link the related issue when applicable, and include screenshots or recordings for UI changes.
 
 ## Documentation & Shipping Rules
-After every approved change, update the relevant agent documentation when conventions or architecture change and always append an entry to `.agents/AGENTS-CHANGELOG.md` using `### YYYY-MM-DD_N` and tags such as `[fix]`, `[feature]`, or `[config]`. `/ship` is the standard push flow, but never run it automatically; only run it on explicit user request. Codex-specific `/ship` instructions live in `.codex/commands/ship.md`.
+After every approved change, update the relevant agent documentation when conventions or architecture change and always append an entry to `.agents/AGENTS-CHANGELOG.md` using `### YYYY-MM-DD_N` and tags such as `[fix]`, `[feature]`, or `[config]`.
+
+`/ship` is the standard push flow, but never run it automatically; only run it on explicit user request.
+- **Agent Markers:** Commits must include a vendor marker: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
+- **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
+- Agent-specific `/ship` instructions live in `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md`.
 
 ## Architecture Notes
 The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.

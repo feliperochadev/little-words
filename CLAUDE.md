@@ -73,9 +73,11 @@ npm run test:coverage
 
 What it does:
 1. Verifies the current branch is not `main`/`master` (asks the user to create a branch if so).
-2. Reads `CLAUDE-CHANGELOG.md` and collects every entry whose heading ID is not yet in `git log` — these are the unshipped changes.
+2. Reads `.agents/AGENTS-CHANGELOG.md` and collects every entry whose heading ID is not yet in `git log` — these are the unshipped changes.
 3. Stages modified/untracked files (no `.env` or secrets).
-4. Commits with a message built from all unshipped changelog entries (bold titles as subject, full bullet-point content as body), suffixed with `(apsc)` — *Agent-Programmed Source Commit*, an internal marker that distinguishes agent-authored commits from manual ones.
+4. Commits with a message built from all unshipped changelog entries:
+   - **Subject line**: titles joined with ` / `, followed by ` (apsc - ce)`. **Strip the `**` bold markers.**
+   - **Body**: full content of entries, chronologically (most recent first). **Strip Markdown formatting** (`###` headings, `**` bold text).
 5. Pushes with `git push -u origin <branch>`.
 
 ## Testing

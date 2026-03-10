@@ -4,6 +4,22 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_9
+
+**[config] Standardized agent markers in global documentation**
+- Updated `.agents/COMMON-RULES.md`, `CLAUDE.md`, and `AGENTS.md` to reflect the new `apsc - {gi|ce|cx}` vendor marker standard
+- Added mandate to strip Markdown formatting (`**`, `###`) from `/ship` commit messages in all core instruction files
+
+---
+
+### 2026-03-10_8
+
+**[config] Standardized agent vendor markers**
+- Updated `GEMINI.md`, `.gemini/commands/ship.md`, `.claude/commands/ship.md`, and `.codex/commands/ship.md` to use the new standardized agent marker format: `apsc - {gi|ce|cx}` (Gemini, Claude, Codex)
+- Updated `.agents/AGENTS-CHANGELOG.md` to reflect the new format in previous entries
+
+---
+
 ### 2026-03-10_7
 
 **[config] /ship reads from shared .agents/AGENTS-CHANGELOG.md**
@@ -27,7 +43,7 @@ Entries are added after every approved change. Most recent first.
 
 **[config] Strip Markdown markers from /ship commit messages**
 - Updated `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md` to explicitly require stripping `**` (bold) and `###` (heading) markers from the final commit message to reduce pollution in git history
-- Maintains `[tag]` and agent markers (e.g., `(apsg)`) for traceability
+- Maintains `[tag]` and agent markers (e.g., `(apsc - gi)`) for traceability
 
 ---
 

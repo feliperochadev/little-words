@@ -66,7 +66,7 @@
    - `/ship` is the standard way to commit and push approved changes.
    - **Never run it automatically** — only when explicitly requested by the user.
    - Follow the detailed implementation in `.gemini/commands/ship.md`.
-   - Appends `(apsg)` to the commit subject to mark it as a Gemini-authored commit.
+   - Appends `(apsc - gi)` to the commit subject to mark it as a Gemini-authored commit.
 
 ## Commands
 ```bash
