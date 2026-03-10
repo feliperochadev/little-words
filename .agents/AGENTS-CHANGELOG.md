@@ -20,6 +20,7 @@ Entries are added after every approved change. Most recent first.
 - Added `addVariant.duplicateTitle` and `addVariant.duplicateAlert` keys to `en-US.ts` and `pt-BR.ts`
 - Unit test: `findVariantByName` null and match cases in `database.test.ts`
 - Integration tests: duplicate warning card display, save blocked by Alert, edit-mode skips check, reset on reopen — in `AddVariantModal.test.tsx`
+- **E2E tests**: added "DUPLICATE VARIANT DETECTION" section to `crud-variant.yaml` and "ADD VARIANTS WITH DEDUPLICATION" section to `crud-word.yaml`.
 
 ---
 
@@ -31,6 +32,7 @@ Entries are added after every approved change. Most recent first.
 - Verified compatibility in `app/(tabs)/words.tsx` and `app/(tabs)/settings.tsx` — both remain functional with the updated `onSave(id?: number)` signature.
 - Updated `__tests__/integration/AddCategoryModal.test.tsx`: verified `onSave` is called with the category ID.
 - Updated `__tests__/integration/AddWordModal.test.tsx`: added a test case to verify that the newly created category is selected and the carousel refreshes.
+- **E2E tests**: updated `crud-word.yaml` to remove manual category selection and carousel scrolling steps, as these are now automated.
 
 ---
 

@@ -105,6 +105,17 @@ npm run agent:review "Change summary"
 
 ## Changelog
 
+### 2026-03-10_27
+
+**[feature] Unique variant per word — duplicate detection in AddVariantModal and AddWordModal**
+- Added `findVariantByName(wordId, variant)` to `database.ts`: queries `variants` with case-insensitive `LOWER(variant)` match scoped to the given `word_id`, mirroring `findWordByName`
+- `AddVariantModal`: debounced duplicate check (400ms) fires when variant text changes and an effective word is known; shows red-bordered input + warning card "⚠️ Variant already exists for `word`" with the duplicate variant text; save button dimmed and Alert blocks save — same UX pattern as word duplicate detection; check is skipped when editing an existing variant
+- `AddWordModal`: `handleSave` now silently deduplicates inline new-variant rows against existing variants and against each other using a running lowercase `Set`, so re-entered pronunciations are dropped rather than inserted twice
+- Added `addVariant.duplicateTitle` and `addVariant.duplicateAlert` keys to `en-US.ts` and `pt-BR.ts`
+- Unit test: `findVariantByName` null and match cases in `database.test.ts`
+- Integration tests: duplicate warning card display, save blocked by Alert, edit-mode skips check, reset on reopen — in `AddVariantModal.test.tsx`
+- **E2E tests**: added "DUPLICATE VARIANT DETECTION" section to `crud-variant.yaml` and "ADD VARIANTS WITH DEDUPLICATION" section to `crud-word.yaml`.
+
 ### 2026-03-10_26
 
 **[fix] AddWordModal — select new category and scroll carousel to left after addition**
@@ -113,6 +124,7 @@ npm run agent:review "Change summary"
 - Verified compatibility in `app/(tabs)/words.tsx` and `app/(tabs)/settings.tsx` — both remain functional with the updated `onSave(id?: number)` signature.
 - Updated `__tests__/integration/AddCategoryModal.test.tsx`: verified `onSave` is called with the category ID.
 - Updated `__tests__/integration/AddWordModal.test.tsx`: added a test case to verify that the newly created category is selected and the carousel refreshes.
+- **E2E tests**: updated `crud-word.yaml` to remove manual category selection and carousel scrolling steps, as these are now automated.
 
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
 
