@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_39
+
+**[config] Remove E2E job from GitHub Actions CI**
+- Removed the `e2e` job (expo prebuild + Gradle + Android emulator + Maestro) from `.github/workflows/ci.yml`
+- CI now runs only `npm run ci` (lint → typecheck → jest) on every push/PR
+- E2E tests remain in `__tests__/e2e/` and are run manually via `maestro test` before Play Store releases
+
 ### 2026-03-10_38
 
 **[config] Fix Android adaptive icon — wire icon_1024.png into the build**
