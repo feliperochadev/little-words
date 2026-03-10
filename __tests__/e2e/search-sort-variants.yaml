@@ -12,7 +12,7 @@ name: "Variants - Search and sort functionality"
 
 # Verify variants are visible
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 
 # ============================
 # SEARCH
@@ -21,10 +21,10 @@ name: "Variants - Search and sort functionality"
 # Search for a specific variant
 - tapOn:
     id: "variants-search"
-- inputText: "maa"
+- inputText: "baa"
 - hideKeyboard
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 - assertVisible: "1 variant"
 
 # Clear search

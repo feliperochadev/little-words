@@ -11,7 +11,7 @@ name: "Words - Search and sort functionality"
 - waitForAnimationToEnd
 
 # Verify words are visible
-- assertVisible: "mama"
+- assertVisible: "ball"
 - assertVisible: "water"
 
 # ============================
@@ -21,9 +21,9 @@ name: "Words - Search and sort functionality"
 # Search for a specific word
 - tapOn:
     id: "words-search"
-- inputText: "mama"
+- inputText: "ball"
 - hideKeyboard
-- assertVisible: "mama"
+- assertVisible: "ball"
 - assertVisible: "1 word"
 
 # Clear search
@@ -31,7 +31,7 @@ name: "Words - Search and sort functionality"
     id: "words-search"
 - eraseText: 4
 - hideKeyboard
-- assertVisible: "mama"
+- assertVisible: "ball"
 - assertVisible: "water"
 
 # Search with no results

@@ -3,27 +3,6 @@ name: "Settings - Delete all data and re-onboard"
 ---
 
 # ============================
-# DELETE ALL DATA (Settings)
-# ============================
-
-- tapOn: "Settings"
-- waitForAnimationToEnd
-
-- scrollUntilVisible:
-    element:
-      id: "settings-delete-all-btn"
-    direction: DOWN
-- tapOn:
-    id: "settings-delete-all-btn"
-
-- assertVisible: "⚠️ Delete all data"
-- tapOn: "🗑️ Delete all data"
-
-- assertVisible: "Confirm deletion"
-- tapOn: "Yes, delete everything"
-- waitForAnimationToEnd
-
-# ============================
 # RE-ONBOARD (Boy)
 # ============================
 

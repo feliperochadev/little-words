@@ -1,8 +1,8 @@
-# Palavrinhas
+# Little Words
 
 English | [Português (Brasil)](./README.pt-BR.md)
 
-Palavrinhas is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
+Little Words is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
 
 ## Features
 

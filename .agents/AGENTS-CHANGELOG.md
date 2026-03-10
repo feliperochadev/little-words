@@ -4,6 +4,19 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_32
+
+**[test] E2E flows — align data and onboarding sequence**
+- Updated word/variant fixtures to use `ball`/`baa-baa` across CRUD/search flows
+- Split delete-all-data and re-onboard steps into separate flows and reordered them in the full E2E sequence
+- Adjusted CRUD word variant steps and added an explicit delete-mama section
+
+**[fix] AddVariantModal duplicate warning testID**
+- Added `testID="modal-duplicate-variant"` on the duplicate warning card for reliable E2E assertions
+
+**[config] README brand naming**
+- Updated the English README title and intro copy to use "Little Words"
+
 ### 2026-03-10_30
 
 **[config] Pre-push protection for root branches**

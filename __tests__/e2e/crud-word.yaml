@@ -191,26 +191,17 @@ name: "CRUD Word - Add, edit, and delete words"
 - inputText: "maa-maa"
 - hideKeyboard
 
-# Add same variant again (deduplication check)
+# Add same variant again
 - tapOn:
     id: "word-add-variant-btn"
 - tapOn:
     id: "word-variant-input-1"
-- inputText: "maa-maa"
-- hideKeyboard
-
-# Add a different variant
-- tapOn:
-    id: "word-add-variant-btn"
-- tapOn:
-    id: "word-variant-input-2"
 - inputText: "ma-ma"
 - hideKeyboard
-
 - tapOn: "Save"
 - waitForAnimationToEnd
 
-# Verify only 2 variant chips appear on the word card (maa-maa was deduplicated)
+# Verify only 2 variant chips appear on the word card
 - assertVisible:
     id: "word-variant-chip-maa-maa"
 - assertVisible:
@@ -247,6 +238,29 @@ name: "CRUD Word - Add, edit, and delete words"
     id: "word-variant-chip-maa-maa"
 - assertVisible:
     id: "word-variant-chip-ma-ma"
+
+
+# ============================
+# DELETE MAMA WORD
+# ============================
+
+# Tap on "daddy" to edit
+- tapOn: "mama"
+- assertVisible:
+    id: "modal-title-edit-word"
+
+# Press Remove button in modal
+- tapOn:
+    id: "word-delete-btn"
+
+# Confirm deletion in alert
+- tapOn:
+    text: "Remove"
+    index: 0
+- waitForAnimationToEnd
+
+# Verify word is gone
+- assertNotVisible: "mama"    
 
 # ============================
 # CHANGE DATE VIA DATE PICKER

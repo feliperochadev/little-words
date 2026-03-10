@@ -223,7 +223,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
             />
 
             {duplicate && effectiveWord && (
-              <View style={s.dupCard}>
+              <View style={s.dupCard} testID="modal-duplicate-variant">
                 <Text style={s.dupTitle}>{t('addVariant.duplicateTitle', { word: effectiveWord.word })}</Text>
                 <Text style={s.dupText}>{duplicate.variant}</Text>
               </View>

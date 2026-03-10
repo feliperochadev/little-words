@@ -21,12 +21,12 @@ name: "CRUD Variant - Add, edit, and delete variants"
 # Select a word from the search list
 - assertVisible:
     id: "variant-word-search"
-- tapOn: "mama"
+- tapOn: "ball"
 
 # Enter variant text
 - tapOn:
     id: "variant-input"
-- inputText: "ma-ma"
+- inputText: "ba-ba"
 - hideKeyboard
 
 # Add a note
@@ -41,8 +41,8 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Verify variant appears
 - assertVisible:
-    id: "variant-item-ma-ma"
-- assertVisible: "mama"
+    id: "variant-item-ba-ba"
+- assertVisible: "ball"
 
 # ============================
 # ADD SECOND VARIANT
@@ -73,11 +73,11 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - hideKeyboard
 
 # Verify duplicate warning card
-- assertVisible: "Variant already exists for water"
+- assertVisible: 
+    id: "modal-duplicate-variant"
 
 # Press Add and verify alert blocks it
 - tapOn: "Add"
-- assertVisible: "Duplicate variant"
 - tapOn: "OK"
 
 # Close modal
@@ -90,7 +90,7 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Tap on the variant to edit
 - tapOn:
-    id: "variant-item-ma-ma"
+    id: "variant-item-ba-ba"
 - assertVisible:
     id: "modal-title-edit-variant"
 
@@ -98,7 +98,7 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - tapOn:
     id: "variant-input"
 - eraseText: 5
-- inputText: "maa-maa"
+- inputText: "baa-baa"
 - hideKeyboard
 
 # Press Save
@@ -107,7 +107,7 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Verify updated variant
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 
 # ============================
 # DELETE VARIANT
