@@ -4,11 +4,10 @@ name: "Import - Import words via text and CSV"
 
 - extendedWaitUntil:
     visible: "Settings"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Settings tab
 - tapOn: "Settings"
-- waitForAnimationToEnd
 
 # ============================
 # IMPORT WORDS VIA TEXT
@@ -39,7 +38,6 @@ name: "Import - Import words via text and CSV"
     id: "import-text-input"
 - inputText: "banana"
 - hideKeyboard
-- waitForAnimationToEnd
 
 # Verify preview section appears
 - scrollUntilVisible:
@@ -54,14 +52,11 @@ name: "Import - Import words via text and CSV"
     id: "import-submit-btn"
 
 # Verify result alert appears (modal auto-closes before alert is shown)
-- waitForAnimationToEnd
 - assertVisible: "Import complete"
 - tapOn: "OK"
-- waitForAnimationToEnd
 
 # Navigate to Words tab to verify import
 - tapOn: "Words"
-- waitForAnimationToEnd
 - assertVisible:
     id: "word-item-banana"
 
@@ -80,7 +75,6 @@ name: "Import - Import words via text and CSV"
 
 # Navigate back to Settings
 - tapOn: "Settings"
-- waitForAnimationToEnd
 
 # Scroll to and tap Import button
 - scrollUntilVisible:
@@ -99,20 +93,16 @@ name: "Import - Import words via text and CSV"
 # Open file picker, force-navigate to Downloads (picker may open on Drive or recent files)
 - tapOn:
     id: "import-csv-pick-btn"
-- waitForAnimationToEnd
 - runFlow:
     when:
       visible: "Show roots"
     commands:
       - tapOn: "Show roots"
-      - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "Downloads"
-    timeout: 10000
+    timeout: 3500
 - tapOn: "Downloads"
-- waitForAnimationToEnd
 - tapOn: "sample-import.csv"
-- waitForAnimationToEnd
 
 # Verify preview shows parsed rows
 - scrollUntilVisible:
@@ -139,14 +129,11 @@ name: "Import - Import words via text and CSV"
     id: "import-submit-btn"
 
 # Verify result alert
-- waitForAnimationToEnd
 - assertVisible: "Import complete"
 - tapOn: "OK"
-- waitForAnimationToEnd
 
 # Verify all words appear in Words tab
 - tapOn: "Words"
-- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       id: "word-item-cherry"
@@ -180,7 +167,6 @@ name: "Import - Import words via text and CSV"
 
 # Verify variants appear in Variants tab
 - tapOn: "Variants"
-- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       id: "variant-item-ki-wi"

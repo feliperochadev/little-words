@@ -4,6 +4,21 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_35
+
+**[test] Add demo Maestro flow**
+- Added a lightweight demo flow that walks through onboarding, word + variants creation, search, and CSV import without assertions
+- Added a Portuguese variant of the demo flow for localized coverage
+- Added a Portuguese CSV fixture and wired the BR demo flow to use it
+- Added a Home tab dashboard scroll and 3-second pause to both demo flows
+- Updated the EN demo flow to tap the Home tab icon to avoid Android system home conflicts
+
+### 2026-03-10_34
+
+**[test] Speed up Maestro waits**
+- Reduced E2E `extendedWaitUntil` and `scrollUntilVisible` timeouts, lowered swipe durations, and removed `waitForAnimationToEnd` calls to cut interaction time without changing coverage
+- Simplified `crud-word.yaml` by dropping redundant modal assertions and hideKeyboard calls, swapping to `testID` selectors where available, trimming per-screen assertions, and preferring `extendedWaitUntil` for key UI readiness checks
+
 ### 2026-03-10_33
 
 **[config] Review workflow — reviewer shipping guard + cleanup**

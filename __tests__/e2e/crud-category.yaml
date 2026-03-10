@@ -4,11 +4,10 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 - extendedWaitUntil:
     visible: "Settings"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Settings tab
 - tapOn: "Settings"
-- waitForAnimationToEnd
 - assertVisible:
     id: "settings-categories-title"
 
@@ -34,12 +33,11 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 # Press Create
 - tapOn: "Create Category"
-- waitForAnimationToEnd
 
 # Verify category appears in settings list
 - swipe:
     direction: DOWN
-    duration: 2000
+    duration: 700
 - scrollUntilVisible:
     element: "Fruits"
     direction: DOWN
@@ -63,12 +61,11 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 # Press Save
 - tapOn: "Save"
-- waitForAnimationToEnd
 
 # Verify updated name in settings
 - swipe:
     direction: DOWN
-    duration: 2000
+    duration: 700
 - scrollUntilVisible:
     element: "Veggies"
     direction: DOWN
@@ -89,7 +86,6 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 # Confirm deletion in alert
 - tapOn: "Remove"
-- waitForAnimationToEnd
 
 # Verify category is gone
 - assertNotVisible: "Veggies"

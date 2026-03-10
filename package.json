@@ -26,6 +26,8 @@
     "e2e:export": "maestro test __tests__/e2e/export-words.yaml",
     "e2e:delete-all-data": "maestro test __tests__/e2e/delete-all-data.yaml",
     "e2e:re-onboard": "maestro test __tests__/e2e/re-onboard.yaml",
+    "e2e:demo": "maestro test __tests__/e2e/demo-flow.yaml",
+    "e2e:demo-br": "maestro test __tests__/e2e/demo-br-flow.yaml",
     "prepare": "husky"
   },
   "dependencies": {

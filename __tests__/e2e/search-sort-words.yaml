@@ -4,11 +4,10 @@ name: "Words - Search and sort functionality"
 
 - extendedWaitUntil:
     visible: "Words"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Words tab
 - tapOn: "Words"
-- waitForAnimationToEnd
 
 # Verify words are visible
 - assertVisible: "ball"
@@ -56,7 +55,6 @@ name: "Words - Search and sort functionality"
     id: "sort-option-alpha_asc"
 - tapOn:
     id: "sort-option-alpha_asc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Z to A
@@ -66,7 +64,6 @@ name: "Words - Search and sort functionality"
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-alpha_desc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Oldest first
@@ -76,7 +73,6 @@ name: "Words - Search and sort functionality"
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-date_asc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Most recent (back to default)
@@ -86,4 +82,3 @@ name: "Words - Search and sort functionality"
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-date_desc"
-- waitForAnimationToEnd

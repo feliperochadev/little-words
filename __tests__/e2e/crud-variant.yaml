@@ -4,11 +4,10 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 - extendedWaitUntil:
     visible: "Variants"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Variants tab
 - tapOn: "Variants"
-- waitForAnimationToEnd
 
 # ============================
 # ADD VARIANT
@@ -37,7 +36,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Press Add
 - tapOn: "Add"
-- waitForAnimationToEnd
 
 # Verify variant appears
 - assertVisible:
@@ -55,7 +53,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - inputText: "wa-wa"
 - hideKeyboard
 - tapOn: "Add"
-- waitForAnimationToEnd
 
 - assertVisible:
     id: "variant-item-wa-wa"
@@ -82,7 +79,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Close modal
 - tapOn: "Cancel"
-- waitForAnimationToEnd
 
 # ============================
 # EDIT VARIANT
@@ -103,7 +99,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Press Save
 - tapOn: "Save"
-- waitForAnimationToEnd
 
 # Verify updated variant
 - assertVisible:
@@ -127,7 +122,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - tapOn:
     text: "Remove"
     index: 0
-- waitForAnimationToEnd
 
 # Verify variant is gone
 - assertNotVisible:

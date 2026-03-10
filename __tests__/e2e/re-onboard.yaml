@@ -8,7 +8,7 @@ name: "Settings - Delete all data and re-onboard"
 
 - extendedWaitUntil:
     visible: "English"
-    timeout: 15000
+    timeout: 5000
 
 - tapOn:
     id: "onboarding-name-input"
@@ -28,4 +28,4 @@ name: "Settings - Delete all data and re-onboard"
 
 - extendedWaitUntil:
     visible: "Home"
-    timeout: 15000
+    timeout: 5000
