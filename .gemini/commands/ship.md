@@ -19,8 +19,8 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
 3. **Stage changes** — run `git status` to see what is modified/untracked. Stage relevant files (prefer specific file names over `git add -A`; exclude secrets like `.env`).
 
 4. **Commit** — build the commit message from the collected unshipped entries:
-   - **Subject line**: all the bold titles from every unshipped entry (`**[tag] Description**` lines), joined with ` / `, followed by ` (apsg)`. Trim to 72 characters if needed.
-   - **Body**: the full content of every unshipped entry, in chronological order (most recent first), separated by blank lines. Include the `### YYYY-MM-DD_N` heading for each entry so the history is traceable.
+   - **Subject line**: titles from every unshipped entry (e.g. `[tag] Description`), joined with ` / `, followed by ` (apsg)`. **Strip the `**` bold markers.** Trim to 72 characters if needed.
+   - **Body**: the full content of every unshipped entry, in chronological order (most recent first), separated by blank lines. **Strip Markdown formatting** (`###` from headings, `**` from bold text).
    - Use a HEREDOC to pass the message so formatting is preserved.
 
 5. **Push** — run `git push -u origin <branch>` (the `-u` flag sets the upstream if not already set).

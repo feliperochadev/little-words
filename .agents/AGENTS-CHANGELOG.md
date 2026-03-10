@@ -4,6 +4,14 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_6
+
+**[config] Strip Markdown markers from /ship commit messages**
+- Updated `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md` to explicitly require stripping `**` (bold) and `###` (heading) markers from the final commit message to reduce pollution in git history
+- Maintains `[tag]` and agent markers (e.g., `(apsg)`) for traceability
+
+---
+
 ### 2026-03-10_5
 
 **[config] README localization refresh**
