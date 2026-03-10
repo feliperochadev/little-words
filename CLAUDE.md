@@ -90,7 +90,7 @@ npm run agent:availability   # show which agents are online/offline
 
 ### Shipping code (`/ship`)
 
-`/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**
+`/ship` is the standard way to commit and push approved changes. Run it automatically when `features.automatic_ship` is `true` in `.agents/agent-config.json` and `/review` confirms approval; wait for explicit user request only when it is `false`.
 
 ```
 /ship

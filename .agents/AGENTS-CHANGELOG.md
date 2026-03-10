@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_19
+
+**[fix] Correct stale auto-ship description in CLAUDE.md**
+- Fixed the "Shipping code" section: replaced "Never run it automatically — only when explicitly requested by the user" with the accurate rule referencing `features.automatic_ship` from `agent-config.json`
+
+---
+
 ### 2026-03-10_18
 
 **[fix] Commit package-lock.json so GitHub Actions cache works**
