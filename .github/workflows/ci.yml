@@ -1,0 +1,184 @@
+# ─────────────────────────────────────────────────────────────
+# Palavrinhas CI/CD — GitHub Actions
+#
+# Jobs:
+#   unit-tests  → runs on every push to any branch
+#                 lint + typecheck + jest
+#
+#   e2e         → runs only on Pull Requests (after unit-tests)
+#                 expo prebuild → gradle debug APK
+#                 → Android emulator (API 33) → Maestro full suite
+#
+# Required secrets:
+#   EXPO_TOKEN          — Expo account token (eas whoami)
+#                         https://expo.dev/accounts/[user]/settings/access-tokens
+#
+# Optional secrets (only needed if Google Drive backup is tested):
+#   GOOGLE_SERVICES_JSON — base64-encoded google-services.json
+#                          encode: base64 -i google-services.json | tr -d '\n'
+# ─────────────────────────────────────────────────────────────
+
+name: CI / E2E
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Cancel in-flight runs for the same branch when a new commit arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job 1 — Lint · Typecheck · Jest
+  #   Runs on every push and every PR.
+  # ──────────────────────────────────────────────────────────
+  unit-tests:
+    name: Lint · Typecheck · Jest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: CI suite (lint → typecheck → jest)
+        run: npm run ci
+
+  # ──────────────────────────────────────────────────────────
+  # Job 2 — E2E Tests (Maestro on Android)
+  #   Runs only on Pull Requests, after unit-tests passes.
+  #
+  #   Build strategy: local debug APK via expo prebuild + Gradle.
+  #   This avoids consuming EAS cloud build credits on every PR
+  #   while still using the Expo toolchain (expo-github-action).
+  #
+  #   To switch to EAS cloud builds instead, replace the
+  #   "Expo prebuild" + "Build debug APK" steps with:
+  #     - run: eas build --platform android --profile ci --non-interactive
+  #       env:
+  #         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  #   and add a "ci" profile to eas.json.
+  # ──────────────────────────────────────────────────────────
+  e2e:
+    name: E2E — Maestro (Android)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: unit-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Sets up the EAS CLI and authenticates with Expo.
+      # Required for expo prebuild to resolve managed dependencies
+      # and for future EAS Build / EAS Update integration.
+      - name: Set up Expo / EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # If the project uses @react-native-google-signin, a google-services.json
+      # must exist before prebuild. Decode from secret when available;
+      # fall back to a CI stub (Google Drive is guarded by isNativeBuild()).
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > google-services.json
+          else
+            cat > google-services.json <<'JSON'
+          {
+            "project_info": { "project_number": "000000000000", "project_id": "ci-stub", "storage_bucket": "ci-stub.appspot.com" },
+            "client": [{
+              "client_info": { "mobilesdk_app_id": "1:000000000000:android:0000000000000000", "android_client_info": { "package_name": "com.littlewords.app" } },
+              "oauth_client": [],
+              "api_key": [{ "current_key": "ci-stub-key" }],
+              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+            }],
+            "configuration_version": "1"
+          }
+          JSON
+          fi
+
+      - name: Expo prebuild (Android)
+        run: npx expo prebuild --platform android --clean
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      # Cache the Gradle wrapper and dependency jars to speed up builds.
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      # Install Maestro CLI. The binary is added to PATH for the emulator step.
+      - name: Install Maestro CLI
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      # Spin up an Android emulator, install the APK, push test fixtures,
+      # then run the full Maestro E2E suite.
+      - name: Run E2E tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_6
+          # Disable window animations for more reliable Maestro assertions
+          disable-animations: true
+          # Wait for the emulator to fully boot before running the script
+          emulator-boot-timeout: 300
+          script: |
+            # Install the debug build
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+
+            # Push CSV fixture required by the import-words E2E flow
+            adb push __tests__/e2e/fixtures/sample-import.csv \
+              /sdcard/Download/sample-import.csv
+
+            # Run the full E2E suite (orchestrates all sub-flows)
+            maestro test __tests__/e2e/full-e2e.yaml
+
+      # Upload Maestro screenshots and logs on failure for debugging
+      - name: Upload Maestro test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-test-results-${{ github.run_id }}
+          path: ~/.maestro/tests/
+          retention-days: 7

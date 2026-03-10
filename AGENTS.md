@@ -28,7 +28,9 @@ After every approved change, update the relevant agent documentation when conven
 
 **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture, update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
-`/ship` is the standard push flow, but never run it automatically; only run it on explicit user request.
+`/ship` is the standard push flow. Before running it, read `features.automatic_ship` from `.agents/agent-config.json`:
+- `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change `status: approved` with required approvals met).
+- `false` → **never run `/ship` automatically**; wait for explicit user request.
 - **Agent Markers:** Commits must include a vendor marker: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
 - **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
 - Agent-specific `/ship` instructions live in `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md`.

@@ -38,10 +38,11 @@
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, or architecture, update **all** vendor readmes listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
 4. **Shipping code (`/ship`):**
-   - `/ship` is the standard way to commit and push approved changes.
-   - **Never run it automatically** — only when explicitly requested by the user.
-   - Follow the detailed steps in `.gemini/commands/ship.md`.
+   - `/ship` is the standard way to commit and push approved changes. Follow `.gemini/commands/ship.md` for detailed steps.
    - Appends `(apsc - gi)` to the commit subject to mark it as a Gemini-authored commit.
+   - **Auto-ship:** Before every `/ship` decision, read `features.automatic_ship` from `.agents/agent-config.json`:
+     - `true` → run `/ship` automatically once `/review` confirms approval.
+     - `false` → **never run `/ship` automatically**; wait for explicit user request.
 
 5. **Multi-Agent Review Protocol (`/review`):**
    - Run `/review` after `npm run ci` passes and before `/ship`.

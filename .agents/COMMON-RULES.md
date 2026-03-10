@@ -15,7 +15,10 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just one vendor's quirks), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`. Currently: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). Every readme must stay in sync on shared rules.
 
-4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**
+4. `/ship` is the standard way to commit and push approved changes. Vendor-specific steps live in `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`.
+   - **Auto-ship:** Read `features.automatic_ship` from `.agents/agent-config.json` before every `/ship` decision:
+     - `true` → run `/ship` automatically after `/review` confirms approval (simple change passes checklist, or complex change has `status: approved` with required approvals met).
+     - `false` → **never run `/ship` automatically**; wait for explicit user request.
    - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
    - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.
 

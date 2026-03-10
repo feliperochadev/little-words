@@ -39,7 +39,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just Claude-specific behaviour), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
-4. `/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**
+4. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
+   - `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change has `status: approved` with required approvals).
+   - `false` → **never run `/ship` automatically**; wait for explicit user request.
 
 5. **Multi-Agent Review Protocol.** Before `/ship`, evaluate the latest changelog entry for complexity and run the appropriate review:
    - **Simple change** (≤ 10 change lines AND < 3 categories): internal review only — run `npm run agent:review` and verify checklist passes.

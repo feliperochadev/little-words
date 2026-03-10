@@ -26,13 +26,9 @@ Perform this checklist by reading the relevant files. Report each item as `[ok]`
 [ ] Docs           — CLAUDE.md updated if architecture/conventions changed
 ```
 
-If all items are `[ok]`, output:
-
-```
-Internal review passed. Safe to /ship.
-```
-
-If any item is `[fail]`, list the failures and fix them before /ship.
+If all items are `[ok]`, output `Internal review passed.` then check `.agents/agent-config.json`:
+- `features.automatic_ship: true` → run `/ship` automatically now.
+- `features.automatic_ship: false` → output `Safe to /ship.` and wait for user.
 
 ---
 

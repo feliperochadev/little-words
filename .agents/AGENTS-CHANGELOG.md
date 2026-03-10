@@ -4,6 +4,41 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_17
+
+**[config] Automatic ship rule enforced across all vendor readmes**
+- Updated `CLAUDE.md` Rule 4: agents must read `features.automatic_ship` from `.agents/agent-config.json`; `true` → run `/ship` automatically after `/review` approval; `false` → wait for user
+- Updated `AGENTS.md` Shipping Rules: documented `automatic_ship` behavior identically
+- Updated `GEMINI.md` Rule 4: same auto-ship logic with reference to `agent-config.json`
+- Updated `.agents/COMMON-RULES.md` Rule 4: auto-ship added as vendor-agnostic baseline
+- Updated `.claude/commands/review.md` Step 2: after internal checklist passes, check `automatic_ship` and either run `/ship` automatically or output `Safe to /ship.`
+
+---
+
+### 2026-03-10_16
+
+**[feature] GitHub Actions CI/CD pipeline**
+- Added `.github/workflows/ci.yml` with two jobs:
+  - `unit-tests`: runs `npm run ci` (lint → typecheck → jest) on every push to any branch and on every PR
+  - `e2e`: runs only on PRs after `unit-tests` passes; builds local debug APK via `expo prebuild` + Gradle, runs full Maestro suite on Android emulator (API 33, x86_64, Pixel 6)
+- `expo/expo-github-action@v8` sets up EAS CLI and Expo toolchain (ready for EAS Build / EAS Update)
+- Graceful `google-services.json` handling: decodes from secret when present, falls back to CI stub
+- Gradle cache via `gradle/actions/setup-gradle@v3`
+- Maestro failure artifacts uploaded with 7-day retention
+- `concurrency` group cancels stale in-flight runs on new pushes
+
+---
+
+### 2026-03-10_15
+
+**[config] Git pre-push hook for mandatory CI**
+- Installed `husky` to manage git hooks.
+- Added `"prepare": "husky"` script to `package.json` for automatic setup.
+- Created `.husky/pre-push` to run `npm run ci` before every push, ensuring all linting, typechecking, and tests pass.
+- Removed default `.husky/pre-commit` to focus on pre-push validation.
+
+---
+
 ### 2026-03-10_14
 
 **[feature] Agent readme_file registry in agent-config.json**
