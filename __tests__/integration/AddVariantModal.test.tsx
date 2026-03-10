@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import type { Word, Variant } from '../../src/database/database';
@@ -154,5 +154,97 @@ describe('AddVariantModal', () => {
     const { findByText } = renderModal({ onClose });
     fireEvent.press(await findByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('clears word search when clear button is pressed', async () => {
+    const { findByPlaceholderText, findByText, queryByText } = renderModal({ word: null });
+    const searchInput = await findByPlaceholderText('Search word...');
+    fireEvent.changeText(searchInput, 'mama');
+    // The ✕ button should appear when there is text
+    expect(await findByText('✕')).toBeTruthy();
+    // Press clear
+    fireEvent.press(await findByText('✕'));
+    // Input should be cleared (✕ button gone)
+    await waitFor(() => {
+      expect(queryByText('✕')).toBeNull();
+    });
+  });
+
+  it('can change chosen word (press change chip to deselect)', async () => {
+    const { findByText, findByPlaceholderText } = renderModal({ word: null });
+    await findByPlaceholderText('Search word...');
+    // Select the word
+    fireEvent.press(await findByText('mamãe'));
+    // Word is now selected — should show change option
+    expect(await findByText(/change/i)).toBeTruthy();
+    // Press change to deselect
+    fireEvent.press(await findByText('mamãe'));
+    // Search input should reappear
+    expect(await findByPlaceholderText('Search word...')).toBeTruthy();
+  });
+});
+
+describe('AddVariantModal — panResponder gesture handlers', () => {
+  let capturedConfig: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedConfig = null;
+    (database.getWords as jest.Mock).mockResolvedValue([mockWord]);
+    jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
+      capturedConfig = config;
+      return { panHandlers: {} };
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function renderWithPan(props: Record<string, any> = {}) {
+    const { AddVariantModal } = require('../../src/components/AddVariantModal');
+    const result = render(
+      <I18nProvider>
+        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} {...props} />
+      </I18nProvider>
+    );
+    await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
+    return result;
+  }
+
+  it('onStartShouldSetPanResponder always returns true', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onStartShouldSetPanResponder()).toBe(true);
+  });
+
+  it('onMoveShouldSetPanResponder returns true only when dy > 0', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: 10 })).toBe(true);
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: -5 })).toBe(false);
+  });
+
+  it('onPanResponderMove updates position for dy > 0, no-op for dy <= 0', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: 60 }); });
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: -5 }); });
+  });
+
+  it('onPanResponderRelease dismisses when dy > 100', async () => {
+    const onClose = jest.fn();
+    await renderWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 150, vy: 0.5 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease dismisses when vy > 0.8', async () => {
+    const onClose = jest.fn();
+    await renderWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 50, vy: 1.5 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease springs back when gesture is too small', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });

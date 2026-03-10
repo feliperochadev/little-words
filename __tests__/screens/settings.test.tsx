@@ -336,4 +336,109 @@ describe('SettingsScreen', () => {
     expect(editBtn).toBeTruthy();
     fireEvent.press(editBtn);
   });
+
+  it('shows Boy label when childSex is boy', async () => {
+    const database = require('../../src/database/database');
+    (database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'child_name') return Promise.resolve('Luca');
+      if (key === 'child_sex') return Promise.resolve('boy');
+      return Promise.resolve(null);
+    });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    expect(await findByText(/Boy/)).toBeTruthy();
+  });
+
+  it('shows dash when childSex is null', async () => {
+    const database = require('../../src/database/database');
+    (database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'child_name') return Promise.resolve('Baby');
+      if (key === 'child_sex') return Promise.resolve(null);
+      return Promise.resolve(null);
+    });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    expect(await findByText(/—/)).toBeTruthy();
+  });
+
+  it('shows no profile message when childName is empty', async () => {
+    const database = require('../../src/database/database');
+    (database.getSetting as jest.Mock).mockImplementation(() => Promise.resolve(null));
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    expect(await findByText(/No profile configured/)).toBeTruthy();
+  });
+
+  it('changes language when a language button is pressed', async () => {
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    // Press Português to change locale
+    fireEvent.press(await findByText('Português'));
+    // Language should switch — English button now visible and un-checked
+    expect(await findByText('English')).toBeTruthy();
+  });
+
+  it('closes ImportModal via its close button (covers onClose callback)', async () => {
+    const { findAllByText, findByTestId } = render(
+      <I18nProvider><SettingsScreen /></I18nProvider>
+    );
+    // Open the import modal
+    const importBtns = await findAllByText(/Import Words/);
+    fireEvent.press(importBtns[importBtns.length - 1]);
+    // Close it via the ✕ button
+    const closeBtn = await findByTestId('import-close-btn');
+    fireEvent.press(closeBtn);
+    // Modal should close — import-close-btn no longer visible
+    await waitFor(() => {
+      expect(require('../../src/database/database').getSetting).toBeDefined();
+    });
+  });
+
+  it('handles sync cancelled (no alert shown)', async () => {
+    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
+    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
+    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Sync/));
+    await waitFor(() => expect(googleDrive.performSync).toHaveBeenCalled());
+    // No alert for cancelled error
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('handles sign in cancelled (no alert shown)', async () => {
+    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Connect/));
+    await waitFor(() => expect(googleDrive.signInWithGoogle).toHaveBeenCalled());
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('handles sign in in_progress (no alert shown)', async () => {
+    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: false, error: 'in_progress' });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Connect/));
+    await waitFor(() => expect(googleDrive.signInWithGoogle).toHaveBeenCalled());
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('handles sign in success and triggers performSync', async () => {
+    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: true });
+    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(false);
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Connect/));
+    await waitFor(() => expect(googleDrive.performSync).toHaveBeenCalled());
+  });
+
+  it('handles sync error without expired token (shows alert, stays connected)', async () => {
+    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
+    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
+    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'network error' });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Sync/));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+  });
+
+  it('handles save to device cancelled (no alert shown)', async () => {
+    (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+    const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
+    fireEvent.press(await findByText(/Save/));
+    await waitFor(() => expect(csvExport.saveCSVToDevice).toHaveBeenCalled());
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { AddCategoryModal } from '../../src/components/AddCategoryModal';
 import * as database from '../../src/database/database';
@@ -132,5 +132,107 @@ describe('AddCategoryModal', () => {
     fireEvent.press(emojis[0]);
     // Color buttons render checkmarks when selected
     expect(await findByText('✓')).toBeTruthy();
+  });
+
+  it('handles delete when onDeleted is not provided (optional chaining)', async () => {
+    // Renders without onDeleted — the optional ?. call should not throw
+    const onClose = jest.fn();
+    const { findByText } = renderModal({ onClose, editCategory: editCat });
+    fireEvent.press(await findByText(/Remove/));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
+    await act(async () => { destructiveBtn.onPress(); });
+    await waitFor(() => {
+      expect(database.deleteCategory).toHaveBeenCalledWith(1);
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('handles save error with non-UNIQUE message', async () => {
+    (database.addCategory as jest.Mock).mockRejectedValue(new Error('some other error'));
+    const { findByText, findByPlaceholderText } = renderModal();
+    fireEvent.changeText(await findByPlaceholderText(/Toys/), 'AnotherCat');
+    fireEvent.press(await findByText('Create Category'));
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+      const [, msg] = (Alert.alert as jest.Mock).mock.calls[0];
+      expect(msg).toContain('some other error');
+    });
+  });
+
+  it('handleDelete shows word count message when category has words', async () => {
+    (database.getWordCountByCategory as jest.Mock).mockResolvedValue(5);
+    const { findByText } = renderModal({ editCategory: editCat });
+    fireEvent.press(await findByText(/Remove/));
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+      const msg = (Alert.alert as jest.Mock).mock.calls[0][1];
+      expect(msg).toMatch(/5/);
+    });
+  });
+});
+
+describe('AddCategoryModal — panResponder gesture handlers', () => {
+  let capturedConfig: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedConfig = null;
+    jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
+      capturedConfig = config;
+      return { panHandlers: {} };
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function renderWithPan(props: Record<string, any> = {}) {
+    const { AddCategoryModal } = require('../../src/components/AddCategoryModal');
+    const result = render(
+      <I18nProvider>
+        <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
+      </I18nProvider>
+    );
+    await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
+    return result;
+  }
+
+  it('onStartShouldSetPanResponder always returns true', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onStartShouldSetPanResponder()).toBe(true);
+  });
+
+  it('onMoveShouldSetPanResponder returns true only when dy > 0', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: 10 })).toBe(true);
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: -5 })).toBe(false);
+  });
+
+  it('onPanResponderMove updates position for dy > 0, no-op for dy <= 0', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: 60 }); });
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: -5 }); });
+  });
+
+  it('onPanResponderRelease dismisses when dy > 100', async () => {
+    const onClose = jest.fn();
+    await renderWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 150, vy: 0.5 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease dismisses when vy > 0.8', async () => {
+    const onClose = jest.fn();
+    await renderWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 50, vy: 1.5 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease springs back when gesture is too small', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });

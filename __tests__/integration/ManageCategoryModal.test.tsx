@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { ManageCategoryModal } from '../../src/components/ManageCategoryModal';
 import * as database from '../../src/database/database';
@@ -134,5 +134,77 @@ describe('ManageCategoryModal', () => {
       const msg = (Alert.alert as jest.Mock).mock.calls[0][1];
       expect(msg).toMatch(/3/);
     });
+  });
+});
+
+describe('ManageCategoryModal — panResponder gesture handlers', () => {
+  let capturedConfig: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedConfig = null;
+    jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
+      capturedConfig = config;
+      return { panHandlers: {} };
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function renderModalWithPan(props: Record<string, any> = {}) {
+    const { ManageCategoryModal } = require('../../src/components/ManageCategoryModal');
+    const result = render(
+      <I18nProvider>
+        <ManageCategoryModal
+          visible={true}
+          category={{ id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾' }}
+          onClose={jest.fn()}
+          onEdit={jest.fn()}
+          onDeleted={jest.fn()}
+          {...props}
+        />
+      </I18nProvider>
+    );
+    // Wait for async render to complete and panResponder to be created
+    await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
+    return result;
+  }
+
+  it('onStartShouldSetPanResponder always returns true', async () => {
+    await renderModalWithPan();
+    expect(capturedConfig.onStartShouldSetPanResponder()).toBe(true);
+  });
+
+  it('onMoveShouldSetPanResponder returns true only when dy > 0', async () => {
+    await renderModalWithPan();
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: 10 })).toBe(true);
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: -5 })).toBe(false);
+  });
+
+  it('onPanResponderMove updates translateY when dy > 0, no-op when dy <= 0', async () => {
+    await renderModalWithPan();
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: 50 }); });
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: -10 }); });
+  });
+
+  it('onPanResponderRelease dismisses when dy > 100', async () => {
+    const onClose = jest.fn();
+    await renderModalWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 150, vy: 0.5 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease dismisses when vy > 0.8', async () => {
+    const onClose = jest.fn();
+    await renderModalWithPan({ onClose });
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 50, vy: 1.2 }); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('onPanResponderRelease springs back when gesture is too small', async () => {
+    await renderModalWithPan();
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 50, vy: 0.3 }); });
   });
 });

@@ -138,4 +138,18 @@ describe('VariantsScreen', () => {
     // Should open AddVariantModal in edit mode
     expect(await findByText(/Edit Variant/)).toBeTruthy();
   });
+
+  it('closes AddVariantModal via onClose callback (covers variants.tsx line 153)', async () => {
+    const { findByText, queryByText } = render(
+      <I18nProvider><VariantsScreen /></I18nProvider>
+    );
+    // Open modal
+    fireEvent.press(await findByText('+ New'));
+    expect(await findByText(/New Variant/)).toBeTruthy();
+    // Close via Cancel button — this calls the onClose prop from variants.tsx
+    fireEvent.press(await findByText('Cancel'));
+    await waitFor(() => {
+      expect(queryByText(/New Variant/)).toBeNull();
+    });
+  });
 });

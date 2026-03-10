@@ -4,6 +4,25 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_7
+
+**[config] /ship reads from shared .agents/AGENTS-CHANGELOG.md**
+- Updated `.claude/commands/ship.md` to read from `.agents/AGENTS-CHANGELOG.md` instead of the Claude-specific `CLAUDE-CHANGELOG.md`, aligning with the cross-vendor shared changelog approach
+
+**[test] Integration and screen test coverage expansion**
+- Added panResponder gesture handler test suites to `AddCategoryModal`, `AddVariantModal`, `AddWordModal`, `ImportModal`, and `ManageCategoryModal` — covering `onStartShouldSetPanResponder`, `onMoveShouldSetPanResponder`, `onPanResponderMove`, and `onPanResponderRelease` (dismiss and spring-back branches)
+- Added branch-coverage tests to `AddCategoryModal`: delete without `onDeleted`, non-UNIQUE save error, word-count message with words
+- Added branch-coverage tests to `AddVariantModal`: clear search button, change selected word chip
+- Added branch-coverage tests to `AddWordModal`: `AddCategoryModal` open/close/save/delete from within, category scroll layout/contentSizeChange/arrow buttons, inline variant blur/flush no-op, duplicate card singular label
+- Added branch-coverage tests to `DatePickerField`: custom accent color, missing label, day clamping, modal preview, out-of-range year (idx < 0 early-return), `WheelColumn` `onMomentumScrollEnd` via FlatList
+- Added branch-coverage tests to `settings.test.tsx`: child sex/name display variants, locale switch, ImportModal close, Google sign-in (cancelled/in_progress/success), sync cancelled/error, save-to-device cancelled
+- Added branch-coverage tests to `index.test.tsx`: Google sync triggered on connected, sync error swallowed
+- Added branch-coverage tests to `variants.test.tsx`: `AddVariantModal` close via Cancel
+- Added branch-coverage tests to `words.test.tsx`: `AddCategoryModal` close/save/delete from words screen
+- Added `__tests__/unit/database.test.ts` — unit tests for `initDatabase`, `addCategory`, `getCategories`, `getWordCountByCategory`, `addWord`, `addVariant`, `getWords`, `findWordByName`, `getSetting`, `getAllDataForCSV`, `clearAllData`, `getDashboardStats` using `global.__mockDb`
+
+---
+
 ### 2026-03-10_6
 
 **[config] Strip Markdown markers from /ship commit messages**

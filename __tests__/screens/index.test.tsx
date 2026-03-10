@@ -45,4 +45,30 @@ describe('Index', () => {
       expect(replace).toHaveBeenCalledWith('/(tabs)/home');
     });
   });
+
+  it('calls performSync when google is connected', async () => {
+    const replace = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ replace, push: jest.fn(), back: jest.fn() });
+    (db.initDatabase as jest.Mock).mockResolvedValue(undefined);
+    (db.getSetting as jest.Mock).mockResolvedValue('1');
+    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
+    render(<Index />);
+    await waitFor(() => {
+      expect(googleDrive.performSync).toHaveBeenCalled();
+    });
+  });
+
+  it('catches and swallows performSync errors', async () => {
+    const replace = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ replace, push: jest.fn(), back: jest.fn() });
+    (db.initDatabase as jest.Mock).mockResolvedValue(undefined);
+    (db.getSetting as jest.Mock).mockResolvedValue('1');
+    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
+    (googleDrive.performSync as jest.Mock).mockRejectedValue(new Error('sync fail'));
+    render(<Index />);
+    // Should navigate to home without crashing even when sync fails
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/(tabs)/home');
+    });
+  });
 });
