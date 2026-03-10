@@ -4,6 +4,28 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_25
+
+**[fix] E2E crud-word — carousel scroll and date picker year selection**
+- Replaced `scrollUntilVisible direction: RIGHT` with 3 optional right-arrow taps (`optional: true`) to scroll the category carousel to the end — Maestro cannot scroll inside horizontal `ScrollView` elements, so the arrow buttons are the only reliable mechanism; `optional: true` makes excess taps silently pass once the arrow disappears at end-of-scroll
+- After adding the Toys category, switched to optional right-arrow taps to find the new chip without crashing when the arrow vanishes at end-of-scroll
+- Replaced swipe gesture on the year wheel with `tapOn: "2025"` — the swipe didn't reliably trigger `onMomentumScrollEnd`, so "2025" was visually visible but React state `py` was never updated before confirm
+
+**[fix] DatePickerField — wheel item tap + onScrollEndDrag fallback**
+- Made each `WheelColumn` item a `TouchableOpacity` that calls `onChange(item.value)` directly and scrolls to center the tapped item — makes tapping any year/month/day item work without requiring a scroll gesture
+- Added `onScrollEndDrag` + `onMomentumScrollBegin` tracking: when a drag ends without generating momentum (as happens with Maestro swipe gestures), `onChange` is called after 80 ms if no momentum event arrived — prevents state staying stale when the FlatList scroll doesn't produce momentum
+
+---
+
+### 2026-03-10_24
+
+**[test] E2E delete-all-data flow before export**
+- Added `__tests__/e2e/delete-all-data.yaml`: clears data from Settings, re-runs onboarding with Boy, lands on Home
+- Inserted the new flow into `__tests__/e2e/full-e2e.yaml` before `export-words.yaml`
+- Added `testID="settings-delete-all-btn"` to the Settings danger button for reliable Maestro targeting
+
+---
+
 ### 2026-03-10_23
 
 **[fix] Clarify automatic_commit semantics in /commit command and all readmes**

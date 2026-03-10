@@ -334,7 +334,11 @@ export default function SettingsScreen() {
         <Card style={[styles.section, styles.dangerCard]}>
           <Text style={styles.sectionTitle}>{t('settings.dangerZone')}</Text>
           <Text style={styles.sectionDesc}>{t('settings.dangerDesc')}</Text>
-          <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
+          <TouchableOpacity
+            style={styles.dangerBtn}
+            onPress={handleClearData}
+            testID="settings-delete-all-btn"
+          >
             <Text style={styles.dangerBtnText}>{t('settings.deleteAll')}</Text>
           </TouchableOpacity>
         </Card>

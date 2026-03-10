@@ -1,0 +1,52 @@
+appId: com.littlewords.app
+name: "Settings - Delete all data and re-onboard"
+---
+
+# ============================
+# DELETE ALL DATA (Settings)
+# ============================
+
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      id: "settings-delete-all-btn"
+    direction: DOWN
+- tapOn:
+    id: "settings-delete-all-btn"
+
+- assertVisible: "⚠️ Delete all data"
+- tapOn: "🗑️ Delete all data"
+
+- assertVisible: "Confirm deletion"
+- tapOn: "Yes, delete everything"
+- waitForAnimationToEnd
+
+# ============================
+# RE-ONBOARD (Boy)
+# ============================
+
+- extendedWaitUntil:
+    visible: "English"
+    timeout: 15000
+
+- tapOn:
+    id: "onboarding-name-input"
+- inputText: "Noah"
+- hideKeyboard
+
+- tapOn: "Boy"
+
+- tapOn: "Select date"
+- assertVisible: "Date of Birth"
+- tapOn: "Confirm"
+
+- assertVisible: "Noah"
+
+- tapOn:
+    id: "onboarding-continue-btn"
+
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 15000

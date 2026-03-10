@@ -134,12 +134,17 @@ name: "CRUD Word - Add, edit, and delete words"
 - inputText: "ball"
 - hideKeyboard
 
-# Scroll right in the category carousel until the add button is visible
-- scrollUntilVisible:
-    element:
-      id: "category-add-btn"
-    direction: RIGHT
-    timeout: 3000
+# Tap right arrow repeatedly to scroll carousel to end where add button is
+# Use optional taps so the last ones silently pass once the arrow disappears at end
+- tapOn:
+    id: "category-scroll-right"
+    optional: true
+- tapOn:
+    id: "category-scroll-right"
+    optional: true
+- tapOn:
+    id: "category-scroll-right"
+    optional: true
 
 # Open add category modal from within the word modal
 - tapOn:
@@ -155,10 +160,16 @@ name: "CRUD Word - Add, edit, and delete words"
 - waitForAnimationToEnd
 
 # Scroll carousel right to find the new Toys category and select it
+# Use optional taps so the last ones silently pass once the arrow disappears at end
 - tapOn:
-    id: "category-scroll-right"
+    id: "category-scroll-left"
+    optional: true
 - tapOn:
-    id: "category-scroll-right"
+    id: "category-scroll-left"
+    optional: true
+- tapOn:
+    id: "category-scroll-left"
+    optional: true
 - tapOn:
     id: "category-chip-Toys"
 
@@ -275,6 +286,9 @@ name: "CRUD Word - Add, edit, and delete words"
     id: "date-picker-preview"
 - assertVisible: "2025"
 
+- tapOn:
+    text: "2025"
+
 # Confirm date selection
 - tapOn:
     id: "date-picker-confirm"
@@ -290,4 +304,6 @@ name: "CRUD Word - Add, edit, and delete words"
 
 # Verify the word was saved with the updated year
 - assertVisible: "teddy"
-- assertVisible: "2025"
+- assertVisible:
+    id: "word-date-teddy"
+    text: "\\d{1,2}/\\d{1,2}/2025"

@@ -40,6 +40,11 @@ name: "Full E2E - Complete app journey"
 - runFlow: import-words.yaml
 
 # ============================
-# 8. EXPORT WORDS
+# 8. DELETE ALL DATA + RE-ONBOARD
+# ============================
+- runFlow: delete-all-data.yaml
+
+# ============================
+# 9. EXPORT WORDS
 # ============================
 - runFlow: export-words.yaml
