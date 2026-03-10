@@ -1,6 +1,7 @@
 {
   "version": 1,
   "features": {
+    "automatic_commit": false,
     "automatic_ship": true
   },
   "review": {

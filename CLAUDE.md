@@ -39,16 +39,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just Claude-specific behaviour), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
-4. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
+4. **Automatic Commit Gate (`/commit`).** When all code and test changes are complete, call `/commit`. It reads `features.automatic_commit` from `.agents/agent-config.json`:
+   - `false` (default) → stop; output that changes are ready but do NOT run CI, `/review`, or `/ship`; wait for the user.
+   - `true` → run `npm run ci`, verify the changelog entry, then run `/review`.
+   - Never bypass this gate — if the flag is `false`, do not commit even if asked to "just commit quickly".
+
+5. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
    - `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change has `status: approved` with required approvals).
    - `false` → **never run `/ship` automatically**; wait for explicit user request.
 
-5. **Multi-Agent Review Protocol.** Before `/ship`, evaluate the latest changelog entry for complexity and run the appropriate review:
+6. **Multi-Agent Review Protocol.** Before `/ship`, evaluate the latest changelog entry for complexity and run the appropriate review:
    - **Simple change** (≤ 10 change lines AND < 3 categories): internal review only — run `npm run agent:review` and verify checklist passes.
    - **Complex change** (> 10 change lines OR ≥ 3 distinct categories): `npm run agent:review "<summary>"` creates a structured review file in `.agents/reviews/`. An external reviewer (Codex or Gemini) must update the file and set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved after 3, status becomes `escalation_required` and the agent must stop and ask the user.
    - After approval, delete review files and proceed to `/ship`.
 
-6. **Rate Limit Resilience.** If approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
+7. **Rate Limit Resilience.** If approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
    - Reverts all uncommitted changes (`git reset && git restore .`).
    - Persists the task context to `.agents/unfinished-tasks/task-{date}-{seq}.md`.
    - Marks Claude as unavailable in `.agents/agent-config.json`.

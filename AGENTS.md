@@ -28,6 +28,12 @@ After every approved change, update the relevant agent documentation when conven
 
 **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture, update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
+**Automatic Commit Gate (`/commit`):** When all code and test changes are complete, call `/commit`. It reads `features.automatic_commit` from `.agents/agent-config.json`:
+- `false` (default) → stop; output that changes are ready but do NOT run CI, `/review`, or `/ship`; wait for the user.
+- `true` → run `npm run ci`, verify the changelog entry, then run `/review`.
+- Never bypass this gate — if the flag is `false`, do not commit even if asked to "just commit quickly".
+- Vendor-specific steps live in `.claude/commands/commit.md`, `.codex/commands/commit.md`, `.gemini/commands/commit.md`.
+
 `/ship` is the standard push flow. Before running it, read `features.automatic_ship` from `.agents/agent-config.json`:
 - `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change `status: approved` with required approvals met).
 - `false` → **never run `/ship` automatically**; wait for explicit user request.

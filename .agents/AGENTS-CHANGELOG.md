@@ -4,6 +4,18 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_21
+
+**[feature] Automatic commit gate — /commit command + automatic_commit flag**
+- Added `features.automatic_commit: false` to `.agents/agent-config.json`
+- Created `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md`: reads `automatic_commit`; if `false` stops and waits for user; if `true` runs CI → `/review` → respects `automatic_ship`
+- Updated `.agents/COMMON-RULES.md`: added Rule 5 (Automatic Commit Gate), renumbered old Rules 5–6 to 6–7
+- Updated `CLAUDE.md`: added Rule 4 (Automatic Commit Gate), renumbered old Rules 4–6 to 5–7
+- Updated `AGENTS.md` Documentation & Shipping Rules: added `/commit` gate block before the `/ship` block
+- Updated `GEMINI.md`: added Rule 4 (Automatic Commit Gate), renumbered old Rules 4–6 to 5–7
+
+---
+
 ### 2026-03-10_20
 
 **[fix] E2E crud-word — scroll carousel before tapping category-add-btn**

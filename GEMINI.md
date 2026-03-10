@@ -37,14 +37,21 @@
 3. **Always update `GEMINI.md` and `.agents/AGENTS-CHANGELOG.md` after every approved change.** Update `GEMINI.md` when architecture, conventions, or tooling change. Always append a changelog entry using `### YYYY-MM-DD_N` format with category tags (`[fix]`, `[feature]`, `[config]`, `[test]`, `[upgrade]`, etc.).
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, or architecture, update **all** vendor readmes listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
-4. **Shipping code (`/ship`):**
+4. **Automatic Commit Gate (`/commit`):**
+   - Call `/commit` when all code and test changes are complete. Follow `.gemini/commands/commit.md` for detailed steps.
+   - Reads `features.automatic_commit` from `.agents/agent-config.json`:
+     - `false` (default) → stop; output that changes are ready but do NOT run CI, `/review`, or `/ship`; wait for the user.
+     - `true` → run `npm run ci`, verify the changelog entry, then run `/review`.
+   - Never bypass this gate — if the flag is `false`, do not commit even if asked to "just commit quickly".
+
+5. **Shipping code (`/ship`):**
    - `/ship` is the standard way to commit and push approved changes. Follow `.gemini/commands/ship.md` for detailed steps.
    - Appends `(apsc - gi)` to the commit subject to mark it as a Gemini-authored commit.
    - **Auto-ship:** Before every `/ship` decision, read `features.automatic_ship` from `.agents/agent-config.json`:
      - `true` → run `/ship` automatically once `/review` confirms approval.
      - `false` → **never run `/ship` automatically**; wait for explicit user request.
 
-5. **Multi-Agent Review Protocol (`/review`):**
+6. **Multi-Agent Review Protocol (`/review`):**
    - Run `/review` after `npm run ci` passes and before `/ship`.
    - Internally calls `npm run agent:review` to classify the change as simple or complex.
    - **Simple** (≤ 10 change lines AND < 3 category tags): internal checklist review. If all items pass, output `Internal review passed. Safe to /ship.`
@@ -52,7 +59,7 @@
    - Maximum 3 review iterations; if unresolved, set `status: escalation_required` and stop.
    - Never approve your own complex changes. Never skip `/review` before `/ship`.
 
-6. **Rate Limit Resilience (`/rate-limit-abort` / `/check-unfinished-tasks`):**
+7. **Rate Limit Resilience (`/rate-limit-abort` / `/check-unfinished-tasks`):**
    - When approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
      - Run `git reset && git restore .` to revert all uncommitted changes.
      - Write `.agents/unfinished-tasks/task-{date}-{seq}.md` with task description, context, progress made, and explicit next steps.
