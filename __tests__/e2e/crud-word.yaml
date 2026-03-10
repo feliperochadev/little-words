@@ -134,6 +134,13 @@ name: "CRUD Word - Add, edit, and delete words"
 - inputText: "ball"
 - hideKeyboard
 
+# Scroll right in the category carousel until the add button is visible
+- scrollUntilVisible:
+    element:
+      id: "category-add-btn"
+    direction: RIGHT
+    timeout: 3000
+
 # Open add category modal from within the word modal
 - tapOn:
     id: "category-add-btn"

@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_20
+
+**[fix] E2E crud-word — scroll carousel before tapping category-add-btn**
+- Added `scrollUntilVisible` with `direction: RIGHT` before tapping `category-add-btn` in the "Add word with new category" section — the button is at the end of the horizontal category carousel and was off-screen, causing the tap to fail with "Element not found"
+
+---
+
 ### 2026-03-10_19
 
 **[fix] Correct stale auto-ship description in CLAUDE.md**
