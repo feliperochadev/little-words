@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_37
+
+**[fix] Fix flaky CI failure in `WordsScreen › renders words list`**
+- Root cause: VirtualizedList schedules `_updateCellsToRender` via `setTimeout`, which fires outside `act()` and can be delayed on loaded CI machines past the default 1000ms `findByText` deadline
+- Fix: increased `findByText` timeout to 5000ms for the two FlatList item assertions in `renders words list` — the only test that queries list items without first awaiting a non-list element that would give the timer time to fire
+- Reverted a global FlatList mock that was attempted but broke `DatePickerField` tests relying on FlatList's scroll/ref API
+
 ### 2026-03-10_36
 
 **[fix] Dashboard monthly chart — show year suffix when months span two calendar years**

@@ -59,8 +59,11 @@ describe('WordsScreen', () => {
     const { findByText } = render(
       <I18nProvider><WordsScreen /></I18nProvider>
     );
-    expect(await findByText('mamãe')).toBeTruthy();
-    expect(await findByText('água')).toBeTruthy();
+    // Use a longer timeout here: VirtualizedList schedules _updateCellsToRender
+    // via setTimeout which can be delayed on loaded CI machines, causing the
+    // default 1000ms deadline to be hit before list items appear.
+    expect(await findByText('mamãe', {}, { timeout: 5000 })).toBeTruthy();
+    expect(await findByText('água', {}, { timeout: 5000 })).toBeTruthy();
   });
 
   it('renders word count', async () => {
