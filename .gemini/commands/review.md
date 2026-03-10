@@ -83,4 +83,5 @@ If any item is `[fail]`, list the failures and fix them before /ship.
 - Never approve your own complex changes.
 - Never skip this command before `/ship` on a complex change.
 - Approval is recorded when a DIFFERENT vendor agent sets `status: approved` and adds their marker (e.g., `apsc - ce` for Claude, `apsc - cx` for Codex) to the `approvals:` list in the review file.
-- After `status: approved` and shipping, delete the review file (`rm .agents/reviews/review-*.md`).
+- An external reviewer may run `/commit` and `/ship` only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` allow it.
+- Always delete the review file after the code is committed (`rm .agents/reviews/review-*.md`).

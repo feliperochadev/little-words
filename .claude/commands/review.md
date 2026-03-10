@@ -65,4 +65,5 @@ If all items are `[ok]`, output `Internal review passed.` then check `.agents/ag
 
 - Never approve your own complex changes.
 - Never skip this command before `/ship` on a complex change.
-- After `status: approved`, delete the review file with `cleanupReviews()` or by removing `.agents/reviews/review-*.md` before shipping.
+- An external reviewer may run `/commit` and `/ship` only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` allow it.
+- Always delete the review file after the code is committed, using `cleanupReviews()` or by removing `.agents/reviews/review-*.md`.

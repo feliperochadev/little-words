@@ -65,6 +65,8 @@ Before running `/ship`, every agent must evaluate the latest changelog entry and
 
 Agents must never approve their own complex changes, bypass CI, or skip changelog updates.
 
+External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+
 ## Rate Limit Resilience
 
 When approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:

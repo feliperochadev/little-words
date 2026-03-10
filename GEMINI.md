@@ -77,11 +77,13 @@
      - Set `agents.gemini.available: false` in `.agents/agent-config.json`.
      - Stop. Do not proceed to `/ship`.
    - At session start, call `/check-unfinished-tasks`:
-     - Re-mark Gemini as `available: true` in `agent-config.json`.
-     - List pending tasks. Pick the oldest, mark it `in_progress`, follow its `## Next Steps`.
-     - On completion: run CI, update changelog, run `/review`, delete the task file.
+      - Re-mark Gemini as `available: true` in `agent-config.json`.
+      - List pending tasks. Pick the oldest, mark it `in_progress`, follow its `## Next Steps`.
+      - On completion: run CI, update changelog, run `/review`, delete the task file.
 
 9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
+
+10. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
 ## Commands
 

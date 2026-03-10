@@ -73,6 +73,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
+10. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+
 ## Commands
 
 ```bash

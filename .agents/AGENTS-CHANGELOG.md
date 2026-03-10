@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_33
+
+**[config] Review workflow — reviewer shipping guard + cleanup**
+- Clarified that external reviewers may run `/commit` and `/ship` only after review approval and required approvals, and only when automatic flags allow it
+- Required deleting review files after the commit is created
+- Synced the rules across `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and vendor review command docs
+
 ### 2026-03-10_32
 
 **[test] E2E flows — align data and onboarding sequence**
