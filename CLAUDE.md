@@ -71,6 +71,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Another agent resumes by running `/check-unfinished-tasks` at session start.
    - On session start, Claude re-marks itself available and checks for pending tasks.
 
+9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
+
 ## Commands
 
 ```bash

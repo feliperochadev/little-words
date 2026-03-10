@@ -14,6 +14,8 @@ Use `npm start` for the Expo dev server and `npm run android` or `npm run ios` f
 
 Do not consider work complete until `npm run ci` passes.
 
+Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
+
 ## Coding Style & Naming Conventions
 Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
 

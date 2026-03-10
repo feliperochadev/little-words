@@ -81,6 +81,8 @@
      - List pending tasks. Pick the oldest, mark it `in_progress`, follow its `## Next Steps`.
      - On completion: run CI, update changelog, run `/review`, delete the task file.
 
+9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
+
 ## Commands
 
 ```bash

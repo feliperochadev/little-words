@@ -4,6 +4,12 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_30
+
+**[config] Pre-push protection for root branches**
+- Updated `.husky/pre-push` to block pushes targeting root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`) before running CI
+- Documented the pre-push protection in `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` to keep workflow rules in sync
+
 ### 2026-03-10_29
 
 **[config] Shipping rules — git tags and changelog immutability**
