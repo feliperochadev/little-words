@@ -2,7 +2,7 @@
   "version": 1,
   "features": {
     "automatic_commit": false,
-    "automatic_ship": true
+    "automatic_ship": false
   },
   "review": {
     "external_agents_required_for_auto_ship": 2,

@@ -4,6 +4,25 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_23
+
+**[fix] Clarify automatic_commit semantics in /commit command and all readmes**
+- Corrected the meaning of `features.automatic_commit`: the flag controls whether the agent **self-triggers** `/commit` after work, NOT what happens when the command is explicitly invoked — `/commit` always runs CI → /review → respects `automatic_ship` when called
+- Rewrote `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md` to reflect this
+- Updated `.agents/COMMON-RULES.md` Rule 5, `CLAUDE.md` Rule 5, `AGENTS.md`, and `GEMINI.md` Rule 5 with the corrected description
+
+---
+
+### 2026-03-10_22
+
+**[config] Session Start — Review Feature Flags rule added to all vendor readmes**
+- Updated `.agents/COMMON-RULES.md`: added Rule 8 (Session Start — Review Feature Flags); renumbered old Rule 7 to remain 7 (Rate Limit Resilience stays in place)
+- Updated `CLAUDE.md`: added Rule 4 (Session Start — Review Feature Flags), renumbered old Rules 4–8 to 5–8
+- Updated `AGENTS.md`: added "Session Start — Review Feature Flags" block in Documentation & Shipping Rules
+- Updated `GEMINI.md`: added Rule 4 (Session Start — Review Feature Flags), renumbered old Rules 4–7 to 5–8
+
+---
+
 ### 2026-03-10_21
 
 **[feature] Automatic commit gate — /commit command + automatic_commit flag**

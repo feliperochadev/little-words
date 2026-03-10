@@ -22,16 +22,27 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
    - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.
 
-5. **Automatic Commit Gate (`/commit`).** When all code and test changes are complete, call `/commit` before proceeding. It reads `features.automatic_commit` from `.agents/agent-config.json`:
-   - `false` (default) → output that changes are ready but stop; do NOT run CI, `/review`, or `/ship`; wait for explicit user approval.
-   - `true` → run `npm run ci`, verify the changelog entry exists, then run `/review` (which in turn respects `automatic_ship`).
-   - **Never bypass this gate.** If `automatic_commit: false`, do not commit even if asked to "just commit quickly" — the flag must be changed first.
+5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` in `.agents/agent-config.json` controls only **whether the agent self-triggers `/commit`** after finishing work:
+   - `false` (default) → agent must wait for the user to explicitly call `/commit`; never self-trigger it.
+   - `true` → agent may call `/commit` automatically once work is complete.
    - Vendor-specific steps live in `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md`.
 
 6. **Multi-Agent Review Protocol.** Before `/ship`, run `npm run agent:review` to evaluate complexity. Scripts live in `scripts/agent/`.
    - **Simple change** (≤ 10 change lines AND < 3 category tags): internal review only.
    - **Complex change** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md`. An external vendor agent must set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved, set `status: escalation_required` and stop.
    - Agents must never approve their own complex changes or proceed to `/ship` while a review file has status `pending` or `changes_requested`.
+
+8. **Session Start — Review Feature Flags.** At the beginning of every session, read `features` from `.agents/agent-config.json` and ask the user:
+
+   > Current feature flags:
+   > - `automatic_commit`: true/false
+   > - `automatic_ship`: true/false
+   >
+   > Keep as is, or change any?
+
+   - If **keep** → proceed normally.
+   - If **change** → ask which flag(s) to update and their new values, apply them to `.agents/agent-config.json`, then proceed.
+   - Do this before any other work in the session.
 
 7. **Rate Limit Resilience.** When approaching 95% of usage quota mid-task, trigger `/rate-limit-abort`:
    - Run `git reset && git restore .` to revert all uncommitted changes.

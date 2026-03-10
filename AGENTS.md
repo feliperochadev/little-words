@@ -28,10 +28,18 @@ After every approved change, update the relevant agent documentation when conven
 
 **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture, update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
-**Automatic Commit Gate (`/commit`):** When all code and test changes are complete, call `/commit`. It reads `features.automatic_commit` from `.agents/agent-config.json`:
-- `false` (default) → stop; output that changes are ready but do NOT run CI, `/review`, or `/ship`; wait for the user.
-- `true` → run `npm run ci`, verify the changelog entry, then run `/review`.
-- Never bypass this gate — if the flag is `false`, do not commit even if asked to "just commit quickly".
+**Session Start — Review Feature Flags:** At the beginning of every session, read `features` from `.agents/agent-config.json` and ask the user:
+> Current feature flags:
+> - `automatic_commit`: true/false
+> - `automatic_ship`: true/false
+>
+> Keep as is, or change any?
+
+If keep → proceed. If change → ask which flag(s) and new value(s), update the file, then proceed. Do this before any other work.
+
+**Automatic Commit Gate (`/commit`):** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
+- `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+- `true` → agent may call `/commit` automatically once work is complete.
 - Vendor-specific steps live in `.claude/commands/commit.md`, `.codex/commands/commit.md`, `.gemini/commands/commit.md`.
 
 `/ship` is the standard push flow. Before running it, read `features.automatic_ship` from `.agents/agent-config.json`:

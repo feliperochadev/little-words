@@ -1,36 +1,14 @@
-# /commit — Gate automatic CI + review + ship (Codex)
+# /commit — Run CI + review + ship (Codex)
 
-Call this command when all code and test changes are complete. It reads `features.automatic_commit` from `.agents/agent-config.json` to decide whether to proceed automatically or wait for the user.
+When this command is invoked (by the user or automatically), always proceed with the full commit flow regardless of flags.
 
-## Steps
+`features.automatic_commit` in `.agents/agent-config.json` controls only **whether the agent calls `/commit` automatically** after finishing work:
+- `false` → agent must wait for the user to explicitly invoke `/commit`; never self-trigger it.
+- `true` → agent may call `/commit` on its own once work is complete.
 
-1. **Read the flag** — check `features.automatic_commit` in `.agents/agent-config.json`.
+## Steps (always execute when invoked)
 
----
-
-## If `automatic_commit: false`
-
-Output the following and stop:
-
-```
-Automatic commit is disabled (features.automatic_commit: false).
-Changes are complete and ready but will NOT be committed automatically.
-
-To proceed manually:
-  1. Run npm run ci to verify everything passes.
-  2. Update .agents/AGENTS-CHANGELOG.md with a ### YYYY-MM-DD_N entry.
-  3. Explicitly request /ship when ready.
-```
-
-Do NOT run CI, `/review`, or `/ship`. Wait for the user.
-
----
-
-## If `automatic_commit: true`
-
-Proceed with the full commit flow:
-
-1. **Run CI** — `npm run ci` must exit with code 0. If it fails, fix the issues and re-run before continuing.
+1. **Run CI** — `npm run ci` must exit with code 0. Fix any failures before continuing.
 
 2. **Verify changelog** — confirm `.agents/AGENTS-CHANGELOG.md` has been updated with a `### YYYY-MM-DD_N` entry covering the current changes.
 
@@ -45,5 +23,5 @@ Proceed with the full commit flow:
 ## Notes
 
 - Never skip CI before proceeding to `/review`.
-- Never commit when `automatic_commit: false` — even if the user asks you to "just commit quickly". Change the flag first.
-- The `automatic_commit` flag is a safety valve: set it to `false` when E2E or integration tests are flaky and you want a human to verify before committing.
+- `automatic_commit: false` means the agent waits to be asked — it does NOT mean the command does nothing when invoked.
+- The `automatic_commit` flag is a safety valve: set it to `false` when E2E or integration tests are flaky and you want to manually trigger commits.
