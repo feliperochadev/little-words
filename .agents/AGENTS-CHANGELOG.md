@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_36
+
+**[fix] Dashboard monthly chart — show year suffix when months span two calendar years**
+- Fixed duplicate month labels (e.g. "Mar, Jan, Mar") on the home dashboard bar chart that occurred when the 6-month window crossed a year boundary
+- `formatMonth` now accepts a `showYear` flag; when the displayed slice spans more than one year, each label appends the 2-digit year (e.g. "Dec '24", "Jan '25")
+- Added three new tests in `home.test.tsx` covering single-year (no suffix), cross-year (suffix shown), and full 6-month single-year window
+
 ### 2026-03-10_35
 
 **[test] Add demo Maestro flow**
