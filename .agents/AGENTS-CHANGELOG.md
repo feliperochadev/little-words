@@ -4,6 +4,29 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_27
+
+**[feature] Unique variant per word — duplicate detection in AddVariantModal and AddWordModal**
+- Added `findVariantByName(wordId, variant)` to `database.ts`: queries `variants` with case-insensitive `LOWER(variant)` match scoped to the given `word_id`, mirroring `findWordByName`
+- `AddVariantModal`: debounced duplicate check (400ms) fires when variant text changes and an effective word is known; shows red-bordered input + warning card "⚠️ Variant already exists for `word`" with the duplicate variant text; save button dimmed and Alert blocks save — same UX pattern as word duplicate detection; check is skipped when editing an existing variant
+- `AddWordModal`: `handleSave` now silently deduplicates inline new-variant rows against existing variants and against each other using a running lowercase `Set`, so re-entered pronunciations are dropped rather than inserted twice
+- Added `addVariant.duplicateTitle` and `addVariant.duplicateAlert` keys to `en-US.ts` and `pt-BR.ts`
+- Unit test: `findVariantByName` null and match cases in `database.test.ts`
+- Integration tests: duplicate warning card display, save blocked by Alert, edit-mode skips check, reset on reopen — in `AddVariantModal.test.tsx`
+
+---
+
+### 2026-03-10_26
+
+**[fix] AddWordModal — select new category and scroll carousel to left after addition**
+- Modified `AddCategoryModal` (`AddCategoryModal.tsx`): updated `onSave` callback to return the ID of the newly created or updated category.
+- Modified `AddWordModal` (`AddWordModal.tsx`): updated `onSave` handler for `AddCategoryModal` to automatically set `selectedCategory` to the new ID and scroll the `category-section` carousel back to the left (`x: 0`) as requested — this ensures the user sees the new category immediately if it's sorted at the beginning and resets the view if they had scrolled to the end to add it.
+- Verified compatibility in `app/(tabs)/words.tsx` and `app/(tabs)/settings.tsx` — both remain functional with the updated `onSave(id?: number)` signature.
+- Updated `__tests__/integration/AddCategoryModal.test.tsx`: verified `onSave` is called with the category ID.
+- Updated `__tests__/integration/AddWordModal.test.tsx`: added a test case to verify that the newly created category is selected and the carousel refreshes.
+
+---
+
 ### 2026-03-10_25
 
 **[fix] E2E crud-word — carousel scroll and date picker year selection**

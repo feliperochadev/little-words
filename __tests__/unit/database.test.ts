@@ -7,6 +7,7 @@ import {
   addVariant,
   getWords,
   findWordByName,
+  findVariantByName,
   getSetting,
   getAllDataForCSV,
   clearAllData,
@@ -205,6 +206,21 @@ describe('database', () => {
       const word = { id: 1, word: 'hello', category_id: null, date_added: '2024-01-01' };
       mockDb.getAllSync.mockReturnValueOnce([word]);
       await expect(findWordByName('hello')).resolves.toEqual(word);
+    });
+  });
+
+  // ─── findVariantByName ───────────────────────────────────────────────────────
+
+  describe('findVariantByName', () => {
+    it('returns null when no matching variant', async () => {
+      mockDb.getAllSync.mockReturnValueOnce([]);
+      await expect(findVariantByName(1, 'maa-maa')).resolves.toBeNull();
+    });
+
+    it('returns the first matching variant', async () => {
+      const v = { id: 5, word_id: 1, variant: 'maa-maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
+      mockDb.getAllSync.mockReturnValueOnce([v]);
+      await expect(findVariantByName(1, 'maa-maa')).resolves.toEqual(v);
     });
   });
 

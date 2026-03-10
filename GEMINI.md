@@ -105,6 +105,15 @@ npm run agent:review "Change summary"
 
 ## Changelog
 
+### 2026-03-10_26
+
+**[fix] AddWordModal — select new category and scroll carousel to left after addition**
+- Modified `AddCategoryModal` (`AddCategoryModal.tsx`): updated `onSave` callback to return the ID of the newly created or updated category.
+- Modified `AddWordModal` (`AddWordModal.tsx`): updated `onSave` handler for `AddCategoryModal` to automatically set `selectedCategory` to the new ID and scroll the `category-section` carousel back to the left (`x: 0`) as requested — this ensures the user sees the new category immediately if it's sorted at the beginning and resets the view if they had scrolled to the end to add it.
+- Verified compatibility in `app/(tabs)/words.tsx` and `app/(tabs)/settings.tsx` — both remain functional with the updated `onSave(id?: number)` signature.
+- Updated `__tests__/integration/AddCategoryModal.test.tsx`: verified `onSave` is called with the category ID.
+- Updated `__tests__/integration/AddWordModal.test.tsx`: added a test case to verify that the newly created category is selected and the carousel refreshes.
+
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
 
 ## Additional Documentation

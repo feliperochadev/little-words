@@ -13,6 +13,7 @@ jest.mock('../../src/database/database', () => ({
   addVariant: jest.fn().mockResolvedValue(1),
   updateVariant: jest.fn().mockResolvedValue(undefined),
   deleteVariant: jest.fn().mockResolvedValue(undefined),
+  findVariantByName: jest.fn().mockResolvedValue(null),
   getWords: jest.fn().mockResolvedValue([]),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
@@ -168,6 +169,55 @@ describe('AddVariantModal', () => {
     await waitFor(() => {
       expect(queryByText('✕')).toBeNull();
     });
+  });
+
+  it('shows duplicate warning card when variant already exists for word', async () => {
+    const existingVariant: Variant = { id: 99, word_id: 1, variant: 'mamá', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
+    (database.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
+    const { findByPlaceholderText, findByText } = renderModal();
+    const input = await findByPlaceholderText(/How the child says/);
+    fireEvent.changeText(input, 'mamá');
+    await waitFor(() => expect(database.findVariantByName).toHaveBeenCalledWith(1, 'mamá'));
+    expect(await findByText(/Variant already exists for/i)).toBeTruthy();
+  });
+
+  it('blocks save and shows alert when duplicate variant is submitted', async () => {
+    const existingVariant: Variant = { id: 99, word_id: 1, variant: 'mamá', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
+    (database.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
+    const { findByPlaceholderText, findByText } = renderModal();
+    const input = await findByPlaceholderText(/How the child says/);
+    fireEvent.changeText(input, 'mamá');
+    await waitFor(() => expect(database.findVariantByName).toHaveBeenCalled());
+    fireEvent.press(await findByText('Add'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    expect(database.addVariant).not.toHaveBeenCalled();
+  });
+
+  it('skips duplicate check when editing a variant', async () => {
+    (database.findVariantByName as jest.Mock).mockResolvedValue(null);
+    const { findByDisplayValue } = renderModal({ editVariant: mockVariant });
+    await findByDisplayValue('mamá');
+    expect(database.findVariantByName).not.toHaveBeenCalled();
+  });
+
+  it('clears duplicate state when modal reopens', async () => {
+    (database.findVariantByName as jest.Mock).mockResolvedValue(null);
+    const view = render(
+      <I18nProvider>
+        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
+      </I18nProvider>
+    );
+    view.rerender(
+      <I18nProvider>
+        <AddVariantModal visible={false} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
+      </I18nProvider>
+    );
+    view.rerender(
+      <I18nProvider>
+        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
+      </I18nProvider>
+    );
+    expect(await view.findByText(/New Variant/)).toBeTruthy();
   });
 
   it('can change chosen word (press change chip to deselect)', async () => {

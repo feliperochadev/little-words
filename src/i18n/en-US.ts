@@ -258,6 +258,8 @@ export default {
     notesPlaceholder: 'Context when they said it...',
     errorVariant: 'Please enter the variant.',
     errorSelectWord: 'Please select a word.',
+    duplicateTitle: '⚠️ Variant already exists for "{{word}}"',
+    duplicateAlert: '"{{variant}}" is already saved for this word.',
     btnAdd: 'Add',
     btnSave: 'Save',
   },

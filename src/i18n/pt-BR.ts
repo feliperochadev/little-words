@@ -258,6 +258,8 @@ export default {
     notesPlaceholder: 'Contexto em que falou...',
     errorVariant: 'Digite a variante.',
     errorSelectWord: 'Selecione uma palavra.',
+    duplicateTitle: '⚠️ Variante já existe para "{{word}}"',
+    duplicateAlert: '"{{variant}}" já está salva para esta palavra.',
     btnAdd: 'Adicionar',
     btnSave: 'Salvar',
   },

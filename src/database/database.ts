@@ -214,6 +214,12 @@ export interface Variant {
 export const getVariantsByWord = (wordId: number): Promise<Variant[]> =>
   query<Variant>('SELECT * FROM variants WHERE word_id=? ORDER BY created_at DESC', [wordId]);
 
+export const findVariantByName = (wordId: number, variant: string): Promise<Variant | null> =>
+  query<Variant>(
+    'SELECT * FROM variants WHERE word_id=? AND LOWER(variant)=LOWER(?) LIMIT 1',
+    [wordId, variant.trim()]
+  ).then(rows => rows[0] ?? null);
+
 export const getAllVariants = (): Promise<Variant[]> =>
   query<Variant>(`
     SELECT v.*, w.word as main_word FROM variants v

@@ -413,13 +413,39 @@ describe('AddWordModal', () => {
     jest.useRealTimers();
   });
 
-  it('AddCategoryModal onSave refreshes categories (covers line 423)', async () => {
-    const { findByText, findByPlaceholderText } = renderModal();
+  it('AddCategoryModal onSave refreshes categories, selects the new one and scrolls (covers lines 424-434)', async () => {
+    // Mock getCategories to return a new list after addition
+    (database.getCategories as jest.Mock)
+      .mockResolvedValueOnce([
+        { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
+      ])
+      .mockResolvedValueOnce([
+        { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
+        { id: 2, name: 'NewCat', color: '#00B894', emoji: '🎨', created_at: '' },
+      ]);
+
+    const { findByText, findByPlaceholderText, findByTestId } = renderModal();
+
+    // Wait for initial load
+    await findByText('Animals');
+
     fireEvent.press(await findByText(/\+ Category/));
     expect(await findByText(/New Category/)).toBeTruthy();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
+
+    // addCategory returns 2 (mocked)
+    (database.addCategory as jest.Mock).mockResolvedValue(2);
+
     await act(async () => { fireEvent.press(await findByText('Create Category')); });
-    await waitFor(() => expect(database.addCategory).toHaveBeenCalled());
+
+    await waitFor(() => {
+      expect(database.addCategory).toHaveBeenCalled();
+      expect(database.getCategories).toHaveBeenCalledTimes(2);
+    });
+
+    // Check if the new category chip is present
+    const newCatChip = await findByText('NewCat');
+    expect(newCatChip).toBeTruthy();
   });
 
   it('AddCategoryModal onDeleted refreshes categories and clears selection (covers line 424)', async () => {

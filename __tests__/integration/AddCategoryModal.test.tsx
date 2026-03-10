@@ -77,7 +77,7 @@ describe('AddCategoryModal', () => {
     fireEvent.press(await findByText('Create Category'));
     await waitFor(() => {
       expect(database.addCategory).toHaveBeenCalledWith('NewCat', expect.any(String), expect.any(String));
-      expect(onSave).toHaveBeenCalled();
+      expect(onSave).toHaveBeenCalledWith(1);
     });
   });
 
@@ -88,7 +88,7 @@ describe('AddCategoryModal', () => {
     fireEvent.press(await findByText(/Save/));
     await waitFor(() => {
       expect(database.updateCategory).toHaveBeenCalledWith(1, 'Test', '#FF6B9D', '🐾');
-      expect(onSave).toHaveBeenCalled();
+      expect(onSave).toHaveBeenCalledWith(1);
     });
   });
 
