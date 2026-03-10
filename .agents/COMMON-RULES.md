@@ -13,6 +13,7 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - `[config]` — documentation, tooling, or project configuration changes
    - `[test]` — new tests or test expansions with no production code change
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
+   - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just one vendor's quirks), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`. Currently: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). Every readme must stay in sync on shared rules.
 
 4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**
    - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
@@ -22,3 +23,10 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - **Simple change** (≤ 10 change lines AND < 3 category tags): internal review only.
    - **Complex change** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md`. An external vendor agent must set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved, set `status: escalation_required` and stop.
    - Agents must never approve their own complex changes or proceed to `/ship` while a review file has status `pending` or `changes_requested`.
+
+6. **Rate Limit Resilience.** When approaching 95% of usage quota mid-task, trigger `/rate-limit-abort`:
+   - Run `git reset && git restore .` to revert all uncommitted changes.
+   - Write `.agents/unfinished-tasks/task-{date}-{seq}.md` with task description, context, progress, and explicit next steps.
+   - Set `agents.{self}.available: false` in `.agents/agent-config.json`.
+   - Stop immediately. Do not proceed to `/ship`.
+   At session start, call `/check-unfinished-tasks`: re-mark yourself available, list pending tasks, pick the oldest, and resume from `## Next Steps`.

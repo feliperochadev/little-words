@@ -20,13 +20,15 @@ const CONFIG_PATH = join(process.cwd(), '.agents', 'agent-config.json');
  * 
  * Returns defaults if the file does not exist or is invalid.
  */
-export function loadAgentConfig(): AgentConfig {
-  if (!existsSync(CONFIG_PATH)) {
+export function loadAgentConfig(configPath?: string): AgentConfig {
+  const resolvedPath = configPath ?? CONFIG_PATH;
+
+  if (!existsSync(resolvedPath)) {
     return DEFAULT_CONFIG;
   }
 
   try {
-    const content = readFileSync(CONFIG_PATH, 'utf-8');
+    const content = readFileSync(resolvedPath, 'utf-8');
     const config = JSON.parse(content);
 
     return {
@@ -35,7 +37,7 @@ export function loadAgentConfig(): AgentConfig {
       maxIterations: config.review?.max_review_iterations ?? DEFAULT_CONFIG.maxIterations,
     };
   } catch (error) {
-    console.error(`Warning: Failed to parse agent config at ${CONFIG_PATH}. Using defaults.`, error);
+    console.error(`Warning: Failed to parse agent config at ${resolvedPath}. Using defaults.`, error);
     return DEFAULT_CONFIG;
   }
 }

@@ -37,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `[config]` — documentation, tooling, or project configuration changes
    - `[test]` — new tests or test expansions with no production code change
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
+   - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just Claude-specific behaviour), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
 
 4. `/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**
 
@@ -44,6 +45,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - **Simple change** (≤ 10 change lines AND < 3 categories): internal review only — run `npm run agent:review` and verify checklist passes.
    - **Complex change** (> 10 change lines OR ≥ 3 distinct categories): `npm run agent:review "<summary>"` creates a structured review file in `.agents/reviews/`. An external reviewer (Codex or Gemini) must update the file and set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved after 3, status becomes `escalation_required` and the agent must stop and ask the user.
    - After approval, delete review files and proceed to `/ship`.
+
+6. **Rate Limit Resilience.** If approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
+   - Reverts all uncommitted changes (`git reset && git restore .`).
+   - Persists the task context to `.agents/unfinished-tasks/task-{date}-{seq}.md`.
+   - Marks Claude as unavailable in `.agents/agent-config.json`.
+   - Another agent resumes by running `/check-unfinished-tasks` at session start.
+   - On session start, Claude re-marks itself available and checks for pending tasks.
 
 ## Commands
 
@@ -72,6 +80,10 @@ npm run test:coverage
 # Run multi-agent review (complexity detection + review file creation if complex)
 npm run agent:review                      # auto-detects complexity
 npm run agent:review "Change summary"    # passes summary for complex review requests
+
+# Rate limit resilience
+npm run agent:check-tasks    # list pending unfinished tasks
+npm run agent:availability   # show which agents are online/offline
 ```
 
 ### Shipping code (`/ship`)

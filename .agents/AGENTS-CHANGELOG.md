@@ -4,6 +4,52 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_14
+
+**[feature] Agent readme_file registry in agent-config.json**
+- Added `readme_file` field to each agent entry in `.agents/agent-config.json`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini)
+- Added `readme_file?: string` to `AgentEntry` interface in `scripts/agent/agent-availability.ts`
+- Added `getAgentReadmeFiles()` helper that returns a map of agent → readme path
+
+**[config] Cross-vendor documentation rule enforced across all readmes**
+- Updated `.agents/COMMON-RULES.md` Rule 3: when a change affects general rules/workflow/tooling, all vendor readmes listed in `agent-config.json` must be updated
+- Updated `CLAUDE.md` Rule 3: added cross-vendor documentation rule
+- Updated `AGENTS.md` Documentation & Shipping Rules: added cross-vendor documentation rule
+- Rewrote `GEMINI.md`: fixed broken file structure (floating numbered rules, orphan schema block), added Rule 6 (Rate Limit Resilience), added cross-vendor rule, added `scripts/agent/` to architecture section
+
+**[test] Added getAgentReadmeFiles tests**
+- Updated `__tests__/unit/agent-availability.test.ts`: added `getAgentReadmeFiles` describe block covering full map, missing `readme_file` omission, and empty result
+
+---
+
+### 2026-03-10_13
+
+**[feature] Rate Limit Resilience + Unfinished Task Recovery**
+- Created `.agents/unfinished-tasks/` directory for task handoff files
+- Added `scripts/agent/task-persistence.ts`: creates, lists, updates, and deletes `.agents/unfinished-tasks/task-{date}-{seq}.md` files; CLI lists all pending tasks
+- Added `scripts/agent/agent-availability.ts`: reads/writes `agents.{name}.available` in `agent-config.json`; exposes `setAgentAvailable`, `isAgentAvailable`, `getAvailableAgents`, `getUnavailableAgents`
+- Restored `agents` section to `.agents/agent-config.json` with `available: true` for all three vendors
+- Added optional `configPath` param to `scripts/agent/load-config.ts` for testability
+- Added `npm run agent:check-tasks` and `npm run agent:availability` scripts to `package.json`
+
+**[feature] /rate-limit-abort and /check-unfinished-tasks slash commands**
+- Added `.claude/commands/rate-limit-abort.md`: reverts uncommitted work, writes task file, marks Claude offline, exits safely
+- Added `.claude/commands/check-unfinished-tasks.md`: re-marks Claude online, lists pending tasks, resumes oldest via Next Steps
+- Added `.gemini/commands/rate-limit-abort.md` and `.gemini/commands/check-unfinished-tasks.md`: Gemini equivalents
+- Added `.codex/commands/rate-limit-abort.md` and `.codex/commands/check-unfinished-tasks.md`: Codex equivalents
+
+**[test] Unit tests for rate limit resilience scripts**
+- Added `__tests__/unit/task-persistence.test.ts`: covers `buildTaskFilename`, `formatTaskFile`, `parseTaskFile`, `createUnfinishedTask`, `listPendingTasks`, `markTaskInProgress`, `completeTask`
+- Added `__tests__/unit/agent-availability.test.ts`: covers all exports with filesystem isolation
+- Added `__tests__/unit/load-config.test.ts`: covers defaults, key mapping, error fallback, and full config parsing
+
+**[config] Documentation updated with Rate Limit Resilience protocol**
+- Updated `CLAUDE.md`: added Rule 6 and `npm run agent:check-tasks` / `agent:availability` commands
+- Updated `AGENTS.md`: added Rate Limit Resilience section
+- Updated `.agents/COMMON-RULES.md`: added Rule 6 as vendor-agnostic baseline
+
+---
+
 ### 2026-03-10_12
 
 **[feature] Shared Agent Configuration + Automatic Ship**

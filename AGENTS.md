@@ -26,6 +26,8 @@ Recent history uses short, imperative subjects such as `fix test` and `fix impor
 ## Documentation & Shipping Rules
 After every approved change, update the relevant agent documentation when conventions or architecture change and always append an entry to `.agents/AGENTS-CHANGELOG.md` using `### YYYY-MM-DD_N` and tags such as `[fix]`, `[feature]`, or `[config]`.
 
+**Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture, update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
+
 `/ship` is the standard push flow, but never run it automatically; only run it on explicit user request.
 - **Agent Markers:** Commits must include a vendor marker: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
 - **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
@@ -42,6 +44,23 @@ Before running `/ship`, every agent must evaluate the latest changelog entry and
 - After `status: approved`, delete the review file and proceed normally.
 
 Agents must never approve their own complex changes, bypass CI, or skip changelog updates.
+
+## Rate Limit Resilience
+
+When approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
+
+- Run `git reset && git restore .` to revert all uncommitted changes.
+- Write `.agents/unfinished-tasks/task-{date}-{seq}.md` with the task description, context, progress made, and explicit next steps.
+- Update `.agents/agent-config.json` to mark the current agent as `"available": false`.
+- Do not proceed further. Another agent resumes via `/check-unfinished-tasks`.
+
+When starting a new session, call `/check-unfinished-tasks`:
+- Mark yourself as `"available": true` in `agent-config.json`.
+- List pending tasks in `.agents/unfinished-tasks/`.
+- Pick the oldest pending task, mark it `in_progress`, and follow the `## Next Steps` section.
+- On completion: run CI, update changelog, run `/review`, delete the task file.
+
+Task files and agent availability are managed by `scripts/agent/task-persistence.ts` and `scripts/agent/agent-availability.ts`. Shared config lives in `.agents/agent-config.json`.
 
 ## Architecture Notes
 The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.
