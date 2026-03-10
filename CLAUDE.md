@@ -4,9 +4,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories, with optional Google Drive backup. Targets Android (APK via EAS Build); built with Expo SDK 52.
+**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories, with optional Google Drive backup.
 
-The `main` branch is SDK 52. There is a pending `update-dependencies` branch that upgrades to Expo SDK 55 (React 19, React Native 0.83.2, Jest 30).
+**Stack (current, fully up to date):**
+- Expo SDK 55, expo-router 55 (file-based navigation)
+- React 19.2.0, React Native 0.83.2
+- TypeScript 5.9, ESLint 9 (flat config via `eslint-config-expo`)
+- Jest 30.1, jest-expo 55, @testing-library/react-native 13
+- Maestro for E2E tests
+- EAS Build for Android APK/preview distribution
+
+**Core features:**
+- Record and manage a baby's first words with dates and categories
+- Track pronunciation variants per word
+- Bilingual UI: English (`en-US`) and Brazilian Portuguese (`pt-BR`), locale persisted to SQLite
+- CSV export (share or save to device) and text/CSV import with preview
+- Optional Google Drive backup (native builds only — guarded by `isNativeBuild()`)
+- Swipeable bottom-sheet modals with pan gesture dismiss
+
+**Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
+
+### Rules
+
+1. **Always write tests for every code change.** Use unit tests for isolated functions (helpers, utils, parsers) and integration tests for components. Tests must cover at least of the changed code: 99% in lines and 95% in funcs, branch and stmts — every branch, edge case, and error path. Place them in the matching subdirectory under `__tests__/` (`unit/`, `integration/`, or `screens/`).
+
+2. **Always run `npm run ci` after changes and only consider the task done when it passes.** The CI script runs `eslint` (fixes must include warnings, not just errors), `tsc --noEmit`, and `jest` in sequence (`npm run lint && npm run typecheck && npm run test`). A passing CI is required before any work is considered complete — do not skip or work around failures.
+
+3. **Always update `CLAUDE.md` and `CLAUDE-CHANGELOG.md` after every approved change.** Once changes pass CI and are approved: update the relevant sections of `CLAUDE.md` if architecture, conventions, or utilities changed; always append a new entry to `CLAUDE-CHANGELOG.md` regardless — it is the permanent record of every approved change. Each entry heading follows the format `### YYYY-MM-DD_N` (e.g. `2026-03-09_1`, `2026-03-09_2`) where N increments within the same day, making every entry uniquely identifiable. Each change group within an entry must be prefixed with a category tag:
+   - `[fix]` — bug fixes and test corrections
+   - `[feature]` — new capabilities added to the app or test infrastructure
+   - `[upgrade]` — dependency version bumps
+   - `[config]` — documentation, tooling, or project configuration changes
+   - `[test]` — new tests or test expansions with no production code change
+   - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
+
+4. `/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**  
 
 ## Commands
 
@@ -31,9 +63,49 @@ npm test
 npm run test:coverage
 ```
 
+### Shipping code (`/ship`)
+
+`/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**
+
+```
+/ship
+```
+
+What it does:
+1. Verifies the current branch is not `main`/`master` (asks the user to create a branch if so).
+2. Reads `CLAUDE-CHANGELOG.md` and collects every entry whose heading ID is not yet in `git log` — these are the unshipped changes.
+3. Stages modified/untracked files (no `.env` or secrets).
+4. Commits with a message built from all unshipped changelog entries (bold titles as subject, full bullet-point content as body), suffixed with `(apsc)` — *Agent-Programmed Source Commit*, an internal marker that distinguishes agent-authored commits from manual ones.
+5. Pushes with `git push -u origin <branch>`.
+
 ## Testing
 
-The project uses **Jest** (via `jest-expo`) with **@testing-library/react-native**.
+### E2E Tests (Maestro)
+
+E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test __tests__/e2e/<file>.yaml`.
+
+**testID rules — always prefer `id:` over text matching:**
+- Every interactive or assertable element must have a `testID`. Text-based assertions (`assertVisible: "some text"`) are only acceptable for OS-level alerts (which can't have testIDs) or truly unique, stable UI strings.
+- Use `id:` for all assertions on app-rendered elements: `assertVisible: id: "my-test-id"`, `tapOn: id: "my-test-id"`.
+- Dynamic list items must include the item's key in the testID, e.g. `testID={`word-item-${item.word}`}`, `testID={`import-preview-word-${row.word}`}`. This makes individual items assertable without text matching.
+- `Card` in `UIComponents.tsx` accepts and forwards `testID` — always use it when the card needs to be asserted in a test.
+
+**Scrolling — always scroll before asserting:**
+- Never `assertVisible` on an element that may be below the fold without first calling `scrollUntilVisible`. This applies especially to: preview sections that appear below a tall input (`minHeight`), items in modals with a `ScrollView`, and list items after navigation.
+- Use `scrollUntilVisible` targeting the specific element you are about to assert, not a nearby container.
+- After `hideKeyboard`, always add `waitForAnimationToEnd` before any scroll or assertion — the layout shifts when the keyboard dismisses.
+
+**Text input:**
+- Maestro's `inputText` passes the string as typed characters. `\n` in YAML double-quoted strings does NOT reliably produce a newline in the TextInput — it arrives as literal `\` + `n`. Do not rely on `\n` for multiline text input.
+- For tests that only need to verify parsing/preview of a single word, input one word with no newlines. This is always reliable.
+- Avoid `pressKey: Enter` to simulate newlines in multiline inputs — its behavior is inconsistent across platforms.
+
+**General conventions:**
+- Always `waitForAnimationToEnd` after modal open/close, navigation taps, and form submissions.
+- Use `scrollUntilVisible` before tapping elements that may be off-screen (e.g. buttons at the bottom of a settings screen).
+- Prefer `eraseText: N` over clearing a field by re-tapping — it's more reliable.
+
+### Unit/Integration Tests (Jest)
 
 - Tests live in `__tests__/` with three subdirectories:
   - `unit/` — pure logic (helpers, i18n catalogues, date utils, import helpers)
@@ -71,6 +143,14 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 - `src/utils/theme.ts` — All colors (`COLORS`), category color palette (`CATEGORY_COLORS`), and category emojis (`CATEGORY_EMOJIS`). Always import colors from here.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
 - `src/utils/googleDrive.ts` — Google Sign-In + Drive v3 REST API for CSV backup. **Only works in native builds**, not in Expo Go (`isNativeBuild()` guard throughout). Tokens stored in the `settings` table.
-- `src/utils/csvExport.ts` — CSV generation helpers.
+- `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string. Google Drive backup calls `getAllDataForCSV` directly with the Portuguese default.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
+
+## Changelog
+
+See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
+
+## Additional Documentation
+
+- `AGENTS.md` — strict contributor guide mirroring the repository enforcement rules for testing, CI, changelog maintenance, and `/ship` usage.

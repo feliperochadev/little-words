@@ -19,30 +19,43 @@ name: "Words - Search and sort functionality"
 # ============================
 
 # Search for a specific word
-- tapOn: "Search words..."
+- tapOn:
+    id: "words-search"
 - inputText: "mama"
+- hideKeyboard
 - assertVisible: "mama"
 - assertVisible: "1 word"
 
 # Clear search
+- tapOn:
+    id: "words-search"
 - eraseText: 4
+- hideKeyboard
 - assertVisible: "mama"
 - assertVisible: "water"
 
 # Search with no results
+- tapOn:
+    id: "words-search"
 - inputText: "xyznotfound"
+- hideKeyboard
 - assertVisible: "No words found"
+- tapOn:
+    id: "words-search"
 - eraseText: 11
+- hideKeyboard
 
 # ============================
 # SORT - A to Z
 # ============================
 
-# Tap the sort button (shows current sort label with triangle)
+# Tap the sort button to open menu
 - tapOn:
-    text: "Most recent"
-- assertVisible: "A → Z"
-- tapOn: "A → Z"
+    id: "words-sort-btn"
+- assertVisible:
+    id: "sort-option-alpha_asc"
+- tapOn:
+    id: "sort-option-alpha_asc"
 - waitForAnimationToEnd
 
 # ============================
@@ -50,8 +63,9 @@ name: "Words - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "A → Z"
-- tapOn: "Z → A"
+    id: "words-sort-btn"
+- tapOn:
+    id: "sort-option-alpha_desc"
 - waitForAnimationToEnd
 
 # ============================
@@ -59,8 +73,9 @@ name: "Words - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "Z → A"
-- tapOn: "Oldest"
+    id: "words-sort-btn"
+- tapOn:
+    id: "sort-option-date_asc"
 - waitForAnimationToEnd
 
 # ============================
@@ -68,6 +83,7 @@ name: "Words - Search and sort functionality"
 # ============================
 
 - tapOn:
-    text: "Oldest"
-- tapOn: "Most recent"
+    id: "words-sort-btn"
+- tapOn:
+    id: "sort-option-date_desc"
 - waitForAnimationToEnd

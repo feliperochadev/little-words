@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, ActivityIndicator,
+  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated, PanResponder,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
@@ -100,6 +100,40 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
   const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); };
   const handleClose = () => { reset(); onClose(); };
 
+  const translateY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const handleCloseRef = useRef(handleClose);
+  useEffect(() => { handleCloseRef.current = handleClose; });
+  const dismissModal = useRef(() => {
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => { handleCloseRef.current(); });
+  }).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
+    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
+    onPanResponderRelease: (_, { dy, vy }) => {
+      if (dy > 100 || vy > 0.8) {
+        dismissModal();
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      }
+    },
+  })).current;
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(800);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity]);
+
   const updateTextPreview = (text: string) => {
     setTextInput(text);
     setPreview(text.trim() ? parseTextInput(text).slice(0, 5) : []);
@@ -161,14 +195,19 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
     : t('importModal.importZero');
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={[styles.container, { paddingBottom: 24 + insets.bottom }]}>
-          <View style={styles.handle} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+      </Animated.View>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+          <View style={styles.handleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
+          </View>
 
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{t('importModal.title')}</Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+            <Text style={styles.title} testID="modal-title-import">{t('importModal.title')}</Text>
+            <TouchableOpacity onPress={handleClose} style={styles.closeBtn} testID="import-close-btn">
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -177,12 +216,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
             <TouchableOpacity
               style={[styles.tab, tab === 'text' && styles.tabActive]}
               onPress={() => { setTab('text'); setPreview([]); }}
+              testID="import-tab-text"
             >
               <Text style={[styles.tabText, tab === 'text' && styles.tabTextActive]}>{t('importModal.tabText')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, tab === 'csv' && styles.tabActive]}
               onPress={() => { setTab('csv'); setPreview([]); }}
+              testID="import-tab-csv"
             >
               <Text style={[styles.tabText, tab === 'csv' && styles.tabTextActive]}>{t('importModal.tabCSV')}</Text>
             </TouchableOpacity>
@@ -211,7 +252,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
             ) : (
               <>
                 <Text style={styles.hint}>{t('importModal.csvHint')}</Text>
-                <TouchableOpacity style={styles.filePicker} onPress={handlePickCSV}>
+                <TouchableOpacity style={styles.filePicker} onPress={handlePickCSV} testID="import-csv-pick-btn">
                   <Text style={styles.filePickerIcon}>📂</Text>
                   <Text style={styles.filePickerText}>{csvFileName || t('importModal.pickFile')}</Text>
                 </TouchableOpacity>
@@ -225,12 +266,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
 
             {preview.length > 0 && (
               <View style={styles.previewBox}>
-                <Text style={styles.previewTitle}>
+                <Text style={styles.previewTitle} testID="import-preview-title">
                   {tc('importModal.previewTitle', wordCount)}
                 </Text>
                 {preview.map((row, i) => (
                   <View key={i} style={styles.previewRow}>
-                    <Text style={styles.previewWord}>{row.word}</Text>
+                    <Text style={styles.previewWord} testID={`import-preview-word-${row.word}`}>{row.word}</Text>
                     {row.category && <Text style={styles.previewMeta}>{row.category}</Text>}
                     {row.date && <Text style={styles.previewMeta}>{row.date}</Text>}
                     {row.variant && <Text style={styles.previewVariant}>→ &ldquo;{row.variant}&rdquo;</Text>}
@@ -246,6 +287,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
               style={[styles.importBtn, (loading || wordCount === 0) && styles.importBtnDisabled]}
               onPress={handleImport}
               disabled={loading || wordCount === 0}
+              testID="import-submit-btn"
             >
               {loading
                 ? <ActivityIndicator color={COLORS.white} />
@@ -255,16 +297,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
 
             <View style={{ height: 20 }} />
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay:           { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  backdrop:          { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay:           { flex: 1, justifyContent: 'flex-end' },
   container:         { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
-  handle:            { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  handleWrap:        { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 6 },
+  handle:            { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
   titleRow:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title:             { fontSize: 20, fontWeight: '800', color: COLORS.text },
   closeBtn:          { padding: 4 },

@@ -247,6 +247,7 @@ export default function OnboardingScreen() {
             placeholder={t('onboarding.babyNamePlaceholder')}
             placeholderTextColor={COLORS.textLight}
             autoCapitalize="words"
+            testID="onboarding-name-input"
           />
         </View>
 
@@ -308,6 +309,7 @@ export default function OnboardingScreen() {
           style={[styles.continueBtn, { backgroundColor: accentColor }]}
           onPress={handleContinue}
           disabled={loading}
+          testID="onboarding-continue-btn"
         >
           <Text style={styles.continueBtnText}>
             {loading

@@ -1,0 +1,195 @@
+appId: com.littlewords.app
+name: "Import - Import words via text and CSV"
+---
+
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 15000
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+# ============================
+# IMPORT WORDS VIA TEXT
+# ============================
+
+# Scroll to and tap Import button
+- scrollUntilVisible:
+    element:
+      id: "settings-import-title"
+    direction: DOWN
+
+# Tap the Import Words button
+- tapOn:
+    id: "settings-import-btn"
+
+# Verify import modal opened
+- assertVisible:
+    id: "modal-title-import"
+
+# Verify tabs are present
+- assertVisible:
+    id: "import-tab-text"
+- assertVisible:
+    id: "import-tab-csv"
+
+# Tap the text area and type a word
+- tapOn:
+    id: "import-text-input"
+- inputText: "banana"
+- hideKeyboard
+- waitForAnimationToEnd
+
+# Verify preview section appears
+- scrollUntilVisible:
+    element:
+      id: "import-preview-word-banana"
+    direction: DOWN
+- assertVisible:
+    id: "import-preview-word-banana"
+
+# Press import button
+- tapOn:
+    id: "import-submit-btn"
+
+# Verify result alert appears (modal auto-closes before alert is shown)
+- waitForAnimationToEnd
+- assertVisible: "Import complete"
+- tapOn: "OK"
+- waitForAnimationToEnd
+
+# Navigate to Words tab to verify import
+- tapOn: "Words"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "word-item-banana"
+
+# ============================
+# IMPORT WORDS VIA CSV
+# ============================
+# Prerequisite: push the fixture file to the device before running this test:
+#   adb push __tests__/e2e/fixtures/sample-import.csv /sdcard/Downloads/sample-import.csv
+#
+# CSV rows cover:
+#   cherry      — word only
+#   mango       — word + category
+#   grape       — word + category + date
+#   kiwi        — word + category + date + variant (ki-wi)
+#   blueberry   — word + date + variant (blue-berry), no category
+
+# Navigate back to Settings
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+# Scroll to and tap Import button
+- scrollUntilVisible:
+    element:
+      id: "settings-import-title"
+    direction: DOWN
+- tapOn:
+    id: "settings-import-btn"
+
+# Switch to CSV tab
+- assertVisible:
+    id: "modal-title-import"
+- tapOn:
+    id: "import-tab-csv"
+
+# Open file picker, force-navigate to Downloads (picker may open on Drive or recent files)
+- tapOn:
+    id: "import-csv-pick-btn"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Downloads"
+    timeout: 10000
+- tapOn: "Downloads"
+- waitForAnimationToEnd
+- tapOn: "sample-import.csv"
+- waitForAnimationToEnd
+
+# Verify preview shows parsed rows
+- scrollUntilVisible:
+    element:
+      id: "import-preview-word-cherry"
+    direction: DOWN
+- assertVisible:
+    id: "import-preview-word-cherry"
+- assertVisible:
+    id: "import-preview-word-mango"
+- assertVisible:
+    id: "import-preview-word-grape"
+- assertVisible:
+    id: "import-preview-word-kiwi"
+- assertVisible:
+    id: "import-preview-word-blueberry"
+
+# Press import button
+- scrollUntilVisible:
+    element:
+      id: "import-submit-btn"
+    direction: DOWN
+- tapOn:
+    id: "import-submit-btn"
+
+# Verify result alert
+- waitForAnimationToEnd
+- assertVisible: "Import complete"
+- tapOn: "OK"
+- waitForAnimationToEnd
+
+# Verify all words appear in Words tab
+- tapOn: "Words"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: "word-item-cherry"
+    direction: DOWN
+- assertVisible:
+    id: "word-item-cherry"
+- scrollUntilVisible:
+    element:
+      id: "word-item-mango"
+    direction: DOWN
+- assertVisible:
+    id: "word-item-mango"
+- scrollUntilVisible:
+    element:
+      id: "word-item-grape"
+    direction: DOWN
+- assertVisible:
+    id: "word-item-grape"
+- scrollUntilVisible:
+    element:
+      id: "word-item-kiwi"
+    direction: DOWN
+- assertVisible:
+    id: "word-item-kiwi"
+- scrollUntilVisible:
+    element:
+      id: "word-item-blueberry"
+    direction: DOWN
+- assertVisible:
+    id: "word-item-blueberry"
+
+# Verify variants appear in Variants tab
+- tapOn: "Variants"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: "variant-item-ki-wi"
+    direction: DOWN
+- assertVisible:
+    id: "variant-item-ki-wi"
+- scrollUntilVisible:
+    element:
+      id: "variant-item-blue-berry"
+    direction: DOWN
+- assertVisible:
+    id: "variant-item-blue-berry"

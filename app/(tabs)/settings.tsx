@@ -8,7 +8,7 @@ import { getSetting, clearAllData, getCategories, Category } from '../../src/dat
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
-import { saveCSVToDevice, shareCSV, buildCategoryResolver } from '../../src/utils/csvExport';
+import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import {
   isGoogleConnected, signInWithGoogle, signOutGoogle,
   performSync, getGoogleUserEmail,
@@ -33,6 +33,7 @@ export default function SettingsScreen() {
   const { t, locale, setLocale } = useI18n();
   const categoryName = useCategoryName();
   const categoryResolver = buildCategoryResolver(t);
+  const csvHeader = buildCSVHeader(t);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
@@ -67,14 +68,14 @@ export default function SettingsScreen() {
 
   const handleShare = async () => {
     setExporting(true);
-    const result = await shareCSV(categoryResolver);
+    const result = await shareCSV(categoryResolver, csvHeader, t);
     setExporting(false);
     if (!result.success) Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
   };
 
   const handleSaveToDevice = async () => {
     setSaving(true);
-    const result = await saveCSVToDevice(categoryResolver);
+    const result = await saveCSVToDevice(categoryResolver, csvHeader, t);
     setSaving(false);
     if (result.success) {
       Alert.alert(t('settings.saveCsvSuccess'), t('settings.saveCsvMsg'));
@@ -221,16 +222,40 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+                {/* Categories */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle} testID="settings-categories-title">🏷️ {t('settings.categories')}</Text>
+          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
+          {categories.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryRow}
+              onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
+            >
+              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
+                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              </View>
+              <Text style={styles.categoryRowName} numberOfLines={1}>
+                {categoryName(cat.name)}
+              </Text>
+              <Text style={styles.categoryChevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
+            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
+          </TouchableOpacity>
+        </Card>
+
         {/* Import */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.importWords')}</Text>
+          <Text style={styles.sectionTitle} testID="settings-import-title">{t('settings.importWords')}</Text>
           <Text style={styles.sectionDesc}>{t('settings.importDesc')}</Text>
-          <Button title={t('settings.importBtn')} onPress={() => setShowImport(true)} style={styles.actionButton} />
+          <Button title={t('settings.importBtn')} onPress={() => setShowImport(true)} style={styles.actionButton} testID="settings-import-btn" />
         </Card>
 
         {/* Export */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.exportData')}</Text>
+          <Text style={styles.sectionTitle} testID="settings-export-title">{t('settings.exportData')}</Text>
           <Text style={styles.sectionDesc}>{t('settings.exportDesc')}</Text>
           <View style={styles.buttonRow}>
             <Button
@@ -239,6 +264,7 @@ export default function SettingsScreen() {
               loading={saving}
               style={[styles.flexBtn, styles.exportBtn]}
               textStyle={{ fontSize: 12, fontWeight: '700' }}
+              testID="settings-save-btn"
             />
             <Button
               title={exporting ? t('settings.sharing') : t('settings.shareExport')}
@@ -247,6 +273,7 @@ export default function SettingsScreen() {
               variant="outline"
               style={[styles.flexBtn, styles.exportBtn]}
               textStyle={{ fontSize: 12, fontWeight: '700' }}
+              testID="settings-share-btn"
             />
           </View>
         </Card>
@@ -301,30 +328,6 @@ export default function SettingsScreen() {
               />
             </>
           )}
-        </Card>
-
-        {/* Categories */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>🏷️ {t('settings.categories')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
-          {categories.map(cat => (
-            <TouchableOpacity
-              key={cat.id}
-              style={styles.categoryRow}
-              onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
-            >
-              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-              </View>
-              <Text style={styles.categoryRowName} numberOfLines={1}>
-                {categoryName(cat.name)}
-              </Text>
-              <Text style={styles.categoryChevron}>›</Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
-            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
-          </TouchableOpacity>
         </Card>
 
         {/* Danger Zone */}

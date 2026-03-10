@@ -15,28 +15,33 @@ name: "CRUD Variant - Add, edit, and delete variants"
 # ============================
 
 - tapOn: "+ New"
-- assertVisible: "New Variant"
+- assertVisible:
+    id: "modal-title-new-variant"
 
 # Select a word from the search list
-- assertVisible: "Search word..."
+- assertVisible:
+    id: "variant-word-search"
 - tapOn: "mama"
 
 # Enter variant text
 - tapOn:
     id: "variant-input"
 - inputText: "ma-ma"
+- hideKeyboard
 
 # Add a note
 - tapOn:
-    text: "Context"
+    id: "variant-notes-input"
 - inputText: "Morning greeting"
+- hideKeyboard
 
 # Press Add
 - tapOn: "Add"
 - waitForAnimationToEnd
 
 # Verify variant appears
-- assertVisible: "ma-ma"
+- assertVisible:
+    id: "variant-item-ma-ma"
 - assertVisible: "mama"
 
 # ============================
@@ -48,10 +53,12 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - tapOn:
     id: "variant-input"
 - inputText: "wa-wa"
+- hideKeyboard
 - tapOn: "Add"
 - waitForAnimationToEnd
 
-- assertVisible: "wa-wa"
+- assertVisible:
+    id: "variant-item-wa-wa"
 - assertVisible: "2 variants"
 
 # ============================
@@ -59,32 +66,39 @@ name: "CRUD Variant - Add, edit, and delete variants"
 # ============================
 
 # Tap on the variant to edit
-- tapOn: "ma-ma"
-- assertVisible: "Edit Variant"
+- tapOn:
+    id: "variant-item-ma-ma"
+- assertVisible:
+    id: "modal-title-edit-variant"
 
 # Clear and update the variant text
 - tapOn:
     id: "variant-input"
 - eraseText: 5
 - inputText: "maa-maa"
+- hideKeyboard
 
 # Press Save
 - tapOn: "Save"
 - waitForAnimationToEnd
 
 # Verify updated variant
-- assertVisible: "maa-maa"
+- assertVisible:
+    id: "variant-item-maa-maa"
 
 # ============================
 # DELETE VARIANT
 # ============================
 
 # Tap on variant to edit
-- tapOn: "wa-wa"
-- assertVisible: "Edit Variant"
+- tapOn:
+    id: "variant-item-wa-wa"
+- assertVisible:
+    id: "modal-title-edit-variant"
 
-# Press Remove
-- tapOn: "Remove"
+# Press Remove button in modal
+- tapOn:
+    id: "variant-delete-btn"
 
 # Confirm deletion in alert
 - tapOn:
@@ -93,5 +107,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - waitForAnimationToEnd
 
 # Verify variant is gone
-- assertNotVisible: "wa-wa"
+- assertNotVisible:
+    id: "variant-item-wa-wa"
 - assertVisible: "1 variant"

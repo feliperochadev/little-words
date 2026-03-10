@@ -13,13 +13,14 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "e2e": "maestro test .maestro/full-e2e.yaml",
-    "e2e:onboarding": "maestro test .maestro/onboarding.yaml",
-    "e2e:crud-word": "maestro test .maestro/crud-word.yaml",
-    "e2e:crud-variant": "maestro test .maestro/crud-variant.yaml",
-    "e2e:crud-category": "maestro test .maestro/crud-category.yaml",
-    "e2e:import": "maestro test .maestro/import-words.yaml",
-    "e2e:export": "maestro test .maestro/export-words.yaml"
+    "ci": "npm run lint && npm run typecheck && npm run test",
+    "e2e": "maestro test __tests__/e2e/full-e2e.yaml",
+    "e2e:onboarding": "maestro test __tests__/e2e/onboarding.yaml",
+    "e2e:crud-word": "maestro test __tests__/e2e/crud-word.yaml",
+    "e2e:crud-variant": "maestro test __tests__/e2e/crud-variant.yaml",
+    "e2e:crud-category": "maestro test __tests__/e2e/crud-category.yaml",
+    "e2e:import": "maestro test __tests__/e2e/import-words.yaml",
+    "e2e:export": "maestro test __tests__/e2e/export-words.yaml"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",

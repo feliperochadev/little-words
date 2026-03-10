@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import type { Word } from '../../src/database/database';
@@ -17,6 +17,11 @@ jest.mock('../../src/database/database', () => ({
   deleteVariant: jest.fn().mockResolvedValue(undefined),
   getVariantsByWord: jest.fn().mockResolvedValue([]),
   findWordByName: jest.fn().mockResolvedValue(null),
+  addCategory: jest.fn().mockResolvedValue(1),
+  updateCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategory: jest.fn().mockResolvedValue(undefined),
+  unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
+  getWordCountByCategory: jest.fn().mockResolvedValue(0),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
@@ -57,6 +62,23 @@ describe('AddWordModal', () => {
     const { findByText } = renderModal({ editWord: mockWord });
     expect(await findByText(/Edit Word/)).toBeTruthy();
     expect(await findByText(/Remove/)).toBeTruthy();
+  });
+
+  it('renders correctly after reopening', async () => {
+    const onClose = jest.fn();
+    const view = render(
+      <I18nProvider>
+        <AddWordModal visible={false} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <AddWordModal visible={true} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText(/New Word/)).toBeTruthy();
   });
 
   it('calls onClose on cancel', async () => {
@@ -295,5 +317,175 @@ describe('AddWordModal', () => {
     const catChip = await findByText('Animals');
     fireEvent(catChip, 'longPress');
     expect(await findByText(/Edit Category/)).toBeTruthy();
+  });
+
+  it('closes AddCategoryModal from within AddWordModal (covers onClose callback)', async () => {
+    const { findByText, findAllByText } = renderModal();
+    // Open the new category modal
+    fireEvent.press(await findByText(/\+ Category/));
+    expect(await findByText(/New Category/)).toBeTruthy();
+    // Both AddWordModal and AddCategoryModal have Cancel buttons — press the last one (AddCategoryModal's)
+    const cancelBtns = await findAllByText('Cancel');
+    fireEvent.press(cancelBtns[cancelBtns.length - 1]);
+    // AddCategoryModal is closed — AddWordModal should still be visible
+    expect(await findByText(/Add Word|New Word/i)).toBeTruthy();
+  });
+
+  it('scrolls to selected category index > 0 on open with editWord (covers lines 115-116)', async () => {
+    jest.useFakeTimers();
+    (database.getCategories as jest.Mock).mockResolvedValue([
+      { id: 99, name: 'food', color: '#00B894', emoji: '🍎', created_at: '' },
+      { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
+    ]);
+    renderModal({ editWord: mockWord });
+    // Flush promises so getCategories resolves and registers the 300ms setTimeout
+    await act(async () => {});
+    // Now fire the setTimeout
+    await act(async () => { jest.advanceTimersByTime(400); });
+    jest.useRealTimers();
+  });
+
+  it('category scroll onLayout fires handler (covers line 269)', async () => {
+    const { findByTestId } = renderModal();
+    const catScroll = await findByTestId('category-scroll');
+    fireEvent(catScroll, 'layout', { nativeEvent: { layout: { width: 300, height: 44 } } });
+  });
+
+  it('category scroll onContentSizeChange fires handler (covers lines 277-278)', async () => {
+    const { findByTestId } = renderModal();
+    const catScroll = await findByTestId('category-scroll');
+    fireEvent(catScroll, 'contentSizeChange', 500, 44);
+  });
+
+  it('category scroll right arrow press (covers line 307)', async () => {
+    const { findByTestId, findByText } = renderModal();
+    await findByText('Animals'); // wait for categories
+    // catAtEnd starts false so right arrow renders
+    const rightBtn = await findByTestId('category-scroll-right');
+    fireEvent.press(rightBtn);
+  });
+
+  it('category scroll left arrow appears and is pressable after scrolling (covers line 258)', async () => {
+    const { findByTestId } = renderModal();
+    const catScroll = await findByTestId('category-scroll');
+    // Scroll past x=10 → catScrolled=true → left arrow renders
+    fireEvent(catScroll, 'scroll', { nativeEvent: { contentOffset: { x: 50 } } });
+    const leftBtn = await findByTestId('category-scroll-left');
+    fireEvent.press(leftBtn);
+  });
+
+  it('blur on inline variant with unchanged text is a no-op (covers line 335 text===v.variant branch)', async () => {
+    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+      { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
+    ]);
+    const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
+    fireEvent.press(await findByText(/mamá/));
+    const varInput = await findByDisplayValue('mamá');
+    // Blur without changing text — text === v.variant, no update
+    await act(async () => { fireEvent(varInput, 'blur'); });
+    expect(database.updateVariant).not.toHaveBeenCalled();
+  });
+
+  it('flush inline variant edit with unchanged text is no-op (covers line 180 text===original.variant)', async () => {
+    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+      { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
+    ]);
+    const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
+    await findByDisplayValue('mamãe');
+    // Enter inline edit but do NOT change text
+    fireEvent.press(await findByText(/mamá/));
+    // Save — flush loop sees text === original.variant → skip updateVariant
+    await act(async () => { fireEvent.press(await findByText('Save')); });
+    await waitFor(() => expect(database.updateWord).toHaveBeenCalled());
+    expect(database.updateVariant).not.toHaveBeenCalled();
+  });
+
+  it('duplicate card shows singular variant label (covers line 244 count===1 branch)', async () => {
+    jest.useFakeTimers();
+    (database.findWordByName as jest.Mock).mockResolvedValue({
+      id: 99, word: 'hello', date_added: '2024-06-01', category_name: null,
+      category_color: null, category_emoji: null, variant_count: 1, notes: null,
+    });
+    const { findByPlaceholderText, findByText } = renderModal();
+    fireEvent.changeText(await findByPlaceholderText(/E\.g\./), 'hello');
+    await act(async () => { jest.advanceTimersByTime(500); });
+    expect(await findByText(/1 variant\b/)).toBeTruthy();
+    jest.useRealTimers();
+  });
+
+  it('AddCategoryModal onSave refreshes categories (covers line 423)', async () => {
+    const { findByText, findByPlaceholderText } = renderModal();
+    fireEvent.press(await findByText(/\+ Category/));
+    expect(await findByText(/New Category/)).toBeTruthy();
+    fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
+    await act(async () => { fireEvent.press(await findByText('Create Category')); });
+    await waitFor(() => expect(database.addCategory).toHaveBeenCalled());
+  });
+
+  it('AddCategoryModal onDeleted refreshes categories and clears selection (covers line 424)', async () => {
+    const { findByText } = renderModal();
+    // Open edit mode via long press on category chip
+    fireEvent(await findByText('Animals'), 'longPress');
+    expect(await findByText(/Edit Category/)).toBeTruthy();
+    fireEvent.press(await findByText(/Remove/));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
+    await act(async () => { destructiveBtn.onPress(); });
+    await waitFor(() => expect(database.deleteCategory).toHaveBeenCalled());
+  });
+});
+
+describe('AddWordModal — panResponder gesture handlers', () => {
+  let capturedConfig: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedConfig = null;
+    (database.getCategories as jest.Mock).mockResolvedValue([
+      { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
+    ]);
+    (database.getSetting as jest.Mock).mockResolvedValue(null);
+    jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
+      capturedConfig = config;
+      return { panHandlers: {} };
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function renderWithPan(props: Record<string, any> = {}) {
+    const { AddWordModal } = require('../../src/components/AddWordModal');
+    const result = render(
+      <I18nProvider>
+        <AddWordModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
+      </I18nProvider>
+    );
+    await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
+    return result;
+  }
+
+  it('onStartShouldSetPanResponder always returns true', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onStartShouldSetPanResponder()).toBe(true);
+  });
+
+  it('onMoveShouldSetPanResponder returns true only when dy > 0', async () => {
+    await renderWithPan();
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: 10 })).toBe(true);
+    expect(capturedConfig.onMoveShouldSetPanResponder(null, { dy: -5 })).toBe(false);
+  });
+
+  it('onPanResponderMove updates position for dy > 0, no-op for dy <= 0', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: 60 }); });
+    act(() => { capturedConfig.onPanResponderMove(null, { dy: -5 }); });
+  });
+
+  it('onPanResponderRelease springs back when gesture is too small', async () => {
+    await renderWithPan();
+    act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });

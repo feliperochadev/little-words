@@ -9,7 +9,8 @@ name: "CRUD Category - Add, edit, and delete a category"
 # Navigate to Settings tab
 - tapOn: "Settings"
 - waitForAnimationToEnd
-- assertVisible: "Categories"
+- assertVisible:
+    id: "settings-categories-title"
 
 # ============================
 # ADD CATEGORY
@@ -19,12 +20,14 @@ name: "CRUD Category - Add, edit, and delete a category"
     element: "+ Category"
     direction: DOWN
 - tapOn: "+ Category"
-- assertVisible: "New Category"
+- assertVisible:
+    id: "modal-title-new-category"
 
 # Enter category name
 - tapOn:
-    text: "Toys*"
+    id: "category-name-input"
 - inputText: "Fruits"
+- hideKeyboard
 
 # Pick a different emoji (tap the 2nd emoji in the list)
 - tapOn: "🍎"
@@ -34,6 +37,9 @@ name: "CRUD Category - Add, edit, and delete a category"
 - waitForAnimationToEnd
 
 # Verify category appears in settings list
+- swipe:
+    direction: DOWN
+    duration: 2000
 - scrollUntilVisible:
     element: "Fruits"
     direction: DOWN
@@ -45,20 +51,24 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 # Tap on the category row to open edit modal
 - tapOn: "Fruits"
-- assertVisible: "Edit Category"
+- assertVisible:
+    id: "modal-title-edit-category"
 
 # Clear and change the name
 - tapOn:
-    text: "Fruits"
-    index: 1
+    id: "category-name-input"
 - eraseText: 6
 - inputText: "Veggies"
+- hideKeyboard
 
 # Press Save
 - tapOn: "Save"
 - waitForAnimationToEnd
 
 # Verify updated name in settings
+- swipe:
+    direction: DOWN
+    duration: 2000
 - scrollUntilVisible:
     element: "Veggies"
     direction: DOWN
@@ -70,10 +80,12 @@ name: "CRUD Category - Add, edit, and delete a category"
 
 # Tap on the category to open edit modal
 - tapOn: "Veggies"
-- assertVisible: "Edit Category"
+- assertVisible:
+    id: "modal-title-edit-category"
 
-# Press Remove button
-- tapOn: "Remove"
+# Press Remove button in modal
+- tapOn:
+    id: "category-delete-btn"
 
 # Confirm deletion in alert
 - tapOn: "Remove"

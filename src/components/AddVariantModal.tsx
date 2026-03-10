@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Modal, StyleSheet,
-  Alert, TouchableOpacity, ScrollView,
+  Alert, TouchableOpacity, ScrollView, Animated, PanResponder,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
@@ -25,6 +25,29 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   const insets = useSafeAreaInsets();
   const today = new Date().toISOString().split('T')[0];
 
+  const translateY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const dismissModal = useRef(() => {
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => { onCloseRef.current(); });
+  }).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
+    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
+    onPanResponderRelease: (_, { dy, vy }) => {
+      if (dy > 100 || vy > 0.8) {
+        dismissModal();
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      }
+    },
+  })).current;
+
   const [variant, setVariant]     = useState('');
   const [dateAdded, setDateAdded] = useState(today);
   const [notes, setNotes]         = useState('');
@@ -36,6 +59,17 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
 
   const effectiveWord = word ?? chosenWord;
   const showSearch    = !word && !editVariant;
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(800);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity]);
 
   useEffect(() => {
     if (!visible) return;
@@ -89,14 +123,20 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={s.overlay}>
-        <View style={[s.container, { paddingBottom: 24 + insets.bottom }]}>
-          <View style={s.handle} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+      <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+      </Animated.View>
+      <View style={s.overlay} pointerEvents="box-none">
+        <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+          <View style={s.handleWrap} {...panResponder.panHandlers}>
+            <View style={s.handle} />
+          </View>
+
           <View style={s.header}>
-            <Text style={[s.title, editVariant && s.titleLeft]}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            <Text style={[s.title, editVariant && s.titleLeft]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
             {editVariant && (
-              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete}>
+              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete} testID="variant-delete-btn">
                 <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             )}
@@ -124,6 +164,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
                         placeholder={t('addVariant.wordSearchPlaceholder')}
                         placeholderTextColor={COLORS.textLight}
                         autoCapitalize="none"
+                        testID="variant-word-search"
                       />
                       {wordSearch.length > 0 && (
                         <TouchableOpacity onPress={() => setWordSearch('')}>
@@ -181,6 +222,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
               style={[s.input, s.textArea]} value={notes} onChangeText={setNotes}
               placeholder={t('addVariant.notesPlaceholder')}
               placeholderTextColor={COLORS.textLight} multiline numberOfLines={3}
+              testID="variant-notes-input"
             />
 
             <View style={s.actions}>
@@ -191,16 +233,18 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
               />
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 };
 
 const s = StyleSheet.create({
-  overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  backdrop:     { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay:      { flex: 1, justifyContent: 'flex-end' },
   container:    { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
-  handle:       { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  handleWrap:   { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
+  handle:       { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title:        { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
   titleLeft:    { textAlign: 'left' },

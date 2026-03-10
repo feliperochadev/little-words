@@ -13,8 +13,7 @@ name: "Onboarding - Complete first-run setup"
 
 # -- Enter baby name --
 - tapOn:
-    text: "E.g.*"
-    optional: true
+    id: "onboarding-name-input"
 - inputText: "Luna"
 - hideKeyboard
 
@@ -30,7 +29,8 @@ name: "Onboarding - Complete first-run setup"
 - assertVisible: "Luna"
 
 # -- Press continue --
-- tapOn: "Start with Luna 💕"
+- tapOn:
+    id: "onboarding-continue-btn"
 
 # -- Verify we land on the home/dashboard screen --
 - extendedWaitUntil:

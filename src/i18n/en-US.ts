@@ -159,6 +159,15 @@ export default {
     countPlural: '{{count}} variants',
   },
 
+  // ── CSV export headers ───────────────────────────────────────────────────────
+  csv: {
+    columnWord:     'word',
+    columnCategory: 'category',
+    columnDate:     'date',
+    columnVariant:  'variant',
+    filenamePrefix: 'little-words',
+  },
+
   // ── Settings screen ─────────────────────────────────────────────────────────
   settings: {
     title: '⚙️ Settings',

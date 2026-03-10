@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert,
+  StyleSheet, ScrollView, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
 import { addCategory, updateCategory, unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
@@ -37,6 +37,47 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   const [selectedEmoji, setSelectedEmoji] = useState(CATEGORY_EMOJIS[0]);
   const [loading, setLoading] = useState(false);
 
+  const handleClose = () => {
+    setName('');
+    setSelectedColor(CATEGORY_COLORS[0]);
+    setSelectedEmoji(CATEGORY_EMOJIS[0]);
+    onClose();
+  };
+
+  const translateY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const dismissModal = useRef(() => {
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => { onCloseRef.current(); });
+  }).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
+    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
+    onPanResponderRelease: (_, { dy, vy }) => {
+      if (dy > 100 || vy > 0.8) {
+        dismissModal();
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      }
+    },
+  })).current;
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(800);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity]);
+
   useEffect(() => {
     if (editCategory) {
       setName(editCategory.name);
@@ -48,13 +89,6 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       setSelectedEmoji(CATEGORY_EMOJIS[0]);
     }
   }, [editCategory, visible]);
-
-  const handleClose = () => {
-    setName('');
-    setSelectedColor(CATEGORY_COLORS[0]);
-    setSelectedEmoji(CATEGORY_EMOJIS[0]);
-    onClose();
-  };
 
   const handleDelete = async () => {
     if (!editCategory) return;
@@ -109,18 +143,24 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={[styles.container, { paddingBottom: 24 + insets.bottom }]}>
-          <View style={styles.handle} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+      </Animated.View>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+          <View style={styles.handleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
+          </View>
+
 
           {/* Header row */}
           <View style={styles.header}>
-            <Text style={[styles.title, isEditing && styles.titleLeft]}>
+            <Text style={[styles.title, isEditing && styles.titleLeft]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
               {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
             </Text>
             {isEditing && (
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} testID="category-delete-btn">
                 <Text style={styles.deleteBtnText}>🗑️ {t('common.remove')}</Text>
               </TouchableOpacity>
             )}
@@ -144,6 +184,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               placeholderTextColor={COLORS.textLight}
               autoFocus
               autoCapitalize="words"
+              testID="category-name-input"
             />
 
             <Text style={styles.label}>{t('addCategory.emojiLabel')}</Text>
@@ -179,19 +220,22 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 onPress={handleSave}
                 loading={loading}
                 style={styles.actionBtn}
+                testID="category-save-btn"
               />
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  backdrop:         { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay:          { flex: 1, justifyContent: 'flex-end' },
   container:        { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },
-  handle:           { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  handleWrap:       { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
+  handle:           { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   title:            { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
   titleLeft:      { textAlign: 'left' },

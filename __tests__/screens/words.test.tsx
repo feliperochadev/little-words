@@ -14,6 +14,10 @@ jest.mock('../../src/database/database', () => {
     findWordByName: jest.fn().mockResolvedValue(null),
     getVariantsByWord: jest.fn().mockResolvedValue([]),
     deleteWord: jest.fn().mockResolvedValue(undefined),
+    updateCategory: jest.fn().mockResolvedValue(undefined),
+    deleteCategory: jest.fn().mockResolvedValue(undefined),
+    unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
+    getWordCountByCategory: jest.fn().mockResolvedValue(0),
     getSetting: jest.fn().mockResolvedValue(null),
     setSetting: jest.fn().mockResolvedValue(undefined),
   };
@@ -27,6 +31,9 @@ jest.mock('../../src/utils/googleDrive', () => ({
 import WordsScreen from '../../app/(tabs)/words';
 import * as db from '../../src/database/database';
 import * as googleDrive from '../../src/utils/googleDrive';
+const mockUpdateCategory = db.updateCategory as jest.Mock;
+const mockDeleteCategory = db.deleteCategory as jest.Mock;
+const mockUnlinkWords = db.unlinkWordsFromCategory as jest.Mock;
 
 const sampleWords = [
   {
@@ -275,6 +282,46 @@ describe('WordsScreen', () => {
     // Modal should be closed
     await waitFor(() => {
       expect(queryByText(/New Word/)).toBeNull();
+    });
+  });
+
+  it('closes AddCategoryModal via Cancel (covers line 204 onClose)', async () => {
+    const { findByText, queryByText } = render(
+      <I18nProvider><WordsScreen /></I18nProvider>
+    );
+    fireEvent(await findByText('Animals'), 'longPress');
+    expect(await findByText(/Edit Category/)).toBeTruthy();
+    fireEvent.press(await findByText('Cancel'));
+    await waitFor(() => {
+      expect(queryByText(/Edit Category/)).toBeNull();
+    });
+  });
+
+  it('saves category edit from words screen (covers line 205 onSave)', async () => {
+    const { findByText } = render(
+      <I18nProvider><WordsScreen /></I18nProvider>
+    );
+    fireEvent(await findByText('Animals'), 'longPress');
+    expect(await findByText(/Edit Category/)).toBeTruthy();
+    await act(async () => { fireEvent.press(await findByText(/Save/)); });
+    await waitFor(() => {
+      expect(mockUpdateCategory).toHaveBeenCalled();
+    });
+  });
+
+  it('deletes category from words screen (covers line 206 onDeleted)', async () => {
+    const { findByText } = render(
+      <I18nProvider><WordsScreen /></I18nProvider>
+    );
+    fireEvent(await findByText('Animals'), 'longPress');
+    expect(await findByText(/Edit Category/)).toBeTruthy();
+    fireEvent.press(await findByText(/Remove/));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
+    await act(async () => { destructiveBtn.onPress(); });
+    await waitFor(() => {
+      expect(mockDeleteCategory).toHaveBeenCalled();
     });
   });
 });

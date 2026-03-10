@@ -3,7 +3,23 @@ import * as Sharing from 'expo-sharing';
 import { getAllDataForCSV } from '../database/database';
 import { DEFAULT_CATEGORY_KEY_SET } from './categoryKeys';
 
-const getFilename = () => `palavrinhas_${new Date().toISOString().split('T')[0]}.csv`;
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function buildFilename(t: (key: string) => string): string {
+  const now = new Date();
+  const date = now.toISOString().split('T')[0];
+  const hhmm = `${pad(now.getHours())}-${pad(now.getMinutes())}`;
+  return `${t('csv.filenamePrefix')}_${date}_${hhmm}.csv`;
+}
+
+export function buildCSVHeader(t: (key: string) => string): string {
+  return [
+    t('csv.columnWord'),
+    t('csv.columnCategory'),
+    t('csv.columnDate'),
+    t('csv.columnVariant'),
+  ].join(',');
+}
 
 /**
  * Builds a category resolver that translates built-in keys using the
@@ -21,19 +37,25 @@ export function buildCategoryResolver(
   };
 }
 
-const writeTempFile = async (resolveCategoryName: (name: string) => string): Promise<string> => {
-  const csvContent = await getAllDataForCSV(resolveCategoryName);
-  const file = new FSFile(Paths.cache, getFilename());
+const writeTempFile = async (
+  resolveCategoryName: (name: string) => string,
+  headerRow: string,
+  t: (key: string) => string,
+): Promise<string> => {
+  const csvContent = await getAllDataForCSV(resolveCategoryName, headerRow);
+  const file = new FSFile(Paths.cache, buildFilename(t));
   file.write(csvContent);
   return file.uri;
 };
 
 export const saveCSVToDevice = async (
-  resolveCategoryName: (name: string) => string
+  resolveCategoryName: (name: string) => string,
+  headerRow: string,
+  t: (key: string) => string,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const csvContent = await getAllDataForCSV(resolveCategoryName);
-    const filename = getFilename();
+    const csvContent = await getAllDataForCSV(resolveCategoryName, headerRow);
+    const filename = buildFilename(t);
 
     let dir: Directory;
     try {
@@ -51,10 +73,12 @@ export const saveCSVToDevice = async (
 };
 
 export const shareCSV = async (
-  resolveCategoryName: (name: string) => string
+  resolveCategoryName: (name: string) => string,
+  headerRow: string,
+  t: (key: string) => string,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const fileUri = await writeTempFile(resolveCategoryName);
+    const fileUri = await writeTempFile(resolveCategoryName, headerRow, t);
     const canShare = await Sharing.isAvailableAsync();
     if (!canShare) return { success: false, error: 'Sharing not available on this device.' };
     await Sharing.shareAsync(fileUri, {
