@@ -31,5 +31,17 @@ After every approved change, update the relevant agent documentation when conven
 - **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
 - Agent-specific `/ship` instructions live in `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md`.
 
+## Multi-Agent Review Protocol
+
+Before running `/ship`, every agent must evaluate the latest changelog entry and run the appropriate review:
+
+- `npm run agent:review` — detects complexity and, for complex changes, creates `.agents/reviews/review-{timestamp}.md`
+- **Simple change** (≤ 10 change lines AND < 3 categories): internal review only; verify checklist in CLI output.
+- **Complex change** (> 10 change lines OR ≥ 3 distinct categories): the review file must be reviewed by an external vendor agent (Codex or Gemini preferred). The reviewer sets `status: approved` or `status: changes_requested` in the file.
+- Maximum **3 iterations**. If unresolved after 3, set `status: escalation_required` and halt — do not proceed to `/ship`.
+- After `status: approved`, delete the review file and proceed normally.
+
+Agents must never approve their own complex changes, bypass CI, or skip changelog updates.
+
 ## Architecture Notes
 The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.

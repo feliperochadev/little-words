@@ -14,6 +14,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "ci": "npm run lint && npm run typecheck && npm run test",
+    "agent:review": "npx tsx scripts/agent/review-loop.ts",
     "e2e": "maestro test __tests__/e2e/full-e2e.yaml",
     "e2e:onboarding": "maestro test __tests__/e2e/onboarding.yaml",
     "e2e:crud-word": "maestro test __tests__/e2e/crud-word.yaml",

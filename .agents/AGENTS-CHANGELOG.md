@@ -4,6 +4,42 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_12
+
+**[feature] Shared Agent Configuration + Automatic Ship**
+- Added `.agents/agent-config.json`: central configuration for all agents (versioning, `automatic_ship` flag, and review requirements)
+- Added `scripts/agent/load-config.ts`: utility to load and validate the shared configuration with sensible defaults
+- Updated `scripts/agent/review-loop.ts`:
+  - Integrated `loadAgentConfig` to govern iteration limits and approval requirements
+  - Extended `ReviewFile` format with `reviewers` and `approvals` arrays for multi-agent tracking
+  - Added CLI logic to detect and announce when required approvals are met and if auto-shipping is enabled
+- Updated `.gemini/commands/review.md`: documented the new multi-agent approval workflow and the automatic ship trigger condition
+
+**[test] Updated review loop unit tests**
+- Updated `__tests__/unit/review-loop.test.ts`: expanded `formatReviewFile` and `parseReviewFile` tests to cover the new `reviewers` and `approvals` fields, ensuring robust multi-agent state management
+- Verified all 591 tests passing with full type-check compliance
+
+---
+
+### 2026-03-10_10
+
+**[feature] Multi-agent review system**
+- Created `.agents/reviews/` directory for review request files
+- Added `scripts/agent/complexity-check.ts`: parses latest changelog entry, counts change lines (Rule A: > 10) and category tags (Rule B: ≥ 3), returns `ComplexityResult`
+- Added `scripts/agent/review-loop.ts`: creates structured review files (`review-{timestamp}.md`), tracks iteration count up to max 3, supports cleanup of approved reviews
+- Added `npm run agent:review` script to `package.json` (runs via `npx tsx`)
+
+**[test] Unit tests for review system scripts**
+- Added `__tests__/unit/complexity-check.test.ts`: full coverage of `parseLatestEntry`, `countChangeLines`, `extractCategories`, `evaluateComplexity`, and `checkComplexity` (filesystem integration)
+- Added `__tests__/unit/review-loop.test.ts`: full coverage of `buildTimestamp`, `formatReviewFile`, `parseReviewFile`, `createReviewRequest`, and `cleanupReviews`
+
+**[config] Updated documentation for multi-agent review protocol**
+- Updated `CLAUDE.md`: added Rule 5 (Multi-Agent Review Protocol) and `npm run agent:review` command docs
+- Updated `AGENTS.md`: added Multi-Agent Review Protocol section before Architecture Notes
+- Updated `.agents/COMMON-RULES.md`: added Rule 5 as vendor-agnostic baseline
+
+---
+
 ### 2026-03-10_9
 
 **[config] Standardized agent markers in global documentation**

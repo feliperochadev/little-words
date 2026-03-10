@@ -38,7 +38,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `[test]` — new tests or test expansions with no production code change
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
 
-4. `/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**  
+4. `/ship` is the standard way to commit and push approved changes. **Never run it automatically — only when explicitly requested by the user.**
+
+5. **Multi-Agent Review Protocol.** Before `/ship`, evaluate the latest changelog entry for complexity and run the appropriate review:
+   - **Simple change** (≤ 10 change lines AND < 3 categories): internal review only — run `npm run agent:review` and verify checklist passes.
+   - **Complex change** (> 10 change lines OR ≥ 3 distinct categories): `npm run agent:review "<summary>"` creates a structured review file in `.agents/reviews/`. An external reviewer (Codex or Gemini) must update the file and set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved after 3, status becomes `escalation_required` and the agent must stop and ask the user.
+   - After approval, delete review files and proceed to `/ship`.
 
 ## Commands
 
@@ -61,6 +66,12 @@ npm test
 
 # Run tests with coverage
 npm run test:coverage
+```
+
+```bash
+# Run multi-agent review (complexity detection + review file creation if complex)
+npm run agent:review                      # auto-detects complexity
+npm run agent:review "Change summary"    # passes summary for complex review requests
 ```
 
 ### Shipping code (`/ship`)

@@ -68,6 +68,14 @@
    - Follow the detailed implementation in `.gemini/commands/ship.md`.
    - Appends `(apsc - gi)` to the commit subject to mark it as a Gemini-authored commit.
 
+5. **Multi-Agent Review Protocol (`/review`):**
+   - Run `/review` after `npm run ci` passes and before `/ship`.
+   - Internally calls `npm run agent:review` to classify the change as simple or complex.
+   - **Simple** (≤ 10 change lines AND < 3 category tags): performs an internal checklist review inline.
+   - **Complex** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md` and requires an external reviewer (Codex or Claude) to set `status: approved`.
+   - Maximum 3 review iterations; if unresolved, sets `status: escalation_required` and stops.
+   - Never approve your own complex changes. Never skip `/review` on a complex change.
+
 ## Commands
 ```bash
 # Start dev server
@@ -75,6 +83,13 @@ npx expo start
 
 # Run full CI suite (Mandatory before completion)
 npm run ci
+
+# Run post-CI review (required before /ship)
+/review
+
+# Run complexity check / create review request directly
+npm run agent:review
+npm run agent:review "Change summary"
 
 # Shipping code
 /ship

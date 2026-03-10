@@ -16,4 +16,9 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
 
 4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**
    - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
-   - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.  
+   - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.
+
+5. **Multi-Agent Review Protocol.** Before `/ship`, run `npm run agent:review` to evaluate complexity. Scripts live in `scripts/agent/`.
+   - **Simple change** (≤ 10 change lines AND < 3 category tags): internal review only.
+   - **Complex change** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md`. An external vendor agent must set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved, set `status: escalation_required` and stop.
+   - Agents must never approve their own complex changes or proceed to `/ship` while a review file has status `pending` or `changes_requested`.
