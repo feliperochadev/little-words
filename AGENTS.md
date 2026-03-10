@@ -47,6 +47,8 @@ If keep → proceed. If change → ask which flag(s) and new value(s), update th
 - `false` → **never run `/ship` automatically**; wait for explicit user request.
 - **Agent Markers:** Commits must include a vendor marker: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
 - **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
+- **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
+- **Changelog immutability after push:** Never modify a changelog entry after it has been pushed. If corrections are needed, add a new entry referencing the old ID.
 - Agent-specific `/ship` instructions live in `.claude/commands/ship.md`, `.codex/commands/ship.md`, and `.gemini/commands/ship.md`.
 
 ## Multi-Agent Review Protocol

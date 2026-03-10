@@ -8,13 +8,17 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
 
 1. **Branch check** — run `git branch --show-current`. If the current branch is `main` or `master`, stop immediately and ask the user to create a feature branch before shipping. Do not proceed.
 
-2. **Find unshipped changelog entries** — do both of the following:
-   - Run `git log --oneline -20` to get recent commit subjects.
+2. **Find unshipped changelog entries** — do all of the following:
+   - Run `git tag --list "ship-*" --sort=-creatordate | head -n 1` to find the most recent ship tag.
    - Read `.agents/AGENTS-CHANGELOG.md` in full.
 
-   Then, working from the top of the changelog (most recent first), collect every entry (heading + content) whose heading ID (e.g. `2026-03-09_5`) does **not** appear in any recent commit subject. Stop collecting when you hit an entry whose ID **is** already in a commit subject — everything from that point is already shipped.
+   If a ship tag exists, strip the `ship-` prefix to get the last shipped changelog ID (e.g. `2026-03-09_5`). Working from the top of the changelog (most recent first), collect every entry (heading + content) until you hit that ID. Everything above it is unshipped.
 
-   If all entries are already in git log, stop and tell the user there is nothing new to ship.
+   If **no** ship tag exists yet, fall back to the git-log method once:
+   - Run `git log --oneline -20` to get recent commit subjects.
+   - Collect entries until you hit a changelog ID that appears in a commit subject.
+
+   If there are no unshipped entries, stop and tell the user there is nothing new to ship.
 
 3. **Stage changes** — run `git status` to see what is modified or untracked. Stage relevant files, prefer specific paths over `git add -A`, and exclude secrets such as `.env`.
 
@@ -23,6 +27,15 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
    - **Body**: the full content of every unshipped entry, in chronological order (most recent first), separated by blank lines. **Strip Markdown formatting** (`###` from headings, `**` from bold text).
    - Use a HEREDOC to pass the message so formatting is preserved.
 
-5. **Push** — run `git push -u origin <branch>` so the upstream is set if needed.
+5. **Tag** — create a ship tag for the newest shipped changelog entry:
+   - Tag format: `ship-YYYY-MM-DD_N` (e.g. `ship-2026-03-10_28`).
+   - The tag must point to the commit you just created.
+   - **Do not** move or recreate an existing ship tag; if it already exists, stop and ask for guidance.
 
-6. **Confirm** — output the commit hash and a one-line summary of how many changelog entries were included.
+6. **Push** — run `git push -u origin <branch>` and push the new tag (e.g. `git push origin ship-2026-03-10_28`).
+
+7. **Confirm** — output the commit hash and a one-line summary of how many changelog entries were included.
+
+## Notes
+
+- Once a changelog entry is pushed, never modify it; add a new entry referencing the original ID if corrections are needed.

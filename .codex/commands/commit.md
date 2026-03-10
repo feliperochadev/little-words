@@ -25,3 +25,5 @@ When this command is invoked (by the user or automatically), always proceed with
 - Never skip CI before proceeding to `/review`.
 - `automatic_commit: false` means the agent waits to be asked — it does NOT mean the command does nothing when invoked.
 - The `automatic_commit` flag is a safety valve: set it to `false` when E2E or integration tests are flaky and you want to manually trigger commits.
+- `/ship` determines unshipped entries using `ship-YYYY-MM-DD_N` git tags; if none exist yet, it falls back to the git-log method once.
+- Once a changelog entry is pushed, never modify it; add a new entry referencing the original ID if corrections are needed.

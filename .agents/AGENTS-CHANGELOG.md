@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_29
+
+**[config] Shipping rules — git tags and changelog immutability**
+- Updated `/ship` docs to use `ship-YYYY-MM-DD_N` tags as the shipping boundary, with git-log fallback only when no tags exist
+- Added rule: once a changelog entry is pushed, never edit it; add a new entry and reference the old ID
+- Synced the rule across `.agents/COMMON-RULES.md`, all vendor readmes, and commit/ship command docs
+
 ### 2026-03-10_28
 
 **[fix] Agent tests — move to scripts folder**
