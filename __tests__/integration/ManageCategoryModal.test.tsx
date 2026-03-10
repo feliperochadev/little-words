@@ -49,11 +49,42 @@ describe('ManageCategoryModal', () => {
     expect(await findByText('🐾')).toBeTruthy();
   });
 
+  it('renders correctly after reopening', async () => {
+    const onClose = jest.fn();
+    const onEdit = jest.fn();
+    const onDeleted = jest.fn();
+    const view = render(
+      <I18nProvider>
+        <ManageCategoryModal
+          visible={false}
+          category={mockCategory}
+          onClose={onClose}
+          onEdit={onEdit}
+          onDeleted={onDeleted}
+        />
+      </I18nProvider>
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <ManageCategoryModal
+          visible={true}
+          category={mockCategory}
+          onClose={onClose}
+          onEdit={onEdit}
+          onDeleted={onDeleted}
+        />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText('Animals')).toBeTruthy();
+  });
+
   it('calls onClose when cancel is pressed', async () => {
     const onClose = jest.fn();
     const { findByText } = renderModal({ onClose });
     fireEvent.press(await findByText('Cancel'));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
   it('shows delete confirmation alert', async () => {
@@ -87,8 +118,9 @@ describe('ManageCategoryModal', () => {
     jest.useFakeTimers();
     const { findByText } = renderModal({ onClose, onEdit });
     fireEvent.press(await findByText('✏️'));
-    expect(onClose).toHaveBeenCalled();
-    act(() => { jest.advanceTimersByTime(400); });
+    // dismissModal runs a 250ms animation before calling onClose, then onEdit fires after a 300ms setTimeout
+    act(() => { jest.advanceTimersByTime(600); });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(onEdit).toHaveBeenCalledWith(mockCategory);
     jest.useRealTimers();
   });

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, Alert,
+  View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
@@ -28,6 +28,40 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
+
+  const translateY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const dismissModal = useRef(() => {
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => { onCloseRef.current(); });
+  }).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
+    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
+    onPanResponderRelease: (_, { dy, vy }) => {
+      if (dy > 100 || vy > 0.8) {
+        dismissModal();
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      }
+    },
+  })).current;
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(800);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity]);
 
   if (!category) return null;
 
@@ -59,10 +93,18 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity style={[styles.sheet, { paddingBottom: 36 + insets.bottom }]} activeOpacity={1}>
-          <View style={styles.handle} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+      </Animated.View>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <Animated.View
+          style={[styles.sheet, { paddingBottom: 36 + insets.bottom, transform: [{ translateY }] }]}
+          onStartShouldSetResponder={() => true}
+        >
+          <View style={styles.handleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
+          </View>
 
           {/* Category preview */}
           <View style={styles.preview}>
@@ -75,7 +117,7 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
           {/* Actions */}
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => { onClose(); setTimeout(() => onEdit(category), 300); }}
+            onPress={() => { dismissModal(); setTimeout(() => onEdit(category), 300); }}
           >
             <Text style={styles.actionIcon}>✏️</Text>
             <Text style={styles.actionText}>{t('manageCategory.edit')}</Text>
@@ -88,19 +130,21 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
             <Text style={[styles.actionText, styles.actionTextDanger]}>{t('manageCategory.delete')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={dismissModal}>
             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </Animated.View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay:        { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  overlay:        { flex: 1, justifyContent: 'flex-end' },
   sheet:          { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
-  handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  handleWrap:     { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
+  handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
   preview:        { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
   emojiCircle:    { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   emoji:          { fontSize: 24 },

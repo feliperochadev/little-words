@@ -33,6 +33,7 @@ jest.mock('../../src/utils/googleDrive', () => ({
 
 jest.mock('../../src/utils/csvExport', () => ({
   buildCategoryResolver: jest.fn(() => (name: string) => name),
+  buildCSVHeader: jest.fn(() => 'word,category,date,variant'),
   shareCSV: jest.fn().mockResolvedValue({ success: true }),
   saveCSVToDevice: jest.fn().mockResolvedValue({ success: true }),
 }));

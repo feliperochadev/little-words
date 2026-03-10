@@ -53,6 +53,23 @@ describe('AddVariantModal', () => {
     expect(await findByText(/Edit Variant/)).toBeTruthy();
   });
 
+  it('renders correctly after reopening', async () => {
+    const onClose = jest.fn();
+    const view = render(
+      <I18nProvider>
+        <AddVariantModal visible={false} onClose={onClose} onSave={jest.fn()} word={mockWord} />
+      </I18nProvider>
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <AddVariantModal visible={true} onClose={onClose} onSave={jest.fn()} word={mockWord} />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText(/New Variant/)).toBeTruthy();
+  });
+
   it('shows delete button in edit mode', async () => {
     const { findByText } = renderModal({ editVariant: mockVariant });
     expect(await findByText(/Remove/)).toBeTruthy();

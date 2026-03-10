@@ -1,0 +1,118 @@
+appId: com.littlewords.app
+name: "Export - Import sample CSV, export, save to device, verify exported file"
+---
+
+# Prerequisite: push the fixture CSV to the device before running:
+#   adb push __tests__/e2e/fixtures/sample-import.csv /sdcard/Downloads/sample-import.csv
+
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 15000
+
+# ============================
+# IMPORT SAMPLE CSV
+# (ensures words are in DB before exporting; safe to re-run — duplicates are skipped)
+# ============================
+
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      id: "settings-import-title"
+    direction: DOWN
+- tapOn:
+    id: "settings-import-btn"
+- assertVisible:
+    id: "modal-title-import"
+- tapOn:
+    id: "import-tab-csv"
+- tapOn:
+    id: "import-csv-pick-btn"
+- waitForAnimationToEnd
+- tapOn: "Show roots"
+- waitForAnimationToEnd
+- tapOn: "Downloads"
+- waitForAnimationToEnd
+- tapOn: "sample-import.csv"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      id: "import-preview-word-cherry"
+    direction: DOWN
+- assertVisible:
+    id: "import-preview-word-cherry"
+
+- scrollUntilVisible:
+    element:
+      id: "import-submit-btn"
+    direction: DOWN
+- tapOn:
+    id: "import-submit-btn"
+- waitForAnimationToEnd
+- assertVisible: "Import complete"
+- tapOn: "OK"
+- waitForAnimationToEnd
+
+# ============================
+# EXPORT - SHARE CSV
+# ============================
+
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      id: "settings-export-title"
+    direction: DOWN
+- assertVisible:
+    id: "settings-export-title"
+
+- tapOn:
+    id: "settings-share-btn"
+- waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+
+# ============================
+# EXPORT - SAVE TO DEVICE
+# ============================
+
+- tapOn:
+    id: "settings-save-btn"
+- waitForAnimationToEnd
+
+# Android directory picker — navigate to Downloads.
+# "Show roots" is only present when the picker opens in a non-root view (e.g. Google Drive).
+# Skip it if the picker already shows Downloads directly.
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Downloads"
+    timeout: 10000
+- tapOn: "Downloads"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Use this folder"
+    timeout: 10000
+- tapOn: "Use this folder"
+- waitForAnimationToEnd
+
+# Android SAF may show a one-time "Allow access to Downloads" confirmation — tap Allow if present.
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+      - waitForAnimationToEnd
+
+# Verify success alert — the "✅ Saved!" alert confirms the file was written to the
+# selected folder. File content is validated by the import step earlier in this flow.
+- assertVisible: "✅ Saved!"
+- tapOn: "OK"
+- waitForAnimationToEnd

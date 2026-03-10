@@ -50,6 +50,20 @@ describe('ImportModal', () => {
     expect(await findByText(/Import words/)).toBeTruthy();
   });
 
+  it('renders correctly after reopening', async () => {
+    const view = renderWithProvider(
+      <ImportModal visible={false} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText(/Import words/)).toBeTruthy();
+  });
+
   it('renders text and csv tabs', async () => {
     const { findByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />

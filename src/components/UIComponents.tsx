@@ -76,17 +76,18 @@ interface CardProps {
   children: React.ReactNode;
   style?: any;
   onPress?: () => void;
+  testID?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style, onPress }) => {
+export const Card: React.FC<CardProps> = ({ children, style, onPress, testID }) => {
   if (onPress) {
     return (
-      <TouchableOpacity style={[cardStyles.card, style]} onPress={onPress} activeOpacity={0.9}>
+      <TouchableOpacity style={[cardStyles.card, style]} onPress={onPress} activeOpacity={0.9} testID={testID}>
         {children}
       </TouchableOpacity>
     );
   }
-  return <View style={[cardStyles.card, style]}>{children}</View>;
+  return <View style={[cardStyles.card, style]} testID={testID}>{children}</View>;
 };
 
 const cardStyles = StyleSheet.create({

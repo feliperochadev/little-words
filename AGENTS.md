@@ -1,0 +1,30 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+`app/` holds Expo Router screens and layouts, including `app/(tabs)/` for the main navigation. Shared UI belongs in `src/components/`, SQLite data access in `src/database/`, translations in `src/i18n/`, and helpers in `src/utils/`. Tests are split into `__tests__/unit`, `__tests__/integration`, `__tests__/screens`, and Maestro flows in `__tests__/e2e`. Keep static assets in `assets/`.
+
+## Build, Test, and Development Commands
+Use `npm start` for the Expo dev server and `npm run android` or `npm run ios` for native runs. Quality gates are mandatory:
+
+- `npm run lint`: ESLint 9 with `eslint-config-expo`
+- `npm run typecheck`: TypeScript compile check without emit
+- `npm test`: Jest unit, integration, and screen tests
+- `npm run ci`: required completion gate; runs lint, typecheck, and Jest
+- `npm run e2e`, `npm run e2e:import`, `npm run e2e:export`: Maestro flows in `__tests__/e2e/`
+
+Do not consider work complete until `npm run ci` passes.
+
+## Coding Style & Naming Conventions
+Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
+
+## Testing Guidelines
+Every code change must include tests. Changed code should reach 99% line coverage and 95% function, branch, and statement coverage, including edge cases and error paths. Put pure logic in `__tests__/unit`, component behavior in `__tests__/integration`, and route-level behavior in `__tests__/screens`. In Maestro, prefer `id:` selectors, call `scrollUntilVisible` before off-screen assertions, and use `waitForAnimationToEnd` after modal or navigation transitions.
+
+## Commit & Pull Request Guidelines
+Recent history uses short, imperative subjects such as `fix test` and `fix import from text box`. Keep commits focused and descriptive. Pull requests should summarize user-visible changes, list tests run, link the related issue when applicable, and include screenshots or recordings for UI changes.
+
+## Documentation & Shipping Rules
+After every approved change, update the relevant agent documentation when conventions or architecture change and always append an entry to `.agents/AGENTS-CHANGELOG.md` using `### YYYY-MM-DD_N` and tags such as `[fix]`, `[feature]`, or `[config]`. `/ship` is the standard push flow, but never run it automatically; only run it on explicit user request. Codex-specific `/ship` instructions live in `.codex/commands/ship.md`.
+
+## Architecture Notes
+The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.

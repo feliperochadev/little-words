@@ -159,6 +159,15 @@ export default {
     countPlural: '{{count}} variantes',
   },
 
+  // ── CSV export headers ───────────────────────────────────────────────────────
+  csv: {
+    columnWord:     'palavra',
+    columnCategory: 'categoria',
+    columnDate:     'data',
+    columnVariant:  'variante',
+    filenamePrefix: 'palavrinhas',
+  },
+
   // ── Settings screen ─────────────────────────────────────────────────────────
   settings: {
     title: '⚙️ Configurações',

@@ -77,7 +77,7 @@ export default function WordsScreen() {
   const renderWord = ({ item }: { item: Word }) => {
 
     return (
-      <Card style={[styles.wordCard]}>
+      <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
         <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
           <View style={styles.wordRow}>
             <View style={styles.wordMain}>

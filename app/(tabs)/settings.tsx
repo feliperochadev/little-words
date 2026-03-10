@@ -8,7 +8,7 @@ import { getSetting, clearAllData, getCategories, Category } from '../../src/dat
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
-import { saveCSVToDevice, shareCSV, buildCategoryResolver } from '../../src/utils/csvExport';
+import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import {
   isGoogleConnected, signInWithGoogle, signOutGoogle,
   performSync, getGoogleUserEmail,
@@ -33,6 +33,7 @@ export default function SettingsScreen() {
   const { t, locale, setLocale } = useI18n();
   const categoryName = useCategoryName();
   const categoryResolver = buildCategoryResolver(t);
+  const csvHeader = buildCSVHeader(t);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
@@ -67,14 +68,14 @@ export default function SettingsScreen() {
 
   const handleShare = async () => {
     setExporting(true);
-    const result = await shareCSV(categoryResolver);
+    const result = await shareCSV(categoryResolver, csvHeader, t);
     setExporting(false);
     if (!result.success) Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
   };
 
   const handleSaveToDevice = async () => {
     setSaving(true);
-    const result = await saveCSVToDevice(categoryResolver);
+    const result = await saveCSVToDevice(categoryResolver, csvHeader, t);
     setSaving(false);
     if (result.success) {
       Alert.alert(t('settings.saveCsvSuccess'), t('settings.saveCsvMsg'));

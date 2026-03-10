@@ -1,6 +1,38 @@
-import { buildCategoryResolver } from '../../src/utils/csvExport';
+import { buildCategoryResolver, buildCSVHeader, buildFilename } from '../../src/utils/csvExport';
 
 describe('csvExport', () => {
+  describe('buildCSVHeader', () => {
+    it('returns English headers for en-US locale', () => {
+      const t = (key: string) => ({ 'csv.columnWord': 'word', 'csv.columnCategory': 'category', 'csv.columnDate': 'date', 'csv.columnVariant': 'variant' }[key] ?? key);
+      expect(buildCSVHeader(t)).toBe('word,category,date,variant');
+    });
+
+    it('returns Portuguese headers for pt-BR locale', () => {
+      const t = (key: string) => ({ 'csv.columnWord': 'palavra', 'csv.columnCategory': 'categoria', 'csv.columnDate': 'data', 'csv.columnVariant': 'variante' }[key] ?? key);
+      expect(buildCSVHeader(t)).toBe('palavra,categoria,data,variante');
+    });
+
+    it('uses comma as delimiter', () => {
+      const t = (key: string) => key.split('.').pop() ?? key;
+      expect(buildCSVHeader(t)).toContain(',');
+      expect(buildCSVHeader(t).split(',').length).toBe(4);
+    });
+  });
+
+  describe('buildFilename', () => {
+    it('uses locale-aware prefix and YYYY-MM-DD-HH-mm format', () => {
+      const t = (key: string) => ({ 'csv.filenamePrefix': 'little-words' }[key] ?? key);
+      const filename = buildFilename(t);
+      expect(filename).toMatch(/^little-words_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.csv$/);
+    });
+
+    it('uses pt-BR prefix when locale is pt-BR', () => {
+      const t = (key: string) => ({ 'csv.filenamePrefix': 'palavrinhas' }[key] ?? key);
+      const filename = buildFilename(t);
+      expect(filename).toMatch(/^palavrinhas_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.csv$/);
+    });
+  });
+
   describe('buildCategoryResolver', () => {
     const mockT = (key: string): string => {
       const map: Record<string, string> = {

@@ -301,7 +301,10 @@ export const setSetting = (key: string, value: string) =>
 
 // ─── CSV ──────────────────────────────────────────────────────────────────────
 
-export const getAllDataForCSV = async (resolveCategoryName: (name: string) => string): Promise<string> => {
+export const getAllDataForCSV = async (
+  resolveCategoryName: (name: string) => string,
+  headerRow = 'palavra,categoria,data,variante',
+): Promise<string> => {
   const rows = await query<any>(`
     SELECT w.word, c.name as categoria, w.date_added as data, '' as variante
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
@@ -313,7 +316,7 @@ export const getAllDataForCSV = async (resolveCategoryName: (name: string) => st
     ORDER BY data ASC
   `);
 
-  const header = 'palavra,categoria,data,variante\n';
+  const header = headerRow + '\n';
   const body = rows.map((r: any) =>
     `"${(r.word || '').replace(/"/g, '""')}","${(resolveCategoryName(r.categoria || '') || '').replace(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replace(/"/g, '""')}"`
   ).join('\n');

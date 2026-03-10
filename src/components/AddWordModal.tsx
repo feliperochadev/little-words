@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert,
+  StyleSheet, ScrollView, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { Category, getCategories, addWord, updateWord, deleteWord, addVariant, updateVariant, deleteVariant, getVariantsByWord, findWordByName, Word, Variant } from '../database/database';
@@ -61,6 +61,29 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const [editingVariantIds, setEditingVariantIds]   = useState<Set<number>>(new Set());
   const [editingVariantTexts, setEditingVariantTexts] = useState<Record<number, string>>({});
 
+  const translateY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const dismissModal = useRef(() => {
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => { onCloseRef.current(); });
+  }).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
+    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
+    onPanResponderRelease: (_, { dy, vy }) => {
+      if (dy > 100 || vy > 0.8) {
+        dismissModal();
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      }
+    },
+  })).current;
+
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
   const catContentWidth = useRef(0);
@@ -68,6 +91,17 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const [catScrolled, setCatScrolled] = useState(false);
   const [catAtEnd, setCatAtEnd] = useState(false);
   const catItemWidth = 110; // approximate chip width + gap
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(800);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity]);
 
   useEffect(() => {
     if (!visible) return;
@@ -158,10 +192,15 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 
   return (
     <>
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={s.overlay}>
-        <View style={[s.container, { paddingBottom: 24 + insets.bottom }]}>
-          <View style={s.handle} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+      <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+      </Animated.View>
+      <View style={s.overlay} pointerEvents="box-none">
+        <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+          <View style={s.handleWrap} {...panResponder.panHandlers}>
+            <View style={s.handle} />
+          </View>
           <View style={s.header}>
             <Text style={[s.title, editWord && s.titleLeft]} testID={editWord ? 'modal-title-edit-word' : 'modal-title-new-word'}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
             {editWord && (
@@ -373,7 +412,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
               />
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
 
@@ -390,9 +429,11 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 };
 
 const s = StyleSheet.create({
-  overlay:        { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay:        { flex: 1, justifyContent: 'flex-end' },
   container:      { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
-  handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  handleWrap:     { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
+  handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
   title:          { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
   titleLeft:      { textAlign: 'left' },
   header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },

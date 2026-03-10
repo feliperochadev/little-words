@@ -59,6 +59,23 @@ describe('AddWordModal', () => {
     expect(await findByText(/Remove/)).toBeTruthy();
   });
 
+  it('renders correctly after reopening', async () => {
+    const onClose = jest.fn();
+    const view = render(
+      <I18nProvider>
+        <AddWordModal visible={false} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <AddWordModal visible={true} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText(/New Word/)).toBeTruthy();
+  });
+
   it('calls onClose on cancel', async () => {
     const onClose = jest.fn();
     const { findByText } = renderModal({ onClose });

@@ -41,6 +41,23 @@ describe('AddCategoryModal', () => {
     expect(await findByText(/Edit Category/)).toBeTruthy();
   });
 
+  it('renders correctly after reopening', async () => {
+    const onClose = jest.fn();
+    const view = render(
+      <I18nProvider>
+        <AddCategoryModal visible={false} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    view.rerender(
+      <I18nProvider>
+        <AddCategoryModal visible={true} onClose={onClose} onSave={jest.fn()} />
+      </I18nProvider>
+    );
+
+    expect(await view.findByText(/New Category/)).toBeTruthy();
+  });
+
   it('shows delete button in edit mode', async () => {
     const { findByText } = renderModal({ editCategory: editCat, onDeleted: jest.fn() });
     expect(await findByText(/Remove/)).toBeTruthy();
