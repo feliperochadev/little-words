@@ -15,7 +15,7 @@ import {
   setAgentAvailable,
   writeAgentConfig,
   type AgentConfig,
-} from '../../scripts/agent/agent-availability';
+} from '../../../scripts/agent/agent-availability';
 
 const makeConfig = (overrides?: Partial<AgentConfig>): AgentConfig => ({
   version: 1,

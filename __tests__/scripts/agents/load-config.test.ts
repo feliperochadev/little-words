@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { loadAgentConfig } from '../../scripts/agent/load-config';
+import { loadAgentConfig } from '../../../scripts/agent/load-config';
 
 const writeJson = (dir: string, data: object): string => {
   const p = path.join(dir, 'agent-config.json');

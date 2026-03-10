@@ -12,7 +12,7 @@ import {
   formatReviewFile,
   parseReviewFile,
   type ReviewFile,
-} from '../../scripts/agent/review-loop';
+} from '../../../scripts/agent/review-loop';
 
 // ---------------------------------------------------------------------------
 // buildTimestamp

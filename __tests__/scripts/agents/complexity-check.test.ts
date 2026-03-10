@@ -10,7 +10,7 @@ import {
   evaluateComplexity,
   extractCategories,
   parseLatestEntry,
-} from '../../scripts/agent/complexity-check';
+} from '../../../scripts/agent/complexity-check';
 
 // ---------------------------------------------------------------------------
 // parseLatestEntry

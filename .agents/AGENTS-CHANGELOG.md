@@ -4,6 +4,13 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_28
+
+**[fix] Agent tests — move to scripts folder**
+- Moved agent coordination unit tests into `__tests__/scripts/agents`
+- Updated relative imports to `scripts/agent` after relocation
+- Enabled automatic commit and ship feature flags in `.agents/agent-config.json`
+
 ### 2026-03-10_27
 
 **[feature] Unique variant per word — duplicate detection in AddVariantModal and AddWordModal**

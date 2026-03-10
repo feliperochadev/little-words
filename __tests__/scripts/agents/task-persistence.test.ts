@@ -14,7 +14,7 @@ import {
   markTaskInProgress,
   parseTaskFile,
   type UnfinishedTask,
-} from '../../scripts/agent/task-persistence';
+} from '../../../scripts/agent/task-persistence';
 
 const baseTask: UnfinishedTask = {
   status: 'pending',
