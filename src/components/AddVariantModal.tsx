@@ -132,6 +132,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
           <View style={s.handleWrap} {...panResponder.panHandlers}>
             <View style={s.handle} />
           </View>
+
           <View style={s.header}>
             <Text style={[s.title, editVariant && s.titleLeft]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
             {editVariant && (

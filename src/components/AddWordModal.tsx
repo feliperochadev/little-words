@@ -201,6 +201,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
           <View style={s.handleWrap} {...panResponder.panHandlers}>
             <View style={s.handle} />
           </View>
+
           <View style={s.header}>
             <Text style={[s.title, editWord && s.titleLeft]} testID={editWord ? 'modal-title-edit-word' : 'modal-title-new-word'}>{editWord ? t('addWord.titleEdit') : t('addWord.titleNew')}</Text>
             {editWord && (

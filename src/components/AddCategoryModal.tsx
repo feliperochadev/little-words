@@ -153,6 +153,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             <View style={styles.handle} />
           </View>
 
+
           {/* Header row */}
           <View style={styles.header}>
             <Text style={[styles.title, isEditing && styles.titleLeft]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
