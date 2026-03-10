@@ -159,4 +159,3 @@ ios/
 .env
 .env.*
 !.env.example
-package-lock.json

@@ -4,6 +4,14 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_18
+
+**[fix] Commit package-lock.json so GitHub Actions cache works**
+- Removed `package-lock.json` from `.gitignore` — it was excluded, causing `actions/setup-node@v4` with `cache: "npm"` to fail with "Dependencies lock file is not found"
+- Committed `package-lock.json` to the repository for reproducible installs and to satisfy the npm cache action
+
+---
+
 ### 2026-03-10_17
 
 **[config] Automatic ship rule enforced across all vendor readmes**
