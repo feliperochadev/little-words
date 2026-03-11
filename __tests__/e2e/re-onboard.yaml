@@ -1,0 +1,31 @@
+appId: com.littlewords.app
+name: "Settings - Delete all data and re-onboard"
+---
+
+# ============================
+# RE-ONBOARD (Boy)
+# ============================
+
+- extendedWaitUntil:
+    visible: "English"
+    timeout: 5000
+
+- tapOn:
+    id: "onboarding-name-input"
+- inputText: "Noah"
+- hideKeyboard
+
+- tapOn: "Boy"
+
+- tapOn: "Select date"
+- assertVisible: "Date of Birth"
+- tapOn: "Confirm"
+
+- assertVisible: "Noah"
+
+- tapOn:
+    id: "onboarding-continue-btn"
+
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 5000

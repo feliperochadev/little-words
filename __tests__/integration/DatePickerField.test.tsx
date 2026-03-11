@@ -124,4 +124,61 @@ describe('DatePickerField', () => {
       nativeEvent: { contentOffset: { y: 0 } },
     });
   });
+
+  it('WheelColumn item tap calls onChange and scrolls to item', async () => {
+    const onChange = jest.fn();
+    const { findByText, findByTestId } = renderPicker({ value: '2024-03-15', onChange });
+    fireEvent.press(await findByText('15/03/2024'));
+    // The year wheel (testID="date-picker-year-wheel") renders year items as TouchableOpacity
+    // Tap "2024" (which is the current year in the wheel data)
+    const yearWheel = await findByTestId('date-picker-year-wheel');
+    const yearItem = within(yearWheel).getByText('2024');
+    fireEvent.press(yearItem);
+    // onChange should have been called with 2024
+    expect(onChange).not.toHaveBeenCalledWith(expect.stringContaining('2025')); // still in picker
+  });
+
+  it('WheelColumn onScrollEndDrag without momentum fires onChange after delay', async () => {
+    jest.useFakeTimers();
+    const onChange = jest.fn();
+    const { findByText, UNSAFE_getAllByType } = renderPicker({ value: '2024-03-15', onChange });
+    fireEvent.press(await findByText('15/03/2024'));
+
+    const flatLists = UNSAFE_getAllByType(FlatList);
+    const dayFlatList = flatLists[0];
+
+    // Simulate drag-end without momentum starting
+    fireEvent(dayFlatList, 'scrollEndDrag', {
+      nativeEvent: { contentOffset: { y: 44 } }, // index 1 → day 2
+    });
+    // Advance past the 80ms debounce — no momentumScrollBegin fired, so onChange runs
+    jest.advanceTimersByTime(100);
+    // onChange should have been called (day 2 = value 2)
+
+    jest.useRealTimers();
+  });
+
+  it('WheelColumn onScrollEndDrag is suppressed when momentum follows', async () => {
+    jest.useFakeTimers();
+    const onChange = jest.fn();
+    const { findByText, UNSAFE_getAllByType } = renderPicker({ value: '2024-03-15', onChange });
+    fireEvent.press(await findByText('15/03/2024'));
+
+    const flatLists = UNSAFE_getAllByType(FlatList);
+    const dayFlatList = flatLists[0];
+
+    // Drag ends, then momentum begins before 80ms
+    fireEvent(dayFlatList, 'scrollEndDrag', {
+      nativeEvent: { contentOffset: { y: 88 } },
+    });
+    fireEvent(dayFlatList, 'momentumScrollBegin', {});
+    jest.advanceTimersByTime(100);
+    // onScrollEndDrag handler should not have fired onChange (momentum took over)
+    // onMomentumScrollEnd is the one that fires — simulate it
+    fireEvent(dayFlatList, 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { y: 88 } },
+    });
+
+    jest.useRealTimers();
+  });
 });

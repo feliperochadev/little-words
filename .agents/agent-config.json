@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "features": {
+    "automatic_commit": true,
+    "automatic_ship": true
+  },
+  "review": {
+    "external_agents_required_for_auto_ship": 2,
+    "max_review_iterations": 3
+  },
+  "agents": {
+    "claude": {
+      "available": true,
+      "readme_file": "CLAUDE.md"
+    },
+    "codex": {
+      "available": true,
+      "readme_file": "AGENTS.md"
+    },
+    "gemini": {
+      "available": true,
+      "readme_file": "GEMINI.md"
+    }
+  }
+}

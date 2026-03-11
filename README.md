@@ -1,8 +1,8 @@
-# Palavrinhas
+# Little Words
 
 English | [Português (Brasil)](./README.pt-BR.md)
 
-Palavrinhas is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
+Little Words is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
 
 ## Features
 
@@ -60,6 +60,14 @@ Useful commands:
 - `src/utils/csvExport.ts` builds locale-aware CSV headers and category labels
 - `src/utils/importHelpers.ts` parses both plain text and CSV input
 - Google Drive backup is guarded by `isNativeBuild()` and does not work in Expo Go
+- Google Drive backups are stored in a `palavrinhas-app` folder and use the `palavrinhas_backup.csv` filename
+- The local SQLite file is `little-words.db` for new installs
+
+## Multi-Agent Workflow
+
+- Coordination data lives in `.agents/` (feature flags, changelog, reviews, and unfinished tasks)
+- Agent state and task persistence scripts live in `scripts/agent/`
+- Vendor readmes (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) are kept in sync for shared rules and workflow steps
 
 ## Testing
 

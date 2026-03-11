@@ -6,6 +6,7 @@ import {
   isGoogleConnected,
   getGoogleUserEmail,
   performSync,
+  buildDriveFolderName,
 } from '../../src/utils/googleDrive';
 import Constants from 'expo-constants';
 
@@ -36,11 +37,28 @@ const mockGetSetting = (values: Record<string, string | null>) => {
 const mockFetch = jest.fn();
 (global as any).fetch = mockFetch;
 
+// Minimal t() mock for performSync — returns locale-neutral test values
+const mockT = (key: string): string => ({
+  'csv.driveFolderName': 'test-app',
+  'csv.filenamePrefix': 'test',
+}[key] ?? key);
+
 describe('googleDrive', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setNativeBuild(false); // default: not native
     mockFetch.mockReset();
+  });
+
+  // ── buildDriveFolderName ───────────────────────────────────────────────
+
+  describe('buildDriveFolderName', () => {
+    it('returns locale-specific folder name from t()', () => {
+      const enT = (key: string) => ({ 'csv.driveFolderName': 'little-words-app' }[key] ?? key);
+      const ptT = (key: string) => ({ 'csv.driveFolderName': 'palavrinhas-app' }[key] ?? key);
+      expect(buildDriveFolderName(enT)).toBe('little-words-app');
+      expect(buildDriveFolderName(ptT)).toBe('palavrinhas-app');
+    });
   });
 
   // ── isNativeBuild ──────────────────────────────────────────────────────
@@ -246,7 +264,7 @@ describe('googleDrive', () => {
   describe('performSync', () => {
     it('returns error when not native build', async () => {
       setNativeBuild(false);
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result).toEqual({ success: false, error: 'not_native' });
     });
 
@@ -255,7 +273,7 @@ describe('googleDrive', () => {
       // isGoogleConnected calls getSetting('google_signed_in')
       mockDb.getAllSync.mockReturnValueOnce([{ value: '' }]);
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result).toEqual({ success: false, error: 'Nao conectado' });
     });
 
@@ -272,16 +290,19 @@ describe('googleDrive', () => {
       });
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
-      // getAllDataForCSV uses query which calls getAllSync
-      // But it's called after the setting queries, so we need to handle that too
 
-      // Mock fetch for uploadToDrive - successful upload
+      // findOrCreateFolder - folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
+      // uploadToDrive - PATCH success
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ id: 'new-file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       expect(result.lastSync).toBeDefined();
       // Verify fetch was called with PATCH (existing file)
@@ -303,21 +324,26 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
+      // findOrCreateFolder - folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // findExistingFile fetch - no file found
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ files: [] }),
       });
-      // uploadToDrive fetch - success
+      // uploadToDrive fetch - success POST
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ id: 'brand-new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
-      // Second fetch should be POST (new file)
-      expect(mockFetch.mock.calls[1][1].method).toBe('POST');
+      // Third fetch should be POST (new file)
+      expect(mockFetch.mock.calls[2][1].method).toBe('POST');
     });
 
     it('finds existing file via Drive API when not in settings', async () => {
@@ -332,6 +358,11 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
+      // findOrCreateFolder - folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // findExistingFile fetch - found existing file
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -343,10 +374,10 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'found-file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // Should use PATCH since file was found
-      expect(mockFetch.mock.calls[1][1].method).toBe('PATCH');
+      expect(mockFetch.mock.calls[2][1].method).toBe('PATCH');
     });
 
     it('handles TOKEN_EXPIRED by retrying with fresh token', async () => {
@@ -364,11 +395,21 @@ describe('googleDrive', () => {
         .mockResolvedValueOnce({ accessToken: 'fresh-token' });
       GoogleSignin.signInSilently.mockResolvedValue({});
 
+      // findOrCreateFolder (initial token)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // First upload - 401 TOKEN_EXPIRED
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: () => Promise.resolve({}),
+      });
+      // findOrCreateFolder (fresh token retry)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
       });
       // Retry upload - success
       mockFetch.mockResolvedValueOnce({
@@ -376,7 +417,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       expect(GoogleSignin.signInSilently).toHaveBeenCalled();
     });
@@ -397,11 +438,21 @@ describe('googleDrive', () => {
       GoogleSignin.signInSilently.mockResolvedValue({});
       GoogleSignin.signOut.mockResolvedValue(undefined);
 
+      // findOrCreateFolder (initial token)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // First upload - 401
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: () => Promise.resolve({}),
+      });
+      // findOrCreateFolder (fresh token retry)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
       });
       // Retry upload - also fails
       mockFetch.mockResolvedValueOnce({
@@ -410,7 +461,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Sessao expirada. Conecte-se novamente.');
     });
@@ -429,6 +480,11 @@ describe('googleDrive', () => {
       GoogleSignin.signInSilently.mockRejectedValue(new Error('silent sign in failed'));
       GoogleSignin.signOut.mockResolvedValue(undefined);
 
+      // findOrCreateFolder
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // First upload - 401
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -436,7 +492,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Sessao expirada. Conecte-se novamente.');
     });
@@ -453,6 +509,11 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
+      // findOrCreateFolder
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // Upload fails with 500
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -460,7 +521,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Erro HTTP 500');
     });
@@ -477,10 +538,15 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
-      // fetch throws
+      // findOrCreateFolder - success
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
+      // uploadToDrive throws
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network error');
     });
@@ -496,7 +562,7 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockRejectedValue(new Error('Token retrieval failed'));
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Token retrieval failed');
     });
@@ -513,6 +579,11 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
+      // findOrCreateFolder - folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // findExistingFile - not ok response
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -524,10 +595,10 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // Should use POST since findExistingFile returned null
-      expect(mockFetch.mock.calls[1][1].method).toBe('POST');
+      expect(mockFetch.mock.calls[2][1].method).toBe('POST');
     });
 
     it('handles findExistingFile fetch exception', async () => {
@@ -542,6 +613,11 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
 
+      // findOrCreateFolder - folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [{ id: 'folder-id' }] }),
+      });
       // findExistingFile - throws
       mockFetch.mockRejectedValueOnce(new Error('network down'));
       // uploadToDrive - success
@@ -550,7 +626,71 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
+      expect(result.success).toBe(true);
+    });
+
+    it('creates folder when none exists and uploads successfully', async () => {
+      setNativeBuild(true);
+      let callCount = 0;
+      mockDb.getAllSync.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return [{ value: '1' }]; // google_signed_in
+        if (callCount === 2) return []; // no google_file_id
+        return [];
+      });
+
+      GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
+
+      // findOrCreateFolder search - no folder found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [] }),
+      });
+      // findOrCreateFolder create - success
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ id: 'new-folder-id' }),
+      });
+      // findExistingFile - no file found
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ files: [] }),
+      });
+      // uploadToDrive - success POST with parent folder
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ id: 'created-file-id' }),
+      });
+
+      const result = await performSync(mockT);
+      expect(result.success).toBe(true);
+      // POST body should include folder parent
+      const uploadBody = mockFetch.mock.calls[3][1].body as string;
+      expect(uploadBody).toContain('new-folder-id');
+    });
+
+    it('proceeds without folder when findOrCreateFolder search fails', async () => {
+      setNativeBuild(true);
+      let callCount = 0;
+      mockDb.getAllSync.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return [{ value: '1' }]; // google_signed_in
+        if (callCount === 2) return [{ value: 'file-id' }]; // google_file_id
+        return [];
+      });
+
+      GoogleSignin.getTokens.mockResolvedValue({ accessToken: 'test-token' });
+
+      // findOrCreateFolder - throws
+      mockFetch.mockRejectedValueOnce(new Error('folder search failed'));
+      // uploadToDrive - success
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ id: 'file-id' }),
+      });
+
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
     });
   });

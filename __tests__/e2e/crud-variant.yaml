@@ -4,11 +4,10 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 - extendedWaitUntil:
     visible: "Variants"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Variants tab
 - tapOn: "Variants"
-- waitForAnimationToEnd
 
 # ============================
 # ADD VARIANT
@@ -21,12 +20,12 @@ name: "CRUD Variant - Add, edit, and delete variants"
 # Select a word from the search list
 - assertVisible:
     id: "variant-word-search"
-- tapOn: "mama"
+- tapOn: "ball"
 
 # Enter variant text
 - tapOn:
     id: "variant-input"
-- inputText: "ma-ma"
+- inputText: "ba-ba"
 - hideKeyboard
 
 # Add a note
@@ -37,12 +36,11 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Press Add
 - tapOn: "Add"
-- waitForAnimationToEnd
 
 # Verify variant appears
 - assertVisible:
-    id: "variant-item-ma-ma"
-- assertVisible: "mama"
+    id: "variant-item-ba-ba"
+- assertVisible: "ball"
 
 # ============================
 # ADD SECOND VARIANT
@@ -55,11 +53,32 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - inputText: "wa-wa"
 - hideKeyboard
 - tapOn: "Add"
-- waitForAnimationToEnd
 
 - assertVisible:
     id: "variant-item-wa-wa"
 - assertVisible: "2 variants"
+
+# ============================
+# DUPLICATE VARIANT DETECTION
+# ============================
+
+- tapOn: "+ New"
+- tapOn: "water"
+- tapOn:
+    id: "variant-input"
+- inputText: "wa-wa"
+- hideKeyboard
+
+# Verify duplicate warning card
+- assertVisible: 
+    id: "modal-duplicate-variant"
+
+# Press Add and verify alert blocks it
+- tapOn: "Add"
+- tapOn: "OK"
+
+# Close modal
+- tapOn: "Cancel"
 
 # ============================
 # EDIT VARIANT
@@ -67,7 +86,7 @@ name: "CRUD Variant - Add, edit, and delete variants"
 
 # Tap on the variant to edit
 - tapOn:
-    id: "variant-item-ma-ma"
+    id: "variant-item-ba-ba"
 - assertVisible:
     id: "modal-title-edit-variant"
 
@@ -75,16 +94,15 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - tapOn:
     id: "variant-input"
 - eraseText: 5
-- inputText: "maa-maa"
+- inputText: "baa-baa"
 - hideKeyboard
 
 # Press Save
 - tapOn: "Save"
-- waitForAnimationToEnd
 
 # Verify updated variant
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 
 # ============================
 # DELETE VARIANT
@@ -104,7 +122,6 @@ name: "CRUD Variant - Add, edit, and delete variants"
 - tapOn:
     text: "Remove"
     index: 0
-- waitForAnimationToEnd
 
 # Verify variant is gone
 - assertNotVisible:

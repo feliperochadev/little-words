@@ -20,14 +20,14 @@ name: "Full E2E - Complete app journey"
 - runFlow: crud-word.yaml
 
 # ============================
-# 4. CRUD VARIANT (in Variants tab)
-# ============================
-- runFlow: crud-variant.yaml
-
-# ============================
-# 5. SEARCH & SORT WORDS
+# 4. SEARCH & SORT WORDS
 # ============================
 - runFlow: search-sort-words.yaml
+
+# ============================
+# 5. CRUD VARIANT (in Variants tab)
+# ============================
+- runFlow: crud-variant.yaml
 
 # ============================
 # 6. SEARCH & SORT VARIANTS
@@ -40,6 +40,16 @@ name: "Full E2E - Complete app journey"
 - runFlow: import-words.yaml
 
 # ============================
-# 8. EXPORT WORDS
+# 8. DELETE ALL DATA
+# ============================
+- runFlow: delete-all-data.yaml
+
+# ============================
+# 9. RE-ONBOARD
+# ============================
+- runFlow: re-onboard.yaml
+
+# ============================
+# 10. EXPORT WORDS
 # ============================
 - runFlow: export-words.yaml

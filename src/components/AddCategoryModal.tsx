@@ -19,7 +19,7 @@ export interface CategoryToEdit {
 interface AddCategoryModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (id?: number) => void;
   onDeleted?: () => void;
   editCategory?: CategoryToEdit | null;
 }
@@ -124,12 +124,14 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     }
     setLoading(true);
     try {
+      let id: number | undefined;
       if (isEditing && editCategory) {
         await updateCategory(editCategory.id, name.trim(), selectedColor, selectedEmoji);
+        id = editCategory.id;
       } else {
-        await addCategory(name.trim(), selectedColor, selectedEmoji);
+        id = await addCategory(name.trim(), selectedColor, selectedEmoji);
       }
-      onSave();
+      onSave(id);
       handleClose();
     } catch (e: any) {
       const msg = e?.message || '';

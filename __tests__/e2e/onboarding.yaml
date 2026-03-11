@@ -5,7 +5,7 @@ name: "Onboarding - Complete first-run setup"
 # Poll until the onboarding screen is ready (async DB init + routing)
 - extendedWaitUntil:
     visible: "English"
-    timeout: 15000
+    timeout: 10000
 
 # Verify both language options are visible
 - assertVisible: "English"
@@ -35,4 +35,4 @@ name: "Onboarding - Complete first-run setup"
 # -- Verify we land on the home/dashboard screen --
 - extendedWaitUntil:
     visible: "Home"
-    timeout: 15000
+    timeout: 5000

@@ -1,7 +1,7 @@
 import { openDatabaseSync } from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 
-const db = openDatabaseSync('palavrinhas.db');
+const db = openDatabaseSync('little-words.db');
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
@@ -213,6 +213,12 @@ export interface Variant {
 
 export const getVariantsByWord = (wordId: number): Promise<Variant[]> =>
   query<Variant>('SELECT * FROM variants WHERE word_id=? ORDER BY created_at DESC', [wordId]);
+
+export const findVariantByName = (wordId: number, variant: string): Promise<Variant | null> =>
+  query<Variant>(
+    'SELECT * FROM variants WHERE word_id=? AND LOWER(variant)=LOWER(?) LIMIT 1',
+    [wordId, variant.trim()]
+  ).then(rows => rows[0] ?? null);
 
 export const getAllVariants = (): Promise<Variant[]> =>
   query<Variant>(`

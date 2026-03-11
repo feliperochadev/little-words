@@ -1,0 +1,143 @@
+appId: com.littlewords.app
+name: "Demo Flow BR - Jornada principal sem asserts"
+---
+
+- clearState
+- launchApp
+
+# ============================
+# ONBOARDING
+# ============================
+
+- extendedWaitUntil:
+    visible: "Português"
+    timeout: 5000
+- tapOn: "Português"
+- tapOn:
+    id: "onboarding-name-input"
+- inputText: "Luiza"
+- hideKeyboard
+- tapOn: "Menina"
+- tapOn: "Selecionar data"
+- tapOn: "Confirmar"
+- tapOn:
+    id: "onboarding-continue-btn"
+
+# ============================
+# ADD WORD + CATEGORY + VARIANTS
+# ============================
+
+- tapOn: "Palavras"
+- tapOn: "+ Nova"
+- tapOn:
+    id: "word-input"
+- inputText: "sol"
+- hideKeyboard
+- tapOn:
+    id: "category-scroll-right"
+    optional: true
+- tapOn:
+    id: "category-chip-nature"
+- tapOn:
+    id: "word-notes-input"
+- inputText: "Palavra do dia ensolarado"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "word-add-variant-btn"
+    direction: DOWN
+    timeout: 300
+- tapOn:
+    id: "word-add-variant-btn"
+- tapOn:
+    id: "word-variant-input-0"
+- inputText: "so-ol"
+- hideKeyboard
+- tapOn:
+    id: "word-add-variant-btn"
+- tapOn:
+    id: "word-variant-input-1"
+- inputText: "solzinho"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "date-picker-btn"
+    direction: DOWN
+    timeout: 300
+- tapOn:
+    id: "date-picker-btn"
+- tapOn:
+    text: "2025"
+- tapOn:
+    id: "date-picker-confirm"
+- scrollUntilVisible:
+    element:
+      text: "Adicionar"
+    direction: DOWN
+    timeout: 300
+- tapOn: "Adicionar"
+
+# ============================
+# VARIANTS TAB + SEARCH
+# ============================
+
+- tapOn: "Variantes"
+- tapOn: "+ Nova"
+- tapOn: "sol"
+- tapOn:
+    id: "variant-input"
+- inputText: "sooo"
+- hideKeyboard
+- tapOn: "Adicionar"
+- tapOn:
+    id: "variants-search"
+- inputText: "so"
+- hideKeyboard
+- tapOn:
+    id: "variants-search"
+- eraseText: 2
+- hideKeyboard
+
+# ============================
+# IMPORT CSV + BACK TO WORDS
+# ============================
+
+# Prerequisite: push the fixture CSV to the device before running:
+#   adb push __tests__/e2e/fixtures/sample-import-pt.csv /sdcard/Downloads/sample-import-pt.csv
+
+- tapOn: "Config."
+- scrollUntilVisible:
+    element:
+      id: "settings-import-title"
+    direction: DOWN
+- tapOn:
+    id: "settings-import-btn"
+- tapOn:
+    id: "import-tab-csv"
+- tapOn:
+    id: "import-csv-pick-btn"
+- tapOn: "sample-import-pt.csv"
+- scrollUntilVisible:
+    element:
+      id: "import-submit-btn"
+    direction: DOWN
+- tapOn:
+    id: "import-submit-btn"
+- tapOn: "OK"
+
+- tapOn: "Palavras"
+- swipe:
+    direction: UP
+    duration: 1000
+
+# ============================
+# HOME DASHBOARD
+# ============================
+
+- tapOn: "Início"
+- swipe:
+    direction: UP
+    duration: 800
+- swipe:
+    direction: UP
+    duration: 800

@@ -181,8 +181,13 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
           await updateVariant(id, text, today, original.notes || '');
         }
       }
+      const existingTexts = new Set(existingVariants.map(v => v.variant.toLowerCase()));
       for (const v of variants.filter(v => v.text.trim())) {
-        await addVariant(wordId, v.text.trim(), dateAdded);
+        const text = v.text.trim();
+        if (!existingTexts.has(text.toLowerCase())) {
+          await addVariant(wordId, text, dateAdded);
+          existingTexts.add(text.toLowerCase());
+        }
       }
       onSave(); onClose();
     } finally {
@@ -421,7 +426,15 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       visible={showNewCategory || !!editCategory}
       editCategory={editCategory}
       onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
-      onSave={async () => { setEditCategory(null); setShowNewCategory(false); const cats = await getCategories(); setCategories(cats); }}
+      onSave={async (id) => {
+        setEditCategory(null);
+        setShowNewCategory(false);
+        const cats = await getCategories();
+        setCategories(cats);
+        if (id) setSelectedCategory(id);
+        // Move section back to left so user can see the new category (as requested)
+        catScrollRef.current?.scrollTo({ x: 0, animated: true });
+      }}
       onDeleted={async () => { setEditCategory(null); setShowNewCategory(false); const cats = await getCategories(); setCategories(cats); setSelectedCategory(null); }}
     />
 

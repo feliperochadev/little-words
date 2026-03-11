@@ -4,15 +4,14 @@ name: "Variants - Search and sort functionality"
 
 - extendedWaitUntil:
     visible: "Variants"
-    timeout: 15000
+    timeout: 5000
 
 # Navigate to Variants tab
 - tapOn: "Variants"
-- waitForAnimationToEnd
 
 # Verify variants are visible
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 
 # ============================
 # SEARCH
@@ -21,10 +20,10 @@ name: "Variants - Search and sort functionality"
 # Search for a specific variant
 - tapOn:
     id: "variants-search"
-- inputText: "maa"
+- inputText: "baa"
 - hideKeyboard
 - assertVisible:
-    id: "variant-item-maa-maa"
+    id: "variant-item-baa-baa"
 - assertVisible: "1 variant"
 
 # Clear search
@@ -54,7 +53,6 @@ name: "Variants - Search and sort functionality"
     id: "sort-option-alpha_asc"
 - tapOn:
     id: "sort-option-alpha_asc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Z to A
@@ -64,7 +62,6 @@ name: "Variants - Search and sort functionality"
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-alpha_desc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Oldest first
@@ -74,7 +71,6 @@ name: "Variants - Search and sort functionality"
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-date_asc"
-- waitForAnimationToEnd
 
 # ============================
 # SORT - Most recent (back to default)
@@ -84,4 +80,3 @@ name: "Variants - Search and sort functionality"
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-date_desc"
-- waitForAnimationToEnd

@@ -43,10 +43,11 @@ export default function DashboardScreen() {
 
   // Map numeric month index (1-based) to the short label key
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const formatMonth = (monthStr: string) => {
-    const [, month] = monthStr.split('-');
+  const formatMonth = (monthStr: string, showYear: boolean) => {
+    const [year, month] = monthStr.split('-');
     const key = MONTH_KEYS[parseInt(month) - 1];
-    return t(`dashboard.months.${key}`);
+    const label = t(`dashboard.months.${key}`);
+    return showYear ? `${label} '${year.slice(2)}` : label;
   };
 
   const emoji = profile?.sex === 'girl' ? '👧' : profile?.sex === 'boy' ? '👦' : '👶';
@@ -92,13 +93,15 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>{t('dashboard.monthlyProgress')}</Text>
             <View style={styles.barChart}>
               {(() => {
-                const max = Math.max(...stats.monthlyProgress.map(m => m.count), 1);
-                return stats.monthlyProgress.slice(-6).map((m, i) => (
+                const last6 = stats.monthlyProgress.slice(-6);
+                const showYear = new Set(last6.map(m => m.month.split('-')[0])).size > 1;
+                const max = Math.max(...last6.map(m => m.count), 1);
+                return last6.map((m, i) => (
                   <View key={i} style={styles.barItem}>
                     <View style={styles.barWrapper}>
                       <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: accentColor }]} />
                     </View>
-                    <Text style={styles.barLabel}>{formatMonth(m.month)}</Text>
+                    <Text style={styles.barLabel}>{formatMonth(m.month, showYear)}</Text>
                     <Text style={[styles.barValue, { color: accentColor }]}>{m.count}</Text>
                   </View>
                 ));

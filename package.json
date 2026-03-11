@@ -1,5 +1,5 @@
 {
-  "name": "palavrinhas",
+  "name": "little-words",
   "version": "2.0.0",
   "main": "expo-router/entry",
   "scripts": {
@@ -14,13 +14,21 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "ci": "npm run lint && npm run typecheck && npm run test",
+    "agent:review": "npx tsx scripts/agent/review-loop.ts",
+    "agent:check-tasks": "npx tsx scripts/agent/task-persistence.ts",
+    "agent:availability": "npx tsx scripts/agent/agent-availability.ts",
     "e2e": "maestro test __tests__/e2e/full-e2e.yaml",
     "e2e:onboarding": "maestro test __tests__/e2e/onboarding.yaml",
     "e2e:crud-word": "maestro test __tests__/e2e/crud-word.yaml",
     "e2e:crud-variant": "maestro test __tests__/e2e/crud-variant.yaml",
     "e2e:crud-category": "maestro test __tests__/e2e/crud-category.yaml",
     "e2e:import": "maestro test __tests__/e2e/import-words.yaml",
-    "e2e:export": "maestro test __tests__/e2e/export-words.yaml"
+    "e2e:export": "maestro test __tests__/e2e/export-words.yaml",
+    "e2e:delete-all-data": "maestro test __tests__/e2e/delete-all-data.yaml",
+    "e2e:re-onboard": "maestro test __tests__/e2e/re-onboard.yaml",
+    "e2e:demo": "maestro test __tests__/e2e/demo-flow.yaml",
+    "e2e:demo-br": "maestro test __tests__/e2e/demo-br-flow.yaml",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -53,6 +61,7 @@
     "@types/react": "~19.2.10",
     "eslint": "^9.39.4",
     "eslint-config-expo": "^55.0.0",
+    "husky": "^9.1.7",
     "jest": "30.1.0",
     "jest-expo": "~55.0.9",
     "react-test-renderer": "19.2.0",

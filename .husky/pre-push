@@ -1,0 +1,44 @@
+set -e
+
+remote_name="$1"
+default_branch=""
+
+if [ -n "$remote_name" ]; then
+  default_ref="$(git symbolic-ref --quiet --short "refs/remotes/${remote_name}/HEAD" 2>/dev/null || true)"
+  default_branch="${default_ref#*/}"
+fi
+
+is_root_branch() {
+  branch="$1"
+  case "$branch" in
+    main|master) return 0 ;;
+  esac
+
+  if [ -n "$default_branch" ] && [ "$branch" = "$default_branch" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
+blocked_branch=""
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/*)
+      remote_branch="${remote_ref#refs/heads/}"
+      if is_root_branch "$remote_branch"; then
+        blocked_branch="$remote_branch"
+        break
+      fi
+      ;;
+  esac
+done
+
+if [ -n "$blocked_branch" ]; then
+  echo "Push blocked: '$blocked_branch' is a protected root branch."
+  echo "Create a feature branch and open a PR instead."
+  exit 1
+fi
+
+npm run ci

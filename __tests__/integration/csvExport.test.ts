@@ -6,7 +6,10 @@ const mockDb = (global as any).__mockDb;
 
 const resolver = (name: string) => name;
 const header = 'word,category,date,variant';
-const t = (key: string) => ({ 'csv.filenamePrefix': 'little-words' }[key] ?? key);
+const t = (key: string) => ({
+  'csv.filenamePrefix': 'little-words',
+  'csv.shareDialogTitle': 'Share Little Words CSV',
+}[key] ?? key);
 
 describe('csvExport', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -18,6 +21,21 @@ describe('csvExport', () => {
       (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
       const result = await shareCSV(resolver, header, t);
       expect(result.success).toBe(true);
+    });
+
+    it('uses locale-aware dialog title from t()', async () => {
+      mockDb.getAllSync.mockReturnValue([]);
+      (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
+      (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
+      const ptT = (key: string) => ({
+        'csv.filenamePrefix': 'palavrinhas',
+        'csv.shareDialogTitle': 'Share Palavrinhas CSV',
+      }[key] ?? key);
+      await shareCSV(resolver, header, ptT);
+      expect(Sharing.shareAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ dialogTitle: 'Share Palavrinhas CSV' }),
+      );
     });
 
     it('returns error when sharing not available', async () => {

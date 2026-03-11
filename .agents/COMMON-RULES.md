@@ -13,5 +13,42 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - `[config]` — documentation, tooling, or project configuration changes
    - `[test]` — new tests or test expansions with no production code change
    - Others like `[security]`, `[refactor]`, `[perf]` can be added as needed.
+   - **Cross-vendor documentation rule:** When a change affects general rules, workflow, tooling, or architecture (not just one vendor's quirks), update **all** vendor readme files listed in `.agents/agent-config.json` under `agents.{name}.readme_file`. Currently: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). Every readme must stay in sync on shared rules.
 
-4. `/ship` is the standard way to commit and push approved changes if the current agent doesn't have one look the example on `.claude/commands/ship.md`. **Never run it automatically — only when explicitly requested by the user.**  
+4. `/ship` is the standard way to commit and push approved changes. Vendor-specific steps live in `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`.
+   - **Auto-ship:** Read `features.automatic_ship` from `.agents/agent-config.json` before every `/ship` decision:
+     - `true` → run `/ship` automatically after `/review` confirms approval (simple change passes checklist, or complex change has `status: approved` with required approvals met).
+     - `false` → **never run `/ship` automatically**; wait for explicit user request.
+   - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
+   - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.
+   - **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to locate the most recently shipped changelog entry. Collect entries above that ID only. If no tag exists yet, fall back to the git-log method once, then create the first tag.
+   - **Changelog immutability after push:** Once a changelog entry has been pushed, never modify it. If a correction is needed, add a new entry and reference the old ID.
+
+5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` in `.agents/agent-config.json` controls only **whether the agent self-triggers `/commit`** after finishing work:
+   - `false` (default) → agent must wait for the user to explicitly call `/commit`; never self-trigger it.
+   - `true` → agent may call `/commit` automatically once work is complete.
+   - Vendor-specific steps live in `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md`.
+
+6. **Multi-Agent Review Protocol.** Before `/ship`, run `npm run agent:review` to evaluate complexity. Scripts live in `scripts/agent/`.
+   - **Simple change** (≤ 10 change lines AND < 3 category tags): internal review only.
+   - **Complex change** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md`. An external vendor agent must set `status: approved` or `status: changes_requested`. Maximum 3 iterations; if still unresolved, set `status: escalation_required` and stop.
+   - Agents must never approve their own complex changes or proceed to `/ship` while a review file has status `pending` or `changes_requested`.
+
+8. **Session Start — Review Feature Flags.** At the beginning of every session, read `features` from `.agents/agent-config.json` and ask the user:
+
+   > Current feature flags:
+   > - `automatic_commit`: true/false
+   > - `automatic_ship`: true/false
+   >
+   > Keep as is, or change any?
+
+   - If **keep** → proceed normally.
+   - If **change** → ask which flag(s) to update and their new values, apply them to `.agents/agent-config.json`, then proceed.
+   - Do this before any other work in the session.
+
+7. **Rate Limit Resilience.** When approaching 95% of usage quota mid-task, trigger `/rate-limit-abort`:
+   - Run `git reset && git restore .` to revert all uncommitted changes.
+   - Write `.agents/unfinished-tasks/task-{date}-{seq}.md` with task description, context, progress, and explicit next steps.
+   - Set `agents.{self}.available: false` in `.agents/agent-config.json`.
+   - Stop immediately. Do not proceed to `/ship`.
+   At session start, call `/check-unfinished-tasks`: re-mark yourself available, list pending tasks, pick the oldest, and resume from `## Next Steps`.

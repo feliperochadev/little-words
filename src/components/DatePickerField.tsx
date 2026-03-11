@@ -29,12 +29,19 @@ interface WheelProps {
 function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelProps) {
   const ref = useRef<FlatList>(null);
   const idx = data.findIndex(i => i.value === selected);
+  const momentumStarted = useRef(false);
 
   useEffect(() => {
     if (ref.current && idx >= 0) {
       setTimeout(() => ref.current?.scrollToOffset({ offset: idx * ITEM_H, animated: false }), 60);
     }
   }, [selected, idx]);
+
+  const snapAndNotify = (offsetY: number) => {
+    const i = Math.round(offsetY / ITEM_H);
+    const c = Math.max(0, Math.min(i, data.length - 1));
+    if (data[c]) onChange(data[c].value);
+  };
 
   return (
     <View style={[wh.col, width ? { width } : { flex: 1 }]} testID={testID}>
@@ -48,19 +55,34 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelP
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: PAD }}
         getItemLayout={(_, index) => ({ length: ITEM_H, offset: ITEM_H * index, index })}
+        onMomentumScrollBegin={() => { momentumStarted.current = true; }}
         onMomentumScrollEnd={e => {
-          const i = Math.round(e.nativeEvent.contentOffset.y / ITEM_H);
-          const c = Math.max(0, Math.min(i, data.length - 1));
-          if (data[c]) onChange(data[c].value);
+          momentumStarted.current = false;
+          snapAndNotify(e.nativeEvent.contentOffset.y);
         }}
-        renderItem={({ item }) => {
+        onScrollEndDrag={e => {
+          // Fire onChange when drag ends without generating momentum (e.g. Maestro swipe gestures)
+          const offsetY = e.nativeEvent.contentOffset.y;
+          momentumStarted.current = false;
+          setTimeout(() => {
+            if (!momentumStarted.current) snapAndNotify(offsetY);
+          }, 80);
+        }}
+        renderItem={({ item, index }) => {
           const sel = item.value === selected;
           return (
-            <View style={wh.item}>
+            <TouchableOpacity
+              style={wh.item}
+              activeOpacity={0.7}
+              onPress={() => {
+                onChange(item.value);
+                ref.current?.scrollToOffset({ offset: index * ITEM_H, animated: true });
+              }}
+            >
               <Text style={[wh.text, sel && { color: accent, fontWeight: '800', fontSize: 17 }]}>
                 {item.label}
               </Text>
-            </View>
+            </TouchableOpacity>
           );
         }}
       />

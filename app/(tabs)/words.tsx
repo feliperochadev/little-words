@@ -62,7 +62,7 @@ export default function WordsScreen() {
   const handleSaved = async () => {
     await load();
     const connected = await isGoogleConnected();
-    if (connected) performSync();
+    if (connected) performSync(t);
   };
 
   const formatDate = (date: string) => {
@@ -85,7 +85,7 @@ export default function WordsScreen() {
                 <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
                   <Text style={styles.wordText}>{item.word}</Text>
                 </TouchableOpacity>
-                <Text style={styles.wordDate}>{formatDate(item.date_added)}</Text>
+                <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
               </View>
               <View style={styles.wordMeta}>
                 {item.category_name && (

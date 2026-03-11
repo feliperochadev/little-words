@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────
+# Palavrinhas CI — GitHub Actions
+#
+# Jobs:
+#   unit-tests  → runs on every push to any branch
+#                 lint + typecheck + jest
+#
+# E2E tests (Maestro) are run manually for now.
+# See options below for future automation.
+# ─────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Cancel in-flight runs for the same branch when a new commit arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Lint · Typecheck · Jest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: CI suite (lint → typecheck → jest)
+        run: npm run ci

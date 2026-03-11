@@ -88,14 +88,64 @@ describe('DashboardScreen', () => {
     });
   });
 
-  it('renders monthly progress chart', async () => {
+  it('renders monthly progress chart without year when all months are in same year', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <I18nProvider><DashboardScreen /></I18nProvider>
     );
     await waitFor(() => {
       expect(getByText('Jan')).toBeTruthy();
       expect(getByText('Feb')).toBeTruthy();
+      // Year suffix should NOT appear when all months are in the same year
+      expect(queryByText(/Jan '24/)).toBeNull();
+      expect(queryByText(/Feb '24/)).toBeNull();
+    });
+  });
+
+  it('renders monthly progress chart with year suffix when months span two years', async () => {
+    const crossYearStats = {
+      ...fullStats,
+      monthlyProgress: [
+        { month: '2024-10', count: 3 },
+        { month: '2024-11', count: 5 },
+        { month: '2024-12', count: 7 },
+        { month: '2025-01', count: 2 },
+        { month: '2025-02', count: 4 },
+        { month: '2025-03', count: 6 },
+      ],
+    };
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(crossYearStats);
+    const { getByText } = render(
+      <I18nProvider><DashboardScreen /></I18nProvider>
+    );
+    await waitFor(() => {
+      // When years differ, labels should include the 2-digit year
+      expect(getByText("Dec '24")).toBeTruthy();
+      expect(getByText("Jan '25")).toBeTruthy();
+      expect(getByText("Mar '25")).toBeTruthy();
+    });
+  });
+
+  it('does not show year suffix for single-year 6-month window', async () => {
+    const singleYearStats = {
+      ...fullStats,
+      monthlyProgress: [
+        { month: '2025-01', count: 1 },
+        { month: '2025-02', count: 2 },
+        { month: '2025-03', count: 3 },
+        { month: '2025-04', count: 4 },
+        { month: '2025-05', count: 5 },
+        { month: '2025-06', count: 6 },
+      ],
+    };
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(singleYearStats);
+    const { getByText, queryByText } = render(
+      <I18nProvider><DashboardScreen /></I18nProvider>
+    );
+    await waitFor(() => {
+      expect(getByText('Jan')).toBeTruthy();
+      expect(getByText('Jun')).toBeTruthy();
+      expect(queryByText(/'25/)).toBeNull();
     });
   });
 });

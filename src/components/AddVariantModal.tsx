@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
-import { addVariant, updateVariant, deleteVariant, getWords, Variant, Word } from '../database/database';
+import { addVariant, updateVariant, deleteVariant, findVariantByName, getWords, Variant, Word } from '../database/database';
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
 import { useI18n, useCategoryName } from '../i18n/i18n';
@@ -52,6 +52,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   const [dateAdded, setDateAdded] = useState(today);
   const [notes, setNotes]         = useState('');
   const [loading, setLoading]     = useState(false);
+  const [duplicate, setDuplicate] = useState<Variant | null>(null);
 
   const [allWords, setAllWords]   = useState<Word[]>([]);
   const [wordSearch, setWordSearch] = useState('');
@@ -80,11 +81,18 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
     } else {
       setVariant(''); setDateAdded(today); setNotes('');
     }
+    setDuplicate(null);
     if (showSearch) {
       setChosenWord(null); setWordSearch('');
       getWords().then(setAllWords);
     }
   }, [visible, editVariant, word, today, showSearch]);
+
+  useEffect(() => {
+    if (editVariant || !variant.trim() || !effectiveWord) { setDuplicate(null); return; }
+    const timer = setTimeout(async () => setDuplicate(await findVariantByName(effectiveWord.id, variant.trim())), 400);
+    return () => clearTimeout(timer);
+  }, [variant, editVariant, effectiveWord]);
 
   const filtered = wordSearch.trim()
     ? allWords.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
@@ -109,6 +117,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   const handleSave = async () => {
     if (!variant.trim()) { Alert.alert(t('common.attention'), t('addVariant.errorVariant')); return; }
     if (!editVariant && !effectiveWord) { Alert.alert(t('common.attention'), t('addVariant.errorSelectWord')); return; }
+    if (duplicate) { Alert.alert(t('addVariant.duplicateTitle', { word: effectiveWord?.word ?? '' }), t('addVariant.duplicateAlert', { variant: duplicate.variant })); return; }
     setLoading(true);
     try {
       if (editVariant) {
@@ -204,7 +213,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
             <Text style={s.label}>{t('addVariant.variantLabel')}</Text>
             <TextInput
               testID="variant-input"
-              style={s.input}
+              style={[s.input, duplicate && s.inputDup]}
               value={variant} onChangeText={setVariant}
               placeholder={effectiveWord
                 ? t('addVariant.variantPlaceholder', { word: effectiveWord.word })
@@ -212,6 +221,13 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
               placeholderTextColor={COLORS.textLight}
               autoCapitalize="none"
             />
+
+            {duplicate && effectiveWord && (
+              <View style={s.dupCard} testID="modal-duplicate-variant">
+                <Text style={s.dupTitle}>{t('addVariant.duplicateTitle', { word: effectiveWord.word })}</Text>
+                <Text style={s.dupText}>{duplicate.variant}</Text>
+              </View>
+            )}
 
             {/* ── Date ── */}
             <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={COLORS.secondary} />
@@ -229,7 +245,8 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
               <Button title={t('common.cancel')} onPress={onClose} variant="outline" style={s.actionBtn} />
               <Button
                 title={editVariant ? t('addVariant.btnSave') : t('addVariant.btnAdd')}
-                onPress={handleSave} loading={loading} style={s.actionBtn}
+                onPress={handleSave} loading={loading}
+                style={[s.actionBtn, !!duplicate && s.btnDisabled]}
               />
             </View>
           </ScrollView>
@@ -255,6 +272,11 @@ const s = StyleSheet.create({
   textArea:     { height: 80, textAlignVertical: 'top' },
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
+  btnDisabled:  { opacity: 0.5 },
+  inputDup:     { borderColor: '#E17055', backgroundColor: '#FFF5F4' },
+  dupCard:      { backgroundColor: '#FFF5F4', borderRadius: 14, borderWidth: 1.5, borderColor: '#E17055', padding: 14, marginTop: -8, marginBottom: 16 },
+  dupTitle:     { fontSize: 13, fontWeight: '700', color: '#E17055', marginBottom: 4 },
+  dupText:      { fontSize: 16, fontWeight: '800', color: '#E17055' },
   searchSection:{ marginBottom: 16 },
   searchBox:    { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 6 },
   searchIcon:   { fontSize: 16, marginRight: 8 },

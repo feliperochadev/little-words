@@ -161,11 +161,13 @@ export default {
 
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
-    columnWord:     'palavra',
-    columnCategory: 'categoria',
-    columnDate:     'data',
-    columnVariant:  'variante',
-    filenamePrefix: 'palavrinhas',
+    columnWord:       'palavra',
+    columnCategory:   'categoria',
+    columnDate:       'data',
+    columnVariant:    'variante',
+    filenamePrefix:   'palavrinhas',
+    driveFolderName:  'palavrinhas-app',
+    shareDialogTitle: 'Share Palavrinhas CSV',
   },
 
   // ── Settings screen ─────────────────────────────────────────────────────────
@@ -258,6 +260,8 @@ export default {
     notesPlaceholder: 'Contexto em que falou...',
     errorVariant: 'Digite a variante.',
     errorSelectWord: 'Selecione uma palavra.',
+    duplicateTitle: '⚠️ Variante já existe para "{{word}}"',
+    duplicateAlert: '"{{variant}}" já está salva para esta palavra.',
     btnAdd: 'Adicionar',
     btnSave: 'Salvar',
   },

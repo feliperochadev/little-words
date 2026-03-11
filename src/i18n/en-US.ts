@@ -161,11 +161,13 @@ export default {
 
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
-    columnWord:     'word',
-    columnCategory: 'category',
-    columnDate:     'date',
-    columnVariant:  'variant',
-    filenamePrefix: 'little-words',
+    columnWord:       'word',
+    columnCategory:   'category',
+    columnDate:       'date',
+    columnVariant:    'variant',
+    filenamePrefix:   'little-words',
+    driveFolderName:  'little-words-app',
+    shareDialogTitle: 'Share Little Words CSV',
   },
 
   // ── Settings screen ─────────────────────────────────────────────────────────
@@ -258,6 +260,8 @@ export default {
     notesPlaceholder: 'Context when they said it...',
     errorVariant: 'Please enter the variant.',
     errorSelectWord: 'Please select a word.',
+    duplicateTitle: '⚠️ Variant already exists for "{{word}}"',
+    duplicateAlert: '"{{variant}}" is already saved for this word.',
     btnAdd: 'Add',
     btnSave: 'Save',
   },

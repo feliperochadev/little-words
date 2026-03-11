@@ -16,6 +16,10 @@ jest.mock('../../src/utils/googleDrive', () => ({
   performSync: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('../../src/i18n/i18n', () => ({
+  useI18n: () => ({ t: (key: string) => key, locale: 'en-US', setLocale: jest.fn() }),
+}));
+
 describe('Index', () => {
   beforeEach(() => jest.clearAllMocks());
 
