@@ -139,7 +139,7 @@ export default function VariantsScreen() {
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
         onSave={() => { refetchVariants(); }}
-        onDeleted={refetchVariants}
+        onDeleted={() => { refetchVariants(); }}
         word={selectedWord}
         editVariant={editVariant}
       />

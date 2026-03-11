@@ -37,7 +37,7 @@ export default function WordsScreen() {
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
 
   // Server state via TanStack Query — caching, dedup, auto-refresh on focus
-  const { data: words = [], isLoading, refetch } = useWords(search);
+  const { data: words = [], refetch } = useWords(search);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };

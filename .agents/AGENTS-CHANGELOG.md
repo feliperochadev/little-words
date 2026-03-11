@@ -4,6 +4,18 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_13
+
+**[refactor] Address PR #10 second review — performance, consistency, dead code**
+- `src/components/AddWordModal.tsx`: `handleSave` loop over pending inline variant edits now calls `variantService.updateVariant` directly instead of `updateVariantMutation.mutateAsync` — prevents N Drive syncs + N cache-invalidation cycles for N open inline edits; the single `VARIANT_MUTATION_KEYS` batch invalidation + `syncOnSuccess()` at end of `handleSave` handles everything in one pass. Removed `QUERY_KEYS` import (no longer used after raw key strings were replaced in prior round).
+- `src/hooks/useSettings.ts`: Deleted — thin wrapper hooks (`useChildProfile`, `useGoogleAuth`) added indirection with no logic; all screens now use `useSettingsStore` / `useAuthStore` directly.
+- `app/(tabs)/home.tsx`: Replaced `useChildProfile()` import with `useSettingsStore()` — now consistent with `settings.tsx` and `onboarding.tsx`.
+- `app/(tabs)/variants.tsx`: Fixed `onDeleted={refetchVariants}` → `onDeleted={() => { refetchVariants(); }}` — same type-mismatch fix as `onSave` (avoids passing `Promise<QueryObserverResult>` where `() => void` is expected).
+- `app/(tabs)/words.tsx`: Removed unused `isLoading` destructure binding (lint warning).
+- All 645 tests pass; 0 lint warnings; 0 TS errors.
+
+---
+
 ### 2026-03-11_12
 
 **[refactor] Address PR #10 review comments — hooks, keys, dead code cleanup**
@@ -28,8 +40,6 @@ Entries are added after every approved change. Most recent first.
 - `returntocorp/semgrep-action@v1` → `semgrep/semgrep-action@v1` (org rename); fixed `config: p/default` (was invalid comma-separated `p/javascript,p/typescript`); added `generateSarif: "1"`; `continue-on-error: true` on semgrep step; guarded SARIF upload with `if: hashFiles('semgrep.sarif') != ''`.
 - Removed `OWASP Dependency-Check` job — version `v3.0.5` does not exist; job is also too slow and has too many false positives for npm projects.
 - Enabled vulnerability alerts on the repo (required for `dependency-review-action` to see the dependency graph).
-
----
 
 ### 2026-03-11_10
 

@@ -12,7 +12,7 @@ import { DatePickerField } from './DatePickerField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEYS, VARIANT_MUTATION_KEYS, CATEGORY_MUTATION_KEYS } from '../hooks/queryKeys';
+import { VARIANT_MUTATION_KEYS, CATEGORY_MUTATION_KEYS } from '../hooks/queryKeys';
 import { useCategories } from '../hooks/useCategories';
 import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
@@ -201,12 +201,13 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       } else {
         wordId = await addWordMutation.mutateAsync({ word: word.trim(), categoryId: selectedCategory, dateAdded, notes });
       }
-      // Flush any inline variant edits still open
+      // Flush any inline variant edits still open — use service directly to batch all
+      // side effects (cache invalidation + sync) in a single call at the end of handleSave.
       for (const id of editingVariantIds) {
         const text = (editingVariantTexts[id] ?? '').trim();
         const original = existingVariants.find(v => v.id === id);
         if (text && original && text !== original.variant) {
-          await updateVariantMutation.mutateAsync({ id, variant: text, dateAdded: today, notes: original.notes || '' });
+          await variantService.updateVariant(id, text, today, original.notes || '');
         }
       }
       const existingTexts = new Set(existingVariants.map(v => v.variant.toLowerCase()));
