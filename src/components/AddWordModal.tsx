@@ -4,17 +4,26 @@ import {
   StyleSheet, ScrollView, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { Category, getCategories, addWord, updateWord, deleteWord, addVariant, updateVariant, deleteVariant, getVariantsByWord, findWordByName, Word, Variant } from '../database/database';
+import { findWordByName, Word, Variant, Category } from '../database/database';
+import * as variantService from '../services/variantService';
 import { Button, CategoryBadge } from './UIComponents';
 import { AddCategoryModal, CategoryToEdit } from './AddCategoryModal';
 import { DatePickerField } from './DatePickerField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCategories } from '../hooks/useCategories';
+import { useVariantsByWord } from '../hooks/useVariants';
+import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
+
+// Stable empty arrays to avoid creating new references on every render
+const EMPTY_CATEGORIES: Category[] = [];
+const EMPTY_VARIANTS: Variant[] = [];
 
 interface AddWordModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave?: () => void;
   onDeleted?: () => void;
   editWord?: Word | null;
   onEditDuplicate?: (word: Word) => void;
@@ -30,6 +39,14 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
   const today = new Date().toISOString().split('T')[0];
+  const queryClient = useQueryClient();
+
+  // Server state via hooks
+  const { data: categories = EMPTY_CATEGORIES } = useCategories();
+  const { data: fetchedVariants = EMPTY_VARIANTS } = useVariantsByWord(editWord?.id, visible && !!editWord);
+  const addWordMutation = useAddWord();
+  const updateWordMutation = useUpdateWord();
+  const deleteWordMutation = useDeleteWord();
 
   const handleDelete = () => {
     if (!editWord) return;
@@ -39,7 +56,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.remove'), style: 'destructive', onPress: async () => {
-          await deleteWord(editWord.id);
+          await deleteWordMutation.mutateAsync({ id: editWord.id });
           onClose();
           onDeleted?.();
         }},
@@ -53,7 +70,6 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const [notes, setNotes]                       = useState('');
   const [editCategory, setEditCategory]         = useState<CategoryToEdit | null>(null);
   const [showNewCategory, setShowNewCategory]   = useState(false);
-  const [categories, setCategories]             = useState<Category[]>([]);
   const [loading, setLoading]                   = useState(false);
   const [duplicate, setDuplicate]               = useState<Word | null>(null);
   const [variants, setVariants]                 = useState<VariantEntry[]>([]);
@@ -103,28 +119,23 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     }
   }, [visible, translateY, backdropOpacity]);
 
+  // Sync fetched variants into local editable state when modal opens or data arrives
+  useEffect(() => {
+    if (visible && editWord) {
+      setExistingVariants(fetchedVariants);
+    }
+  }, [fetchedVariants, visible, editWord]);
+
+  // Initialize form state when modal opens or editWord changes.
+  // NOTE: `categories` is intentionally excluded — it must not reset form fields when TQ loads.
   useEffect(() => {
     if (!visible) return;
-    getCategories().then(cats => {
-      setCategories(cats);
-      // Scroll to selected category when editing
-      if (editWord?.category_id) {
-        const idx = cats.findIndex(c => c.id === editWord.category_id);
-        if (idx > 0) {
-          setTimeout(() => {
-            const offset = idx * catItemWidth - catScrollWidth.current / 2 + catItemWidth / 2;
-            catScrollRef.current?.scrollTo({ x: Math.max(0, offset), animated: true });
-          }, 300);
-        }
-      }
-    });
     if (editWord) {
       setWord(editWord.word);
       setSelectedCategory(editWord.category_id);
       setDateAdded(editWord.date_added);
       setNotes(editWord.notes || '');
       setVariants([]);
-      getVariantsByWord(editWord.id).then(setExistingVariants);
     } else {
       setWord(''); setSelectedCategory(null);
       setDateAdded(today); setNotes(''); setVariants([]);
@@ -139,6 +150,18 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     setShowNewCategory(false);
     setDuplicate(null);
   }, [visible, editWord, today]);
+
+  // Scroll category carousel to the selected chip when editing (runs when categories load).
+  useEffect(() => {
+    if (!visible || !editWord?.category_id || categories.length === 0) return;
+    const idx = categories.findIndex(c => c.id === editWord.category_id);
+    if (idx > 0) {
+      setTimeout(() => {
+        const offset = idx * catItemWidth - catScrollWidth.current / 2 + catItemWidth / 2;
+        catScrollRef.current?.scrollTo({ x: Math.max(0, offset), animated: true });
+      }, 300);
+    }
+  }, [visible, editWord?.category_id, categories, catItemWidth]);
 
   useEffect(() => {
     if (editWord || !word.trim()) { setDuplicate(null); return; }
@@ -168,28 +191,32 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     try {
       let wordId: number;
       if (editWord) {
-        await updateWord(editWord.id, word.trim(), selectedCategory, dateAdded, notes);
+        await updateWordMutation.mutateAsync({ id: editWord.id, word: word.trim(), categoryId: selectedCategory, dateAdded, notes });
         wordId = editWord.id;
       } else {
-        wordId = await addWord(word.trim(), selectedCategory, dateAdded, notes);
+        wordId = await addWordMutation.mutateAsync({ word: word.trim(), categoryId: selectedCategory, dateAdded, notes });
       }
       // Flush any inline variant edits still open
       for (const id of editingVariantIds) {
         const text = (editingVariantTexts[id] ?? '').trim();
         const original = existingVariants.find(v => v.id === id);
         if (text && original && text !== original.variant) {
-          await updateVariant(id, text, today, original.notes || '');
+          await variantService.updateVariant(id, text, today, original.notes || '');
         }
       }
       const existingTexts = new Set(existingVariants.map(v => v.variant.toLowerCase()));
       for (const v of variants.filter(v => v.text.trim())) {
         const text = v.text.trim();
         if (!existingTexts.has(text.toLowerCase())) {
-          await addVariant(wordId, text, dateAdded);
+          await variantService.addVariant(wordId, text, dateAdded);
           existingTexts.add(text.toLowerCase());
         }
       }
-      onSave(); onClose();
+      // Invalidate variant-specific keys (word mutation already covered ['words'] + ['dashboard'])
+      queryClient.invalidateQueries({ queryKey: ['words', wordId, 'variants'] });
+      queryClient.invalidateQueries({ queryKey: ['variants'] });
+      onClose();
+      onSave?.();
     } finally {
       setLoading(false);
     }
@@ -339,15 +366,19 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                     onBlur={async () => {
                       const text = (editingVariantTexts[v.id] ?? v.variant).trim();
                       if (text && text !== v.variant) {
-                        await updateVariant(v.id, text, today, v.notes || '');
-                        if (editWord) getVariantsByWord(editWord.id).then(setExistingVariants);
+                        await variantService.updateVariant(v.id, text, today, v.notes || '');
+                        queryClient.invalidateQueries({ queryKey: ['words', editWord?.id, 'variants'] });
+                        queryClient.invalidateQueries({ queryKey: ['variants'] });
+                        setExistingVariants(prev => prev.map(ev => ev.id === v.id ? { ...ev, variant: text } : ev));
                       }
                       setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
                     }}
                   />
                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={async () => {
-                    await deleteVariant(v.id);
+                    await variantService.deleteVariant(v.id);
                     setExistingVariants(prev => prev.filter(e => e.id !== v.id));
+                    queryClient.invalidateQueries({ queryKey: ['words', editWord?.id, 'variants'] });
+                    queryClient.invalidateQueries({ queryKey: ['variants'] });
                     setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
                   }}>
                     <Text style={s.varRemoveText}>✕</Text>
@@ -429,13 +460,16 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       onSave={async (id) => {
         setEditCategory(null);
         setShowNewCategory(false);
-        const cats = await getCategories();
-        setCategories(cats);
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
         if (id) setSelectedCategory(id);
-        // Move section back to left so user can see the new category (as requested)
         catScrollRef.current?.scrollTo({ x: 0, animated: true });
       }}
-      onDeleted={async () => { setEditCategory(null); setShowNewCategory(false); const cats = await getCategories(); setCategories(cats); setSelectedCategory(null); }}
+      onDeleted={async () => {
+        setEditCategory(null);
+        setShowNewCategory(false);
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        setSelectedCategory(null);
+      }}
     />
 
     </>

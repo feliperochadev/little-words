@@ -4,6 +4,7 @@ import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { ManageCategoryModal } from '../../src/components/ManageCategoryModal';
 import * as database from '../../src/database/database';
+import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
@@ -12,24 +13,47 @@ jest.mock('../../src/database/database', () => ({
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockDeleteCategoryMutate = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../../src/hooks/useCategories', () => ({
+  ...jest.requireActual('../../src/hooks/useCategories'),
+  useDeleteCategory: jest.fn(() => ({
+    mutateAsync: mockDeleteCategoryMutate,
+    mutate: jest.fn(),
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    error: null,
+    reset: jest.fn(),
+    data: undefined,
+    variables: undefined,
+    context: undefined,
+    failureCount: 0,
+    failureReason: null,
+    isIdle: true,
+    isPaused: false,
+    status: 'idle',
+    submittedAt: 0,
+  })),
 }));
 
 const mockCategory = { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾' };
 
 function renderModal(props: Partial<React.ComponentProps<typeof ManageCategoryModal>> = {}) {
-  return render(
-    <I18nProvider>
-      <ManageCategoryModal
-        visible={true}
-        category={mockCategory}
-        onClose={jest.fn()}
-        onEdit={jest.fn()}
-        onDeleted={jest.fn()}
-        {...props}
-      />
-    </I18nProvider>
+  return renderWithProviders(
+    <ManageCategoryModal
+      visible={true}
+      category={mockCategory}
+      onClose={jest.fn()}
+      onEdit={jest.fn()}
+      onDeleted={jest.fn()}
+      {...props}
+    />
   );
 }
 
@@ -53,28 +77,24 @@ describe('ManageCategoryModal', () => {
     const onClose = jest.fn();
     const onEdit = jest.fn();
     const onDeleted = jest.fn();
-    const view = render(
-      <I18nProvider>
-        <ManageCategoryModal
-          visible={false}
-          category={mockCategory}
-          onClose={onClose}
-          onEdit={onEdit}
-          onDeleted={onDeleted}
-        />
-      </I18nProvider>
+    const view = renderWithProviders(
+      <ManageCategoryModal
+        visible={false}
+        category={mockCategory}
+        onClose={onClose}
+        onEdit={onEdit}
+        onDeleted={onDeleted}
+      />
     );
 
     view.rerender(
-      <I18nProvider>
-        <ManageCategoryModal
-          visible={true}
-          category={mockCategory}
-          onClose={onClose}
-          onEdit={onEdit}
-          onDeleted={onDeleted}
-        />
-      </I18nProvider>
+      <ManageCategoryModal
+        visible={true}
+        category={mockCategory}
+        onClose={onClose}
+        onEdit={onEdit}
+        onDeleted={onDeleted}
+      />
     );
 
     expect(await view.findByText('Animals')).toBeTruthy();
@@ -95,7 +115,7 @@ describe('ManageCategoryModal', () => {
     });
   });
 
-  it('deletes category when confirmed', async () => {
+  it('deletes category via hook when confirmed', async () => {
     const onClose = jest.fn();
     const onDeleted = jest.fn();
     const { findByText } = renderModal({ onClose, onDeleted });
@@ -105,10 +125,27 @@ describe('ManageCategoryModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.unlinkWordsFromCategory).toHaveBeenCalledWith(1);
-      expect(database.deleteCategory).toHaveBeenCalledWith(1);
+      expect(mockDeleteCategoryMutate).toHaveBeenCalledWith({ id: 1 });
       expect(onClose).toHaveBeenCalled();
       expect(onDeleted).toHaveBeenCalled();
+    });
+  });
+
+  it('shows error alert when deletion fails', async () => {
+    mockDeleteCategoryMutate.mockRejectedValueOnce(new Error('DB error'));
+    const onClose = jest.fn();
+    const onDeleted = jest.fn();
+    const { findByText } = renderModal({ onClose, onDeleted });
+    fireEvent.press(await findByText(/Delete category/));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
+    await act(async () => { destructiveBtn.onPress(); });
+    await waitFor(() => {
+      expect(onClose).not.toHaveBeenCalled();
+      expect(onDeleted).not.toHaveBeenCalled();
+      const errorAlert = (Alert.alert as jest.Mock).mock.calls[1];
+      expect(errorAlert).toBeDefined();
     });
   });
 

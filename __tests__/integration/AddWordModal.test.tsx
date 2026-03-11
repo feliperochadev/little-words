@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
+import { renderWithProviders } from '../helpers/renderWithProviders';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import type { Word } from '../../src/database/database';
 import * as database from '../../src/database/database';
@@ -20,10 +20,18 @@ jest.mock('../../src/database/database', () => ({
   addCategory: jest.fn().mockResolvedValue(1),
   updateCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/utils/googleDrive', () => ({
+  isGoogleConnected: jest.fn().mockResolvedValue(false),
+  performSync: jest.fn().mockResolvedValue({ success: true }),
+  getGoogleUserEmail: jest.fn().mockResolvedValue(null),
+  configureGoogleSignIn: jest.fn(),
 }));
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
@@ -35,10 +43,8 @@ const mockWord: Word = {
 };
 
 function renderModal(props: Partial<React.ComponentProps<typeof AddWordModal>> = {}) {
-  return render(
-    <I18nProvider>
-      <AddWordModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
-    </I18nProvider>
+  return renderWithProviders(
+    <AddWordModal visible={true} onClose={jest.fn()} {...props} />
   );
 }
 
@@ -66,19 +72,13 @@ describe('AddWordModal', () => {
 
   it('renders correctly after reopening', async () => {
     const onClose = jest.fn();
-    const view = render(
-      <I18nProvider>
-        <AddWordModal visible={false} onClose={onClose} onSave={jest.fn()} />
-      </I18nProvider>
+    const { rerender, findByText } = renderWithProviders(
+      <AddWordModal visible={false} onClose={onClose} />
     );
 
-    view.rerender(
-      <I18nProvider>
-        <AddWordModal visible={true} onClose={onClose} onSave={jest.fn()} />
-      </I18nProvider>
-    );
+    rerender(<AddWordModal visible={true} onClose={onClose} />);
 
-    expect(await view.findByText(/New Word/)).toBeTruthy();
+    expect(await findByText(/New Word/)).toBeTruthy();
   });
 
   it('calls onClose on cancel', async () => {
@@ -413,18 +413,18 @@ describe('AddWordModal', () => {
     jest.useRealTimers();
   });
 
-  it('AddCategoryModal onSave refreshes categories, selects the new one and scrolls (covers lines 424-434)', async () => {
-    // Mock getCategories to return a new list after addition
+  it('AddCategoryModal onSave refreshes categories, selects the new one and scrolls', async () => {
+    // First call returns original list; subsequent calls return updated list after invalidation
     (database.getCategories as jest.Mock)
       .mockResolvedValueOnce([
         { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
       ])
-      .mockResolvedValueOnce([
+      .mockResolvedValue([
         { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
         { id: 2, name: 'NewCat', color: '#00B894', emoji: '🎨', created_at: '' },
       ]);
 
-    const { findByText, findByPlaceholderText, findByTestId } = renderModal();
+    const { findByText, findByPlaceholderText } = renderModal();
 
     // Wait for initial load
     await findByText('Animals');
@@ -433,19 +433,15 @@ describe('AddWordModal', () => {
     expect(await findByText(/New Category/)).toBeTruthy();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
 
-    // addCategory returns 2 (mocked)
     (database.addCategory as jest.Mock).mockResolvedValue(2);
-
     await act(async () => { fireEvent.press(await findByText('Create Category')); });
 
     await waitFor(() => {
       expect(database.addCategory).toHaveBeenCalled();
-      expect(database.getCategories).toHaveBeenCalledTimes(2);
     });
 
-    // Check if the new category chip is present
-    const newCatChip = await findByText('NewCat');
-    expect(newCatChip).toBeTruthy();
+    // After invalidation triggers refetch, new category should appear
+    expect(await findByText('NewCat')).toBeTruthy();
   });
 
   it('AddCategoryModal onDeleted refreshes categories and clears selection (covers line 424)', async () => {
@@ -458,7 +454,7 @@ describe('AddWordModal', () => {
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
-    await waitFor(() => expect(database.deleteCategory).toHaveBeenCalled());
+    await waitFor(() => expect(database.deleteCategoryWithUnlink).toHaveBeenCalled());
   });
 });
 
@@ -484,10 +480,8 @@ describe('AddWordModal — panResponder gesture handlers', () => {
 
   async function renderWithPan(props: Record<string, any> = {}) {
     const { AddWordModal } = require('../../src/components/AddWordModal');
-    const result = render(
-      <I18nProvider>
-        <AddWordModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
-      </I18nProvider>
+    const result = renderWithProviders(
+      <AddWordModal visible={true} onClose={jest.fn()} {...props} />
     );
     await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
     return result;

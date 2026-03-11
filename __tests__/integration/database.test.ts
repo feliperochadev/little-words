@@ -4,6 +4,7 @@ import {
   addCategory,
   updateCategory,
   deleteCategory,
+  deleteCategoryWithUnlink,
   getWordCountByCategory,
   unlinkWordsFromCategory,
   getWords,
@@ -80,6 +81,28 @@ describe('database', () => {
         expect.stringContaining('DELETE FROM categories'),
         [3]
       );
+    });
+  });
+
+  describe('deleteCategoryWithUnlink', () => {
+    it('runs both UPDATE and DELETE inside a transaction', async () => {
+      await deleteCategoryWithUnlink(3);
+      expect(mockDb.withTransactionSync).toHaveBeenCalled();
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE words SET category_id = NULL'),
+        [3]
+      );
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM categories'),
+        [3]
+      );
+    });
+
+    it('rejects when the transaction throws', async () => {
+      (mockDb.withTransactionSync as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('DB locked');
+      });
+      await expect(deleteCategoryWithUnlink(3)).rejects.toThrow('DB locked');
     });
   });
 

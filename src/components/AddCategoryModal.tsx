@@ -4,10 +4,10 @@ import {
   StyleSheet, ScrollView, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
-import { addCategory, updateCategory, unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
 import { Button } from './UIComponents';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+import { useAddCategory, useUpdateCategory, useDeleteCategory, useWordCountByCategory } from '../hooks/useCategories';
 
 export interface CategoryToEdit {
   id: number;
@@ -31,6 +31,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
   const isEditing = !!editCategory;
+
+  const addCategoryMutation    = useAddCategory();
+  const updateCategoryMutation = useUpdateCategory();
+  const deleteCategoryMutation = useDeleteCategory();
+  const { data: wordCount = 0 } = useWordCountByCategory(editCategory?.id ?? 0);
 
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState(CATEGORY_COLORS[0]);
@@ -90,12 +95,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     }
   }, [editCategory, visible]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editCategory) return;
     const displayName = categoryName(editCategory.name);
-    const count = await getWordCountByCategory(editCategory.id);
-    const message = count > 0
-      ? t('manageCategory.deleteMessageWithWords', { name: displayName, count })
+    const message = wordCount > 0
+      ? t('manageCategory.deleteMessageWithWords', { name: displayName, count: wordCount })
       : t('manageCategory.deleteMessage', { name: displayName });
 
     Alert.alert(
@@ -107,8 +111,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           text: t('common.remove'),
           style: 'destructive',
           onPress: async () => {
-            await unlinkWordsFromCategory(editCategory.id);
-            await deleteCategory(editCategory.id);
+            await deleteCategoryMutation.mutateAsync({ id: editCategory.id });
             handleClose();
             onDeleted?.();
           },
@@ -126,10 +129,10 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     try {
       let id: number | undefined;
       if (isEditing && editCategory) {
-        await updateCategory(editCategory.id, name.trim(), selectedColor, selectedEmoji);
+        await updateCategoryMutation.mutateAsync({ id: editCategory.id, name: name.trim(), color: selectedColor, emoji: selectedEmoji });
         id = editCategory.id;
       } else {
-        id = await addCategory(name.trim(), selectedColor, selectedEmoji);
+        id = await addCategoryMutation.mutateAsync({ name: name.trim(), color: selectedColor, emoji: selectedEmoji });
       }
       onSave(id);
       handleClose();

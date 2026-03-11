@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
+import { waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '../helpers/renderWithProviders';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 jest.mock('../../src/database/database', () => {
   const actual = jest.requireActual('../../src/database/database');
@@ -32,13 +33,13 @@ describe('DashboardScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (db.getSetting as jest.Mock).mockResolvedValue(null);
+    // Reset store to no-profile state
+    useSettingsStore.setState({ name: '', sex: null, birth: '', isOnboardingDone: false, isHydrated: true });
   });
 
   it('renders empty dashboard', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
-    const { getByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    const { getByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       expect(getByText(/Start recording/)).toBeTruthy();
     });
@@ -46,15 +47,8 @@ describe('DashboardScreen', () => {
 
   it('renders stats with profile', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    (db.getSetting as jest.Mock).mockImplementation((key: string) => {
-      if (key === 'child_name') return Promise.resolve('Luna');
-      if (key === 'child_sex') return Promise.resolve('girl');
-      if (key === 'child_birth') return Promise.resolve('2023-06-15');
-      return Promise.resolve(null);
-    });
-    const { findByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByText } = renderWithProviders(<DashboardScreen />);
     expect(await findByText('Luna')).toBeTruthy();
     expect(await findByText('10')).toBeTruthy();
     expect(await findByText('Animals')).toBeTruthy();
@@ -63,15 +57,8 @@ describe('DashboardScreen', () => {
 
   it('renders boy profile', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
-    (db.getSetting as jest.Mock).mockImplementation((key: string) => {
-      if (key === 'child_name') return Promise.resolve('Miguel');
-      if (key === 'child_sex') return Promise.resolve('boy');
-      if (key === 'child_birth') return Promise.resolve('2024-01-01');
-      return Promise.resolve(null);
-    });
-    const { getByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    useSettingsStore.setState({ name: 'Miguel', sex: 'boy', birth: '2024-01-01', isOnboardingDone: true, isHydrated: true });
+    const { getByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       expect(getByText('Miguel')).toBeTruthy();
       expect(getByText('👦')).toBeTruthy();
@@ -80,9 +67,7 @@ describe('DashboardScreen', () => {
 
   it('renders without profile', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
-    const { getByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    const { getByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       expect(getByText(/Start recording/)).toBeTruthy();
     });
@@ -90,9 +75,7 @@ describe('DashboardScreen', () => {
 
   it('renders monthly progress chart without year when all months are in same year', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { getByText, queryByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    const { getByText, queryByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       expect(getByText('Jan')).toBeTruthy();
       expect(getByText('Feb')).toBeTruthy();
@@ -115,9 +98,7 @@ describe('DashboardScreen', () => {
       ],
     };
     (db.getDashboardStats as jest.Mock).mockResolvedValue(crossYearStats);
-    const { getByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    const { getByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       // When years differ, labels should include the 2-digit year
       expect(getByText("Dec '24")).toBeTruthy();
@@ -139,9 +120,7 @@ describe('DashboardScreen', () => {
       ],
     };
     (db.getDashboardStats as jest.Mock).mockResolvedValue(singleYearStats);
-    const { getByText, queryByText } = render(
-      <I18nProvider><DashboardScreen /></I18nProvider>
-    );
+    const { getByText, queryByText } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
       expect(getByText('Jan')).toBeTruthy();
       expect(getByText('Jun')).toBeTruthy();

@@ -14,6 +14,7 @@ jest.mock('../../src/database/database', () => ({
 jest.mock('../../src/utils/googleDrive', () => ({
   isGoogleConnected: jest.fn().mockResolvedValue(false),
   performSync: jest.fn().mockResolvedValue({ success: true }),
+  getGoogleUserEmail: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock('../../src/i18n/i18n', () => ({

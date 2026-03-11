@@ -1,45 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getDashboardStats, getSetting, DashboardStats } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
-
-interface ChildProfile {
-  name: string;
-  sex: 'boy' | 'girl' | null;
-  birth: string;
-}
+import { useDashboardStats } from '../../src/hooks/useDashboard';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 export default function DashboardScreen() {
   const { t } = useI18n();
   const categoryName = useCategoryName();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [profile, setProfile] = useState<ChildProfile | null>(null);
+  const { data: stats, refetch } = useDashboardStats();
+  const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    const [data, name, sex, birth] = await Promise.all([
-      getDashboardStats(),
-      getSetting('child_name'),
-      getSetting('child_sex'),
-      getSetting('child_birth'),
-    ]);
-    setStats(data);
-    if (name) {
-      setProfile({ name, sex: (sex as 'boy' | 'girl' | null), birth: birth || '' });
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false); };
 
   // Map numeric month index (1-based) to the short label key
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -50,9 +29,9 @@ export default function DashboardScreen() {
     return showYear ? `${label} '${year.slice(2)}` : label;
   };
 
-  const emoji = profile?.sex === 'girl' ? '👧' : profile?.sex === 'boy' ? '👦' : '👶';
-  const accentColor = profile?.sex === 'girl' ? '#FF6B9D' : profile?.sex === 'boy' ? '#74B9FF' : COLORS.primary;
-  const ageText = profile?.birth ? getAgeText(profile.birth, t) : null;
+  const emoji = sex === 'girl' ? '👧' : sex === 'boy' ? '👦' : '👶';
+  const accentColor = sex === 'girl' ? '#FF6B9D' : sex === 'boy' ? '#74B9FF' : COLORS.primary;
+  const ageText = birth ? getAgeText(birth, t) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -63,16 +42,16 @@ export default function DashboardScreen() {
       >
         <BrandHeader />
 
-        {profile && (
+        {!!name && (
           <View style={styles.profileBlock}>
             <View style={styles.profileRow}>
               <Text style={styles.profileEmoji}>{emoji}</Text>
               <View>
-                <Text style={[styles.profileName, { color: accentColor }]}>{profile.name}</Text>
+                <Text style={[styles.profileName, { color: accentColor }]}>{name}</Text>
                 {ageText && <Text style={styles.profileAge}>🎂 {ageText}</Text>}
               </View>
             </View>
-            <Text style={styles.profileGreeting}>{getGreeting(profile.name, profile.sex, t)}</Text>
+            <Text style={styles.profileGreeting}>{getGreeting(name, sex, t)}</Text>
           </View>
         )}
 
@@ -155,8 +134,8 @@ export default function DashboardScreen() {
             <Text style={styles.emptyEmoji}>🌟</Text>
             <Text style={styles.emptyTitle}>{t('dashboard.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              {profile
-                ? t('dashboard.emptyTextWithName', { name: profile.name })
+              {!!name
+                ? t('dashboard.emptyTextWithName', { name })
                 : t('dashboard.emptyText')}
             </Text>
           </View>

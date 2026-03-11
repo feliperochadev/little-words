@@ -16,6 +16,13 @@ Do not consider work complete until `npm run ci` passes.
 
 Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
+**Architecture & Design Planning (`/plan`):** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
+- **Design document** (`.agents/plan/design/DESIGN-<slug>.md`) for new features with UI/data flow.
+- **ADR** (`.agents/plan/architecture/ADR-NNNN-<slug>.md`) for significant architectural decisions between competing approaches.
+- Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
+- Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
+- Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+
 ## Coding Style & Naming Conventions
 Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
 
@@ -86,3 +93,17 @@ Task files and agent availability are managed by `scripts/agent/task-persistence
 
 ## Architecture Notes
 The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.
+
+### State Management Strategy
+
+| Category | Tool | Examples |
+|---|---|---|
+| Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
+| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Local UI state | **useState** | modals, form inputs, sort order |
+
+- `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
+- `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`
+- `src/stores/` — Zustand stores (`settingsStore`, `authStore`); hydrated at app start in `app/index.tsx`
+- `__tests__/helpers/renderWithProviders.tsx` — test wrapper with `QueryClientProvider` + `I18nProvider`
+- **Stable empty-array defaults**: always use a module-level `const EMPTY: T[] = []` instead of inline `= []` for TQ defaults used in `useEffect` deps.

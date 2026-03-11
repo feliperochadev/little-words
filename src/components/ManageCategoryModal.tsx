@@ -3,7 +3,8 @@ import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { unlinkWordsFromCategory, deleteCategory, getWordCountByCategory } from '../database/database';
+import { getWordCountByCategory } from '../database/database';
+import { useDeleteCategory } from '../hooks/useCategories';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
@@ -28,6 +29,7 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
+  const deleteCategory = useDeleteCategory();
 
   const translateY = useRef(new Animated.Value(800)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -82,10 +84,13 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
           text: t('common.remove'),
           style: 'destructive',
           onPress: async () => {
-            await unlinkWordsFromCategory(category.id);
-            await deleteCategory(category.id);
-            onClose();
-            onDeleted();
+            try {
+              await deleteCategory.mutateAsync({ id: category.id });
+              onClose();
+              onDeleted();
+            } catch {
+              Alert.alert(t('common.error'), t('manageCategory.deleteFailed'));
+            }
           },
         },
       ]

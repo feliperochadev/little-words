@@ -1,22 +1,18 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  getWords,
-  Word, Variant,
-} from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
 import { SearchBar, Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
-import { performSync, isGoogleConnected } from '../../src/utils/googleDrive';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { sortWords, SortKey } from '../../src/utils/sortHelpers';
+import { useWords } from '../../src/hooks/useWords';
+import type { Word, Variant } from '../../src/database/database';
 
 export default function WordsScreen() {
   const { t, tc } = useI18n();
@@ -29,41 +25,26 @@ export default function WordsScreen() {
     { key: 'alpha_desc',label: t('words.sortZA') },
   ];
 
-  const [words, setWords] = useState<Word[]>([]);
+  // Local UI state only — no server state managed here
   const [search, setSearch] = useState('');
-  const searchRef = useRef(search);
-  searchRef.current = search;
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [editWord, setEditWord] = useState<Word | null>(null);
-  const [selectedWord] = useState<Word | null>(null);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
 
-  const load = useCallback(async (searchQuery?: string) => {
-    const data = await getWords(searchQuery ?? searchRef.current);
-    setWords(data);
-  }, []);
+  // Server state via TanStack Query — caching, dedup, auto-refresh on focus
+  const { data: words = [], isLoading, refetch } = useWords(search);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false); };
 
+  const handleSearch = (text: string) => { setSearch(text); };
 
-
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-
-  const handleSearch = (text: string) => { setSearch(text); load(text); };
-
-
-
-  const handleSaved = async () => {
-    await load();
-    const connected = await isGoogleConnected();
-    if (connected) performSync(t);
-  };
+  const closeWordModal = () => { setShowAddWord(false); setEditWord(null); };
 
   const formatDate = (date: string) => {
     if (!date) return '';
@@ -74,54 +55,51 @@ export default function WordsScreen() {
   const sortedWords = sortWords(words, sort);
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? '';
 
-  const renderWord = ({ item }: { item: Word }) => {
-
-    return (
-      <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
-        <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
-          <View style={styles.wordRow}>
-            <View style={styles.wordMain}>
-              <View style={styles.wordHeader}>
-                <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
-                  <Text style={styles.wordText}>{item.word}</Text>
-                </TouchableOpacity>
-                <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
-              </View>
-              <View style={styles.wordMeta}>
-                {item.category_name && (
-                  <TouchableOpacity
-                    onLongPress={() => setEditCategory({
-                      id: item.category_id!,
-                      name: categoryName(item.category_name!),
-                      color: item.category_color || COLORS.primary,
-                      emoji: item.category_emoji || '🏷️',
-                    })}
-                    delayLongPress={400}
-                    activeOpacity={1}
-                  >
-                    <CategoryBadge
-                      name={categoryName(item.category_name)}
-                      color={item.category_color || COLORS.primary}
-                      emoji={item.category_emoji || '📝'}
-                      size="small"
-                    />
-                  </TouchableOpacity>
-                )}
-                {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
-                  <View key={i} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
-                    <Text style={styles.variantChipText}>🗣️ {v}</Text>
-                  </View>
-                ))}
-              </View>
-              {item.notes && (
-                <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
-              )}
+  const renderWord = ({ item }: { item: Word }) => (
+    <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
+      <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
+        <View style={styles.wordRow}>
+          <View style={styles.wordMain}>
+            <View style={styles.wordHeader}>
+              <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
+                <Text style={styles.wordText}>{item.word}</Text>
+              </TouchableOpacity>
+              <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
             </View>
+            <View style={styles.wordMeta}>
+              {item.category_name && (
+                <TouchableOpacity
+                  onLongPress={() => setEditCategory({
+                    id: item.category_id!,
+                    name: categoryName(item.category_name!),
+                    color: item.category_color || COLORS.primary,
+                    emoji: item.category_emoji || '🏷️',
+                  })}
+                  delayLongPress={400}
+                  activeOpacity={1}
+                >
+                  <CategoryBadge
+                    name={categoryName(item.category_name)}
+                    color={item.category_color || COLORS.primary}
+                    emoji={item.category_emoji || '📝'}
+                    size="small"
+                  />
+                </TouchableOpacity>
+              )}
+              {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
+                <View key={i} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
+                  <Text style={styles.variantChipText}>🗣️ {v}</Text>
+                </View>
+              ))}
+            </View>
+            {item.notes && (
+              <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
+            )}
           </View>
-        </TouchableOpacity>
-      </Card>
-    );
-  };
+        </View>
+      </TouchableOpacity>
+    </Card>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -183,9 +161,8 @@ export default function WordsScreen() {
 
       <AddWordModal
         visible={showAddWord}
-        onClose={() => { setShowAddWord(false); setEditWord(null); }}
-        onSave={handleSaved}
-        onDeleted={() => { setShowAddWord(false); setEditWord(null); load(); }}
+        onClose={closeWordModal}
+        onDeleted={closeWordModal}
         editWord={editWord}
         onEditDuplicate={(w) => { setShowAddWord(false); setTimeout(() => { setEditWord(w); setShowAddWord(true); }, 300); }}
       />
@@ -193,20 +170,19 @@ export default function WordsScreen() {
       <AddVariantModal
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
-        onSave={handleSaved}
-        onDeleted={() => { setShowAddVariant(false); setEditVariant(null); load(); }}
-        word={selectedWord}
+        onSave={() => {}}
+        onDeleted={() => { setShowAddVariant(false); setEditVariant(null); }}
+        word={null}
         editVariant={editVariant}
       />
 
       <AddCategoryModal
         visible={showAddCategory || !!editCategory}
         onClose={() => { setShowAddCategory(false); setEditCategory(null); }}
-        onSave={() => { load(); setEditCategory(null); }}
-        onDeleted={() => { load(); setEditCategory(null); }}
+        onSave={() => { setEditCategory(null); }}
+        onDeleted={() => { setEditCategory(null); }}
         editCategory={editCategory}
       />
-
     </SafeAreaView>
   );
 }

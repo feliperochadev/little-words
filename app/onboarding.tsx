@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { setSetting } from '../src/database/database';
 import { COLORS } from '../src/utils/theme';
+import { useSettingsStore } from '../src/stores/settingsStore';
 import { BrandHeader } from '../src/components/BrandHeader';
 import { useI18n, LANGUAGES, type Locale } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
@@ -189,10 +189,12 @@ export default function OnboardingScreen() {
     if (!birthDate) { Alert.alert(t('common.attention'), t('onboarding.errorBirth')); return; }
 
     setLoading(true);
-    await setSetting('child_name', name.trim());
-    await setSetting('child_sex', sex);
-    await setSetting('child_birth', toStorageDate(birthDate));
-    await setSetting('onboarding_done', '1');
+    await useSettingsStore.getState().setProfile({
+      name: name.trim(),
+      sex: sex!,
+      birth: toStorageDate(birthDate!),
+    });
+    await useSettingsStore.getState().setOnboardingDone();
     setLoading(false);
     router.replace('/(tabs)/home');
   };

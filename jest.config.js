@@ -4,6 +4,11 @@ module.exports = {
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|@react-native-google-signin/.*)',
   ],
 
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '__tests__/helpers/',
+  ],
+
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     'app/**/*.{ts,tsx}',
@@ -16,4 +21,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   setupFiles: ['./jest.setup.js'],
+  maxWorkers: 2,
 };

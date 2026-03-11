@@ -325,5 +325,6 @@ export default {
     deleteTitle: 'Delete category',
     deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Are you sure you want to delete "{{name}}"?',
+    deleteFailed: 'Failed to delete category. Please try again.',
   },
 };

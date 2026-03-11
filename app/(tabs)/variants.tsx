@@ -1,15 +1,19 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getAllVariants, getWords, Variant, Word } from '../../src/database/database';
+import { Variant, Word } from '../../src/database/database';
 import { COLORS } from '../../src/utils/theme';
 import { Card, EmptyState, SearchBar } from '../../src/components/UIComponents';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import { useI18n } from '../../src/i18n/i18n';
 import { sortVariants, SortKey } from '../../src/utils/sortHelpers';
+import { useAllVariants } from '../../src/hooks/useVariants';
+import { useWords } from '../../src/hooks/useWords';
+
+const EMPTY_VARIANTS: Variant[] = [];
+const EMPTY_WORDS: Word[] = [];
 
 export default function VariantsScreen() {
   const { t, tc } = useI18n();
@@ -21,43 +25,26 @@ export default function VariantsScreen() {
     { key: 'alpha_desc',label: t('words.sortZA') },
   ];
 
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [filteredVariants, setFilteredVariants] = useState<Variant[]>([]);
+  const { data: variants = EMPTY_VARIANTS, refetch: refetchVariants } = useAllVariants();
+  const { data: words = EMPTY_WORDS } = useWords();
+
   const [search, setSearch] = useState('');
-  const searchRef = useRef(search);
-  searchRef.current = search;
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(false);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
-  const [words, setWords] = useState<Word[]>([]);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
 
-  const applySearch = useCallback((data: Variant[], text: string) => {
-    if (!text.trim()) {
-      setFilteredVariants(data);
-    } else {
-      setFilteredVariants(data.filter(v =>
-        v.variant.toLowerCase().includes(text.toLowerCase()) ||
-        (v.main_word || '').toLowerCase().includes(text.toLowerCase())
-      ));
-    }
-  }, []);
+  const onRefresh = async () => { setRefreshing(true); await refetchVariants(); setRefreshing(false); };
 
-  const load = useCallback(async () => {
-    const data = await getAllVariants();
-    setVariants(data);
-    applySearch(data, searchRef.current);
-    const wordData = await getWords();
-    setWords(wordData);
-  }, [applySearch]);
+  const handleSearch = (text: string) => setSearch(text);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-
-  const handleSearch = (text: string) => { setSearch(text); applySearch(variants, text); };
+  const filtered = search.trim()
+    ? variants.filter(v =>
+        v.variant.toLowerCase().includes(search.toLowerCase()) ||
+        (v.main_word || '').toLowerCase().includes(search.toLowerCase()))
+    : variants;
 
   const handleEditVariant = (variant: Variant) => {
     const parentWord = words.find(w => w.id === variant.word_id) || null;
@@ -73,7 +60,7 @@ export default function VariantsScreen() {
   };
 
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? '';
-  const sorted = sortVariants(filteredVariants, sort);
+  const sorted = sortVariants(filtered, sort);
 
   const renderVariant = ({ item }: { item: Variant }) => (
     <Card style={styles.variantCard}>
@@ -110,7 +97,7 @@ export default function VariantsScreen() {
         <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)} testID="variants-sort-btn">
           <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
-        <Text style={styles.countText}>{tc('variants.count', filteredVariants.length)}</Text>
+        <Text style={styles.countText}>{tc('variants.count', filtered.length)}</Text>
       </View>
 
       {showSortMenu && (
@@ -151,8 +138,8 @@ export default function VariantsScreen() {
       <AddVariantModal
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
-        onSave={load}
-        onDeleted={load}
+        onSave={refetchVariants}
+        onDeleted={refetchVariants}
         word={selectedWord}
         editVariant={editVariant}
       />
