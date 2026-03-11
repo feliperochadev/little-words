@@ -28,21 +28,3 @@ export const setChildProfile = async (profile: ChildProfile): Promise<void> => {
     setSetting('child_birth', profile.birth),
   ]);
 };
-
-export interface GoogleAuthState {
-  isConnected: boolean;
-  email: string | null;
-  lastSync: string | null;
-}
-
-export const getGoogleAuthState = async (): Promise<GoogleAuthState> => {
-  const [email, lastSync] = await Promise.all([
-    getSetting('google_email'),
-    getSetting('google_last_sync'),
-  ]);
-  return {
-    isConnected: !!email,
-    email,
-    lastSync,
-  };
-};

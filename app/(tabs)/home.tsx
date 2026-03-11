@@ -9,13 +9,13 @@ import { BrandHeader } from '../../src/components/BrandHeader';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
-import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useChildProfile } from '../../src/hooks/useSettings';
 
 export default function DashboardScreen() {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const { data: stats, refetch } = useDashboardStats();
-  const { name, sex, birth } = useSettingsStore();
+  const { name, sex, birth } = useChildProfile();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };

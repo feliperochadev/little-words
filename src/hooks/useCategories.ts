@@ -51,7 +51,7 @@ export function useDeleteCategory() {
 
 export function useWordCountByCategory(id: number) {
   return useQuery({
-    queryKey: ['wordCounts', id],
+    queryKey: QUERY_KEYS.wordCount(id),
     queryFn: () => categoryService.getWordCountByCategory(id),
     enabled: id > 0,
   });

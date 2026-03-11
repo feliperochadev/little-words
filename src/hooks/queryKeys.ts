@@ -4,6 +4,7 @@ export const QUERY_KEYS = {
   allVariants: () => ['variants'] as const,
   categories: () => ['categories'] as const,
   dashboard: () => ['dashboard'] as const,
+  wordCount: (id: number) => ['wordCounts', id] as const,
 } as const;
 
 // Keys to invalidate after word mutations (word count + variant count affect dashboard)

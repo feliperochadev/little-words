@@ -61,9 +61,7 @@ export default function WordsScreen() {
         <View style={styles.wordRow}>
           <View style={styles.wordMain}>
             <View style={styles.wordHeader}>
-              <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
-                <Text style={styles.wordText} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
-              </TouchableOpacity>
+              <Text style={styles.wordText} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
               <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
             </View>
             <View style={styles.wordMeta}>
@@ -201,8 +199,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   addBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
-  addCategoryBtn: { backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.primary, shadowOpacity: 0.1 },
-  addCategoryBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
   searchContainer: { paddingHorizontal: 20 },
   sortBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -232,31 +228,7 @@ const styles = StyleSheet.create({
   wordText: { fontSize: 20, fontWeight: '800', color: COLORS.text },
   wordMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   wordDate: { fontSize: 12, color: COLORS.textSecondary },
-  variantBadge: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  variantBadgeText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
-  expandIcon: { fontSize: 12, color: COLORS.textLight, marginLeft: 8, marginTop: 4 },
-  expandedContent: { marginTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 12 },
-  notesBox: { backgroundColor: COLORS.background, borderRadius: 10, padding: 12, marginBottom: 12 },
-  notesLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 4 },
-  notesText: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
   notePreview: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-  variantsSection: {
-    backgroundColor: COLORS.secondary + '0D', borderRadius: 12,
-    padding: 10, marginBottom: 12,
-  },
-  variantsSectionTitle: { fontSize: 11, fontWeight: '700', color: COLORS.secondary, marginBottom: 8 },
-  variantRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 10,
-    padding: 10, marginBottom: 6,
-  },
-  variantInfo: { flex: 1 },
-  variantText: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-  variantDate: { fontSize: 11, color: COLORS.textSecondary },
-  variantNotes: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
-  actionRow: { flexDirection: 'row', gap: 8 },
-  actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 12, alignItems: 'center' },
-  actionBtnText: { fontSize: 12, fontWeight: '700' },
   variantChip: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   variantChipText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
 });

@@ -4,6 +4,24 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_12
+
+**[refactor] Address PR #10 review comments — hooks, keys, dead code cleanup**
+- `src/hooks/useSyncOnSuccess.ts` (NEW): Extracted shared `useSyncOnSuccess` hook from `useWords` and `useVariants`, avoiding duplication. Added `.catch(console.error)` on `performSync`.
+- `src/hooks/useWords.ts`, `src/hooks/useVariants.ts`: Import `useSyncOnSuccess` from shared hook; removed duplicate inline definitions and dead imports (`useAuthStore`, `useI18n`, `performSync`).
+- `src/hooks/queryKeys.ts`: Added `wordCount: (id: number)` entry to `QUERY_KEYS` for type-safe category word-count keys.
+- `src/hooks/useCategories.ts`: Replaced raw `['wordCounts', id]` with `QUERY_KEYS.wordCount(id)`.
+- `src/components/AddWordModal.tsx`: Inline variant edits (update/delete) now use `useUpdateVariant` / `useDeleteVariant` mutation hooks instead of direct service calls. Replaced all raw query key strings with `QUERY_KEYS.*` and `*_MUTATION_KEYS` constants.
+- `src/services/settingsService.ts`: Removed dead `GoogleAuthState` interface and `getGoogleAuthState` export (no callers).
+- `app/(tabs)/home.tsx`: Replaced `useSettingsStore()` with `useChildProfile()` for consistent store access pattern.
+- `app/(tabs)/variants.tsx`: Fixed `onSave` prop type mismatch (`onSave={() => { refetchVariants(); }}`).
+- `app/(tabs)/words.tsx`: Removed 19 dead style keys; removed redundant inner `TouchableOpacity` wrapping word text (outer Card already handles tap).
+
+**[test] Add useSyncOnSuccess unit tests**
+- `__tests__/unit/useSyncOnSuccess.test.ts` (NEW): 3 tests covering no-op when disconnected, performSync call when connected, and error swallowing via `.catch`.
+
+---
+
 ### 2026-03-11_11
 
 **[fix] security.yml — fix Semgrep action, remove OWASP Dependency-Check**

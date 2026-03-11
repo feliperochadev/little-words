@@ -3,18 +3,7 @@ import { useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { QUERY_KEYS, WORD_MUTATION_KEYS } from './queryKeys';
 import * as wordService from '../services/wordService';
-import { useAuthStore } from '../stores/authStore';
-import { useI18n } from '../i18n/i18n';
-import { performSync } from '../utils/googleDrive';
-
-function useSyncOnSuccess() {
-  const { t } = useI18n();
-  return () => {
-    if (useAuthStore.getState().isConnected) {
-      performSync(t);
-    }
-  };
-}
+import { useSyncOnSuccess } from './useSyncOnSuccess';
 
 export function useWords(search?: string) {
   const query = useQuery({

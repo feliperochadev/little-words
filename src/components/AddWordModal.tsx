@@ -12,9 +12,11 @@ import { DatePickerField } from './DatePickerField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS, VARIANT_MUTATION_KEYS, CATEGORY_MUTATION_KEYS } from '../hooks/queryKeys';
 import { useCategories } from '../hooks/useCategories';
-import { useVariantsByWord } from '../hooks/useVariants';
+import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
+import { useSyncOnSuccess } from '../hooks/useSyncOnSuccess';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -47,6 +49,9 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
   const addWordMutation = useAddWord();
   const updateWordMutation = useUpdateWord();
   const deleteWordMutation = useDeleteWord();
+  const updateVariantMutation = useUpdateVariant();
+  const deleteVariantMutation = useDeleteVariant();
+  const syncOnSuccess = useSyncOnSuccess();
 
   const handleDelete = () => {
     if (!editWord) return;
@@ -201,7 +206,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
         const text = (editingVariantTexts[id] ?? '').trim();
         const original = existingVariants.find(v => v.id === id);
         if (text && original && text !== original.variant) {
-          await variantService.updateVariant(id, text, today, original.notes || '');
+          await updateVariantMutation.mutateAsync({ id, variant: text, dateAdded: today, notes: original.notes || '' });
         }
       }
       const existingTexts = new Set(existingVariants.map(v => v.variant.toLowerCase()));
@@ -212,10 +217,11 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
           existingTexts.add(text.toLowerCase());
         }
       }
-      // Re-invalidate words list so variant_texts in word rows reflects new variants
-      queryClient.invalidateQueries({ queryKey: ['words'] });
-      queryClient.invalidateQueries({ queryKey: ['words', wordId, 'variants'] });
-      queryClient.invalidateQueries({ queryKey: ['variants'] });
+      // Invalidate all variant-related caches and trigger Drive sync
+      VARIANT_MUTATION_KEYS.forEach(key =>
+        queryClient.invalidateQueries({ queryKey: key })
+      );
+      syncOnSuccess();
       onClose();
       onSave?.();
     } finally {
@@ -367,19 +373,15 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                     onBlur={async () => {
                       const text = (editingVariantTexts[v.id] ?? v.variant).trim();
                       if (text && text !== v.variant) {
-                        await variantService.updateVariant(v.id, text, today, v.notes || '');
-                        queryClient.invalidateQueries({ queryKey: ['words', editWord?.id, 'variants'] });
-                        queryClient.invalidateQueries({ queryKey: ['variants'] });
+                        await updateVariantMutation.mutateAsync({ id: v.id, variant: text, dateAdded: today, notes: v.notes || '' });
                         setExistingVariants(prev => prev.map(ev => ev.id === v.id ? { ...ev, variant: text } : ev));
                       }
                       setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
                     }}
                   />
                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={async () => {
-                    await variantService.deleteVariant(v.id);
+                    await deleteVariantMutation.mutateAsync({ id: v.id });
                     setExistingVariants(prev => prev.filter(e => e.id !== v.id));
-                    queryClient.invalidateQueries({ queryKey: ['words', editWord?.id, 'variants'] });
-                    queryClient.invalidateQueries({ queryKey: ['variants'] });
                     setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
                   }}>
                     <Text style={s.varRemoveText}>✕</Text>
@@ -461,14 +463,14 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
       onSave={async (id) => {
         setEditCategory(null);
         setShowNewCategory(false);
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
         if (id) setSelectedCategory(id);
         catScrollRef.current?.scrollTo({ x: 0, animated: true });
       }}
       onDeleted={async () => {
         setEditCategory(null);
         setShowNewCategory(false);
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
         setSelectedCategory(null);
       }}
     />

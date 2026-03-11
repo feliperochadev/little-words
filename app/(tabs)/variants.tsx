@@ -138,7 +138,7 @@ export default function VariantsScreen() {
       <AddVariantModal
         visible={showAddVariant}
         onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
-        onSave={refetchVariants}
+        onSave={() => { refetchVariants(); }}
         onDeleted={refetchVariants}
         word={selectedWord}
         editVariant={editVariant}
