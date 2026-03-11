@@ -1,0 +1,95 @@
+name: Security Scans
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main", "master"]
+  schedule:
+    - cron: "15 3 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep (SARIF)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/javascript,p/typescript
+          generateSarif: true
+          sarif_file: semgrep.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+
+  trivy:
+    name: Trivy FS Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy (SARIF)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: fs
+          format: sarif
+          output: trivy.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          vuln-type: library
+          exit-code: "1"
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+
+  dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Dependency-Check (SARIF)
+        uses: dependency-check/Dependency-Check_Action@v3.0.5
+        with:
+          project: "little-words"
+          path: "."
+          format: "SARIF"
+          out: "dependency-check-report"
+          args: "--failOnCVSS 7"
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: dependency-check-report/dependency-check-report.sarif

@@ -13,6 +13,8 @@
 - **Build System:** EAS Build (Android targeted)
 - **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest
 
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+
 ## Architecture & Core Modules
 
 - `app/`: Expo Router screens and layouts.

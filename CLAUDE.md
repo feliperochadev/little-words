@@ -24,6 +24,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
 
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+
 ### Rules
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions (helpers, utils, parsers) and integration tests for components. Tests must cover at least of the changed code: 99% in lines and 95% in funcs, branch and stmts — every branch, edge case, and error path. Place them in the matching subdirectory under `__tests__/` (`unit/`, `integration/`, or `screens/`).

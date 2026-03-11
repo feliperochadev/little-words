@@ -16,6 +16,8 @@ Do not consider work complete until `npm run ci` passes.
 
 Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+
 10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
    - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.

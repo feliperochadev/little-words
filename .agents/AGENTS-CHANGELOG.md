@@ -4,6 +4,17 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_10
+
+**[config] Add free GitHub security + quality tooling workflows**
+- Added `.github/dependabot.yml` for weekly npm dependency updates with production/dev grouping.
+- Added `.github/workflows/codeql.yml` to run CodeQL scans on PRs, default-branch pushes, and weekly schedule.
+- Added `.github/workflows/security.yml` with Dependency Review gating on high severity, plus Semgrep, Trivy (ignore-unfixed), and OWASP Dependency-Check SARIF uploads.
+- Added `.github/workflows/sonarcloud.yml` plus `sonar-project.properties` for SonarCloud OSS scanning on PRs and default-branch pushes.
+- Configured `main` branch protection via GitHub API: 4 required status checks before merge (`Lint · Typecheck · Jest`, `CodeQL Scan (javascript-typescript)`, `Dependency Review`, `Trivy FS Scan`); `strict` mode (branch must be up-to-date); no direct push to main.
+
+---
+
 ### 2026-03-11_09
 
 **[fix] Pull-to-refresh error safety + testID sanitization**
