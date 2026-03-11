@@ -214,14 +214,15 @@ interface StatCardProps {
   value: number | string;
   label: string;
   color: string;
+  testID?: string;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color }) => (
+export const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, testID }) => (
   <View style={[statStyles.card, { borderColor: color + '30' }]}>
     <View style={[statStyles.iconBg, { backgroundColor: color + '15' }]}>
       <Text style={statStyles.emoji}>{emoji}</Text>
     </View>
-    <Text style={[statStyles.value, { color }]}>{value}</Text>
+    <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
     <Text style={statStyles.label}>{label}</Text>
   </View>
 );

@@ -74,6 +74,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelP
             <TouchableOpacity
               style={wh.item}
               activeOpacity={0.7}
+              testID={testID ? `${testID}-item-${item.value}` : undefined}
               onPress={() => {
                 onChange(item.value);
                 ref.current?.scrollToOffset({ offset: index * ITEM_H, animated: true });

@@ -18,7 +18,7 @@ export default function DashboardScreen() {
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
   // Map numeric month index (1-based) to the short label key
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -57,13 +57,13 @@ export default function DashboardScreen() {
 
         {/* Main stats */}
         <View style={styles.statsGrid}>
-          <StatCard emoji="📝" value={stats?.totalWords ?? 0} label={t('dashboard.totalWords')} color={accentColor} />
-          <StatCard emoji="🗣️" value={stats?.totalVariants ?? 0} label={t('dashboard.variants')} color={COLORS.secondary} />
+          <StatCard emoji="📝" value={stats?.totalWords ?? 0} label={t('dashboard.totalWords')} color={accentColor} testID="stat-total-words" />
+          <StatCard emoji="🗣️" value={stats?.totalVariants ?? 0} label={t('dashboard.variants')} color={COLORS.secondary} testID="stat-total-variants" />
         </View>
         <View style={styles.statsGrid}>
-          <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} />
-          <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} />
-          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color="#6C5CE7" />
+          <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} testID="stat-words-today" />
+          <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} testID="stat-words-week" />
+          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color="#6C5CE7" testID="stat-words-month" />
         </View>
 
         {/* Monthly progress */}
@@ -80,8 +80,8 @@ export default function DashboardScreen() {
                     <View style={styles.barWrapper}>
                       <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: accentColor }]} />
                     </View>
-                    <Text style={styles.barLabel}>{formatMonth(m.month, showYear)}</Text>
-                    <Text style={[styles.barValue, { color: accentColor }]}>{m.count}</Text>
+                    <Text style={styles.barLabel} testID={`bar-label-${m.month}`}>{formatMonth(m.month, showYear)}</Text>
+                    <Text style={[styles.barValue, { color: accentColor }]} testID={`bar-value-${m.month}`}>{m.count}</Text>
                   </View>
                 ));
               })()}
@@ -101,7 +101,7 @@ export default function DashboardScreen() {
                   <View style={styles.catInfo}>
                     <View style={styles.catHeader}>
                       <Text style={styles.catName}>{categoryName(cat.name)}</Text>
-                      <Text style={[styles.catCount, { color: cat.color }]}>{cat.count}</Text>
+                      <Text style={[styles.catCount, { color: cat.color }]} testID={`cat-count-${cat.name}`}>{cat.count}</Text>
                     </View>
                     <View style={styles.progressBg}>
                       <View style={[styles.progressFill, { width: `${(cat.count / max) * 100}%`, backgroundColor: cat.color }]} />
@@ -115,11 +115,11 @@ export default function DashboardScreen() {
 
         {/* Recent words */}
         {stats && stats.recentWords.length > 0 && (
-          <Card>
+          <Card testID="recent-words-section">
             <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
             <View style={styles.wordCloud}>
               {stats.recentWords.map((w, i) => (
-                <View key={i} style={[styles.wordChip, { backgroundColor: (w.category_color || accentColor) + '20' }]}>
+                <View key={i} style={[styles.wordChip, { backgroundColor: (w.category_color || accentColor) + '20' }]} testID={`recent-word-${i}-${w.word.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}`}>
                   <Text style={[styles.wordChipText, { color: w.category_color || accentColor }]}>
                     {w.word}
                   </Text>

@@ -87,6 +87,7 @@ name: "CRUD Word - Add, edit, and delete words"
     id: "word-input"
 - eraseText: 5
 - inputText: "mama"
+- hideKeyboard
 
 # Press Save
 - tapOn: "Save"
@@ -216,6 +217,7 @@ name: "CRUD Word - Add, edit, and delete words"
     id: "existing-variant-row-maa-maa"
 - tapOn:
     id: "existing-variant-delete-maa-maa"
+- hideKeyboard
 
 - tapOn: "Save"
 
@@ -266,22 +268,17 @@ name: "CRUD Word - Add, edit, and delete words"
 - tapOn:
     id: "date-picker-btn"
 
-# Swipe UP on the year wheel to move from current year to previous year
-- swipe:
-    startElement:
-      id: "date-picker-year-wheel"
-    direction: UP
-    duration: 70
+# Tap directly on the 2025 year item (visible below the selected 2026)
+- tapOn:
+    id: "date-picker-year-wheel-item-2025"
+- waitForAnimationToEnd
 
-# Verify the preview shows the previous year
+# Verify the preview shows the previous year (full text is "DD Month 2025")
 - extendedWaitUntil:
     visible:
       id: "date-picker-preview"
-      text: "2025"
+      text: ".* 2025"
     timeout: 1000
-
-- tapOn:
-    text: "2025"
 
 # Confirm date selection
 - tapOn:

@@ -4,7 +4,26 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
-### 2026-03-11_07
+### 2026-03-11_09
+
+**[fix] Pull-to-refresh error safety + testID sanitization**
+- `app/(tabs)/home.tsx`, `app/(tabs)/words.tsx`, `app/(tabs)/variants.tsx`: wrapped `refetch()` call in `try-finally` inside `onRefresh` so `setRefreshing(false)` always executes even if the query throws.
+- `app/(tabs)/home.tsx`: sanitized `recent-word` testID — spaces replaced with `-`, non-alphanumeric/dash/underscore chars stripped — prevents broken testID selectors for multi-word or accented entries.
+
+---
+
+### 2026-03-11_08
+
+**[feature] Dashboard testIDs + E2E home screen verification in re-onboard.yaml**
+- `src/components/UIComponents.tsx`: added optional `testID` prop to `StatCard`; forwarded to the value `<Text>` element.
+- `app/(tabs)/home.tsx`: passed `testID` props to all five `StatCard` calls (`stat-total-words`, `stat-total-variants`, `stat-words-today`, `stat-words-week`, `stat-words-month`); added `testID` to bar chart label/value `<Text>` elements (`bar-label-{YYYY-MM}`, `bar-value-{YYYY-MM}`); added `testID` to category count `<Text>` (`cat-count-{name}`); added sanitized `testID` (`recent-word-${i}-${sanitized}`) to recent-word chip `<View>`.
+- `__tests__/e2e/re-onboard.yaml`: added import of `sample-import.csv` after re-onboard, then full Home screen verification (total words=5, variants=2, today=2, week=2, month=3, monthly bars 2025-03/2026-01/2026-03, Food category count=3, all 5 recent-word chips in insertion-order sequence).
+
+**[test] Unit/integration coverage for new dashboard testIDs**
+- `__tests__/integration/UIComponents.test.tsx`: added test asserting `testID` is forwarded to value `<Text>` in `StatCard`.
+- `__tests__/screens/home.test.tsx`: added tests for stat-card testIDs, bar-value testIDs, cat-count testID, and recent-word position-indexed testIDs.
+
+
 
 **[fix] Second review round fixes — over-invalidation, error handling, test coverage, pull-to-refresh**
 - `queryKeys.ts`: replaced `['categories']` in `WORD_MUTATION_KEYS` with `['wordCounts']` — prevents full category list from being refetched on every word mutation (was over-invalidating).

@@ -107,6 +107,52 @@ describe('DashboardScreen', () => {
     });
   });
 
+  it('renders stat cards with testIDs', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { getByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(getByTestId('stat-total-words').props.children).toBe(10);
+      expect(getByTestId('stat-total-variants').props.children).toBe(5);
+      expect(getByTestId('stat-words-today').props.children).toBe(2);
+      expect(getByTestId('stat-words-week').props.children).toBe(4);
+      expect(getByTestId('stat-words-month').props.children).toBe(8);
+    });
+  });
+
+  it('renders bar chart with testIDs for month values', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { getByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(getByTestId('bar-value-2024-01').props.children).toBe(5);
+      expect(getByTestId('bar-value-2024-02').props.children).toBe(8);
+    });
+  });
+
+  it('renders category count with testID using category name key', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { getByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(getByTestId('cat-count-animals').props.children).toBe(3);
+    });
+  });
+
+  it('renders recent word chips with position-indexed testIDs', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue({
+      ...fullStats,
+      recentWords: [
+        { id: 1, word: 'apple', category_color: '#FF6B9D' },
+        { id: 2, word: 'ball', category_color: null },
+      ],
+    });
+    const { getByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(getByTestId('recent-words-section')).toBeTruthy();
+      expect(getByTestId('recent-word-0-apple')).toBeTruthy();
+      expect(getByTestId('recent-word-1-ball')).toBeTruthy();
+    });
+  });
+
+
   it('does not show year suffix for single-year 6-month window', async () => {
     const singleYearStats = {
       ...fullStats,

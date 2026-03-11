@@ -36,7 +36,7 @@ export default function VariantsScreen() {
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
 
-  const onRefresh = async () => { setRefreshing(true); await refetchVariants(); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); try { await refetchVariants(); } finally { setRefreshing(false); } };
 
   const handleSearch = (text: string) => setSearch(text);
 
@@ -62,8 +62,8 @@ export default function VariantsScreen() {
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? '';
   const sorted = sortVariants(filtered, sort);
 
-  const renderVariant = ({ item }: { item: Variant }) => (
-    <Card style={styles.variantCard}>
+  const renderVariant = ({ item, index }: { item: Variant; index: number }) => (
+    <Card style={styles.variantCard} testID={`variant-pos-${index}-${item.variant}`}>
       <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
         <View style={styles.variantRow}>
           <View style={styles.variantBubble}>

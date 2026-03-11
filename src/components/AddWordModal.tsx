@@ -212,7 +212,8 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
           existingTexts.add(text.toLowerCase());
         }
       }
-      // Invalidate variant-specific keys (word mutation already covered ['words'] + ['dashboard'])
+      // Re-invalidate words list so variant_texts in word rows reflects new variants
+      queryClient.invalidateQueries({ queryKey: ['words'] });
       queryClient.invalidateQueries({ queryKey: ['words', wordId, 'variants'] });
       queryClient.invalidateQueries({ queryKey: ['variants'] });
       onClose();

@@ -40,7 +40,7 @@ export default function WordsScreen() {
   const { data: words = [], isLoading, refetch } = useWords(search);
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
   const handleSearch = (text: string) => { setSearch(text); };
 
@@ -55,14 +55,14 @@ export default function WordsScreen() {
   const sortedWords = sortWords(words, sort);
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? '';
 
-  const renderWord = ({ item }: { item: Word }) => (
+  const renderWord = ({ item, index }: { item: Word; index: number }) => (
     <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
       <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
         <View style={styles.wordRow}>
           <View style={styles.wordMain}>
             <View style={styles.wordHeader}>
               <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} hitSlop={{ top: 4, bottom: 4 }}>
-                <Text style={styles.wordText}>{item.word}</Text>
+                <Text style={styles.wordText} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
               </TouchableOpacity>
               <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
             </View>

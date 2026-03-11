@@ -16,12 +16,13 @@ Do not consider work complete until `npm run ci` passes.
 
 Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
-**Architecture & Design Planning (`/plan`):** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
-- **Design document** (`.agents/plan/design/DESIGN-<slug>.md`) for new features with UI/data flow.
-- **ADR** (`.agents/plan/architecture/ADR-NNNN-<slug>.md`) for significant architectural decisions between competing approaches.
-- Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
-- Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
-- Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
+   - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
+   - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
+   - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
+   - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
+   - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
 
 ## Coding Style & Naming Conventions
 Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.

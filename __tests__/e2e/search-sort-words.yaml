@@ -2,6 +2,12 @@ appId: com.littlewords.app
 name: "Words - Search and sort functionality"
 ---
 
+# At this point (after crud-word.yaml) the DB contains exactly 3 words:
+#   water  (date_added: 2026-03-11, created_at: earliest)
+#   ball   (date_added: 2026-03-11, created_at: second)
+#   teddy  (date_added: 2025-03-xx, created_at: latest)
+# DB fetch order (created_at DESC): teddy, ball, water
+
 - extendedWaitUntil:
     visible: "Words"
     timeout: 5000
@@ -46,39 +52,72 @@ name: "Words - Search and sort functionality"
 
 # ============================
 # SORT - A to Z
+# alpha_asc: ball(0), teddy(1), water(2)
 # ============================
 
-# Tap the sort button to open menu
 - tapOn:
     id: "words-sort-btn"
 - assertVisible:
     id: "sort-option-alpha_asc"
 - tapOn:
     id: "sort-option-alpha_asc"
+- waitForAnimationToEnd
+
+# "ball" is first alphabetically, "water" is last
+- assertVisible:
+    id: "word-pos-0-ball"
+- assertVisible:
+    id: "word-pos-2-water"
 
 # ============================
 # SORT - Z to A
+# alpha_desc: water(0), teddy(1), ball(2)
 # ============================
 
 - tapOn:
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-alpha_desc"
+- waitForAnimationToEnd
+
+# "water" is first reverse-alphabetically, "ball" is last
+- assertVisible:
+    id: "word-pos-0-water"
+- assertVisible:
+    id: "word-pos-2-ball"
 
 # ============================
 # SORT - Oldest first
+# date_asc: teddy(0) [2025], ball(1), water(2) [both 2026, stable = DB created_at DESC order]
 # ============================
 
 - tapOn:
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-date_asc"
+- waitForAnimationToEnd
+
+# "teddy" has the oldest date (2025) — must be first
+- assertVisible:
+    id: "word-pos-0-teddy"
+# "water" was created earliest (created_at) so it falls last among the 2026 group
+- assertVisible:
+    id: "word-pos-2-water"
 
 # ============================
 # SORT - Most recent (back to default)
+# date_desc: ball(0), water(1) [both 2026, stable = DB order], teddy(2) [2025 oldest]
 # ============================
 
 - tapOn:
     id: "words-sort-btn"
 - tapOn:
     id: "sort-option-date_desc"
+- waitForAnimationToEnd
+
+# "ball" was created most recently among 2026 words — must be first
+- assertVisible:
+    id: "word-pos-0-ball"
+# "teddy" has the oldest date (2025) — must be last
+- assertVisible:
+    id: "word-pos-2-teddy"
