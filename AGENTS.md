@@ -110,3 +110,16 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 - `src/stores/` — Zustand stores (`settingsStore`, `authStore`); hydrated at app start in `app/index.tsx`
 - `__tests__/helpers/renderWithProviders.tsx` — test wrapper with `QueryClientProvider` + `I18nProvider`
 - **Stable empty-array defaults**: always use a module-level `const EMPTY: T[] = []` instead of inline `= []` for TQ defaults used in `useEffect` deps.
+
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |

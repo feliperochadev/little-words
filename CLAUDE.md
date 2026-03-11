@@ -239,6 +239,19 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
 
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain. Standards cover TypeScript patterns, component design, state management, hooks, testing, and styling/naming conventions.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |
+
 ## Additional Documentation
 
 - `AGENTS.md` — strict contributor guide mirroring the repository enforcement rules for testing, CI, changelog maintenance, and `/ship` usage.

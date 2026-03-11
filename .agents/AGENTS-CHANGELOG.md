@@ -4,6 +4,21 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_14
+
+**[config] Add .agents/standards/ — authoritative code standards documentation**
+- `.agents/standards/README.md` (NEW): Index file with quick-reference table and instructions for agents on when/how to use standards files.
+- `.agents/standards/typescript.md` (NEW): TypeScript patterns — `interface` vs `type`, banned patterns (`any`, `enum`, `React.FC`, `@ts-ignore`), `as const`, `satisfies`, generics, type guards, `import type`.
+- `.agents/standards/components.md` (NEW): Component standards — named exports, props typing, `handle*`/`on*` naming, component structure order, `memo`/`useCallback` policy, ~200-line size limit, accessibility (`testID` + `accessibilityLabel`), loading/error/empty state pattern, RN FlatList rules.
+- `.agents/standards/state-management.md` (NEW): State layer decision table (TQ vs Zustand vs useState), QUERY_KEYS usage, module-level `EMPTY_*` constants, Zustand selector hooks, `getState()` for non-reactive reads, hydration rules, `useEffect` + TQ data anti-pattern.
+- `.agents/standards/hooks.md` (NEW): Hook naming rules, when to/not to create a hook, one-concern-per-effect rule, async-inside-effect pattern, cleanup, stable closure pattern, module-level empty defaults, hook file structure.
+- `.agents/standards/testing.md` (NEW): Directory rules, describe/it naming, `clearAllMocks`, `renderWithProviders`, `getByTestId` preference, mock-at-boundary strategy, 99% line / 95% branch coverage floor, Maestro `id:` selectors, `scrollUntilVisible`, `waitForAnimationToEnd`.
+- `.agents/standards/styling-and-naming.md` (NEW): `StyleSheet.create()` at file bottom, `COLORS.*` only, camelCase style keys, file naming table, `SCREAMING_SNAKE_CASE` for fixed constants, boolean `is*`/`has*`/`can*` prefix, `handle*` for internal handlers, import order.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added "Code Standards" section referencing `.agents/standards/` with quick-reference table.
+- Research documents in `.agents/plan/research-documents/2026-03-11_01-code-standards-audit/`: `codebase-audit.md` (10-domain baseline audit) and `best-practices-2025-2026.md` (React Native + TypeScript industry standards).
+
+---
+
 ### 2026-03-11_13
 
 **[refactor] Address PR #10 second review — performance, consistency, dead code**
