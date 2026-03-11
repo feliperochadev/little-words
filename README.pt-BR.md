@@ -60,6 +60,14 @@ Comandos úteis:
 - `src/utils/csvExport.ts` monta cabeçalhos CSV e rótulos de categoria de acordo com o locale
 - `src/utils/importHelpers.ts` faz o parse tanto de texto simples quanto de CSV
 - O backup com Google Drive é protegido por `isNativeBuild()` e não funciona no Expo Go
+- Os backups do Google Drive ficam na pasta `palavrinhas-app` e usam o nome `palavrinhas_backup.csv`
+- O arquivo local do SQLite é `little-words.db` em instalações novas
+
+## Fluxo Multi-Agente
+
+- A coordenação vive em `.agents/` (flags, changelog, reviews e tarefas pendentes)
+- Os scripts de estado do agente e persistência de tarefas ficam em `scripts/agent/`
+- Os readmes dos vendors (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) ficam sincronizados nas regras compartilhadas
 
 ## Testes
 

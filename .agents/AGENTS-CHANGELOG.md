@@ -4,6 +4,12 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_01
+
+**[config] README updates — architecture notes + multi-agent workflow**
+- `README.md` and `README.pt-BR.md`: added Google Drive folder/filename and SQLite filename notes in Architecture Notes
+- Added a concise multi-agent workflow section describing `.agents/` coordination and `scripts/agent/` tooling
+
 ### 2026-03-10_42
 
 **[feature] Locale-aware Google Drive folder name, backup filename, and share dialog title**
