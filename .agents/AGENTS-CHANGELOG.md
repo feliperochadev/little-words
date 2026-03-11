@@ -4,6 +4,15 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_11
+
+**[fix] security.yml — fix Semgrep action, remove OWASP Dependency-Check**
+- `returntocorp/semgrep-action@v1` → `semgrep/semgrep-action@v1` (org rename); fixed `config: p/default` (was invalid comma-separated `p/javascript,p/typescript`); added `generateSarif: "1"`; `continue-on-error: true` on semgrep step; guarded SARIF upload with `if: hashFiles('semgrep.sarif') != ''`.
+- Removed `OWASP Dependency-Check` job — version `v3.0.5` does not exist; job is also too slow and has too many false positives for npm projects.
+- Enabled vulnerability alerts on the repo (required for `dependency-review-action` to see the dependency graph).
+
+---
+
 ### 2026-03-11_10
 
 **[config] Add free GitHub security + quality tooling workflows**
