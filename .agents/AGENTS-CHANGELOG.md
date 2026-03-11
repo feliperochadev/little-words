@@ -4,6 +4,16 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_40
+
+**[config] Rename app to "Little Words" across package metadata and system names**
+- `app.json` display name: "Palavrinhas" → "Little Words" (Play Store / device launcher)
+- `package.json` name: "palavrinhas" → "little-words"
+- `src/utils/csvExport.ts` share dialog: "Share Palavrinhas CSV" → "Share Little Words CSV"
+- `src/utils/googleDrive.ts` backup filename: `palavrinhas_backup.csv` → `little-words_backup.csv`; internal boundary string updated
+- `src/i18n/pt-BR.ts` left untouched — Portuguese UI keeps "Palavrinhas" branding
+- `src/database/database.ts` left untouched — `palavrinhas.db` filename preserved to avoid data loss on existing installs
+
 ### 2026-03-10_39
 
 **[config] Remove E2E job from GitHub Actions CI**

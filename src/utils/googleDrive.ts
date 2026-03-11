@@ -2,7 +2,7 @@
 import { getSetting, setSetting, getAllDataForCSV } from '../database/database';
 import Constants from 'expo-constants';
 
-const CSV_FILENAME = 'palavrinhas_backup.csv';
+const CSV_FILENAME = 'little-words_backup.csv';
 
 // True when running inside a real APK/IPA build (not Expo Go)
 export const isNativeBuild = (): boolean => {
@@ -79,7 +79,7 @@ const uploadToDrive = async (
 ): Promise<{ fileId: string; success: boolean; error?: string }> => {
   try {
     const csvContent = await getAllDataForCSV((name: string) => name);
-    const boundary = '-------palavrinhas314159';
+    const boundary = '-------littlewords314159';
     const body =
       `\r\n--${boundary}\r\n` +
       'Content-Type: application/json\r\n\r\n' +
