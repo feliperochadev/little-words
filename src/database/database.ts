@@ -1,7 +1,7 @@
 import { openDatabaseSync } from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 
-const db = openDatabaseSync('palavrinhas.db');
+const db = openDatabaseSync('little-words.db');
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 

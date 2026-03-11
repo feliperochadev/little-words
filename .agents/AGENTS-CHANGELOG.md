@@ -4,15 +4,31 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_41
+
+**[fix] Settings sync test timeout — add 5000ms to findByText for CI reliability**
+- `__tests__/screens/settings.test.tsx`: `handles sync cancelled (no alert shown)` uses `findByText(/Sync/, {}, { timeout: 5000 })` — same pattern as the words screen fix; the Sync button only renders after the async `isGoogleConnected()` chain resolves, which can exceed 1000ms on loaded CI machines
+
+**[fix] Revert palavrinhas brand strings in csvExport / googleDrive**
+- `src/utils/csvExport.ts` share dialog title reverted to `'Share Palavrinhas CSV'`
+- `src/utils/googleDrive.ts` backup filename reverted to `palavrinhas_backup.csv`; boundary string reverted to `-------palavrinhas314159`
+
+**[feature] Google Drive folder — store backup inside `palavrinhas-app` folder**
+- `src/utils/googleDrive.ts`: added `findOrCreateFolder()` that searches for / creates a Drive folder named `palavrinhas-app`; `performSync` passes the folder ID to `uploadToDrive` so new files are created inside the folder; `parents` is only set on initial file creation (POST), not on PATCH updates
+- `__tests__/integration/googleDrive.test.ts`: all `performSync` tests updated to include the `findOrCreateFolder` fetch mock; added two new tests: folder creation path and graceful fallback when folder search fails
+
+**[config] Rename SQLite database to `little-words.db`**
+- `src/database/database.ts`: `openDatabaseSync('palavrinhas.db')` → `openDatabaseSync('little-words.db')` (existing installs will create a fresh empty database on next launch)
+
 ### 2026-03-10_40
 
 **[config] Rename app to "Little Words" across package metadata and system names**
 - `app.json` display name: "Palavrinhas" → "Little Words" (Play Store / device launcher)
 - `package.json` name: "palavrinhas" → "little-words"
-- `src/utils/csvExport.ts` share dialog: "Share Palavrinhas CSV" → "Share Little Words CSV"
-- `src/utils/googleDrive.ts` backup filename: `palavrinhas_backup.csv` → `little-words_backup.csv`; internal boundary string updated
+- `src/utils/csvExport.ts` share dialog: "Share Palavrinhas CSV" → "Share Little Words CSV" (reverted in 2026-03-10_41)
+- `src/utils/googleDrive.ts` backup filename: `palavrinhas_backup.csv` → `little-words_backup.csv` (reverted in 2026-03-10_41)
 - `src/i18n/pt-BR.ts` left untouched — Portuguese UI keeps "Palavrinhas" branding
-- `src/database/database.ts` left untouched — `palavrinhas.db` filename preserved to avoid data loss on existing installs
+- `src/database/database.ts` left untouched — `palavrinhas.db` filename preserved to avoid data loss on existing installs (renamed in 2026-03-10_41)
 
 ### 2026-03-10_39
 

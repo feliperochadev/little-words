@@ -83,7 +83,7 @@ export const shareCSV = async (
     if (!canShare) return { success: false, error: 'Sharing not available on this device.' };
     await Sharing.shareAsync(fileUri, {
       mimeType: 'text/csv',
-      dialogTitle: 'Share Little Words CSV',
+      dialogTitle: 'Share Palavrinhas CSV',
       UTI: 'public.comma-separated-values-text',
     });
     return { success: true };

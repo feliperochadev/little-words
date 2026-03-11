@@ -395,7 +395,8 @@ describe('SettingsScreen', () => {
     (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
     (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
     const { findByText } = render(<I18nProvider><SettingsScreen /></I18nProvider>);
-    fireEvent.press(await findByText(/Sync/));
+    // Sync button only renders after async load() resolves isGoogleConnected — use longer timeout for CI
+    fireEvent.press(await findByText(/Sync/, {}, { timeout: 5000 }));
     await waitFor(() => expect(googleDrive.performSync).toHaveBeenCalled());
     // No alert for cancelled error
     expect(Alert.alert).not.toHaveBeenCalled();

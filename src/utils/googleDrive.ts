@@ -2,7 +2,8 @@
 import { getSetting, setSetting, getAllDataForCSV } from '../database/database';
 import Constants from 'expo-constants';
 
-const CSV_FILENAME = 'little-words_backup.csv';
+const CSV_FILENAME = 'palavrinhas_backup.csv';
+const DRIVE_FOLDER_NAME = 'palavrinhas-app';
 
 // True when running inside a real APK/IPA build (not Expo Go)
 export const isNativeBuild = (): boolean => {
@@ -73,17 +74,48 @@ const getAccessToken = async (): Promise<string> => {
   return tokens.accessToken;
 };
 
+const findOrCreateFolder = async (accessToken: string): Promise<string | null> => {
+  try {
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&spaces=drive&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (searchRes.ok) {
+      const data = await searchRes.json();
+      if (data.files?.[0]?.id) return data.files[0].id as string;
+    }
+    // Create folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
+    });
+    if (!createRes.ok) return null;
+    const folder = await createRes.json();
+    return folder.id ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const uploadToDrive = async (
   accessToken: string,
   existingFileId: string | null,
+  folderId: string | null,
 ): Promise<{ fileId: string; success: boolean; error?: string }> => {
   try {
     const csvContent = await getAllDataForCSV((name: string) => name);
-    const boundary = '-------littlewords314159';
+    const boundary = '-------palavrinhas314159';
+    // parents is only valid on initial file creation (POST), not on PATCH updates
+    const meta: Record<string, unknown> = { name: CSV_FILENAME, mimeType: 'text/csv' };
+    if (!existingFileId && folderId) meta.parents = [folderId];
     const body =
       `\r\n--${boundary}\r\n` +
       'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify({ name: CSV_FILENAME, mimeType: 'text/csv' }) +
+      JSON.stringify(meta) +
       `\r\n--${boundary}\r\n` +
       'Content-Type: text/csv\r\n\r\n' +
       csvContent +
@@ -113,10 +145,11 @@ const uploadToDrive = async (
   }
 };
 
-const findExistingFile = async (accessToken: string): Promise<string | null> => {
+const findExistingFile = async (accessToken: string, folderId: string | null): Promise<string | null> => {
   try {
+    const folderClause = folderId ? `+and+'${folderId}'+in+parents` : '';
     const res = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${CSV_FILENAME}'&spaces=drive&fields=files(id)`,
+      `https://www.googleapis.com/drive/v3/files?q=name='${CSV_FILENAME}'${folderClause}&spaces=drive&fields=files(id)`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     if (!res.ok) return null;
@@ -138,16 +171,18 @@ export const performSync = async (): Promise<{ success: boolean; error?: string;
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     const accessToken = await getAccessToken();
+    const folderId = await findOrCreateFolder(accessToken);
     let fileId = await getSetting('google_file_id');
-    if (!fileId) fileId = await findExistingFile(accessToken);
+    if (!fileId) fileId = await findExistingFile(accessToken, folderId);
 
-    const result = await uploadToDrive(accessToken, fileId);
+    const result = await uploadToDrive(accessToken, fileId, folderId);
 
     if (result.error === 'TOKEN_EXPIRED') {
       try {
         await GoogleSignin.signInSilently();
         const freshToken = await getAccessToken();
-        const retry = await uploadToDrive(freshToken, fileId);
+        const freshFolderId = await findOrCreateFolder(freshToken);
+        const retry = await uploadToDrive(freshToken, fileId, freshFolderId);
         if (!retry.success) {
           await signOutGoogle();
           return { success: false, error: 'Sessao expirada. Conecte-se novamente.' };
