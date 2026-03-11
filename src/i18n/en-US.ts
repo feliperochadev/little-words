@@ -161,11 +161,13 @@ export default {
 
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
-    columnWord:     'word',
-    columnCategory: 'category',
-    columnDate:     'date',
-    columnVariant:  'variant',
-    filenamePrefix: 'little-words',
+    columnWord:       'word',
+    columnCategory:   'category',
+    columnDate:       'date',
+    columnVariant:    'variant',
+    filenamePrefix:   'little-words',
+    driveFolderName:  'little-words-app',
+    shareDialogTitle: 'Share Little Words CSV',
   },
 
   // ── Settings screen ─────────────────────────────────────────────────────────

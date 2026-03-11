@@ -161,11 +161,13 @@ export default {
 
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
-    columnWord:     'palavra',
-    columnCategory: 'categoria',
-    columnDate:     'data',
-    columnVariant:  'variante',
-    filenamePrefix: 'palavrinhas',
+    columnWord:       'palavra',
+    columnCategory:   'categoria',
+    columnDate:       'data',
+    columnVariant:    'variante',
+    filenamePrefix:   'palavrinhas',
+    driveFolderName:  'palavrinhas-app',
+    shareDialogTitle: 'Share Palavrinhas CSV',
   },
 
   // ── Settings screen ─────────────────────────────────────────────────────────

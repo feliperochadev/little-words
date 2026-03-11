@@ -62,7 +62,7 @@ export default function WordsScreen() {
   const handleSaved = async () => {
     await load();
     const connected = await isGoogleConnected();
-    if (connected) performSync();
+    if (connected) performSync(t);
   };
 
   const formatDate = (date: string) => {

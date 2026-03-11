@@ -4,6 +4,19 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-10_42
+
+**[feature] Locale-aware Google Drive folder name, backup filename, and share dialog title**
+- `src/i18n/en-US.ts` + `src/i18n/pt-BR.ts`: added `csv.driveFolderName` (`little-words-app` / `palavrinhas-app`) and `csv.shareDialogTitle` (`Share Little Words CSV` / `Share Palavrinhas CSV`)
+- `src/utils/googleDrive.ts`: removed hardcoded `DRIVE_FOLDER_NAME` / `CSV_FILENAME` constants; added exported `buildDriveFolderName(t)` helper and internal `buildDriveFilename(t)`; `performSync(t)` now accepts a `t` function and derives folder name and backup filename from locale; `findOrCreateFolder`, `findExistingFile`, and `uploadToDrive` updated to accept dynamic folder/filename
+- `src/utils/csvExport.ts`: `shareCSV` now uses `t('csv.shareDialogTitle')` instead of hardcoded string
+- `app/(tabs)/settings.tsx`: passes `t` to `performSync(t)` in both `handleSync` and `handleSignIn`
+- `app/(tabs)/words.tsx`: passes `t` to `performSync(t)` in `handleSaved`
+- `app/index.tsx`: imports `useI18n` and passes `t` to the startup background sync; `eslint-disable` added to keep the effect running once only
+- `__tests__/integration/googleDrive.test.ts`: added `buildDriveFolderName` test; all `performSync` calls updated to `performSync(mockT)`; `mockT` fixture added
+- `__tests__/integration/csvExport.test.ts`: updated `t` mock to include `shareDialogTitle`; added test verifying pt-BR dialog title is forwarded to `Sharing.shareAsync`
+- `__tests__/screens/index.test.tsx`: added `useI18n` mock so `Index` can be tested without `I18nProvider`
+
 ### 2026-03-10_41
 
 **[fix] Settings sync test timeout — add 5000ms to findByText for CI reliability**

@@ -6,6 +6,7 @@ import {
   isGoogleConnected,
   getGoogleUserEmail,
   performSync,
+  buildDriveFolderName,
 } from '../../src/utils/googleDrive';
 import Constants from 'expo-constants';
 
@@ -36,11 +37,28 @@ const mockGetSetting = (values: Record<string, string | null>) => {
 const mockFetch = jest.fn();
 (global as any).fetch = mockFetch;
 
+// Minimal t() mock for performSync — returns locale-neutral test values
+const mockT = (key: string): string => ({
+  'csv.driveFolderName': 'test-app',
+  'csv.filenamePrefix': 'test',
+}[key] ?? key);
+
 describe('googleDrive', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setNativeBuild(false); // default: not native
     mockFetch.mockReset();
+  });
+
+  // ── buildDriveFolderName ───────────────────────────────────────────────
+
+  describe('buildDriveFolderName', () => {
+    it('returns locale-specific folder name from t()', () => {
+      const enT = (key: string) => ({ 'csv.driveFolderName': 'little-words-app' }[key] ?? key);
+      const ptT = (key: string) => ({ 'csv.driveFolderName': 'palavrinhas-app' }[key] ?? key);
+      expect(buildDriveFolderName(enT)).toBe('little-words-app');
+      expect(buildDriveFolderName(ptT)).toBe('palavrinhas-app');
+    });
   });
 
   // ── isNativeBuild ──────────────────────────────────────────────────────
@@ -246,7 +264,7 @@ describe('googleDrive', () => {
   describe('performSync', () => {
     it('returns error when not native build', async () => {
       setNativeBuild(false);
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result).toEqual({ success: false, error: 'not_native' });
     });
 
@@ -255,7 +273,7 @@ describe('googleDrive', () => {
       // isGoogleConnected calls getSetting('google_signed_in')
       mockDb.getAllSync.mockReturnValueOnce([{ value: '' }]);
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result).toEqual({ success: false, error: 'Nao conectado' });
     });
 
@@ -284,7 +302,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'new-file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       expect(result.lastSync).toBeDefined();
       // Verify fetch was called with PATCH (existing file)
@@ -322,7 +340,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'brand-new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // Third fetch should be POST (new file)
       expect(mockFetch.mock.calls[2][1].method).toBe('POST');
@@ -356,7 +374,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'found-file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // Should use PATCH since file was found
       expect(mockFetch.mock.calls[2][1].method).toBe('PATCH');
@@ -399,7 +417,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       expect(GoogleSignin.signInSilently).toHaveBeenCalled();
     });
@@ -443,7 +461,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Sessao expirada. Conecte-se novamente.');
     });
@@ -474,7 +492,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Sessao expirada. Conecte-se novamente.');
     });
@@ -503,7 +521,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Erro HTTP 500');
     });
@@ -528,7 +546,7 @@ describe('googleDrive', () => {
       // uploadToDrive throws
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network error');
     });
@@ -544,7 +562,7 @@ describe('googleDrive', () => {
 
       GoogleSignin.getTokens.mockRejectedValue(new Error('Token retrieval failed'));
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Token retrieval failed');
     });
@@ -577,7 +595,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // Should use POST since findExistingFile returned null
       expect(mockFetch.mock.calls[2][1].method).toBe('POST');
@@ -608,7 +626,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'new-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
     });
 
@@ -645,7 +663,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'created-file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
       // POST body should include folder parent
       const uploadBody = mockFetch.mock.calls[3][1].body as string;
@@ -672,7 +690,7 @@ describe('googleDrive', () => {
         json: () => Promise.resolve({ id: 'file-id' }),
       });
 
-      const result = await performSync();
+      const result = await performSync(mockT);
       expect(result.success).toBe(true);
     });
   });

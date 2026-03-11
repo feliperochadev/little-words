@@ -86,7 +86,7 @@ export default function SettingsScreen() {
 
   const handleSync = async () => {
     setSyncing(true);
-    const result = await performSync();
+    const result = await performSync(t);
     setSyncing(false);
     if (result.success) {
       setLastSync(result.lastSync || null);
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
     setSigningIn(false);
     if (result.success) {
       await load();
-      performSync().catch(console.error);
+      performSync(t).catch(console.error);
     } else if (result.error && result.error !== 'cancelled' && result.error !== 'in_progress') {
       Alert.alert(t('common.error'), result.error);
     }

@@ -2,13 +2,20 @@
 import { getSetting, setSetting, getAllDataForCSV } from '../database/database';
 import Constants from 'expo-constants';
 
-const CSV_FILENAME = 'palavrinhas_backup.csv';
-const DRIVE_FOLDER_NAME = 'palavrinhas-app';
-
 // True when running inside a real APK/IPA build (not Expo Go)
 export const isNativeBuild = (): boolean => {
   return Constants.executionEnvironment !== 'storeClient';
 };
+
+// ── Locale-aware Drive helpers ─────────────────────────────────────────────────
+
+export function buildDriveFolderName(t: (key: string) => string): string {
+  return t('csv.driveFolderName');
+}
+
+function buildDriveFilename(t: (key: string) => string): string {
+  return `${t('csv.filenamePrefix')}_backup.csv`;
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -74,10 +81,10 @@ const getAccessToken = async (): Promise<string> => {
   return tokens.accessToken;
 };
 
-const findOrCreateFolder = async (accessToken: string): Promise<string | null> => {
+const findOrCreateFolder = async (accessToken: string, folderName: string): Promise<string | null> => {
   try {
     const searchRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&spaces=drive&fields=files(id)`,
+      `https://www.googleapis.com/drive/v3/files?q=name='${folderName}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&spaces=drive&fields=files(id)`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     if (searchRes.ok) {
@@ -91,7 +98,7 @@ const findOrCreateFolder = async (accessToken: string): Promise<string | null> =
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
+      body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' }),
     });
     if (!createRes.ok) return null;
     const folder = await createRes.json();
@@ -105,12 +112,13 @@ const uploadToDrive = async (
   accessToken: string,
   existingFileId: string | null,
   folderId: string | null,
+  filename: string,
 ): Promise<{ fileId: string; success: boolean; error?: string }> => {
   try {
     const csvContent = await getAllDataForCSV((name: string) => name);
     const boundary = '-------palavrinhas314159';
     // parents is only valid on initial file creation (POST), not on PATCH updates
-    const meta: Record<string, unknown> = { name: CSV_FILENAME, mimeType: 'text/csv' };
+    const meta: Record<string, unknown> = { name: filename, mimeType: 'text/csv' };
     if (!existingFileId && folderId) meta.parents = [folderId];
     const body =
       `\r\n--${boundary}\r\n` +
@@ -145,11 +153,11 @@ const uploadToDrive = async (
   }
 };
 
-const findExistingFile = async (accessToken: string, folderId: string | null): Promise<string | null> => {
+const findExistingFile = async (accessToken: string, folderId: string | null, filename: string): Promise<string | null> => {
   try {
     const folderClause = folderId ? `+and+'${folderId}'+in+parents` : '';
     const res = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${CSV_FILENAME}'${folderClause}&spaces=drive&fields=files(id)`,
+      `https://www.googleapis.com/drive/v3/files?q=name='${filename}'${folderClause}&spaces=drive&fields=files(id)`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     if (!res.ok) return null;
@@ -162,27 +170,32 @@ const findExistingFile = async (accessToken: string, folderId: string | null): P
 
 // ── Public sync ───────────────────────────────────────────────────────────────
 
-export const performSync = async (): Promise<{ success: boolean; error?: string; lastSync?: string }> => {
+export const performSync = async (
+  t: (key: string) => string,
+): Promise<{ success: boolean; error?: string; lastSync?: string }> => {
   if (!isNativeBuild()) return { success: false, error: 'not_native' };
 
   const connected = await isGoogleConnected();
   if (!connected) return { success: false, error: 'Nao conectado' };
 
+  const folderName = buildDriveFolderName(t);
+  const filename = buildDriveFilename(t);
+
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     const accessToken = await getAccessToken();
-    const folderId = await findOrCreateFolder(accessToken);
+    const folderId = await findOrCreateFolder(accessToken, folderName);
     let fileId = await getSetting('google_file_id');
-    if (!fileId) fileId = await findExistingFile(accessToken, folderId);
+    if (!fileId) fileId = await findExistingFile(accessToken, folderId, filename);
 
-    const result = await uploadToDrive(accessToken, fileId, folderId);
+    const result = await uploadToDrive(accessToken, fileId, folderId, filename);
 
     if (result.error === 'TOKEN_EXPIRED') {
       try {
         await GoogleSignin.signInSilently();
         const freshToken = await getAccessToken();
-        const freshFolderId = await findOrCreateFolder(freshToken);
-        const retry = await uploadToDrive(freshToken, fileId, freshFolderId);
+        const freshFolderId = await findOrCreateFolder(freshToken, folderName);
+        const retry = await uploadToDrive(freshToken, fileId, freshFolderId, filename);
         if (!retry.success) {
           await signOutGoogle();
           return { success: false, error: 'Sessao expirada. Conecte-se novamente.' };
