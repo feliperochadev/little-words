@@ -3,13 +3,15 @@
 // sets isInsideTestCode=false, jest-runtime throws "outside of scope" errors.
 // Pre-warm all expo lazy globals now (during setupFiles, isInsideTestCode is undefined, not false)
 // so they resolve to cached plain values before any test scope transitions.
-globalThis.__ExpoImportMetaRegistry;
-globalThis.TextDecoder;
-globalThis.TextDecoderStream;
-globalThis.TextEncoderStream;
-globalThis.URL;
-globalThis.URLSearchParams;
-globalThis.structuredClone;
+[
+  globalThis.__ExpoImportMetaRegistry,
+  globalThis.TextDecoder,
+  globalThis.TextDecoderStream,
+  globalThis.TextEncoderStream,
+  globalThis.URL,
+  globalThis.URLSearchParams,
+  globalThis.structuredClone,
+].forEach(Boolean);
 
 // Mock expo-sqlite — singleton so database.ts and tests share the same instance
 const mockDbInstance = {

@@ -4,7 +4,6 @@ import { Alert } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import OnboardingScreen from '../../app/onboarding';
 import * as db from '../../src/database/database';
-import { useRouter } from 'expo-router';
 
 jest.spyOn(Alert, 'alert');
 

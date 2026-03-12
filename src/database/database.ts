@@ -364,7 +364,7 @@ export const getAllDataForCSV = async (
 
   const header = headerRow + '\n';
   const body = rows.map((r) =>
-    `"${(r.word || '').replaceAll(/"/g, '""')}","${(resolveCategoryName(r.categoria || '') || '').replaceAll(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replaceAll(/"/g, '""')}"`
+    `"${(r.word || '').replaceAll('"', '""')}","${(resolveCategoryName(r.categoria || '') || '').replaceAll('"', '""')}","${r.data || ''}","${(r.variante || '').replaceAll('"', '""')}"`
   ).join('\n');
 
   return header + body;
