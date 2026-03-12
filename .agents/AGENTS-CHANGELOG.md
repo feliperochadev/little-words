@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_08
+
+**[fix] Sonar PR #19 nesting-depth cleanup in AddWordModal**
+- Refactored `handleExistingVariantBlur` and `handleExistingVariantDelete` to remove higher-order async function nesting that exceeded Sonar's max nesting-depth rule.
+- Updated call sites to invoke these handlers via lightweight wrappers, keeping behavior unchanged for inline variant edit/delete flows.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
 ### 2026-03-12_07
 
 **[config] Downgrade app version to 1.0.0**

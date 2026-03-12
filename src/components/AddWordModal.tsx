@@ -197,7 +197,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     });
   };
 
-  const handleExistingVariantBlur = (variant: Variant) => async () => {
+  const handleExistingVariantBlur = async (variant: Variant) => {
     const text = (editingVariantTexts[variant.id] ?? variant.variant).trim();
     if (text && text !== variant.variant) {
       await updateVariantMutation.mutateAsync({ id: variant.id, variant: text, dateAdded: today, notes: variant.notes || '' });
@@ -206,7 +206,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     stopEditingVariant(variant.id);
   };
 
-  const handleExistingVariantDelete = (variant: Variant) => async () => {
+  const handleExistingVariantDelete = async (variant: Variant) => {
     await deleteVariantMutation.mutateAsync({ id: variant.id });
     setExistingVariants(prev => prev.filter(v => v.id !== variant.id));
     stopEditingVariant(variant.id);
@@ -394,9 +394,9 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
                      placeholderTextColor={COLORS.textLight}
                      autoCapitalize="none"
                      autoFocus
-                     onBlur={handleExistingVariantBlur(v)}
+                     onBlur={() => { void handleExistingVariantBlur(v); }}
                    />
-                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={handleExistingVariantDelete(v)}>
+                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={() => { void handleExistingVariantDelete(v); }}>
                     <Text style={s.varRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>
