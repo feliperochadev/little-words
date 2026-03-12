@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_01
+
+**[fix] App icon speech bubble misaligned and tail distorted — rescaled, centred, proper tail**
+- `assets/icon_1024.png` and `assets/icon.png`: regenerated. Final: bubble body 536×400 px (ratio 1.34) at (244,270)→(780,670); sharp triangular tail at [(264,630),(354,670),(229,755)], tip 269 px from bottom. Visual centre y=512.5 (canvas 512). Top padding 270 px. Colors preserved: #FAF4EC background, #F4C3B2 bubble, #D26948 text, Georgia serif 200 pt. Backups kept as `icon_1024_backup.png` / `icon_backup.png`.
+
 ---
 
 ### 2026-03-11_14
@@ -75,7 +80,6 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
-### 2026-03-11_08
 
 **[feature] Dashboard testIDs + E2E home screen verification in re-onboard.yaml**
 - `src/components/UIComponents.tsx`: added optional `testID` prop to `StatCard`; forwarded to the value `<Text>` element.
@@ -671,3 +675,11 @@ Entries are added after every approved change. Most recent first.
 - Added E2E testing conventions (testID rules, scrolling, text input pitfalls)
 - Added Rules section (write tests, run CI, update CLAUDE.md, maintain changelog)
 - Updated Project Overview with full stack versions and feature list
+
+
+### 2026-03-12_1
+
+**[config] SonarCloud — hardcode project key and organization**
+- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
+- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
+- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)
