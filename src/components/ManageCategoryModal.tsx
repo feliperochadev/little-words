@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { MODAL_ANIMATION } from '../utils/animationConstants';
 import { getWordCountByCategory } from '../database/database';
 import { useDeleteCategory } from '../hooks/useCategories';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,8 +38,8 @@ export function ManageCategoryModal({
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   const dismissModal = useRef(() => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: MODAL_ANIMATION.SLIDE_OUT_DISTANCE, duration: MODAL_ANIMATION.SLIDE_OUT_DURATION, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_HIDDEN, duration: MODAL_ANIMATION.FADE_OUT_DURATION, useNativeDriver: true }),
     ]).start(() => { onCloseRef.current(); });
   }).current;
   const panResponder = useRef(PanResponder.create({
@@ -49,18 +50,18 @@ export function ManageCategoryModal({
       if (dy > 100 || vy > 0.8) {
         dismissModal();
       } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.QUICK_CLOSE_FRICTION }).start();
       }
     },
   })).current;
 
   useEffect(() => {
     if (visible) {
-      translateY.setValue(800);
-      backdropOpacity.setValue(0);
+      translateY.setValue(MODAL_ANIMATION.SLIDE_OUT_DISTANCE);
+      backdropOpacity.setValue(MODAL_ANIMATION.BACKDROP_HIDDEN);
       Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
-        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.SLIDE_IN_FRICTION, tension: MODAL_ANIMATION.SLIDE_IN_TENSION }),
+        Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_VISIBLE, duration: MODAL_ANIMATION.FADE_IN_DURATION, useNativeDriver: true }),
       ]).start();
     }
   }, [visible, translateY, backdropOpacity]);

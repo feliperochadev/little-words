@@ -8,6 +8,7 @@ import { clearAllData } from '../../src/database/database';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
+import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import {
   signInWithGoogle, signOutGoogle, performSync,
@@ -388,15 +389,15 @@ const styles = StyleSheet.create({
   exportBtn: { paddingVertical: 10, paddingHorizontal: 8 },
   driveTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   connectedRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
-  connectedIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.success + '20', alignItems: 'center', justifyContent: 'center' },
+  connectedIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: withOpacity(COLORS.success, '20'), alignItems: 'center', justifyContent: 'center' },
   connectedIconText: { fontSize: 18, color: COLORS.success, fontWeight: '800' },
   connectedInfo: { flex: 1 },
   connectedLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
   connectedEmail: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   aboutText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
   versionText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 8, opacity: 0.6 },
-  dangerCard: { borderWidth: 1.5, borderColor: COLORS.error + '40' },
-  dangerBtn: { backgroundColor: COLORS.error + '15', borderWidth: 1.5, borderColor: COLORS.error, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  dangerCard: { borderWidth: 1.5, borderColor: withOpacity(COLORS.error, '40') },
+  dangerBtn: { backgroundColor: withOpacity(COLORS.error, '15'), borderWidth: 1.5, borderColor: COLORS.error, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   dangerBtnText: { color: COLORS.error, fontWeight: '700', fontSize: 15 },
   categoryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
   categoryDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   categoryChevron: { fontSize: 22, color: COLORS.textLight, fontWeight: '300' },
   addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   addCategoryBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
-  editProfileBtn: { backgroundColor: COLORS.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  editProfileBtn: { backgroundColor: withOpacity(COLORS.primary, '15'), paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   // Language picker
   languageRow: { flexDirection: 'row', gap: 10 },
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     gap: 8, paddingVertical: 12, borderRadius: 14,
     backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.border,
   },
-  langBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '10' },
+  langBtnActive: { borderColor: COLORS.primary, backgroundColor: withOpacity(COLORS.primary, '10') },
   langFlag: { fontSize: 20 },
   langLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   langLabelActive: { color: COLORS.primary, fontWeight: '800' },

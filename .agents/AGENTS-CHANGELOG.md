@@ -2,6 +2,40 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_15
+
+**[refactor] Fix remaining SonarCloud issues - magic numbers, duplicate code, code smells**
+
+**New utilities:**
+- `src/utils/animationConstants.ts`: Centralized modal animation constants (SLIDE_OUT_DISTANCE: 800, SLIDE_OUT_DURATION: 250, FADE_OUT_DURATION: 200, FADE_IN_DURATION: 300, SLIDE_IN_FRICTION: 8, SLIDE_IN_TENSION: 65, QUICK_CLOSE_FRICTION: 7, BACKDROP_VISIBLE: 1, BACKDROP_HIDDEN: 0).
+- `src/utils/colorHelpers.ts`: `withOpacity(hexColor, opacityHex)` helper to replace 40+ instances of string concatenation like `COLORS.primary + '15'`.
+
+**Modal components (animation constants):**
+- `src/components/AddWordModal.tsx`: Replaced magic numbers with `MODAL_ANIMATION` constants; replaced 10 color concatenations with `withOpacity()`.
+- `src/components/AddVariantModal.tsx`: Replaced magic numbers with `MODAL_ANIMATION` constants; replaced 6 color concatenations with `withOpacity()`.
+- `src/components/AddCategoryModal.tsx`: Replaced magic numbers with `MODAL_ANIMATION` constants; replaced 1 color concatenation with `withOpacity()`.
+- `src/components/ManageCategoryModal.tsx`: Replaced magic numbers with `MODAL_ANIMATION` constants.
+- `src/components/ImportModal.tsx`: Replaced magic numbers with `MODAL_ANIMATION` constants.
+
+**App screens (color helper):**
+- `app/(tabs)/settings.tsx`: Replaced 5 color concatenations with `withOpacity()`.
+- `app/(tabs)/words.tsx`: Replaced 2 color concatenations with `withOpacity()`.
+- `app/(tabs)/variants.tsx`: Replaced 2 color concatenations with `withOpacity()`.
+
+**Shared components:**
+- `src/components/UIComponents.tsx`: Replaced 4 color concatenations with `withOpacity()` in `CategoryBadge` and `StatCard`.
+
+**Code quality improvements:**
+- `src/utils/dashboardHelpers.ts`: Refactored `getGreeting()` to use ternary operators and const declarations instead of let+if-else blocks (eliminates 2 mutable variables).
+- `scripts/agent/review-loop.ts`: Added `// NOSONAR` comments to `execFileSync` calls with justification (uses array-based arguments, no shell expansion risk).
+
+**Validation**
+- All 37 test suites, 645 tests pass.
+- CI passes (lint, typecheck, test).
+- Addresses SonarCloud issues: magic numbers (S109), duplicate string literals, variables that should be const, security hotspots (child process execution).
+
+---
+
 ### 2026-03-12_14
 
 **[fix] Fix 7 remaining SonarCloud issues (empty catch blocks and console.error usage)**

@@ -4,6 +4,8 @@ import {
   StyleSheet, ScrollView, Alert, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { MODAL_ANIMATION } from '../utils/animationConstants';
+import { withOpacity } from '../utils/colorHelpers';
 import { findWordByName, Word, Variant, Category } from '../database/database';
 import * as variantService from '../services/variantService';
 import { Button, CategoryBadge } from './UIComponents';
@@ -88,8 +90,8 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   const dismissModal = useRef(() => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: MODAL_ANIMATION.SLIDE_OUT_DISTANCE, duration: MODAL_ANIMATION.SLIDE_OUT_DURATION, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_HIDDEN, duration: MODAL_ANIMATION.FADE_OUT_DURATION, useNativeDriver: true }),
     ]).start(() => { onCloseRef.current(); });
   }).current;
   const panResponder = useRef(PanResponder.create({
@@ -100,7 +102,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       if (dy > 100 || vy > 0.8) {
         dismissModal();
       } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.QUICK_CLOSE_FRICTION }).start();
       }
     },
   })).current;
@@ -116,11 +118,11 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
 
   useEffect(() => {
     if (visible) {
-      translateY.setValue(800);
-      backdropOpacity.setValue(0);
+      translateY.setValue(MODAL_ANIMATION.SLIDE_OUT_DISTANCE);
+      backdropOpacity.setValue(MODAL_ANIMATION.BACKDROP_HIDDEN);
       Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
-        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.SLIDE_IN_FRICTION, tension: MODAL_ANIMATION.SLIDE_IN_TENSION }),
+        Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_VISIBLE, duration: MODAL_ANIMATION.FADE_IN_DURATION, useNativeDriver: true }),
       ]).start();
     }
   }, [visible, translateY, backdropOpacity]);
@@ -502,12 +504,12 @@ const s = StyleSheet.create({
   title:          { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
   titleLeft:      { textAlign: 'left' },
   header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  deleteBtn:      { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
+  deleteBtn:      { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: withOpacity(COLORS.error, '20'), borderRadius: 12 },
   deleteBtnText:  { fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:          { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:          { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
-  inputDup:       { borderColor: COLORS.warning, backgroundColor: COLORS.warning + '22' },
-  dupCard:        { backgroundColor: COLORS.warning + '22', borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
+  inputDup:       { borderColor: COLORS.warning, backgroundColor: withOpacity(COLORS.warning, '22') },
+  dupCard:        { backgroundColor: withOpacity(COLORS.warning, '22'), borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
   dupTitle:       { fontSize: 13, fontWeight: '700', color: COLORS.warning },
   dupCardHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   dupEditHint:    { fontSize: 12, fontWeight: '600', color: COLORS.warning, opacity: 0.7 },
@@ -528,19 +530,19 @@ const s = StyleSheet.create({
   catEmoji:       { fontSize: 16, marginRight: 6 },
   catName:        { fontSize: 13, fontWeight: '600', color: COLORS.text },
   varHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  addVarBtn:      { backgroundColor: COLORS.primary + '18', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1.5, borderColor: COLORS.primary + '60' },
+  addVarBtn:      { backgroundColor: withOpacity(COLORS.primary, '18'), borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1.5, borderColor: withOpacity(COLORS.primary, '60') },
   addVarBtnText:  { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   varHint:        { fontSize: 13, color: COLORS.textLight, fontStyle: 'italic', marginBottom: 16 },
-  existingVarRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.secondary + '10', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 8, borderWidth: 1.5, borderColor: COLORS.secondary + '30' },
+  existingVarRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: withOpacity(COLORS.secondary, '10'), borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 8, borderWidth: 1.5, borderColor: withOpacity(COLORS.secondary, '30') },
   existingVarText:{ flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.text },
   existingVarChevron: { fontSize: 22, color: COLORS.textLight, fontWeight: '300' },
   varRow:         { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
-  varBadge:       { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.secondary + '20', alignItems: 'center', justifyContent: 'center' },
+  varBadge:       { width: 28, height: 28, borderRadius: 14, backgroundColor: withOpacity(COLORS.secondary, '20'), alignItems: 'center', justifyContent: 'center' },
   varBadgeText:   { fontSize: 13, fontWeight: '700', color: COLORS.secondary },
   varInput:       { flex: 1, backgroundColor: COLORS.white, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border },
   varRemove:      { padding: 6 },
   varRemoveText:  { fontSize: 16, color: COLORS.textLight, fontWeight: '700' },
-  addAnotherBtn:  { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: COLORS.primary + '12', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5, borderColor: COLORS.primary + '50' },
+  addAnotherBtn:  { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: withOpacity(COLORS.primary, '12'), borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5, borderColor: withOpacity(COLORS.primary, '50') },
   addAnotherText: { fontSize: 13, color: COLORS.primary, fontWeight: '700' },
   actions:        { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:      { flex: 1 },

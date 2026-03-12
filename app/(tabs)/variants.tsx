@@ -1,3 +1,4 @@
+import { withOpacity } from '../../src/utils/colorHelpers';
 import React, { useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
@@ -174,18 +175,18 @@ const styles = StyleSheet.create({
     marginBottom: 6, overflow: 'hidden',
   },
   sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  sortMenuItemActive: { backgroundColor: COLORS.secondary + '15' },
+  sortMenuItemActive: { backgroundColor: withOpacity(COLORS.secondary, '15') },
   sortMenuText: { fontSize: 14, color: COLORS.text },
   sortMenuTextActive: { color: COLORS.secondary, fontWeight: '700' },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
   hint: {
-    fontSize: 13, color: COLORS.textSecondary, backgroundColor: COLORS.secondary + '15',
+    fontSize: 13, color: COLORS.textSecondary, backgroundColor: withOpacity(COLORS.secondary, '15'),
     padding: 12, borderRadius: 12, marginBottom: 12, lineHeight: 18,
   },
   variantCard: { marginBottom: 10 },
   variantRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   variantBubble: {
-    backgroundColor: COLORS.primaryLight + '30', paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: withOpacity(COLORS.primaryLight, '30'), paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: 16,
   },
   variantText: { fontSize: 18, fontWeight: '700', color: COLORS.primaryDark, fontStyle: 'italic' },

@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
+import { withOpacity } from '../utils/colorHelpers';
+import { MODAL_ANIMATION } from '../utils/animationConstants';
 import { findVariantByName, Variant, Word } from '../database/database';
 import { useWords } from '../hooks/useWords';
 import { useAddVariant, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
@@ -35,8 +37,8 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   const dismissModal = useRef(() => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: MODAL_ANIMATION.SLIDE_OUT_DISTANCE, duration: MODAL_ANIMATION.SLIDE_OUT_DURATION, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_HIDDEN, duration: MODAL_ANIMATION.FADE_OUT_DURATION, useNativeDriver: true }),
     ]).start(() => { onCloseRef.current(); });
   }).current;
   const panResponder = useRef(PanResponder.create({
@@ -47,7 +49,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
       if (dy > 100 || vy > 0.8) {
         dismissModal();
       } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.QUICK_CLOSE_FRICTION }).start();
       }
     },
   })).current;
@@ -71,11 +73,11 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
 
   useEffect(() => {
     if (visible) {
-      translateY.setValue(800);
-      backdropOpacity.setValue(0);
+      translateY.setValue(MODAL_ANIMATION.SLIDE_OUT_DISTANCE);
+      backdropOpacity.setValue(MODAL_ANIMATION.BACKDROP_HIDDEN);
       Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
-        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.SLIDE_IN_FRICTION, tension: MODAL_ANIMATION.SLIDE_IN_TENSION }),
+        Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_VISIBLE, duration: MODAL_ANIMATION.FADE_IN_DURATION, useNativeDriver: true }),
       ]).start();
     }
   }, [visible, translateY, backdropOpacity]);
@@ -277,7 +279,7 @@ const s = StyleSheet.create({
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title:        { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
   titleLeft:    { textAlign: 'left' },
-  deleteBtn:    { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.error + '20', borderRadius: 12 },
+  deleteBtn:    { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: withOpacity(COLORS.error, '20'), borderRadius: 12 },
   deleteBtnText:{ fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:        { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:        { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
@@ -285,8 +287,8 @@ const s = StyleSheet.create({
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
   btnDisabled:  { opacity: 0.5 },
-  inputDup:     { borderColor: COLORS.warning, backgroundColor: COLORS.warning + '22' },
-  dupCard:      { backgroundColor: COLORS.warning + '22', borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
+  inputDup:     { borderColor: COLORS.warning, backgroundColor: withOpacity(COLORS.warning, '22') },
+  dupCard:      { backgroundColor: withOpacity(COLORS.warning, '22'), borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
   dupTitle:     { fontSize: 13, fontWeight: '700', color: COLORS.warning, marginBottom: 4 },
   dupText:      { fontSize: 16, fontWeight: '800', color: COLORS.warning },
   searchSection:{ marginBottom: 16 },
@@ -299,10 +301,10 @@ const s = StyleSheet.create({
   wordItemText: { fontSize: 16, fontWeight: '700', color: COLORS.text },
   wordItemCat:  { fontSize: 12, color: COLORS.textSecondary },
   noWords:      { textAlign: 'center', color: COLORS.textSecondary, padding: 16, fontSize: 14 },
-  chosenChip:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.secondary + '15', borderRadius: 14, borderWidth: 2, borderColor: COLORS.secondary, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 4 },
+  chosenChip:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: withOpacity(COLORS.secondary, '15'), borderRadius: 14, borderWidth: 2, borderColor: COLORS.secondary, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 4 },
   chosenText:   { fontSize: 17, fontWeight: '800', color: COLORS.secondary },
   chosenClear:  { fontSize: 13, color: COLORS.secondary, fontWeight: '600' },
-  contextRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: COLORS.secondary + '10', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  contextRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: withOpacity(COLORS.secondary, '10'), borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   contextLabel: { fontSize: 14, color: COLORS.textSecondary },
   contextWord:  { fontSize: 14, fontWeight: '800', color: COLORS.text },
 });
