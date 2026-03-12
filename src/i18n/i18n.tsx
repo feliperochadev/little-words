@@ -9,7 +9,7 @@
  */
 
 import React, {
-  createContext, useContext, useState, useEffect, useCallback,
+  createContext, useContext, useState, useEffect, useCallback, useMemo,
   type ReactNode,
 } from 'react';
 import { getSetting, setSetting } from '../database/database';
@@ -51,7 +51,7 @@ export function deepGet(obj: Record<string, unknown>, path: string): unknown {
 /** Interpolate {{placeholder}} tokens in a string. */
 export function interpolate(str: string, params?: Record<string, string | number>): string {
   if (!params) return str;
-  return str.replace(/\{\{(\w+)\}\}/g, (_, k) =>
+  return str.replaceAll(/\{\{(\w+)\}\}/g, (_, k) =>
     params[k] !== undefined ? String(params[k]) : `{{${k}}}`
   );
 }
@@ -66,10 +66,9 @@ function resolve(
   const value = deepGet(catalogue, key);
   if (typeof value === 'string') return interpolate(value, params);
   // Fallback to en-US if missing in current locale
-  if (locale !== 'en-US') {
-    const fallback = deepGet(catalogues['en-US'], key);
-    if (typeof fallback === 'string') return interpolate(fallback, params);
-  }
+  if (locale === 'en-US') return key;
+  const fallback = deepGet(catalogues['en-US'], key);
+  if (typeof fallback === 'string') return interpolate(fallback, params);
   // Last resort: return the key itself
   return key;
 }
@@ -78,7 +77,7 @@ function resolve(
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-export const I18nProvider = ({ children }: { children: ReactNode }) => {
+export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) => {
   const [locale, setLocaleState] = useState<Locale>('en-US');
   const [ready, setReady] = useState(false);
 
@@ -108,10 +107,9 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     (key: string): string[] => {
       const value = deepGet(catalogues[locale], key);
       if (Array.isArray(value)) return value as string[];
-      if (locale !== 'en-US') {
-        const fallback = deepGet(catalogues['en-US'], key);
-        if (Array.isArray(fallback)) return fallback as string[];
-      }
+      if (locale === 'en-US') return [];
+      const fallback = deepGet(catalogues['en-US'], key);
+      if (Array.isArray(fallback)) return fallback as string[];
       return [];
     },
     [locale],
@@ -126,10 +124,15 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     [locale],
   );
 
+  const contextValue = useMemo(
+    () => ({ locale, setLocale, t, ta, tc }),
+    [locale, setLocale, t, ta, tc],
+  );
+
   if (!ready) return null; // Don't render until locale is loaded
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t, ta, tc }}>
+    <I18nContext.Provider value={contextValue}>
       {children}
     </I18nContext.Provider>
   );

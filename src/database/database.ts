@@ -183,7 +183,7 @@ export const getWords = (search?: string): Promise<Word[]> => {
            (SELECT GROUP_CONCAT(v.variant, '|||') FROM variants v WHERE v.word_id = w.id ORDER BY v.created_at ASC) as variant_texts
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
   `;
-  if (search && search.trim()) {
+  if (search?.trim()) {
     return query<Word>(base + ` WHERE LOWER(w.word) LIKE LOWER(?) ORDER BY w.created_at DESC`, [`%${search.trim()}%`]);
   }
   return query<Word>(base + ' ORDER BY w.created_at DESC');
@@ -364,7 +364,7 @@ export const getAllDataForCSV = async (
 
   const header = headerRow + '\n';
   const body = rows.map((r) =>
-    `"${(r.word || '').replace(/"/g, '""')}","${(resolveCategoryName(r.categoria || '') || '').replace(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replace(/"/g, '""')}"`
+    `"${(r.word || '').replaceAll('"', '""')}","${(resolveCategoryName(r.categoria || '') || '').replaceAll('"', '""')}","${r.data || ''}","${(r.variante || '').replaceAll('"', '""')}"`
   ).join('\n');
 
   return header + body;

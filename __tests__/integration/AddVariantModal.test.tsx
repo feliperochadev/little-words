@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import type { Word, Variant } from '../../src/database/database';
@@ -138,7 +138,7 @@ describe('AddVariantModal', () => {
       mockWord,
       { id: 2, word: 'água', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
     ]);
-    const { findByPlaceholderText, findByText, queryByText } = renderModal({ word: null });
+    const { findByPlaceholderText, findByText } = renderModal({ word: null });
     const searchInput = await findByPlaceholderText('Search word...');
     fireEvent.changeText(searchInput, 'água');
     expect(await findByText('água')).toBeTruthy();

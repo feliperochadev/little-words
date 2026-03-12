@@ -30,12 +30,22 @@ export function getGreeting(
   t: (key: string, params?: Record<string, string | number>) => string,
 ): string {
   const hour = new Date().getHours();
-  const periodKey = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  let periodKey: string;
+  if (hour < 12) {
+    periodKey = 'morning';
+  } else if (hour < 18) {
+    periodKey = 'afternoon';
+  } else {
+    periodKey = 'evening';
+  }
   const period = t(`dashboard.greeting.${periodKey}`);
-  const msgKey = sex === 'girl'
-    ? 'dashboard.greeting.messageFemale'
-    : sex === 'boy'
-      ? 'dashboard.greeting.messageMale'
-      : 'dashboard.greeting.messageNeutral';
+  let msgKey: string;
+  if (sex === 'girl') {
+    msgKey = 'dashboard.greeting.messageFemale';
+  } else if (sex === 'boy') {
+    msgKey = 'dashboard.greeting.messageMale';
+  } else {
+    msgKey = 'dashboard.greeting.messageNeutral';
+  }
   return t(msgKey, { period, name });
 }

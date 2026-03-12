@@ -10,8 +10,8 @@
  *   Rule B — 3 or more distinct category tags
  */
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface ComplexityResult {
   isComplex: boolean;
@@ -61,8 +61,8 @@ export function countChangeLines(entry: string): number {
  * Extract unique category tags present in the entry.
  */
 export function extractCategories(entry: string): string[] {
-  const pattern = new RegExp(`\\[(${KNOWN_CATEGORIES.join('|')})\\]`, 'gi');
-  const matches = entry.match(pattern) ?? [];
+  const pattern = new RegExp(String.raw`\[(${KNOWN_CATEGORIES.join('|')})\]`, 'gi');
+  const matches = [...entry.matchAll(pattern)].map(m => m[0]);
   const unique = new Set(matches.map((m) => m.toLowerCase()));
   return Array.from(unique);
 }

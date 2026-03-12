@@ -24,7 +24,7 @@ import {
   clearAllData,
 } from '../../src/database/database';
 
-const mockDb = (global as any).__mockDb;
+const mockDb = (globalThis as any).__mockDb;
 
 describe('database', () => {
   beforeEach(() => {

@@ -3,13 +3,15 @@
 // sets isInsideTestCode=false, jest-runtime throws "outside of scope" errors.
 // Pre-warm all expo lazy globals now (during setupFiles, isInsideTestCode is undefined, not false)
 // so they resolve to cached plain values before any test scope transitions.
-void global.__ExpoImportMetaRegistry;
-void global.TextDecoder;
-void global.TextDecoderStream;
-void global.TextEncoderStream;
-void global.URL;
-void global.URLSearchParams;
-void global.structuredClone;
+[
+  globalThis.__ExpoImportMetaRegistry,
+  globalThis.TextDecoder,
+  globalThis.TextDecoderStream,
+  globalThis.TextEncoderStream,
+  globalThis.URL,
+  globalThis.URLSearchParams,
+  globalThis.structuredClone,
+].forEach(Boolean);
 
 // Mock expo-sqlite — singleton so database.ts and tests share the same instance
 const mockDbInstance = {
@@ -22,7 +24,7 @@ const mockDbInstance = {
 jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => mockDbInstance),
 }));
-global.__mockDb = mockDbInstance;
+globalThis.__mockDb = mockDbInstance;
 
 // Mock expo-file-system (new API)
 jest.mock('expo-file-system', () => {
@@ -63,9 +65,9 @@ jest.mock('expo-document-picker', () => ({
 // Mock expo-router
 jest.mock('expo-router', () => {
   const React = require('react');
-  const StackComponent = ({ children }) => React.createElement(React.Fragment, null, children);
+  const StackComponent = ({ children }) => React.createElement(React.Fragment, null, children); // NOSONAR
   StackComponent.Screen = () => null;
-  const TabsComponent = ({ children }) => React.createElement(React.Fragment, null, children);
+  const TabsComponent = ({ children }) => React.createElement(React.Fragment, null, children); // NOSONAR
   TabsComponent.Screen = () => null;
   return {
     useRouter: jest.fn(() => ({
@@ -84,8 +86,8 @@ jest.mock('expo-router', () => {
 
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaView: ({ children }) => children,
-  SafeAreaProvider: ({ children }) => children,
+  SafeAreaView: ({ children }) => children, // NOSONAR
+  SafeAreaProvider: ({ children }) => children, // NOSONAR
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 

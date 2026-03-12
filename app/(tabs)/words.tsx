@@ -89,8 +89,8 @@ export default function WordsScreen() {
                 </TouchableOpacity>
                 );
               })()}
-              {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
-                <View key={i} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
+              {item.variant_texts?.split('|||').map((v) => (
+                <View key={v} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
                   <Text style={styles.variantChipText}>🗣️ {v}</Text>
                 </View>
               ))}
@@ -157,7 +157,7 @@ export default function WordsScreen() {
             emoji={search ? '🔍' : '📝'}
             title={search ? t('words.emptySearchTitle') : t('words.emptyTitle')}
             subtitle={search ? t('words.emptySearchSubtitle', { search }) : t('words.emptySubtitle')}
-            action={!search ? { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true) } : undefined}
+            action={search ? undefined : { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true) }}
           />
         }
       />

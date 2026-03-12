@@ -23,9 +23,9 @@ export function daysInMonth(month: number, year: number): number {
 export function parseDate(s: string): { d: number; m: number; y: number } {
   const [y, m, d] = s.split('-').map(Number);
   return {
-    y: isNaN(y) ? new Date().getFullYear() : y,
-    m: isNaN(m) ? new Date().getMonth() : m - 1,
-    d: isNaN(d) ? new Date().getDate() : d,
+    y: (typeof y !== 'number' || Number.isNaN(y)) ? new Date().getFullYear() : y,
+    m: (typeof m !== 'number' || Number.isNaN(m)) ? new Date().getMonth() : m - 1,
+    d: (typeof d !== 'number' || Number.isNaN(d)) ? new Date().getDate() : d,
   };
 }
 

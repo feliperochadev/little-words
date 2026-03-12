@@ -23,7 +23,7 @@ function TestConsumer() {
   );
 }
 
-function CategoryNameConsumer({ name }: { name: string }) {
+function CategoryNameConsumer({ name }: Readonly<{ name: string }>) {
   const resolver = useCategoryName();
   return <Text testID="catName">{resolver(name)}</Text>;
 }

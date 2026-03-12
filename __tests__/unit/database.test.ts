@@ -19,7 +19,7 @@ describe('database', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockDb = (global as any).__mockDb;
+    mockDb = (globalThis as any).__mockDb;
   });
 
   // ─── initDatabase ───────────────────────────────────────────────────────────
