@@ -12,7 +12,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { checkComplexity } from './complexity-check';
 import { loadAgentConfig } from './load-config';
 
@@ -36,8 +36,6 @@ export interface ReviewFile {
 }
 
 const REVIEWS_DIR = join(process.cwd(), '.agents', 'reviews');
-const FIXED_SYSTEM_PATH = '/usr/bin:/bin:/usr/sbin:/sbin';
-
 function readLineValue(content: string, key: string): string | undefined {
   const prefix = `${key}:`;
   for (const line of content.split('\n')) {
@@ -75,10 +73,7 @@ export function buildTimestamp(existingCount: number): string {
 
 export function getCurrentBranch(): string {
   try {
-    return execSync('git rev-parse --abbrev-ref HEAD', {
-      encoding: 'utf-8',
-      env: { ...process.env, PATH: FIXED_SYSTEM_PATH },
-    }).trim();
+    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf-8' }).trim();
   } catch {
     return 'unknown';
   }
@@ -86,10 +81,7 @@ export function getCurrentBranch(): string {
 
 export function getModifiedFiles(): string[] {
   try {
-    const output = execSync('git diff --name-only HEAD', {
-      encoding: 'utf-8',
-      env: { ...process.env, PATH: FIXED_SYSTEM_PATH },
-    });
+    const output = execFileSync('git', ['diff', '--name-only', 'HEAD'], { encoding: 'utf-8' });
     return output.trim().split('\n').filter(Boolean);
   } catch {
     return [];

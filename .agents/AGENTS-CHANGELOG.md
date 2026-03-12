@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_11
+
+**[security] PR #20 hotspot follow-up — remove PATH env usage**
+- Updated `scripts/agent/review-loop.ts` to use `execFileSync('git', [...])` instead of `execSync` with custom `PATH` environment injection.
+- Removed explicit `PATH` handling that triggered Sonar security hotspot rule `typescript:S4036`.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
 ### 2026-03-12_10
 
 **[security] Sonar security hotspots remediation (workflow + parser hardening)**
