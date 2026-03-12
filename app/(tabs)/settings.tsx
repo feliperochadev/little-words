@@ -93,7 +93,9 @@ export default function SettingsScreen() {
     setSigningIn(false);
     if (result.success) {
       await reloadGoogleState();
-      performSync(t).catch(console.error);
+      performSync(t).catch((error) => {
+        console.error('[GoogleDrive] Post-signin sync failed:', error);
+      });
     } else if (result.error && result.error !== 'cancelled' && result.error !== 'in_progress') {
       Alert.alert(t('common.error'), result.error);
     }

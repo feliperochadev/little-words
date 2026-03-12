@@ -6,7 +6,9 @@ export function useSyncOnSuccess() {
   const { t } = useI18n();
   return () => {
     if (useAuthStore.getState().isConnected) {
-      performSync(t).catch(console.error);
+      performSync(t).catch((error) => {
+        console.error('[GoogleDrive] Sync failed:', error);
+      });
     }
   };
 }

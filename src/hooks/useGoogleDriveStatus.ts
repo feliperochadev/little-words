@@ -34,7 +34,8 @@ export function useGoogleDriveStatus(): GoogleDriveStatus {
 
   useFocusEffect(
     useCallback(() => {
-      reloadGoogleState().catch(() => {
+      reloadGoogleState().catch((error) => {
+        console.error('[GoogleDrive] Failed to reload state:', error);
         setGoogleConnected(false);
         setGoogleEmail(null);
         setLastSync(null);
