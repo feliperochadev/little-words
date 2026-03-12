@@ -8,20 +8,18 @@ on:
   schedule:
     - cron: "15 3 * * 1"
 
-permissions:
-  contents: read
-  security-events: write
-  pull-requests: write
-
 jobs:
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -31,13 +29,16 @@ jobs:
   semgrep:
     name: Semgrep
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Run Semgrep (SARIF)
-        uses: semgrep/semgrep-action@v1
+        uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d
         with:
           config: p/default
           generateSarif: "1"
@@ -53,13 +54,16 @@ jobs:
   trivy:
     name: Trivy FS Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Run Trivy (SARIF)
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@b2933f565dbc598b29947660e66259e3c7bc8561
         with:
           scan-type: fs
           format: sarif

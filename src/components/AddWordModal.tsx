@@ -111,6 +111,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const catScrollX = useRef(0);
   const [catScrolled, setCatScrolled] = useState(false);
   const [catAtEnd, setCatAtEnd] = useState(false);
+  const nextVariantKeyRef = useRef(0);
   const catItemWidth = 110; // approximate chip width + gap
 
   useEffect(() => {
@@ -175,7 +176,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   }, [word, editWord]);
 
   const addVariantRow = () =>
-    setVariants(v => [...v, { key: String(Date.now() + Math.random()), text: '' }]);
+    setVariants(v => [...v, { key: `${Date.now()}-${nextVariantKeyRef.current++}`, text: '' }]);
 
   const updateVariantRow = (key: string, text: string) =>
     setVariants(v => v.map(e => e.key === key ? { ...e, text } : e));
