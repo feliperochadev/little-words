@@ -36,7 +36,7 @@ interface VariantEntry {
   text: string;
 }
 
-export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }) => {
+export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }: Readonly<AddWordModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -189,6 +189,29 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
     return `${day}/${m}/${y}`;
   };
 
+  const stopEditingVariant = (variantId: number) => {
+    setEditingVariantIds(prev => {
+      const updated = new Set(prev);
+      updated.delete(variantId);
+      return updated;
+    });
+  };
+
+  const handleExistingVariantBlur = async (variant: Variant) => {
+    const text = (editingVariantTexts[variant.id] ?? variant.variant).trim();
+    if (text && text !== variant.variant) {
+      await updateVariantMutation.mutateAsync({ id: variant.id, variant: text, dateAdded: today, notes: variant.notes || '' });
+      setExistingVariants(prev => prev.map(ev => ev.id === variant.id ? { ...ev, variant: text } : ev));
+    }
+    stopEditingVariant(variant.id);
+  };
+
+  const handleExistingVariantDelete = async (variant: Variant) => {
+    await deleteVariantMutation.mutateAsync({ id: variant.id });
+    setExistingVariants(prev => prev.filter(v => v.id !== variant.id));
+    stopEditingVariant(variant.id);
+  };
+
   const handleSave = async () => {
     if (!word.trim()) { Alert.alert(t('common.attention'), t('addWord.errorWord')); return; }
     if (duplicate) { Alert.alert(t('addWord.duplicateTitle'), t('addWord.duplicateAlert', { word: duplicate.word })); return; }
@@ -267,7 +290,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
             {duplicate && (
               <TouchableOpacity
                 style={s.dupCard}
-                onPress={() => onEditDuplicate && onEditDuplicate(duplicate)}
+                onPress={() => onEditDuplicate?.(duplicate)}
                 activeOpacity={onEditDuplicate ? 0.7 : 1}
               >
                 <View style={s.dupCardHeader}>
@@ -368,23 +391,12 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
                     value={editingVariantTexts[v.id] ?? v.variant}
                     onChangeText={txt => setEditingVariantTexts(prev => ({ ...prev, [v.id]: txt }))}
                     placeholder={v.variant}
-                    placeholderTextColor={COLORS.textLight}
-                    autoCapitalize="none"
-                    autoFocus
-                    onBlur={async () => {
-                      const text = (editingVariantTexts[v.id] ?? v.variant).trim();
-                      if (text && text !== v.variant) {
-                        await updateVariantMutation.mutateAsync({ id: v.id, variant: text, dateAdded: today, notes: v.notes || '' });
-                        setExistingVariants(prev => prev.map(ev => ev.id === v.id ? { ...ev, variant: text } : ev));
-                      }
-                      setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
-                    }}
-                  />
-                  <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={async () => {
-                    await deleteVariantMutation.mutateAsync({ id: v.id });
-                    setExistingVariants(prev => prev.filter(e => e.id !== v.id));
-                    setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
-                  }}>
+                     placeholderTextColor={COLORS.textLight}
+                     autoCapitalize="none"
+                     autoFocus
+                     onBlur={() => { void handleExistingVariantBlur(v); }}
+                   />
+                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={() => { void handleExistingVariantDelete(v); }}>
                     <Text style={s.varRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -478,7 +490,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 
     </>
   );
-};
+}
 
 const s = StyleSheet.create({
   backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -493,11 +505,11 @@ const s = StyleSheet.create({
   deleteBtnText:  { fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:          { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:          { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
-  inputDup:       { borderColor: '#E17055', backgroundColor: '#FFF5F4' },
-  dupCard:        { backgroundColor: '#FFF5F4', borderRadius: 14, borderWidth: 1.5, borderColor: '#E17055', padding: 14, marginTop: -8, marginBottom: 16 },
-  dupTitle:       { fontSize: 13, fontWeight: '700', color: '#E17055' },
+  inputDup:       { borderColor: COLORS.warning, backgroundColor: COLORS.warning + '22' },
+  dupCard:        { backgroundColor: COLORS.warning + '22', borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
+  dupTitle:       { fontSize: 13, fontWeight: '700', color: COLORS.warning },
   dupCardHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  dupEditHint:    { fontSize: 12, fontWeight: '600', color: '#E17055', opacity: 0.7 },
+  dupEditHint:    { fontSize: 12, fontWeight: '600', color: COLORS.warning, opacity: 0.7 },
   dupRecord:      { backgroundColor: COLORS.white, borderRadius: 10, padding: 12 },
   dupWord:        { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
   dupMeta:        { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },

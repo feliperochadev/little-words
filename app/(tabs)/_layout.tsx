@@ -61,5 +61,10 @@ export default function TabLayout() {
 }
 
 function TabIcon({ emoji, color }: { emoji: string; color: string }) {
-  return <Text style={{ fontSize: 22, opacity: color === COLORS.primary ? 1 : 0.5 }}>{emoji}</Text>;
+  return <Text style={color === COLORS.primary ? styles.tabIconActive : styles.tabIconInactive}>{emoji}</Text>;
 }
+
+const styles = {
+  tabIconActive: { fontSize: 22, opacity: 1 },
+  tabIconInactive: { fontSize: 22, opacity: 0.5 },
+} as const;

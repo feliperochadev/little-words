@@ -5,6 +5,11 @@ export const COLORS = {
   primaryDark:   '#B8502F',   // Deep terra — pressed states
   secondary:     '#F4C3B2',   // Bolha      — chips, badges, bubbles
   accent:        '#ED9B76',   // Coral      — accents, icons
+  profileGirl:   '#FF6B9D',
+  profileGirlBg: '#FFF0F5',
+  profileBoy:    '#74B9FF',
+  profileBoyBg:  '#F0F7FF',
+  info:          '#6C5CE7',
 
   // ── Semantic ────────────────────────────────────────────────────
   success:       '#6DBF8A',   // Soft green — unchanged

@@ -65,11 +65,15 @@ export default function WordsScreen() {
               <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
             </View>
             <View style={styles.wordMeta}>
-              {item.category_name && (
+              {(() => {
+                const categoryId = item.category_id;
+                const categoryNameValue = item.category_name;
+                if (!categoryNameValue || categoryId === null) return null;
+                return (
                 <TouchableOpacity
                   onLongPress={() => setEditCategory({
-                    id: item.category_id!,
-                    name: categoryName(item.category_name!),
+                    id: categoryId,
+                    name: categoryName(categoryNameValue),
                     color: item.category_color || COLORS.primary,
                     emoji: item.category_emoji || '🏷️',
                   })}
@@ -77,13 +81,14 @@ export default function WordsScreen() {
                   activeOpacity={1}
                 >
                   <CategoryBadge
-                    name={categoryName(item.category_name)}
+                    name={categoryName(categoryNameValue)}
                     color={item.category_color || COLORS.primary}
                     emoji={item.category_emoji || '📝'}
                     size="small"
                   />
                 </TouchableOpacity>
-              )}
+                );
+              })()}
               {item.variant_texts && item.variant_texts.split('|||').map((v, i) => (
                 <View key={i} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
                   <Text style={styles.variantChipText}>🗣️ {v}</Text>
@@ -213,7 +218,7 @@ const styles = StyleSheet.create({
   sortMenu: {
     marginHorizontal: 20, backgroundColor: COLORS.white, borderRadius: 14,
     borderWidth: 1.5, borderColor: COLORS.border,
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    shadowColor: COLORS.text, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
     marginBottom: 6, overflow: 'hidden',
   },
   sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },

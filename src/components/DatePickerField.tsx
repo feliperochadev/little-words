@@ -26,7 +26,7 @@ interface WheelProps {
   testID?: string;
 }
 
-function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelProps) {
+function WheelColumn({ data, selected, onChange, accent, width, testID }: Readonly<WheelProps>) {
   const ref = useRef<FlatList>(null);
   const idx = data.findIndex(i => i.value === selected);
   const momentumStarted = useRef(false);
@@ -106,9 +106,9 @@ interface Props {
   label?: string;
 }
 
-export const DatePickerField: React.FC<Props> = ({
+export function DatePickerField({
   value, onChange, accentColor = COLORS.primary, label,
-}) => {
+}: Readonly<Props>) {
   const { t, ta } = useI18n();
   // Pull locale-aware month names from catalogue
   const MONTHS: string[] = ta('datePicker.months');
@@ -176,7 +176,7 @@ export const DatePickerField: React.FC<Props> = ({
       </Modal>
     </>
   );
-};
+}
 
 const f = StyleSheet.create({
   label:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -186,7 +186,7 @@ const f = StyleSheet.create({
   arrow:   { fontSize: 14 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet:   { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16 },
-  header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   hTitle:  { fontSize: 16, fontWeight: '700', color: COLORS.text },
   hBtn:    { fontSize: 15, fontWeight: '600' },
   wheels:  { flexDirection: 'row', marginTop: 8 },

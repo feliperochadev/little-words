@@ -23,7 +23,7 @@ interface Props {
   editVariant?: Variant | null;
 }
 
-export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onDeleted, word, editVariant }) => {
+export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, editVariant }: Readonly<Props>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -125,12 +125,17 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
     if (!variant.trim()) { Alert.alert(t('common.attention'), t('addVariant.errorVariant')); return; }
     if (!editVariant && !effectiveWord) { Alert.alert(t('common.attention'), t('addVariant.errorSelectWord')); return; }
     if (duplicate) { Alert.alert(t('addVariant.duplicateTitle', { word: effectiveWord?.word ?? '' }), t('addVariant.duplicateAlert', { variant: duplicate.variant })); return; }
+    const targetWordId = effectiveWord?.id;
     setLoading(true);
     try {
       if (editVariant) {
         await updateVariantMutation.mutateAsync({ id: editVariant.id, variant: variant.trim(), dateAdded, notes });
       } else {
-        await addVariantMutation.mutateAsync({ wordId: effectiveWord!.id, variant: variant.trim(), dateAdded, notes });
+        if (!targetWordId) {
+          Alert.alert(t('common.attention'), t('addVariant.errorSelectWord'));
+          return;
+        }
+        await addVariantMutation.mutateAsync({ wordId: targetWordId, variant: variant.trim(), dateAdded, notes });
       }
       onSave(); onClose();
     } finally {
@@ -261,7 +266,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
       </View>
     </Modal>
   );
-};
+}
 
 const s = StyleSheet.create({
   backdrop:     { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -280,10 +285,10 @@ const s = StyleSheet.create({
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
   btnDisabled:  { opacity: 0.5 },
-  inputDup:     { borderColor: '#E17055', backgroundColor: '#FFF5F4' },
-  dupCard:      { backgroundColor: '#FFF5F4', borderRadius: 14, borderWidth: 1.5, borderColor: '#E17055', padding: 14, marginTop: -8, marginBottom: 16 },
-  dupTitle:     { fontSize: 13, fontWeight: '700', color: '#E17055', marginBottom: 4 },
-  dupText:      { fontSize: 16, fontWeight: '800', color: '#E17055' },
+  inputDup:     { borderColor: COLORS.warning, backgroundColor: COLORS.warning + '22' },
+  dupCard:      { backgroundColor: COLORS.warning + '22', borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
+  dupTitle:     { fontSize: 13, fontWeight: '700', color: COLORS.warning, marginBottom: 4 },
+  dupText:      { fontSize: 16, fontWeight: '800', color: COLORS.warning },
   searchSection:{ marginBottom: 16 },
   searchBox:    { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 6 },
   searchIcon:   { fontSize: 16, marginRight: 8 },

@@ -18,12 +18,16 @@ name: "Onboarding - Complete first-run setup"
 - hideKeyboard
 
 # -- Select sex --
-- tapOn: "Girl"
+- tapOn:
+    id: "onboarding-sex-girl-btn"
 
 # -- Select birth date --
-- tapOn: "Select date"
-- assertVisible: "Date of Birth"
-- tapOn: "Confirm"
+- tapOn:
+    id: "onboarding-birthdate-btn"
+- assertVisible:
+    id: "onboarding-date-title"
+- tapOn:
+    id: "onboarding-date-confirm-btn"
 
 # -- Verify preview appears --
 - assertVisible: "Luna"

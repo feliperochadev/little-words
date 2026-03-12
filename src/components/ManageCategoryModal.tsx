@@ -23,9 +23,9 @@ interface ManageCategoryModalProps {
   onDeleted: () => void;
 }
 
-export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
+export function ManageCategoryModal({
   visible, category, onClose, onEdit, onDeleted,
-}) => {
+}: Readonly<ManageCategoryModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -142,7 +142,7 @@ export const ManageCategoryModal: React.FC<ManageCategoryModalProps> = ({
       </View>
     </Modal>
   );
-};
+}
 
 const styles = StyleSheet.create({
   backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },

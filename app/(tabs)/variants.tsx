@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   sortMenu: {
     marginHorizontal: 20, backgroundColor: COLORS.white, borderRadius: 14,
     borderWidth: 1.5, borderColor: COLORS.border,
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    shadowColor: COLORS.text, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
     marginBottom: 6, overflow: 'hidden',
   },
   sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },

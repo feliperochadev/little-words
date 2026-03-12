@@ -24,14 +24,17 @@ export default function DashboardScreen() {
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const formatMonth = (monthStr: string, showYear: boolean) => {
     const [year, month] = monthStr.split('-');
-    const key = MONTH_KEYS[parseInt(month) - 1];
+    const key = MONTH_KEYS[Number.parseInt(month, 10) - 1];
     const label = t(`dashboard.months.${key}`);
     return showYear ? `${label} '${year.slice(2)}` : label;
   };
 
-  const emoji = sex === 'girl' ? '👧' : sex === 'boy' ? '👦' : '👶';
-  const accentColor = sex === 'girl' ? '#FF6B9D' : sex === 'boy' ? '#74B9FF' : COLORS.primary;
+  const emojiBySex = { girl: '👧', boy: '👦' } as const;
+  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
+  const emoji = sex ? emojiBySex[sex] : '👶';
+  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
   const ageText = birth ? getAgeText(birth, t) : null;
+  const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -42,7 +45,7 @@ export default function DashboardScreen() {
       >
         <BrandHeader />
 
-        {!!name && (
+        {name && (
           <View style={styles.profileBlock}>
             <View style={styles.profileRow}>
               <Text style={styles.profileEmoji}>{emoji}</Text>
@@ -63,7 +66,7 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} testID="stat-words-today" />
           <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} testID="stat-words-week" />
-          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color="#6C5CE7" testID="stat-words-month" />
+          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color={COLORS.info} testID="stat-words-month" />
         </View>
 
         {/* Monthly progress */}
@@ -75,8 +78,8 @@ export default function DashboardScreen() {
                 const last6 = stats.monthlyProgress.slice(-6);
                 const showYear = new Set(last6.map(m => m.month.split('-')[0])).size > 1;
                 const max = Math.max(...last6.map(m => m.count), 1);
-                return last6.map((m, i) => (
-                  <View key={i} style={styles.barItem}>
+                return last6.map(m => (
+                  <View key={m.month} style={styles.barItem}>
                     <View style={styles.barWrapper}>
                       <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: accentColor }]} />
                     </View>
@@ -90,13 +93,13 @@ export default function DashboardScreen() {
         )}
 
         {/* Categories breakdown */}
-        {stats && stats.categoryCounts.filter(c => c.count > 0).length > 0 && (
+        {visibleCategoryCounts.length > 0 && (
           <Card>
             <Text style={styles.sectionTitle}>{t('dashboard.byCategory')}</Text>
-            {stats.categoryCounts.filter(c => c.count > 0).map((cat, i) => {
-              const max = stats.categoryCounts[0].count || 1;
+            {visibleCategoryCounts.map(cat => {
+              const max = visibleCategoryCounts[0]?.count || 1;
               return (
-                <View key={i} style={styles.categoryRow}>
+                <View key={cat.name} style={styles.categoryRow}>
                   <Text style={styles.catEmoji}>{cat.emoji}</Text>
                   <View style={styles.catInfo}>
                     <View style={styles.catHeader}>
@@ -119,7 +122,11 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
             <View style={styles.wordCloud}>
               {stats.recentWords.map((w, i) => (
-                <View key={i} style={[styles.wordChip, { backgroundColor: (w.category_color || accentColor) + '20' }]} testID={`recent-word-${i}-${w.word.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}`}>
+                <View
+                  key={w.id}
+                  style={[styles.wordChip, { backgroundColor: `${w.category_color || accentColor}20` }]}
+                  testID={`recent-word-${i}-${w.word.replaceAll(/\s+/g, '-').replaceAll(/[^a-zA-Z0-9-_]/g, '')}`}
+                >
                   <Text style={[styles.wordChipText, { color: w.category_color || accentColor }]}>
                     {w.word}
                   </Text>
@@ -134,14 +141,14 @@ export default function DashboardScreen() {
             <Text style={styles.emptyEmoji}>🌟</Text>
             <Text style={styles.emptyTitle}>{t('dashboard.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              {!!name
+              {name
                 ? t('dashboard.emptyTextWithName', { name })
                 : t('dashboard.emptyText')}
             </Text>
           </View>
         )}
 
-        <View style={{ height: 20 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -181,4 +188,5 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
   emptyText: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  bottomSpacer: { height: 20 },
 });

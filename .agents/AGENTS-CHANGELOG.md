@@ -2,6 +2,93 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_09
+
+**[fix] Restore Android APK build compatibility for Expo SDK 55**
+- Downgraded `react-native` from `0.84.1` to `0.83.2` to match Expo SDK 55 compatibility and resolve Kotlin bridge API mismatches in `expo-modules-core`.
+- Aligned `react` and `react-test-renderer` from `19.2.3` to `19.2.0` to stay consistent with the React Native renderer version used by `react-native@0.83.2`.
+- Updated `package-lock.json` via `npm install` to persist the dependency graph changes.
+
+**Validation**
+- Ran `npm run ci` successfully.
+- Ran `./gradlew :expo-modules-core:compileReleaseKotlin` successfully.
+- Ran `./gradlew :app:assembleRelease` successfully (`BUILD SUCCESSFUL`).
+
+---
+
+### 2026-03-12_08
+
+**[fix] Sonar PR #19 nesting-depth cleanup in AddWordModal**
+- Refactored `handleExistingVariantBlur` and `handleExistingVariantDelete` to remove higher-order async function nesting that exceeded Sonar's max nesting-depth rule.
+- Updated call sites to invoke these handlers via lightweight wrappers, keeping behavior unchanged for inline variant edit/delete flows.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
+### 2026-03-12_07
+
+**[config] Downgrade app version to 1.0.0**
+- Updated `app.json` Expo app version from `2.0.0` to `1.0.0`.
+- Updated project package version from `2.0.0` to `1.0.0` in `package.json`.
+- Synced lockfile root package version fields in `package-lock.json` to `1.0.0`.
+
+**Validation**
+- Ran `npm run ci` successfully after the version change.
+
+---
+
+### 2026-03-12_06
+
+**[fix] Sonar remediation pass — readonly props, readability, and key stability**
+- Marked component props as `Readonly<...>` where Sonar requested immutable parameters (`UIComponents`, `AddCategoryModal`, `AddVariantModal`, `AddWordModal`, `ManageCategoryModal`, `ImportModal`, `DatePickerField`, onboarding wheel component).
+- Removed nested ternaries flagged for readability by replacing them with explicit mappings/derived values in `home.tsx`, `onboarding.tsx`, and `UIComponents.tsx`.
+- Replaced index-based keys with stable keys in dashboard monthly/category/recent-word rendering and import preview rows.
+- Updated additional Sonar-targeted patterns: `parseInt` → `Number.parseInt`, optional-chaining callback invocation for duplicate edit, and regex `replace` calls to `replaceAll` in recent-word testID sanitization.
+- Simplified inline variant edit handlers in `AddWordModal` into dedicated helper handlers to reduce nesting and improve maintainability.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
+### 2026-03-12_05
+
+**[config] SonarCloud — hardcode project key and organization**
+- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
+- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
+- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)
+
+---
+
+### 2026-03-12_04
+
+**[refactor] Standards compliance migration across components, hooks, and typing**
+- Removed `React.FC` usage from shared components and modals (`UIComponents`, `AddWordModal`, `AddVariantModal`, `AddCategoryModal`, `ManageCategoryModal`, `DatePickerField`, `ImportModal`) in favor of typed function component signatures.
+- Replaced broad `any` patterns in production code with narrowed `unknown` handling and explicit row interfaces in `src/database/database.ts`, `src/utils/googleDrive.ts`, and `src/utils/csvExport.ts`.
+- Eliminated unsafe non-null assertions in touched flows (`AddVariantModal`, `WordsScreen`, onboarding submit path) with explicit guards and narrowed local values.
+- Added `useGoogleDriveStatus` hook and moved settings-screen focus refresh behavior into the hook to align focus/refetch ownership with hook standards.
+
+**[fix] Styling and color constant compliance**
+- Removed inline JSX style objects in touched screens/components (`home`, `settings`, onboarding, `ImportModal`, `UIComponents`) by moving styles into StyleSheet entries.
+- Replaced hardcoded color literals in app/component logic with centralized theme constants (`COLORS.profileGirl`, `COLORS.profileBoy`, `COLORS.info`, etc.) and updated dependent styles accordingly.
+- Kept unavoidable brand-asset embedded SVG colors (Google Drive logo paths) as-is.
+
+**[test] Selector and interaction alignment updates**
+- Updated `__tests__/integration/UIComponents.test.tsx` to use `userEvent` for interactive flows and stronger testID-driven presses where available.
+- Added onboarding-specific `testID` targets in `app/onboarding.tsx` for sex/date actions and updated `__tests__/e2e/onboarding.yaml` to use `id:` selectors for those interactions/assertions.
+
+**[config] Planning artifacts for migration**
+- Added design and audit artifacts for this migration:
+  - `.agents/plan/design/2026-03-12_01-standards-compliance-migration.md`
+  - `.agents/plan/research-documents/2026-03-12_01-standards-compliance-migration/compliance-audit.md`
+
+**Validation**
+- Ran `npm run ci` successfully after migration changes.
+
+---
+
 ### 2026-03-12_03
 
 **[config] Remove redundant sonarcloud.yml — Automatic Analysis already gates PRs**
@@ -692,11 +779,3 @@ Entries are added after every approved change. Most recent first.
 - Added E2E testing conventions (testID rules, scrolling, text input pitfalls)
 - Added Rules section (write tests, run CI, update CLAUDE.md, maintain changelog)
 - Updated Project Overview with full stack versions and feature list
-
-
-### 2026-03-12_1
-
-**[config] SonarCloud — hardcode project key and organization**
-- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
-- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
-- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)

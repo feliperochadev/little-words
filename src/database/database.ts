@@ -1,4 +1,4 @@
-import { openDatabaseSync } from 'expo-sqlite';
+import { openDatabaseSync, type SQLiteBindParams } from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 
 const db = openDatabaseSync('little-words.db');
@@ -96,7 +96,7 @@ export const initDatabase = (): Promise<void> => {
 };
 
 // Helper: SELECT → array
-const query = <T>(sql: string, args: any[] = []): Promise<T[]> => {
+const query = <T extends object>(sql: string, args: SQLiteBindParams = []): Promise<T[]> => {
   try {
     const rows = db.getAllSync<T>(sql, args);
     return Promise.resolve(rows);
@@ -106,7 +106,7 @@ const query = <T>(sql: string, args: any[] = []): Promise<T[]> => {
 };
 
 // Helper: INSERT / UPDATE / DELETE
-const run = (sql: string, args: any[] = []): Promise<{ insertId: number; rowsAffected: number }> => {
+const run = (sql: string, args: SQLiteBindParams = []): Promise<{ insertId: number; rowsAffected: number }> => {
   try {
     const result = db.runSync(sql, args);
     return Promise.resolve({ insertId: result.lastInsertRowId, rowsAffected: result.changes });
@@ -267,19 +267,46 @@ export interface DashboardStats {
   monthlyProgress: { month: string; count: number }[];
 }
 
+interface CountRow {
+  count: number;
+}
+
+interface CategoryCountRow {
+  name: string;
+  count: number;
+  color: string;
+  emoji: string;
+}
+
+interface MonthProgressRow {
+  month: string;
+  count: number;
+}
+
+interface SettingRow {
+  value: string;
+}
+
+interface CsvRow {
+  word: string | null;
+  categoria: string | null;
+  data: string | null;
+  variante: string | null;
+}
+
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-  const [totalWordsRow]    = await query<any>('SELECT COUNT(*) as count FROM words');
-  const [totalVariantsRow] = await query<any>('SELECT COUNT(*) as count FROM variants');
-  const [todayRow]         = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added = ?', [todayStr]);
-  const [weekRow]          = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [weekAgo]);
-  const [monthRow]         = await query<any>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [monthStart]);
+  const [totalWordsRow] = await query<CountRow>('SELECT COUNT(*) as count FROM words');
+  const [totalVariantsRow] = await query<CountRow>('SELECT COUNT(*) as count FROM variants');
+  const [todayRow] = await query<CountRow>('SELECT COUNT(*) as count FROM words WHERE date_added = ?', [todayStr]);
+  const [weekRow] = await query<CountRow>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [weekAgo]);
+  const [monthRow] = await query<CountRow>('SELECT COUNT(*) as count FROM words WHERE date_added >= ?', [monthStart]);
 
-  const categoryCounts = await query<any>(`
+  const categoryCounts = await query<CategoryCountRow>(`
     SELECT c.name, c.color, c.emoji, COUNT(w.id) as count
     FROM categories c LEFT JOIN words w ON w.category_id = c.id
     GROUP BY c.id ORDER BY count DESC
@@ -291,7 +318,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     ORDER BY w.created_at DESC LIMIT 10
   `);
 
-  const monthlyProgress = await query<any>(`
+  const monthlyProgress = await query<MonthProgressRow>(`
     SELECT strftime('%Y-%m', date_added) as month, COUNT(*) as count
     FROM words GROUP BY month ORDER BY month ASC LIMIT 12
   `);
@@ -311,7 +338,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 
 export const getSetting = async (key: string): Promise<string | null> => {
-  const rows = await query<any>('SELECT value FROM settings WHERE key=?', [key]);
+  const rows = await query<SettingRow>('SELECT value FROM settings WHERE key=?', [key]);
   return rows.length > 0 ? rows[0].value : null;
 };
 
@@ -324,7 +351,7 @@ export const getAllDataForCSV = async (
   resolveCategoryName: (name: string) => string,
   headerRow = 'palavra,categoria,data,variante',
 ): Promise<string> => {
-  const rows = await query<any>(`
+  const rows = await query<CsvRow>(`
     SELECT w.word, c.name as categoria, w.date_added as data, '' as variante
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
     UNION ALL
@@ -336,7 +363,7 @@ export const getAllDataForCSV = async (
   `);
 
   const header = headerRow + '\n';
-  const body = rows.map((r: any) =>
+  const body = rows.map((r) =>
     `"${(r.word || '').replace(/"/g, '""')}","${(resolveCategoryName(r.categoria || '') || '').replace(/"/g, '""')}","${r.data || ''}","${(r.variante || '').replace(/"/g, '""')}"`
   ).join('\n');
 

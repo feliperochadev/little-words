@@ -4,6 +4,8 @@ import { getAllDataForCSV } from '../database/database';
 import { DEFAULT_CATEGORY_KEY_SET } from './categoryKeys';
 
 const pad = (n: number) => String(n).padStart(2, '0');
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unknown error';
 
 export function buildFilename(t: (key: string) => string): string {
   const now = new Date();
@@ -67,8 +69,8 @@ export const saveCSVToDevice = async (
     const file = dir.createFile(filename, 'text/csv');
     file.write(csvContent);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 };
 
@@ -87,8 +89,8 @@ export const shareCSV = async (
       UTI: 'public.comma-separated-values-text',
     });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 };
 

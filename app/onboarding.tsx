@@ -3,13 +3,15 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert, Platform, Modal,
   FlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../src/utils/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { BrandHeader } from '../src/components/BrandHeader';
-import { useI18n, LANGUAGES, type Locale } from '../src/i18n/i18n';
+import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
 
 /* ───────── constants ───────── */
@@ -28,7 +30,7 @@ interface WheelColumnProps {
   width?: number;
 }
 
-function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }: WheelColumnProps) {
+function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }: Readonly<WheelColumnProps>) {
   const flatListRef = useRef<FlatList>(null);
   const initialIndexRef = useRef(data.findIndex((item) => item.value === selectedValue));
 
@@ -43,7 +45,7 @@ function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }:
     }
   }, []);
 
-  const handleMomentumEnd = (event: any) => {
+  const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const index = Math.round(offsetY / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(index, data.length - 1));
@@ -138,8 +140,11 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
-  const accentColor = isGirl ? '#FF6B9D' : isBoy ? '#74B9FF' : COLORS.primary;
+  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
+  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
+  const emojiBySex = { girl: '👧', boy: '👦' } as const;
+  const profileEmoji = sex ? emojiBySex[sex] : '👶';
 
   useEffect(() => {
     if (allFilled) {
@@ -188,11 +193,17 @@ export default function OnboardingScreen() {
     if (!sex) { Alert.alert(t('common.attention'), t('onboarding.errorSex')); return; }
     if (!birthDate) { Alert.alert(t('common.attention'), t('onboarding.errorBirth')); return; }
 
+    const selectedSex = sex;
+    const selectedBirthDate = birthDate;
+    if (!selectedSex || !selectedBirthDate) {
+      return;
+    }
+
     setLoading(true);
     await useSettingsStore.getState().setProfile({
       name: name.trim(),
-      sex: sex!,
-      birth: toStorageDate(birthDate!),
+      sex: selectedSex,
+      birth: toStorageDate(selectedBirthDate),
     });
     await useSettingsStore.getState().setOnboardingDone();
     setLoading(false);
@@ -207,7 +218,7 @@ export default function OnboardingScreen() {
 
         <BrandHeader />
 
-        <Text style={styles.emoji}>{isGirl ? '👧' : isBoy ? '👦' : '👶'}</Text>
+        <Text style={styles.emoji}>{profileEmoji}</Text>
         <Text style={styles.title}>{t('onboarding.welcome')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
 
@@ -222,7 +233,7 @@ export default function OnboardingScreen() {
                   styles.langBtn,
                   locale === lang.locale && { borderColor: accentColor, backgroundColor: accentColor + '12' },
                 ]}
-                onPress={() => setLocale(lang.locale as Locale)}
+                onPress={() => setLocale(lang.locale)}
               >
                 <Text style={styles.langFlag}>{lang.flag}</Text>
                 <Text style={[
@@ -257,21 +268,23 @@ export default function OnboardingScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>{t('onboarding.sex').toUpperCase()}</Text>
           <View style={styles.sexRow}>
-            <TouchableOpacity
-              style={[styles.sexBtn, isGirl && styles.sexBtnGirl]}
-              onPress={() => setSex('girl')}
-            >
+              <TouchableOpacity
+                style={[styles.sexBtn, isGirl && styles.sexBtnGirl]}
+                onPress={() => setSex('girl')}
+                testID="onboarding-sex-girl-btn"
+              >
               <Text style={styles.sexEmoji}>👧</Text>
-              <Text style={[styles.sexLabel, isGirl && { color: '#FF6B9D', fontWeight: '800' }]}>
+              <Text style={[styles.sexLabel, isGirl && styles.sexLabelActiveGirl]}>
                 {t('onboarding.girl')}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sexBtn, isBoy && styles.sexBtnBoy]}
-              onPress={() => setSex('boy')}
-            >
+              <TouchableOpacity
+                style={[styles.sexBtn, isBoy && styles.sexBtnBoy]}
+                onPress={() => setSex('boy')}
+                testID="onboarding-sex-boy-btn"
+              >
               <Text style={styles.sexEmoji}>👦</Text>
-              <Text style={[styles.sexLabel, isBoy && { color: '#74B9FF', fontWeight: '800' }]}>
+              <Text style={[styles.sexLabel, isBoy && styles.sexLabelActiveBoy]}>
                 {t('onboarding.boy')}
               </Text>
             </TouchableOpacity>
@@ -284,6 +297,7 @@ export default function OnboardingScreen() {
           <TouchableOpacity
             style={[styles.dateBtn, { borderColor: birthDate ? accentColor : COLORS.border }]}
             onPress={openPicker}
+            testID="onboarding-birthdate-btn"
           >
             <Text style={styles.dateBtnIcon}>📅</Text>
             <Text style={[styles.dateBtnText, !birthDate && styles.dateBtnPlaceholder]}>
@@ -297,11 +311,11 @@ export default function OnboardingScreen() {
         {allFilled && (
           <View style={[styles.preview, { borderColor: accentColor }]}>
             <View style={styles.previewRow}>
-              <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
+              <Text style={styles.previewEmoji}>{profileEmoji}</Text>
               <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
             </View>
             <Text style={styles.previewDate}>
-              {birthArticle} {formatDisplayDate(birthDate!)}
+              {birthDate ? `${birthArticle} ${formatDisplayDate(birthDate)}` : ''}
             </Text>
           </View>
         )}
@@ -321,7 +335,7 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* ── Date Picker Modal ── */}
@@ -329,13 +343,13 @@ export default function OnboardingScreen() {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.header}>
-              <TouchableOpacity onPress={() => setShowPicker(false)}>
+              <TouchableOpacity onPress={() => setShowPicker(false)} testID="onboarding-date-cancel-btn">
                 <Text style={[modalStyles.headerBtn, { color: COLORS.textSecondary }]}>
                   {t('onboarding.datePicker.cancel')}
                 </Text>
               </TouchableOpacity>
-              <Text style={modalStyles.headerTitle}>{t('onboarding.datePicker.title')}</Text>
-              <TouchableOpacity onPress={confirmPicker}>
+              <Text style={modalStyles.headerTitle} testID="onboarding-date-title">{t('onboarding.datePicker.title')}</Text>
+              <TouchableOpacity onPress={confirmPicker} testID="onboarding-date-confirm-btn">
                 <Text style={[modalStyles.headerBtn, { color: accentColor }]}>
                   {t('onboarding.datePicker.confirm')}
                 </Text>
@@ -379,13 +393,13 @@ export default function OnboardingScreen() {
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
-    backgroundColor: COLORS.white ?? '#fff',
+    backgroundColor: COLORS.white,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee',
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
   headerBtn: { fontSize: 15, fontWeight: '600' },
@@ -430,8 +444,10 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', paddingVertical: 18,
     backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, borderColor: COLORS.border,
   },
-  sexBtnGirl: { borderColor: '#FF6B9D', backgroundColor: '#FFF0F5' },
-  sexBtnBoy: { borderColor: '#74B9FF', backgroundColor: '#F0F7FF' },
+  sexBtnGirl: { borderColor: COLORS.profileGirl, backgroundColor: COLORS.profileGirlBg },
+  sexBtnBoy: { borderColor: COLORS.profileBoy, backgroundColor: COLORS.profileBoyBg },
+  sexLabelActiveGirl: { color: COLORS.profileGirl, fontWeight: '800' },
+  sexLabelActiveBoy: { color: COLORS.profileBoy, fontWeight: '800' },
   sexEmoji: { fontSize: 36, marginBottom: 6 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
   // Date
@@ -459,4 +475,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
   continueBtnText: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+  bottomSpacer: { height: 40 },
 });

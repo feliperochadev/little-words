@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, userEvent } from '@testing-library/react-native';
 import { Button, Card, SearchBar, CategoryBadge, EmptyState, StatCard } from '../../src/components/UIComponents';
 
 describe('UIComponents', () => {
@@ -9,10 +9,10 @@ describe('UIComponents', () => {
       expect(getByText('Save')).toBeTruthy();
     });
 
-    it('calls onPress when pressed', () => {
+    it('calls onPress when pressed', async () => {
       const onPress = jest.fn();
-      const { getByText } = render(<Button title="Save" onPress={onPress} />);
-      fireEvent.press(getByText('Save'));
+      const { getByTestId } = render(<Button title="Save" onPress={onPress} testID="save-button" />);
+      await userEvent.press(getByTestId('save-button'));
       expect(onPress).toHaveBeenCalledTimes(1);
     });
 
@@ -21,10 +21,10 @@ describe('UIComponents', () => {
       expect(queryByText('Save')).toBeNull();
     });
 
-    it('is disabled when disabled prop is true', () => {
+    it('is disabled when disabled prop is true', async () => {
       const onPress = jest.fn();
-      const { getByText } = render(<Button title="Save" onPress={onPress} disabled />);
-      fireEvent.press(getByText('Save'));
+      const { getByTestId } = render(<Button title="Save" onPress={onPress} disabled testID="save-button" />);
+      await userEvent.press(getByTestId('save-button'));
       expect(onPress).not.toHaveBeenCalled();
     });
 
@@ -52,12 +52,13 @@ describe('UIComponents', () => {
       expect(getByText('Inside')).toBeTruthy();
     });
 
-    it('is pressable when onPress is provided', () => {
+    it('is pressable when onPress is provided', async () => {
       const onPress = jest.fn();
-      const { getByText } = render(
-        <Card onPress={onPress}><Button title="Pressable" onPress={() => {}} /></Card>
+      const { getByTestId } = render(
+        <Card onPress={onPress} testID="pressable-card"><Button title="Pressable" onPress={() => {}} /></Card>
       );
-      expect(getByText('Pressable')).toBeTruthy();
+      await userEvent.press(getByTestId('pressable-card'));
+      expect(onPress).toHaveBeenCalledTimes(1);
     });
 
     it('renders as View when no onPress', () => {
@@ -76,21 +77,34 @@ describe('UIComponents', () => {
       expect(getByPlaceholderText('Search...')).toBeTruthy();
     });
 
-    it('calls onChangeText when text changes', () => {
+    it('calls onChangeText when text changes', async () => {
       const onChangeText = jest.fn();
+      function SearchBarHarness() {
+        const [value, setValue] = React.useState('');
+        return (
+          <SearchBar
+            value={value}
+            onChangeText={(text) => {
+              setValue(text);
+              onChangeText(text);
+            }}
+            placeholder="Search..."
+          />
+        );
+      }
       const { getByPlaceholderText } = render(
-        <SearchBar value="" onChangeText={onChangeText} placeholder="Search..." />
+        <SearchBarHarness />
       );
-      fireEvent.changeText(getByPlaceholderText('Search...'), 'hello');
-      expect(onChangeText).toHaveBeenCalledWith('hello');
+      await userEvent.type(getByPlaceholderText('Search...'), 'hello');
+      expect(onChangeText).toHaveBeenLastCalledWith('hello');
     });
 
-    it('shows clear button when value is not empty', () => {
+    it('shows clear button when value is not empty', async () => {
       const onChangeText = jest.fn();
       const { getByText } = render(
         <SearchBar value="test" onChangeText={onChangeText} />
       );
-      fireEvent.press(getByText('✕'));
+      await userEvent.press(getByText('✕'));
       expect(onChangeText).toHaveBeenCalledWith('');
     });
 
@@ -144,13 +158,13 @@ describe('UIComponents', () => {
       expect(queryByText('Add your first word')).toBeNull();
     });
 
-    it('renders action button when provided', () => {
+    it('renders action button when provided', async () => {
       const onPress = jest.fn();
       const { getByText } = render(
         <EmptyState emoji="📝" title="No words" action={{ label: 'Add Word', onPress }} />
       );
       expect(getByText('Add Word')).toBeTruthy();
-      fireEvent.press(getByText('Add Word'));
+      await userEvent.press(getByText('Add Word'));
       expect(onPress).toHaveBeenCalled();
     });
   });
