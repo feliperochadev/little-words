@@ -8,8 +8,6 @@ jest.mock('../../src/database/database', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { COLORS } from '../../src/utils/theme';
-
 // Override the Tabs mock to render tabBarIcon callbacks with both active and inactive colors
 jest.mock('expo-router', () => {
   const React = require('react');

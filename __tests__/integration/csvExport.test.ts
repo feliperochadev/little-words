@@ -2,7 +2,7 @@ import { Directory } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { saveCSVToDevice, shareCSV, exportCSV } from '../../src/utils/csvExport';
 
-const mockDb = (global as any).__mockDb;
+const mockDb = (globalThis as any).__mockDb;
 
 const resolver = (name: string) => name;
 const header = 'word,category,date,variant';

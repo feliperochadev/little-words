@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import RootLayout from '../../app/_layout';
-import * as db from '../../src/database/database';
 
 jest.mock('../../src/database/database', () => ({
   ...jest.requireActual('../../src/database/database'),

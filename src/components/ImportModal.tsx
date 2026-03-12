@@ -43,6 +43,17 @@ interface ImportResult {
 
 const DEFAULT_IMPORT_CATEGORY_COLOR = DEFAULT_CATEGORIES.find(({ key }) => key === 'others')?.color ?? COLORS.textLight;
 
+async function addVariantsForWord(wordId: number, rows: ParsedRow[], today: string): Promise<number> {
+  let count = 0;
+  for (const row of rows) {
+    if (row.variant?.trim()) {
+      await addVariant(wordId, row.variant.trim(), row.date || today);
+      count++;
+    }
+  }
+  return count;
+}
+
 async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   const result: ImportResult = { wordsAdded: 0, variantsAdded: 0, skipped: [], errors: [] };
   const existingCats = await getCategories();
@@ -77,12 +88,7 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
       let wordId: number;
       if (existing) { wordId = existing.id; result.skipped.push(firstRow.word); }
       else { wordId = await addWord(firstRow.word, categoryId, dateAdded); result.wordsAdded++; }
-      for (const row of group.rows) {
-        if (row.variant?.trim()) {
-          await addVariant(wordId, row.variant.trim(), row.date || today);
-          result.variantsAdded++;
-        }
-      }
+      result.variantsAdded += await addVariantsForWord(wordId, group.rows, today);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'error';
       result.errors.push(`"${firstRow.word}": ${message}`);

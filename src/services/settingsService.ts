@@ -1,6 +1,6 @@
 import { getSetting, setSetting } from '../database/database';
 
-export { getSetting, setSetting };
+export { getSetting, setSetting } from '../database/database';
 
 export interface ChildProfile {
   name: string;

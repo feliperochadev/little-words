@@ -165,8 +165,8 @@ export function parseReviewFile(content: string): Partial<ReviewFile> {
 
   return {
     status,
-    iteration: iterationStr !== undefined ? parseInt(iterationStr, 10) : 1,
-    maxIterations: maxIterationsStr !== undefined ? parseInt(maxIterationsStr, 10) : 3,
+    iteration: iterationStr !== undefined ? Number.parseInt(iterationStr, 10) : 1,
+    maxIterations: maxIterationsStr !== undefined ? Number.parseInt(maxIterationsStr, 10) : 3,
     branch,
     targetAgent,
     reviewers,

@@ -116,7 +116,6 @@ describe('OnboardingScreen', () => {
   });
 
   it('completes full onboarding flow', async () => {
-    const mockReplace = (useRouter as jest.Mock)().replace;
     const { findByText, findByPlaceholderText } = render(
       <I18nProvider><OnboardingScreen /></I18nProvider>
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
@@ -109,7 +109,7 @@ describe('ImportModal', () => {
   });
 
   it('switches back to text tab and clears preview', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     // Switch to CSV then back to text
@@ -205,7 +205,7 @@ describe('ImportModal', () => {
   it('handles canceled document picker', async () => {
     mockGetDocumentAsync.mockResolvedValueOnce({ canceled: true, assets: [] } as any);
 
-    const { findByText, queryByText } = renderWithProvider(
+    const { findByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     fireEvent.press(await findByText(/CSV File/));
@@ -373,7 +373,7 @@ describe('ImportModal', () => {
   });
 
   it('alerts noWordsFound when text parses to empty rows', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     // Note: the button is disabled when wordCount=0, so this path is technically
@@ -525,7 +525,7 @@ describe('ImportModal', () => {
   });
 
   it('does not render content when visible is false', () => {
-    const { queryByText } = renderWithProvider(
+    renderWithProvider(
       <ImportModal visible={false} onClose={jest.fn()} onImported={jest.fn()} />
     );
     // Modal with visible=false may or may not render children depending on RN version
@@ -553,9 +553,9 @@ describe('ImportModal — panResponder gesture handlers', () => {
   });
 
   async function renderWithPan(props: Record<string, any> = {}) {
-    const { ImportModal: IM } = require('../../src/components/ImportModal');
+    const { ImportModal: ImportModalComp } = require('../../src/components/ImportModal');
     const result = renderWithProviders(
-      <IM visible={true} onClose={jest.fn()} onImported={jest.fn()} {...props} />
+      <ImportModalComp visible={true} onClose={jest.fn()} onImported={jest.fn()} {...props} />
     );
     await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
     return result;

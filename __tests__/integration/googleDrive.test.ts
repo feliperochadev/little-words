@@ -10,7 +10,7 @@ import {
 } from '../../src/utils/googleDrive';
 import Constants from 'expo-constants';
 
-const mockDb = (global as any).__mockDb;
+const mockDb = (globalThis as any).__mockDb;
 
 // Get the mocked google signin module
 const mockGoogleSignin = require('@react-native-google-signin/google-signin');
@@ -27,7 +27,7 @@ const mockGetSetting = (values: Record<string, string | null>) => {
     const key = args?.[0];
     if (key && key in values) {
       const val = values[key];
-      return val !== null ? [{ value: val }] : [];
+      return val === null ? [] : [{ value: val }];
     }
     return [];
   });
@@ -35,7 +35,7 @@ const mockGetSetting = (values: Record<string, string | null>) => {
 
 // Mock global fetch
 const mockFetch = jest.fn();
-(global as any).fetch = mockFetch;
+(globalThis as any).fetch = mockFetch;
 
 // Minimal t() mock for performSync — returns locale-neutral test values
 const mockT = (key: string): string => ({

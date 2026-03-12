@@ -2,6 +2,19 @@ import enUS from '../../src/i18n/en-US';
 import ptBR from '../../src/i18n/pt-BR';
 import { DEFAULT_CATEGORIES } from '../../src/utils/categoryKeys';
 
+function getKeys(obj: Record<string, unknown>, prefix = ''): string[] {
+  const keys: string[] = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      keys.push(...getKeys(v as Record<string, unknown>, path));
+    } else {
+      keys.push(path);
+    }
+  }
+  return keys;
+}
+
 describe('i18n catalogues', () => {
   describe('en-US', () => {
     it('has all default category translations', () => {
@@ -69,22 +82,9 @@ describe('i18n catalogues', () => {
   });
 
   describe('catalogue parity', () => {
-    function getKeys(obj: Record<string, unknown>, prefix = ''): string[] {
-      const keys: string[] = [];
-      for (const [k, v] of Object.entries(obj)) {
-        const path = prefix ? `${prefix}.${k}` : k;
-        if (v && typeof v === 'object' && !Array.isArray(v)) {
-          keys.push(...getKeys(v as Record<string, unknown>, path));
-        } else {
-          keys.push(path);
-        }
-      }
-      return keys;
-    }
-
     it('en-US and pt-BR have the same keys', () => {
-      const enKeys = getKeys(enUS as unknown as Record<string, unknown>).sort();
-      const ptKeys = getKeys(ptBR as unknown as Record<string, unknown>).sort();
+      const enKeys = getKeys(enUS as unknown as Record<string, unknown>).sort((a, b) => a.localeCompare(b));
+      const ptKeys = getKeys(ptBR as unknown as Record<string, unknown>).sort((a, b) => a.localeCompare(b));
       expect(enKeys).toEqual(ptKeys);
     });
   });

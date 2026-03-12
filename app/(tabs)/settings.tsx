@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/database/database';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
-import { useCategoryName } from '../../src/i18n/i18n';
+import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import {
@@ -16,7 +16,6 @@ import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
 import { SvgXml } from 'react-native-svg';
 import { ImportModal } from '../../src/components/ImportModal';
-import { useI18n, LANGUAGES, type Locale } from '../../src/i18n/i18n';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useGoogleDriveStatus } from '../../src/hooks/useGoogleDriveStatus';
@@ -151,11 +150,22 @@ export default function SettingsScreen() {
     catch { return iso; }
   };
 
-  const sexLabel = childSex === 'girl'
-    ? t('settings.girl')
-    : childSex === 'boy'
-      ? t('settings.boy')
-      : '—';
+  let sexEmoji: string;
+  if (childSex === 'girl') {
+    sexEmoji = '👧';
+  } else if (childSex === 'boy') {
+    sexEmoji = '👦';
+  } else {
+    sexEmoji = '👶';
+  }
+  let sexLabel: string;
+  if (childSex === 'girl') {
+    sexLabel = t('settings.girl');
+  } else if (childSex === 'boy') {
+    sexLabel = t('settings.boy');
+  } else {
+    sexLabel = '—';
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -166,7 +176,7 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {childSex === 'girl' ? '👧' : childSex === 'boy' ? '👦' : '👶'} {t('settings.babyProfile')}
+              {sexEmoji} {t('settings.babyProfile')}
             </Text>
             <TouchableOpacity onPress={() => router.push('/onboarding')} style={styles.editProfileBtn}>
               <Text style={styles.editProfileText}>{t('settings.editProfile')}</Text>
@@ -191,7 +201,7 @@ export default function SettingsScreen() {
                   styles.langBtn,
                   locale === lang.locale && styles.langBtnActive,
                 ]}
-                onPress={() => setLocale(lang.locale as Locale)}
+                onPress={() => setLocale(lang.locale)}
               >
                 <Text style={styles.langFlag}>{lang.flag}</Text>
                 <Text style={[
