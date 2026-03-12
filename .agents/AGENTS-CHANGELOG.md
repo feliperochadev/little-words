@@ -2,6 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_07
+
+**[config] Downgrade app version to 1.0.0**
+- Updated `app.json` Expo app version from `2.0.0` to `1.0.0`.
+- Updated project package version from `2.0.0` to `1.0.0` in `package.json`.
+- Synced lockfile root package version fields in `package-lock.json` to `1.0.0`.
+
+**Validation**
+- Ran `npm run ci` successfully after the version change.
+
+---
+
 ### 2026-03-12_06
 
 **[fix] Sonar remediation pass — readonly props, readability, and key stability**
