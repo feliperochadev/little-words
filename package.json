@@ -61,7 +61,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.10",
-    "eslint": "^9.39.4",
+    "eslint": "^10.0.3",
     "eslint-config-expo": "^55.0.0",
     "husky": "^9.1.7",
     "jest": "30.3.0",
