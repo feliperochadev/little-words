@@ -675,3 +675,11 @@ Entries are added after every approved change. Most recent first.
 - Added E2E testing conventions (testID rules, scrolling, text input pitfalls)
 - Added Rules section (write tests, run CI, update CLAUDE.md, maintain changelog)
 - Updated Project Overview with full stack versions and feature list
+
+
+### 2026-03-12_1
+
+**[config] SonarCloud — hardcode project key and organization**
+- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
+- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
+- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)
