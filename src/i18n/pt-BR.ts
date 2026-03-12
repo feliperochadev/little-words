@@ -325,5 +325,6 @@ export default {
     deleteTitle: 'Excluir categoria',
     deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
     deleteMessage: 'Tem certeza que deseja excluir "{{name}}"?',
+    deleteFailed: 'Falha ao excluir categoria. Tente novamente.',
   },
 };

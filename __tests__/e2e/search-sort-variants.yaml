@@ -2,6 +2,10 @@ appId: com.littlewords.app
 name: "Variants - Search and sort functionality"
 ---
 
+# At this point (after crud-variant.yaml) the DB contains exactly 1 variant:
+#   baa-baa  (for "ball", created_at: earliest)
+# A second variant "waa-waa" is added here for meaningful sort testing.
+
 - extendedWaitUntil:
     visible: "Variants"
     timeout: 5000
@@ -9,9 +13,31 @@ name: "Variants - Search and sort functionality"
 # Navigate to Variants tab
 - tapOn: "Variants"
 
-# Verify variants are visible
+# Verify existing variant is visible
 - assertVisible:
     id: "variant-item-baa-baa"
+
+# ============================
+# SETUP: add a second variant for sort testing
+# DB order after setup (created_at DESC): waa-waa(0), baa-baa(1)
+# ============================
+
+- tapOn: "+ New"
+- extendedWaitUntil:
+    visible:
+      id: "modal-title-new-variant"
+    timeout: 1000
+- tapOn: "water"
+- tapOn:
+    id: "variant-input"
+- inputText: "waa-waa"
+- hideKeyboard
+- tapOn: "Add"
+- extendedWaitUntil:
+    visible:
+      id: "variant-item-waa-waa"
+    timeout: 1000
+- assertVisible: "2 variants"
 
 # ============================
 # SEARCH
@@ -45,6 +71,7 @@ name: "Variants - Search and sort functionality"
 
 # ============================
 # SORT - A to Z
+# alpha_asc: baa-baa(0), waa-waa(1)  — "b" < "w"
 # ============================
 
 - tapOn:
@@ -53,30 +80,60 @@ name: "Variants - Search and sort functionality"
     id: "sort-option-alpha_asc"
 - tapOn:
     id: "sort-option-alpha_asc"
+- waitForAnimationToEnd
+
+# "baa-baa" (b < w) is first, "waa-waa" is last
+- assertVisible:
+    id: "variant-pos-0-baa-baa"
+- assertVisible:
+    id: "variant-pos-1-waa-waa"
 
 # ============================
 # SORT - Z to A
+# alpha_desc: waa-waa(0), baa-baa(1)  — "w" > "b"
 # ============================
 
 - tapOn:
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-alpha_desc"
+- waitForAnimationToEnd
+
+# "waa-waa" is first, "baa-baa" is last
+- assertVisible:
+    id: "variant-pos-0-waa-waa"
+- assertVisible:
+    id: "variant-pos-1-baa-baa"
 
 # ============================
 # SORT - Oldest first
+# Both variants share date_added = 2026-03-11, so stable sort preserves
+# DB (created_at DESC) order: waa-waa(0), baa-baa(1)
 # ============================
 
 - tapOn:
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-date_asc"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "variant-pos-0-waa-waa"
+- assertVisible:
+    id: "variant-pos-1-baa-baa"
 
 # ============================
 # SORT - Most recent (back to default)
+# Same stable order as date_asc (both share date_added)
 # ============================
 
 - tapOn:
     id: "variants-sort-btn"
 - tapOn:
     id: "sort-option-date_desc"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "variant-pos-0-waa-waa"
+- assertVisible:
+    id: "variant-pos-1-baa-baa"

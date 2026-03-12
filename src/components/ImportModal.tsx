@@ -6,10 +6,12 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { COLORS } from '../utils/theme';
 import {
   getCategories, addCategory, findWordByName, addWord, addVariant,
 } from '../database/database';
+import { QUERY_KEYS } from '../hooks/queryKeys';
 import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 import { deaccent, parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
@@ -89,6 +91,7 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
 export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onImported }) => {
   const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const [tab, setTab]               = useState<'text' | 'csv'>('text');
   const [textInput, setTextInput]   = useState('');
@@ -170,6 +173,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
     try {
       const result = await importRows(rows);
       setLoading(false);
+      [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
+        key => queryClient.invalidateQueries({ queryKey: key })
+      );
       reset(); onImported(); onClose();
 
       const lines = [t('importModal.resultWords', { count: result.wordsAdded })];

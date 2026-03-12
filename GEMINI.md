@@ -13,13 +13,18 @@
 - **Build System:** EAS Build (Android targeted)
 - **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest
 
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+
 ## Architecture & Core Modules
 
 - `app/`: Expo Router screens and layouts.
-  - `_layout.tsx`: Root layout with `I18nProvider` and Google Sign-In config.
-  - `index.tsx`: Entry point, DB initialization, and routing logic.
+  - `_layout.tsx`: Root layout with `QueryClientProvider`, `I18nProvider`, and Google Sign-In config.
+  - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
 - `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`.
+- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`).
+- `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`.
+- `src/stores/`: Zustand stores for global client state (`settingsStore` — child profile/onboarding; `authStore` — Google auth).
 - `src/components/`: Reusable UI components and modals.
 - `src/i18n/`: Internationalization logic and translation catalogues (`en-US`, `pt-BR`).
 - `src/utils/`:
@@ -27,6 +32,21 @@
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `theme.ts`: Centralized color and style constants.
   - `agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
+
+### State Management Strategy
+
+| Category | Tool | Examples |
+|---|---|---|
+| Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
+| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Local UI state | **useState** | modals, form inputs, sort order |
+
+**Key patterns:**
+- Screens are pure UI — no DB imports, no `useFocusEffect`, no `load()` callbacks.
+- `useFocusEffect` refetch lives inside the hooks (e.g. `useDashboardStats`), not in screens.
+- Module-level stable empty arrays for TQ defaults: `const EMPTY: T[] = []` — never `= []` inline in JSX/hooks when used in `useEffect` deps.
+- `useEffect` that resets form state must NOT include TQ data arrays in deps — split into separate effects.
+- Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
 
 ## Rules
 
@@ -83,7 +103,15 @@
 
 9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
-10. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
+   - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
+   - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
+   - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
+   - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
+   - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+
+11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
 ## Commands
 
@@ -112,6 +140,19 @@ npm run agent:review "Change summary"
 ## Changelog
 
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
+
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain. Standards cover TypeScript patterns, component design, state management, hooks, testing, and styling/naming conventions.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |
 
 ## Additional Documentation
 

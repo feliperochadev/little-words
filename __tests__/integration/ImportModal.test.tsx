@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
 import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 const mockTextFn: jest.Mock = (FileSystem as any)._fileMock?.text;
 import * as database from '../../src/database/database';
+import { renderWithProviders } from '../helpers/renderWithProviders';
 
 // Mock database functions
 jest.mock('../../src/database/database', () => ({
@@ -28,7 +28,7 @@ const mockAddVariant = database.addVariant as jest.MockedFunction<typeof databas
 const mockGetDocumentAsync = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof DocumentPicker.getDocumentAsync>;
 
 function renderWithProvider(ui: React.ReactElement) {
-  return render(<I18nProvider>{ui}</I18nProvider>);
+  return renderWithProviders(ui);
 }
 
 beforeEach(() => {
@@ -56,9 +56,7 @@ describe('ImportModal', () => {
     );
 
     view.rerender(
-      <I18nProvider>
-        <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
-      </I18nProvider>
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
 
     expect(await view.findByText(/Import words/)).toBeTruthy();
@@ -556,10 +554,8 @@ describe('ImportModal — panResponder gesture handlers', () => {
 
   async function renderWithPan(props: Record<string, any> = {}) {
     const { ImportModal: IM } = require('../../src/components/ImportModal');
-    const result = render(
-      <I18nProvider>
-        <IM visible={true} onClose={jest.fn()} onImported={jest.fn()} {...props} />
-      </I18nProvider>
+    const result = renderWithProviders(
+      <IM visible={true} onClose={jest.fn()} onImported={jest.fn()} {...props} />
     );
     await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
     return result;

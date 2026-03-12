@@ -147,6 +147,19 @@ export const getWordCountByCategory = async (id: number): Promise<number> => {
 export const deleteCategory = (id: number) =>
   run('DELETE FROM categories WHERE id=?', [id]);
 
+export const deleteCategoryWithUnlink = (id: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    try {
+      db.withTransactionSync(() => {
+        db.runSync('UPDATE words SET category_id = NULL WHERE category_id = ?', [id]);
+        db.runSync('DELETE FROM categories WHERE id = ?', [id]);
+      });
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+
 // ─── WORDS ────────────────────────────────────────────────────────────────────
 
 export interface Word {

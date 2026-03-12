@@ -4,6 +4,171 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
+### 2026-03-11_14
+
+**[config] Add .agents/standards/ — authoritative code standards documentation**
+- `.agents/standards/README.md` (NEW): Index file with quick-reference table and instructions for agents on when/how to use standards files.
+- `.agents/standards/typescript.md` (NEW): TypeScript patterns — `interface` vs `type`, banned patterns (`any`, `enum`, `React.FC`, `@ts-ignore`), `as const`, `satisfies`, generics, type guards, `import type`.
+- `.agents/standards/components.md` (NEW): Component standards — named exports, props typing, `handle*`/`on*` naming, component structure order, `memo`/`useCallback` policy, ~200-line size limit, accessibility (`testID` + `accessibilityLabel`), loading/error/empty state pattern, RN FlatList rules.
+- `.agents/standards/state-management.md` (NEW): State layer decision table (TQ vs Zustand vs useState), QUERY_KEYS usage, module-level `EMPTY_*` constants, Zustand selector hooks, `getState()` for non-reactive reads, hydration rules, `useEffect` + TQ data anti-pattern.
+- `.agents/standards/hooks.md` (NEW): Hook naming rules, when to/not to create a hook, one-concern-per-effect rule, async-inside-effect pattern, cleanup, stable closure pattern, module-level empty defaults, hook file structure.
+- `.agents/standards/testing.md` (NEW): Directory rules, describe/it naming, `clearAllMocks`, `renderWithProviders`, `getByTestId` preference, mock-at-boundary strategy, 99% line / 95% branch coverage floor, Maestro `id:` selectors, `scrollUntilVisible`, `waitForAnimationToEnd`.
+- `.agents/standards/styling-and-naming.md` (NEW): `StyleSheet.create()` at file bottom, `COLORS.*` only, camelCase style keys, file naming table, `SCREAMING_SNAKE_CASE` for fixed constants, boolean `is*`/`has*`/`can*` prefix, `handle*` for internal handlers, import order.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added "Code Standards" section referencing `.agents/standards/` with quick-reference table.
+- Research documents in `.agents/plan/research-documents/2026-03-11_01-code-standards-audit/`: `codebase-audit.md` (10-domain baseline audit) and `best-practices-2025-2026.md` (React Native + TypeScript industry standards).
+
+---
+
+### 2026-03-11_13
+
+**[refactor] Address PR #10 second review — performance, consistency, dead code**
+- `src/components/AddWordModal.tsx`: `handleSave` loop over pending inline variant edits now calls `variantService.updateVariant` directly instead of `updateVariantMutation.mutateAsync` — prevents N Drive syncs + N cache-invalidation cycles for N open inline edits; the single `VARIANT_MUTATION_KEYS` batch invalidation + `syncOnSuccess()` at end of `handleSave` handles everything in one pass. Removed `QUERY_KEYS` import (no longer used after raw key strings were replaced in prior round).
+- `src/hooks/useSettings.ts`: Deleted — thin wrapper hooks (`useChildProfile`, `useGoogleAuth`) added indirection with no logic; all screens now use `useSettingsStore` / `useAuthStore` directly.
+- `app/(tabs)/home.tsx`: Replaced `useChildProfile()` import with `useSettingsStore()` — now consistent with `settings.tsx` and `onboarding.tsx`.
+- `app/(tabs)/variants.tsx`: Fixed `onDeleted={refetchVariants}` → `onDeleted={() => { refetchVariants(); }}` — same type-mismatch fix as `onSave` (avoids passing `Promise<QueryObserverResult>` where `() => void` is expected).
+- `app/(tabs)/words.tsx`: Removed unused `isLoading` destructure binding (lint warning).
+- All 645 tests pass; 0 lint warnings; 0 TS errors.
+
+---
+
+### 2026-03-11_12
+
+**[refactor] Address PR #10 review comments — hooks, keys, dead code cleanup**
+- `src/hooks/useSyncOnSuccess.ts` (NEW): Extracted shared `useSyncOnSuccess` hook from `useWords` and `useVariants`, avoiding duplication. Added `.catch(console.error)` on `performSync`.
+- `src/hooks/useWords.ts`, `src/hooks/useVariants.ts`: Import `useSyncOnSuccess` from shared hook; removed duplicate inline definitions and dead imports (`useAuthStore`, `useI18n`, `performSync`).
+- `src/hooks/queryKeys.ts`: Added `wordCount: (id: number)` entry to `QUERY_KEYS` for type-safe category word-count keys.
+- `src/hooks/useCategories.ts`: Replaced raw `['wordCounts', id]` with `QUERY_KEYS.wordCount(id)`.
+- `src/components/AddWordModal.tsx`: Inline variant edits (update/delete) now use `useUpdateVariant` / `useDeleteVariant` mutation hooks instead of direct service calls. Replaced all raw query key strings with `QUERY_KEYS.*` and `*_MUTATION_KEYS` constants.
+- `src/services/settingsService.ts`: Removed dead `GoogleAuthState` interface and `getGoogleAuthState` export (no callers).
+- `app/(tabs)/home.tsx`: Replaced `useSettingsStore()` with `useChildProfile()` for consistent store access pattern.
+- `app/(tabs)/variants.tsx`: Fixed `onSave` prop type mismatch (`onSave={() => { refetchVariants(); }}`).
+- `app/(tabs)/words.tsx`: Removed 19 dead style keys; removed redundant inner `TouchableOpacity` wrapping word text (outer Card already handles tap).
+
+**[test] Add useSyncOnSuccess unit tests**
+- `__tests__/unit/useSyncOnSuccess.test.ts` (NEW): 3 tests covering no-op when disconnected, performSync call when connected, and error swallowing via `.catch`.
+
+---
+
+### 2026-03-11_11
+
+**[fix] security.yml — fix Semgrep action, remove OWASP Dependency-Check**
+- `returntocorp/semgrep-action@v1` → `semgrep/semgrep-action@v1` (org rename); fixed `config: p/default` (was invalid comma-separated `p/javascript,p/typescript`); added `generateSarif: "1"`; `continue-on-error: true` on semgrep step; guarded SARIF upload with `if: hashFiles('semgrep.sarif') != ''`.
+- Removed `OWASP Dependency-Check` job — version `v3.0.5` does not exist; job is also too slow and has too many false positives for npm projects.
+- Enabled vulnerability alerts on the repo (required for `dependency-review-action` to see the dependency graph).
+
+### 2026-03-11_10
+
+**[config] Add free GitHub security + quality tooling workflows**
+- Added `.github/dependabot.yml` for weekly npm dependency updates with production/dev grouping.
+- Added `.github/workflows/codeql.yml` to run CodeQL scans on PRs, default-branch pushes, and weekly schedule.
+- Added `.github/workflows/security.yml` with Dependency Review gating on high severity, plus Semgrep, Trivy (ignore-unfixed), and OWASP Dependency-Check SARIF uploads.
+- Added `.github/workflows/sonarcloud.yml` plus `sonar-project.properties` for SonarCloud OSS scanning on PRs and default-branch pushes.
+- Configured `main` branch protection via GitHub API: 4 required status checks before merge (`Lint · Typecheck · Jest`, `CodeQL Scan (javascript-typescript)`, `Dependency Review`, `Trivy FS Scan`); `strict` mode (branch must be up-to-date); no direct push to main.
+
+---
+
+### 2026-03-11_09
+
+**[fix] Pull-to-refresh error safety + testID sanitization**
+- `app/(tabs)/home.tsx`, `app/(tabs)/words.tsx`, `app/(tabs)/variants.tsx`: wrapped `refetch()` call in `try-finally` inside `onRefresh` so `setRefreshing(false)` always executes even if the query throws.
+- `app/(tabs)/home.tsx`: sanitized `recent-word` testID — spaces replaced with `-`, non-alphanumeric/dash/underscore chars stripped — prevents broken testID selectors for multi-word or accented entries.
+
+---
+
+### 2026-03-11_08
+
+**[feature] Dashboard testIDs + E2E home screen verification in re-onboard.yaml**
+- `src/components/UIComponents.tsx`: added optional `testID` prop to `StatCard`; forwarded to the value `<Text>` element.
+- `app/(tabs)/home.tsx`: passed `testID` props to all five `StatCard` calls (`stat-total-words`, `stat-total-variants`, `stat-words-today`, `stat-words-week`, `stat-words-month`); added `testID` to bar chart label/value `<Text>` elements (`bar-label-{YYYY-MM}`, `bar-value-{YYYY-MM}`); added `testID` to category count `<Text>` (`cat-count-{name}`); added sanitized `testID` (`recent-word-${i}-${sanitized}`) to recent-word chip `<View>`.
+- `__tests__/e2e/re-onboard.yaml`: added import of `sample-import.csv` after re-onboard, then full Home screen verification (total words=5, variants=2, today=2, week=2, month=3, monthly bars 2025-03/2026-01/2026-03, Food category count=3, all 5 recent-word chips in insertion-order sequence).
+
+**[test] Unit/integration coverage for new dashboard testIDs**
+- `__tests__/integration/UIComponents.test.tsx`: added test asserting `testID` is forwarded to value `<Text>` in `StatCard`.
+- `__tests__/screens/home.test.tsx`: added tests for stat-card testIDs, bar-value testIDs, cat-count testID, and recent-word position-indexed testIDs.
+
+
+
+**[fix] Second review round fixes — over-invalidation, error handling, test coverage, pull-to-refresh**
+- `queryKeys.ts`: replaced `['categories']` in `WORD_MUTATION_KEYS` with `['wordCounts']` — prevents full category list from being refetched on every word mutation (was over-invalidating).
+- `useCategories.ts`: changed `useWordCountByCategory` query key from `['categories', id, 'wordCount']` to `['wordCounts', id]` to match new prefix; now only word-count queries (not category-list queries) are invalidated by word mutations.
+- `ManageCategoryModal`: replaced direct `deleteCategoryWithUnlink` DB call + no error handling with `useDeleteCategory` hook + `try/catch`; shows localised error alert on failure instead of unhandled rejection.
+- `words.tsx`: fixed `RefreshControl` — replaced `refreshing={isLoading}` (always `false` after first fetch in TQ v5) with manual `refreshing` state matching the pattern used in `home.tsx` and `variants.tsx`.
+- `en-US.ts` / `pt-BR.ts`: added `manageCategory.deleteFailed` translation key used by the new error alert.
+- `database.test.ts`: added failure-path test for `deleteCategoryWithUnlink` — mocks `withTransactionSync` to throw and asserts the promise rejects.
+- `ManageCategoryModal.test.tsx`: migrated to `renderWithProviders` + `jest.mock` for `useDeleteCategory`; added "shows error alert when deletion fails" test covering the new catch path.
+- All 637 tests pass.
+
+---
+
+### 2026-03-11_06
+
+**[fix] Code review fixes — atomic category deletion, cache invalidation correctness**
+- Added `deleteCategoryWithUnlink(id)` to `database.ts`: wraps `UPDATE words SET category_id = NULL` + `DELETE FROM categories` in a single `db.withTransactionSync()` — prevents partial state if the delete fails after unlink.
+- Updated `categoryService.ts` to export `deleteCategoryWithUnlink`.
+- Updated `useDeleteCategory` hook to call `deleteCategoryWithUnlink` (atomic) instead of two separate service calls.
+- Updated `ManageCategoryModal` to call `deleteCategoryWithUnlink` directly (same atomicity fix).
+- Fixed `ImportModal` cache invalidation: changed `QUERY_KEYS.words()` (which produces `['words', { search: '' }]`, only matching empty-search queries) to prefix key `['words']` so all search-filtered word queries are invalidated after import.
+- Added `['categories']` to `WORD_MUTATION_KEYS` so `useWordCountByCategory` cache is invalidated when words are added/deleted — prevents stale count in category delete confirmation.
+- Updated all affected tests (`AddCategoryModal`, `ManageCategoryModal`, `AddWordModal`, `words.test.tsx`, `database.test.ts`) to use `deleteCategoryWithUnlink`; added unit test for the new atomic function.
+- All 635 tests pass.
+
+---
+
+
+
+**[feature] TanStack Query + Zustand migration — remaining modals (Phase 3)**
+- Migrated `src/components/AddVariantModal.tsx`: replaced `useState<Word[]>(allWords)` + `getWords().then(setAllWords)` with `useWords()` hook; replaced `addVariant`/`updateVariant`/`deleteVariant` direct DB calls with `useAddVariant()`, `useUpdateVariant()`, `useDeleteVariant()` mutation hooks; added module-level `EMPTY_WORDS` stable ref.
+- Migrated `src/components/AddCategoryModal.tsx`: replaced `addCategory`/`updateCategory`/`unlinkWordsFromCategory`/`deleteCategory`/`getWordCountByCategory` direct DB calls with `useAddCategory()`, `useUpdateCategory()`, `useDeleteCategory()`, `useWordCountByCategory()` hooks; word count is now pre-fetched by TQ (better UX — no async gap on delete).
+- Updated `src/components/ImportModal.tsx`: added `useQueryClient` + explicit cache invalidation after successful import (words, variants, categories, dashboard keys); bulk import logic (`importRows` standalone function) kept using direct DB calls as appropriate for a complex batch operation.
+- Updated `__tests__/integration/AddVariantModal.test.tsx`, `AddCategoryModal.test.tsx`, `ImportModal.test.tsx`: switched all renders to `renderWithProviders`; added `waitFor` on `getWordCountByCategory` before delete-flow assertions to account for pre-fetched async data.
+- All 634 tests pass; no lint warnings; no TS errors.
+
+---
+
+### 2026-03-11_04
+
+**[feature] TanStack Query + Zustand migration — remaining screens (Phase 2)**
+- Migrated `app/(tabs)/home.tsx`: removed `useState`/`load`/`useFocusEffect`/`useCallback`; uses `useDashboardStats()` + `useSettingsStore()` for all data. Profile block derived from store fields (`name`, `sex`, `birth`) instead of local state.
+- Migrated `app/(tabs)/variants.tsx`: removed `useState` for variants/filteredVariants/words and `searchRef`/`applySearch`/`load`/`useFocusEffect`/`useCallback`; uses `useAllVariants()` + `useWords()` with module-level stable empty arrays. Filtered list computed inline.
+- Migrated `app/(tabs)/settings.tsx`: removed `useState` for `categories`/`childName`/`childSex`; uses `useCategories()` + `useSettingsStore()`. `load()` kept only for Google auth state; `AddCategoryModal` callbacks simplified (`onSave`/`onDeleted` no longer re-call `load()`).
+- Migrated `app/index.tsx`: hydrates `useSettingsStore` + `useAuthStore` after `initDatabase()`; reads `isOnboardingDone` / `isConnected` from store state instead of direct `getSetting` / `isGoogleConnected` calls.
+- Migrated `app/onboarding.tsx`: replaced four `setSetting` calls with `useSettingsStore.getState().setProfile()` + `useSettingsStore.getState().setOnboardingDone()` so store stays in sync on first save.
+- Updated `__tests__/screens/home.test.tsx`, `variants.test.tsx`, `settings.test.tsx`: switched to `renderWithProviders`; profile data in home/settings tests now set via `useSettingsStore.setState()`; `getSetting` child_name/sex mocks removed from settings tests.
+- Updated `__tests__/screens/index.test.tsx`: added `getGoogleUserEmail` to googleDrive mock so `useAuthStore.hydrate()` completes correctly.
+
+---
+
+### 2026-03-11_03
+
+**[feature] TanStack Query + Zustand migration — Words screen reference implementation**
+- Installed `@tanstack/react-query@^5` and `zustand@^5` dependencies.
+- Added `QueryClientProvider` + `AppState` focus manager to `app/_layout.tsx`.
+- Created service layer: `src/services/categoryService.ts`, `wordService.ts`, `variantService.ts`, `settingsService.ts`, `dashboardService.ts` — thin wrappers over `database.ts`.
+- Created Zustand stores: `src/stores/settingsStore.ts` (child profile, locale, onboarding) and `src/stores/authStore.ts` (Google auth state).
+- Created TanStack Query hooks: `src/hooks/useCategories.ts`, `useWords.ts`, `useVariants.ts`, `useDashboard.ts`, `useSettings.ts` with full CRUD mutation + cache invalidation.
+- Created `src/hooks/queryKeys.ts` — centralized query/invalidation key registry.
+- Refactored `app/(tabs)/words.tsx` to use `useWords()` hook — pure UI screen with no DB imports.
+- Refactored `src/components/AddWordModal.tsx` to use mutation hooks + `useCategories()` / `useVariantsByWord()`. Split init `useEffect` from category-scroll `useEffect` — fixes form-reset bug when TanStack Query loads categories after mount.
+- Created `__tests__/helpers/renderWithProviders.tsx` — `QueryClientProvider` + `I18nProvider` wrapper for all tests.
+- Updated `__tests__/screens/words.test.tsx` and `__tests__/integration/AddWordModal.test.tsx` to use `renderWithProviders`.
+- Created `ADR-0001-tanstack-query-sqlite.md` documenting the architecture decision.
+- Updated `jest.config.js`: `testPathIgnorePatterns` for `__tests__/helpers/`, `maxWorkers: 2`.
+
+**[fix] AddWordModal `useEffect` — categories dep causing form state reset**
+- Extracted category carousel scroll logic into a dedicated `useEffect([visible, editWord?.category_id, categories])` so that TanStack Query loading categories no longer triggers `setWord('')` and `setDuplicate(null)`, fixing duplicate-detection tests with `jest.useFakeTimers()`.
+
+---
+
+### 2026-03-11_02
+
+**[feature] /plan skill — design & architecture planning command**
+- Added `/plan` command to `.claude/commands/plan.md`, `.codex/commands/plan.md`, `.gemini/commands/plan.md`: step-by-step guide for producing design docs and ADRs before big or core changes.
+- Added `ADR-TEMPLATE.md` to `.agents/plan/architecture/` with full ADR format (context, options, decision, consequences, links).
+- Added `DESIGN-TEMPLATE.md` to `.agents/plan/design/` with structured design doc format (goals, component breakdown, data flow, acceptance criteria).
+- Updated `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` (rule 10) to require `/plan` before changes touching ≥ 5 files, a new dependency, a core module replacement, or ≥ 3 changelog categories.
+
+---
+
 ### 2026-03-11_01
 
 **[config] README updates — architecture notes + multi-agent workflow**

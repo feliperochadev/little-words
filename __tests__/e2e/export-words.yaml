@@ -10,45 +10,6 @@ name: "Export - Import sample CSV, export, save to device, verify exported file"
     timeout: 5000
 
 # ============================
-# IMPORT SAMPLE CSV
-# (ensures words are in DB before exporting; safe to re-run — duplicates are skipped)
-# ============================
-
-- tapOn: "Settings"
-
-- scrollUntilVisible:
-    element:
-      id: "settings-import-title"
-    direction: DOWN
-- tapOn:
-    id: "settings-import-btn"
-- assertVisible:
-    id: "modal-title-import"
-- tapOn:
-    id: "import-tab-csv"
-- tapOn:
-    id: "import-csv-pick-btn"
-- tapOn: "Show roots"
-- tapOn: "Downloads"
-- tapOn: "sample-import.csv"
-
-- scrollUntilVisible:
-    element:
-      id: "import-preview-word-cherry"
-    direction: DOWN
-- assertVisible:
-    id: "import-preview-word-cherry"
-
-- scrollUntilVisible:
-    element:
-      id: "import-submit-btn"
-    direction: DOWN
-- tapOn:
-    id: "import-submit-btn"
-- assertVisible: "Import complete"
-- tapOn: "OK"
-
-# ============================
 # EXPORT - SHARE CSV
 # ============================
 

@@ -5,10 +5,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
-import { addVariant, updateVariant, deleteVariant, findVariantByName, getWords, Variant, Word } from '../database/database';
+import { findVariantByName, Variant, Word } from '../database/database';
+import { useWords } from '../hooks/useWords';
+import { useAddVariant, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+
+const EMPTY_WORDS: Word[] = [];
 
 interface Props {
   visible: boolean;
@@ -48,13 +52,17 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
     },
   })).current;
 
+  const { data: words = EMPTY_WORDS } = useWords();
+  const addVariantMutation    = useAddVariant();
+  const updateVariantMutation = useUpdateVariant();
+  const deleteVariantMutation = useDeleteVariant();
+
   const [variant, setVariant]     = useState('');
   const [dateAdded, setDateAdded] = useState(today);
   const [notes, setNotes]         = useState('');
   const [loading, setLoading]     = useState(false);
   const [duplicate, setDuplicate] = useState<Variant | null>(null);
 
-  const [allWords, setAllWords]   = useState<Word[]>([]);
   const [wordSearch, setWordSearch] = useState('');
   const [chosenWord, setChosenWord] = useState<Word | null>(null);
 
@@ -84,7 +92,6 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
     setDuplicate(null);
     if (showSearch) {
       setChosenWord(null); setWordSearch('');
-      getWords().then(setAllWords);
     }
   }, [visible, editVariant, word, today, showSearch]);
 
@@ -95,8 +102,8 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
   }, [variant, editVariant, effectiveWord]);
 
   const filtered = wordSearch.trim()
-    ? allWords.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
-    : allWords;
+    ? words.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
+    : words;
 
   const handleDelete = () => {
     if (!editVariant) return;
@@ -106,7 +113,7 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.remove'), style: 'destructive', onPress: async () => {
-          await deleteVariant(editVariant.id);
+          await deleteVariantMutation.mutateAsync({ id: editVariant.id });
           onClose();
           onDeleted?.();
         }},
@@ -121,9 +128,9 @@ export const AddVariantModal: React.FC<Props> = ({ visible, onClose, onSave, onD
     setLoading(true);
     try {
       if (editVariant) {
-        await updateVariant(editVariant.id, variant.trim(), dateAdded, notes);
+        await updateVariantMutation.mutateAsync({ id: editVariant.id, variant: variant.trim(), dateAdded, notes });
       } else {
-        await addVariant(effectiveWord!.id, variant.trim(), dateAdded, notes);
+        await addVariantMutation.mutateAsync({ wordId: effectiveWord!.id, variant: variant.trim(), dateAdded, notes });
       }
       onSave(); onClose();
     } finally {

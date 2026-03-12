@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
 import { AddCategoryModal } from '../../src/components/AddCategoryModal';
 import * as database from '../../src/database/database';
+import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
@@ -12,6 +12,7 @@ jest.mock('../../src/database/database', () => ({
   addCategory: jest.fn().mockResolvedValue(1),
   updateCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
   getSetting: jest.fn().mockResolvedValue(null),
@@ -21,10 +22,8 @@ jest.mock('../../src/database/database', () => ({
 const editCat = { id: 1, name: 'Test', color: '#FF6B9D', emoji: '🐾' };
 
 function renderModal(props: Partial<React.ComponentProps<typeof AddCategoryModal>> = {}) {
-  return render(
-    <I18nProvider>
-      <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
-    </I18nProvider>
+  return renderWithProviders(
+    <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
   );
 }
 
@@ -43,16 +42,12 @@ describe('AddCategoryModal', () => {
 
   it('renders correctly after reopening', async () => {
     const onClose = jest.fn();
-    const view = render(
-      <I18nProvider>
-        <AddCategoryModal visible={false} onClose={onClose} onSave={jest.fn()} />
-      </I18nProvider>
+    const view = renderWithProviders(
+      <AddCategoryModal visible={false} onClose={onClose} onSave={jest.fn()} />
     );
 
     view.rerender(
-      <I18nProvider>
-        <AddCategoryModal visible={true} onClose={onClose} onSave={jest.fn()} />
-      </I18nProvider>
+      <AddCategoryModal visible={true} onClose={onClose} onSave={jest.fn()} />
     );
 
     expect(await view.findByText(/New Category/)).toBeTruthy();
@@ -102,8 +97,7 @@ describe('AddCategoryModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.unlinkWordsFromCategory).toHaveBeenCalledWith(1);
-      expect(database.deleteCategory).toHaveBeenCalledWith(1);
+      expect(database.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
       expect(onDeleted).toHaveBeenCalled();
     });
   });
@@ -144,7 +138,7 @@ describe('AddCategoryModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.deleteCategory).toHaveBeenCalledWith(1);
+      expect(database.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
       expect(onClose).toHaveBeenCalled();
     });
   });
@@ -164,6 +158,8 @@ describe('AddCategoryModal', () => {
   it('handleDelete shows word count message when category has words', async () => {
     (database.getWordCountByCategory as jest.Mock).mockResolvedValue(5);
     const { findByText } = renderModal({ editCategory: editCat });
+    // Wait for the word count query to resolve before pressing delete
+    await waitFor(() => expect(database.getWordCountByCategory).toHaveBeenCalledWith(1));
     fireEvent.press(await findByText(/Remove/));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalled();
@@ -191,10 +187,8 @@ describe('AddCategoryModal — panResponder gesture handlers', () => {
 
   async function renderWithPan(props: Record<string, any> = {}) {
     const { AddCategoryModal } = require('../../src/components/AddCategoryModal');
-    const result = render(
-      <I18nProvider>
-        <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
-      </I18nProvider>
+    const result = renderWithProviders(
+      <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} {...props} />
     );
     await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
     return result;

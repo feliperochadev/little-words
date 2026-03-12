@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSetting, clearAllData, getCategories, Category } from '../../src/database/database';
+import { getSetting, clearAllData } from '../../src/database/database';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
@@ -18,6 +18,8 @@ import Constants from 'expo-constants';
 import { SvgXml } from 'react-native-svg';
 import { ImportModal } from '../../src/components/ImportModal';
 import { useI18n, LANGUAGES, type Locale } from '../../src/i18n/i18n';
+import { useCategories } from '../../src/hooks/useCategories';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
   <path fill="#4285f4" d="M29.5,21l-3.1708,5.5489A3.07,3.07,0,0,1,23.6459,28H8.3541a3.07,3.07,0,0,1-2.6833-1.4511L4.3687,24.27,9.7578,21Z"/>
@@ -35,12 +37,12 @@ export default function SettingsScreen() {
   const categoryResolver = buildCategoryResolver(t);
   const csvHeader = buildCSVHeader(t);
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { data: categories = [] } = useCategories();
+  const { name: childName, sex: childSex } = useSettingsStore();
+
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  const [childName, setChildName] = useState('');
-  const [childSex, setChildSex] = useState<'boy' | 'girl' | null>(null);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -50,21 +52,19 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const connected = await isGoogleConnected();
     setGoogleConnected(connected);
     if (connected) {
       setGoogleEmail(await getGoogleUserEmail());
       setLastSync(await getSetting('google_last_sync'));
+    } else {
+      setGoogleEmail(null);
+      setLastSync(null);
     }
-    const name = await getSetting('child_name');
-    const sex = await getSetting('child_sex');
-    if (name) setChildName(name);
-    if (sex) setChildSex(sex as 'boy' | 'girl');
-    setCategories(await getCategories());
-  };
+  }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleShare = async () => {
     setExporting(true);
@@ -222,7 +222,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-                {/* Categories */}
+        {/* Categories */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle} testID="settings-categories-title">🏷️ {t('settings.categories')}</Text>
           <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
@@ -363,8 +363,8 @@ export default function SettingsScreen() {
         <AddCategoryModal
           visible={showAddCategory || !!editCategory}
           onClose={() => { setShowAddCategory(false); setEditCategory(null); }}
-          onSave={() => { load(); setEditCategory(null); }}
-          onDeleted={() => { load(); setEditCategory(null); }}
+          onSave={() => setEditCategory(null)}
+          onDeleted={() => setEditCategory(null)}
           editCategory={editCategory}
         />
       </ScrollView>

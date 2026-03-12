@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
 import type { Word, Variant } from '../../src/database/database';
 import * as database from '../../src/database/database';
+import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
@@ -31,10 +31,8 @@ const mockVariant: Variant = {
 };
 
 function renderModal(props: Partial<React.ComponentProps<typeof AddVariantModal>> = {}) {
-  return render(
-    <I18nProvider>
-      <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} {...props} />
-    </I18nProvider>
+  return renderWithProviders(
+    <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} {...props} />
   );
 }
 
@@ -56,16 +54,12 @@ describe('AddVariantModal', () => {
 
   it('renders correctly after reopening', async () => {
     const onClose = jest.fn();
-    const view = render(
-      <I18nProvider>
-        <AddVariantModal visible={false} onClose={onClose} onSave={jest.fn()} word={mockWord} />
-      </I18nProvider>
+    const view = renderWithProviders(
+      <AddVariantModal visible={false} onClose={onClose} onSave={jest.fn()} word={mockWord} />
     );
 
     view.rerender(
-      <I18nProvider>
-        <AddVariantModal visible={true} onClose={onClose} onSave={jest.fn()} word={mockWord} />
-      </I18nProvider>
+      <AddVariantModal visible={true} onClose={onClose} onSave={jest.fn()} word={mockWord} />
     );
 
     expect(await view.findByText(/New Variant/)).toBeTruthy();
@@ -202,20 +196,14 @@ describe('AddVariantModal', () => {
 
   it('clears duplicate state when modal reopens', async () => {
     (database.findVariantByName as jest.Mock).mockResolvedValue(null);
-    const view = render(
-      <I18nProvider>
-        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
-      </I18nProvider>
+    const view = renderWithProviders(
+      <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
     );
     view.rerender(
-      <I18nProvider>
-        <AddVariantModal visible={false} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
-      </I18nProvider>
+      <AddVariantModal visible={false} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
     );
     view.rerender(
-      <I18nProvider>
-        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
-      </I18nProvider>
+      <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
     );
     expect(await view.findByText(/New Variant/)).toBeTruthy();
   });
@@ -253,10 +241,8 @@ describe('AddVariantModal — panResponder gesture handlers', () => {
 
   async function renderWithPan(props: Record<string, any> = {}) {
     const { AddVariantModal } = require('../../src/components/AddVariantModal');
-    const result = render(
-      <I18nProvider>
-        <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} {...props} />
-      </I18nProvider>
+    const result = renderWithProviders(
+      <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} {...props} />
     );
     await waitFor(() => { expect(capturedConfig).not.toBeNull(); });
     return result;

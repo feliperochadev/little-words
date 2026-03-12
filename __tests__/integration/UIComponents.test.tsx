@@ -171,5 +171,13 @@ describe('UIComponents', () => {
       );
       expect(getByText('N/A')).toBeTruthy();
     });
+
+    it('forwards testID to value Text', () => {
+      const { getByTestId } = render(
+        <StatCard emoji="📝" value={7} label="Words" color="#D2694B" testID="stat-total-words" />
+      );
+      const valueEl = getByTestId('stat-total-words');
+      expect(valueEl.props.children).toBe(7);
+    });
   });
 });

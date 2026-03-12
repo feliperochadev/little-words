@@ -24,6 +24,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
 
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+
 ### Rules
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions (helpers, utils, parsers) and integration tests for components. Tests must cover at least of the changed code: 99% in lines and 95% in funcs, branch and stmts — every branch, edge case, and error path. Place them in the matching subdirectory under `__tests__/` (`unit/`, `integration/`, or `screens/`).
@@ -73,7 +75,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
-10. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
+   - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
+   - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
+   - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
+   - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
+   - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+
+11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
 ## Commands
 
@@ -166,10 +176,41 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 ### Navigation (expo-router file-based)
 
-- `app/index.tsx` — Splash/entry: initializes SQLite DB, checks onboarding flag, then routes to `/(tabs)/home` or `/onboarding`. Also triggers Google Drive sync on startup.
-- `app/_layout.tsx` — Root layout: wraps everything in `<I18nProvider>`, calls `configureGoogleSignIn()`.
+- `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates Zustand stores (`useSettingsStore`, `useAuthStore`), then routes to `/(tabs)/home` or `/onboarding`. Also triggers Google Drive sync on startup.
+- `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>`, `<I18nProvider>`, calls `configureGoogleSignIn()`.
 - `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export, Google Drive).
-- `app/onboarding.tsx` — First-run flow; sets `onboarding_done` setting when complete.
+- `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
+
+### State Management
+
+The app uses a three-tier state strategy:
+
+| Category | Tool | Examples |
+|---|---|---|
+| Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard stats |
+| Global client state | **Zustand v5** | child profile, Google auth, onboarding flag |
+| Local UI state | **useState** | modals, form inputs, sort order |
+
+**Service layer** (`src/services/`): thin wrappers over `database.ts` that provide a clean import boundary for hooks.
+
+**Hooks** (`src/hooks/`):
+- `useCategories` / `useAddCategory` / `useUpdateCategory` / `useDeleteCategory`
+- `useWords(search?)` / `useAddWord` / `useUpdateWord` / `useDeleteWord`
+- `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
+- `useDashboardStats()` — includes `useFocusEffect` refetch
+- `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
+
+**Stores** (`src/stores/`):
+- `useSettingsStore` — `name`, `sex`, `birth`, `isOnboardingDone`; `hydrate()`, `setProfile()`, `setOnboardingDone()`
+- `useAuthStore` — `isConnected`, `email`, `lastSync`; `hydrate()`, `setConnected()`, `setLastSync()`, `clear()`
+
+Both stores call `hydrate()` during app startup in `app/index.tsx`.
+
+**Test helper**: `__tests__/helpers/renderWithProviders.tsx` — wraps components in `QueryClientProvider` + `I18nProvider` for all tests. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
+
+**IMPORTANT — stable empty array defaults**: When destructuring TQ data with a fallback array (`= []`), always use a **module-level constant** (e.g. `const EMPTY_ITEMS: Item[] = []`) instead of an inline `[]`. Inline `[]` creates a new reference on every render, causing infinite loops when used in `useEffect` deps.
+
+**IMPORTANT — `useEffect` deps and TQ data**: Never include TanStack Query data arrays in the deps of a `useEffect` that also resets form state. If the same effect both resets UI and uses TQ data for UX (e.g. scroll position), split them into two separate effects.
 
 ### Data Layer (`src/database/database.ts`)
 
@@ -197,6 +238,19 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 ## Changelog
 
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
+
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain. Standards cover TypeScript patterns, component design, state management, hooks, testing, and styling/naming conventions.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |
 
 ## Additional Documentation
 

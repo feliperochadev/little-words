@@ -29,3 +29,169 @@ name: "Settings - Delete all data and re-onboard"
 - extendedWaitUntil:
     visible: "Home"
     timeout: 5000
+
+# ============================
+# IMPORT SAMPLE DATA
+# Imports sample-import.csv with 5 words:
+#   cherry      — no category, no date (→ today)
+#   mango       — Food, no date (→ today)
+#   grape       — Food, 01/01/2026
+#   kiwi        — Food, 02/03/2026, variant ki-wi
+#   blueberry   — no category, 10/03/2025, variant blue-berry
+# ============================
+
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      id: "settings-import-title"
+    direction: DOWN
+- tapOn:
+    id: "settings-import-btn"
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "import-tab-csv"
+- tapOn:
+    id: "import-csv-pick-btn"
+
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+
+- extendedWaitUntil:
+    visible: "Downloads"
+    timeout: 3500
+- tapOn: "Downloads"
+- tapOn: "sample-import.csv"
+- waitForAnimationToEnd
+
+# Verify import preview loaded
+- scrollUntilVisible:
+    element:
+      id: "import-preview-word-cherry"
+    direction: DOWN
+- assertVisible:
+    id: "import-preview-word-cherry"
+
+- scrollUntilVisible:
+    element:
+      id: "import-submit-btn"
+    direction: DOWN
+- tapOn:
+    id: "import-submit-btn"
+
+- assertVisible: "Import complete"
+- tapOn: "OK"
+- waitForAnimationToEnd
+
+# ============================
+# ADD ONE MORE WORD VIA WORDS SCREEN
+# Adding "star" manually guarantees it has the highest created_at,
+# so it will always appear at position 0 in recentWords (ORDER BY created_at DESC).
+# ============================
+
+- tapOn: "Words"
+- waitForAnimationToEnd
+- tapOn: "+ New"
+- waitForAnimationToEnd
+- tapOn:
+    id: "word-input"
+- inputText: "star"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Add"
+    direction: DOWN
+- tapOn: "Add"
+- waitForAnimationToEnd
+
+# ============================
+# HOME SCREEN DASHBOARD VERIFICATION
+#
+# Expected state (test date: 2026-03-11):
+#   Total words  : 6  (cherry, mango, grape, kiwi, blueberry + star)
+#   Total variants: 2  (ki-wi, blue-berry)
+#   Words today  : 3  (cherry + mango + star — no date → assigned today 2026-03-11)
+#   Words this week: 3 (cherry + mango + star; kiwi on 2026-03-02 is before 7-day cutoff 2026-03-04)
+#   Words this month: 4 (cherry + mango + kiwi + star; all in March 2026)
+#
+#   Monthly bars (showYear=true — data spans 2025 and 2026):
+#     2025-03 "Mar '25" → 1  (blueberry)
+#     2026-01 "Jan '26" → 1  (grape)
+#     2026-03 "Mar '26" → 4  (cherry, mango, kiwi, star)
+#
+#   By category (count > 0): Food → 3 (mango, grape, kiwi)
+#
+#   Recent words (created_at DESC): star is guaranteed pos 0 (added via UI after bulk import)
+# ============================
+
+- tapOn: "🏠"
+- waitForAnimationToEnd
+
+# --- Top stats ---
+- extendedWaitUntil:
+    visible:
+      id: "stat-total-words"
+      text: "6"
+    timeout: 3000
+- assertVisible:
+    id: "stat-total-variants"
+    text: "2"
+- assertVisible:
+    id: "stat-words-today"
+    text: "3"
+- assertVisible:
+    id: "stat-words-week"
+    text: "3"
+- assertVisible:
+    id: "stat-words-month"
+    text: "4"
+
+# --- Monthly progress bars ---
+# 3 bars: Mar '25 (1), Jan '26 (1), Mar '26 (4)
+- scrollUntilVisible:
+    element:
+      id: "bar-value-2025-03"
+    direction: DOWN
+    timeout: 3000
+- assertVisible:
+    id: "bar-value-2025-03"
+    text: "1"
+- assertVisible:
+    id: "bar-label-2025-03"
+    text: "Mar '25"
+- assertVisible:
+    id: "bar-value-2026-01"
+    text: "1"
+- assertVisible:
+    id: "bar-label-2026-01"
+    text: "Jan '26"
+- assertVisible:
+    id: "bar-value-2026-03"
+    text: "4"
+- assertVisible:
+    id: "bar-label-2026-03"
+    text: "Mar '26"
+
+# --- By category: only Food has words ---
+- scrollUntilVisible:
+    element:
+      id: "cat-count-food"
+    direction: DOWN
+    timeout: 3000
+- assertVisible:
+    id: "cat-count-food"
+    text: "3"
+
+# --- Recent words: star is at position 0 (added via UI after bulk import) ---
+- scrollUntilVisible:
+    element:
+      id: "recent-words-section"
+    direction: DOWN
+    timeout: 8000
+- assertVisible:
+    id: "recent-word-0-star"
+
+
