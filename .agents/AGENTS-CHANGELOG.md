@@ -2,6 +2,23 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_03
+
+**[config] Remove redundant sonarcloud.yml — Automatic Analysis already gates PRs**
+- `.github/workflows/sonarcloud.yml`: deleted. SonarCloud's built-in Automatic Analysis already runs on every PR and push, making a separate CI workflow redundant and causing the "You are running CI analysis while Automatic Analysis is enabled" conflict error.
+
+---
+
+### 2026-03-12_02
+
+**[fix] Downgrade react/react-test-renderer to 19.2.3 and eslint to ^9.39.4 after dependabot bumps**
+- `package.json`: `react` 19.2.4 → 19.2.3 and `react-test-renderer` 19.2.4 → 19.2.3 — must match `react-native-renderer` bundled inside `react-native` 0.84.1 to prevent the "Incompatible React versions" test error.
+- `package.json`: `eslint` ^10.0.3 → ^9.39.4 — ESLint 10 removed `contextOrFilename.getFilename()` API used by `eslint-config-expo`'s `eslint-plugin-react`, breaking lint entirely.
+- `package-lock.json`: updated to reflect all three version changes.
+- All 645 tests pass; 0 lint errors; 0 TS errors.
+
+---
+
 ### 2026-03-12_01
 
 **[fix] App icon speech bubble misaligned and tail distorted — rescaled, centred, proper tail**
