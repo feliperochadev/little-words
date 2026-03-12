@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_01
+
+**[fix] App icon speech bubble misaligned and tail distorted — rescaled, centred, proper tail**
+- `assets/icon_1024.png` and `assets/icon.png`: regenerated. Final: bubble body 536×400 px (ratio 1.34) at (244,270)→(780,670); sharp triangular tail at [(264,630),(354,670),(229,755)], tip 269 px from bottom. Visual centre y=512.5 (canvas 512). Top padding 270 px. Colors preserved: #FAF4EC background, #F4C3B2 bubble, #D26948 text, Georgia serif 200 pt. Backups kept as `icon_1024_backup.png` / `icon_backup.png`.
+
 ---
 
 ### 2026-03-11_14
@@ -75,7 +80,6 @@ Entries are added after every approved change. Most recent first.
 
 ---
 
-### 2026-03-11_08
 
 **[feature] Dashboard testIDs + E2E home screen verification in re-onboard.yaml**
 - `src/components/UIComponents.tsx`: added optional `testID` prop to `StatCard`; forwarded to the value `<Text>` element.
