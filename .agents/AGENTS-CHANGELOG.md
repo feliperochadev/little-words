@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_13
+
+**[fix] Fix 16 new SonarCloud issues introduced by PR #21 (S905, S7781, S1128)**
+- `jest.setup.js`: replaced 7 bare `globalThis.X;` expression-statements with a single `[...].forEach(Boolean)` call to satisfy S905 (no-unused-expressions) while still triggering all lazy Expo property getters.
+- `src/database/database.ts` L367: `replaceAll(/"/g, '""')` → `replaceAll('"', '""')` (S7781: use string literal for single-char pattern).
+- `src/utils/importHelpers.ts` L67, L77-83: `replaceAll(/"/g, '')` → `replaceAll('"', '')` (S7781, 5 occurrences).
+- `__tests__/screens/onboarding.test.tsx` L7: removed unused `useRouter` import (S1128).
+- All 37 test suites, 645 tests pass.
+
+---
+
 ### 2026-03-12_12
 
 **[fix] Fix all SonarCloud issues (S7772, S7764, S3735, S7781, S7773, S1128, S1854, S7735, S3358, S6582, S4138, S6594, S7780, S7763, S6759, S6478, S4325, S6754, S6481, S2871, S7721, S6774, S3776, S6770)**

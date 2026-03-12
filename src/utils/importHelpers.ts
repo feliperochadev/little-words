@@ -64,7 +64,7 @@ export function parseCSV(text: string): ParsedRow[] {
 
   let wordIdx = 0, catIdx = 1, dateIdx = 2, variantIdx = 3;
   if (hasHeader) {
-    const headers = lines[0].split(delim).map(h => h.replaceAll(/"/g, '').toLowerCase().trim());
+    const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
     const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
     if (wi >= 0) wordIdx = wi;
     catIdx     = headers.findIndex(h => h.includes('categor'));
@@ -74,13 +74,13 @@ export function parseCSV(text: string): ParsedRow[] {
 
   for (const line of dataLines) {
     const parts = splitCSVLine(line, delim);
-    const word = parts[wordIdx]?.replaceAll(/"/g, '').trim();
+    const word = parts[wordIdx]?.replaceAll('"', '').trim();
     if (!word) continue;
     rows.push({
       word,
-      category: catIdx >= 0 ? parts[catIdx]?.replaceAll(/"/g, '').trim() || undefined : undefined,
-      date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll(/"/g, '').trim()) : undefined,
-      variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll(/"/g, '').trim() || undefined : undefined,
+      category: catIdx >= 0 ? parts[catIdx]?.replaceAll('"', '').trim() || undefined : undefined,
+      date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll('"', '').trim()) : undefined,
+      variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll('"', '').trim() || undefined : undefined,
     });
   }
   return rows;
