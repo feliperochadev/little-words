@@ -2,6 +2,19 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_10
+
+**[security] Sonar security hotspots remediation (workflow + parser hardening)**
+- Hardened `.github/workflows/security.yml` by moving permissions to job scope and pinning third-party actions to full commit SHAs (`actions/checkout`, `semgrep/semgrep-action`, `aquasecurity/trivy-action`).
+- Reworked `scripts/agent/review-loop.ts` parsing to avoid regex-based metadata extraction and added fixed system `PATH` for `execSync` git commands.
+- Reworked `scripts/agent/task-persistence.ts` parsing/update logic to avoid regex-based extraction and replacement paths flagged by Sonar.
+- Replaced `Math.random()` key generation in `AddWordModal` variant rows with a deterministic ref-based key suffix.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
 ### 2026-03-12_09
 
 **[fix] Restore Android APK build compatibility for Expo SDK 55**

@@ -10,9 +10,9 @@
  *   - Clean up approved review files
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { execSync } from 'node:child_process';
 import { checkComplexity } from './complexity-check';
 import { loadAgentConfig } from './load-config';
 
@@ -36,6 +36,32 @@ export interface ReviewFile {
 }
 
 const REVIEWS_DIR = join(process.cwd(), '.agents', 'reviews');
+const FIXED_SYSTEM_PATH = '/usr/bin:/bin:/usr/sbin:/sbin';
+
+function readLineValue(content: string, key: string): string | undefined {
+  const prefix = `${key}:`;
+  for (const line of content.split('\n')) {
+    if (line.startsWith(prefix)) {
+      return line.slice(prefix.length).trim();
+    }
+  }
+  return undefined;
+}
+
+function readMarkdownList(content: string, title: string): string[] {
+  const header = `${title}:`;
+  const lines = content.split('\n');
+  const index = lines.findIndex((line) => line.trim() === header);
+  if (index < 0) return [];
+
+  const values: string[] = [];
+  for (let i = index + 1; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line.startsWith('- ')) break;
+    values.push(line.slice(2).trim());
+  }
+  return values;
+}
 
 export function getReviewsDir(): string {
   return REVIEWS_DIR;
@@ -49,7 +75,10 @@ export function buildTimestamp(existingCount: number): string {
 
 export function getCurrentBranch(): string {
   try {
-    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim();
+    return execSync('git rev-parse --abbrev-ref HEAD', {
+      encoding: 'utf-8',
+      env: { ...process.env, PATH: FIXED_SYSTEM_PATH },
+    }).trim();
   } catch {
     return 'unknown';
   }
@@ -57,7 +86,10 @@ export function getCurrentBranch(): string {
 
 export function getModifiedFiles(): string[] {
   try {
-    const output = execSync('git diff --name-only HEAD', { encoding: 'utf-8' });
+    const output = execSync('git diff --name-only HEAD', {
+      encoding: 'utf-8',
+      env: { ...process.env, PATH: FIXED_SYSTEM_PATH },
+    });
     return output.trim().split('\n').filter(Boolean);
   } catch {
     return [];
@@ -130,17 +162,14 @@ ${review.resolution || '(empty)'}
 }
 
 export function parseReviewFile(content: string): Partial<ReviewFile> {
-  const status = content.match(/^status:\s*(.+)$/m)?.[1]?.trim() as ReviewStatus | undefined;
-  const iterationStr = content.match(/^iteration:\s*(\d+)$/m)?.[1];
-  const maxIterationsStr = content.match(/^max_iterations:\s*(\d+)$/m)?.[1];
-  const branch = content.match(/^branch:\s*(.+)$/m)?.[1]?.trim() ?? 'unknown';
-  const targetAgent = content.match(/^target_agent:\s*(.+)$/m)?.[1]?.trim() ?? 'unknown';
-
-  const reviewersMatch = content.match(/^reviewers:\s*\n((?:- .+\n?)*)/m);
-  const reviewers = reviewersMatch ? reviewersMatch[1].split('\n').filter(l => l.startsWith('- ')).map(l => l.substring(2).trim()) : [];
-
-  const approvalsMatch = content.match(/^approvals:\s*\n((?:- .+\n?)*)/m);
-  const approvals = approvalsMatch ? approvalsMatch[1].split('\n').filter(l => l.startsWith('- ')).map(l => l.substring(2).trim()) : [];
+  const parsedStatus = readLineValue(content, 'status');
+  const status = parsedStatus as ReviewStatus | undefined;
+  const iterationStr = readLineValue(content, 'iteration');
+  const maxIterationsStr = readLineValue(content, 'max_iterations');
+  const branch = readLineValue(content, 'branch') ?? 'unknown';
+  const targetAgent = readLineValue(content, 'target_agent') ?? 'unknown';
+  const reviewers = readMarkdownList(content, 'reviewers');
+  const approvals = readMarkdownList(content, 'approvals');
 
   return {
     status,

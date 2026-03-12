@@ -11,8 +11,8 @@
  *   and resumes the work.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
@@ -99,10 +99,22 @@ ${checkList}
 }
 
 export function parseTaskFile(content: string): Partial<UnfinishedTask> {
-  const status = content.match(/^status:\s*(.+)$/m)?.[1]?.trim() as TaskStatus | undefined;
-  const createdBy = content.match(/^created_by:\s*(.+)$/m)?.[1]?.trim() ?? 'unknown';
-  const createdAt = content.match(/^created_at:\s*(.+)$/m)?.[1]?.trim() ?? '';
-  const reason = content.match(/^reason:\s*(.+)$/m)?.[1]?.trim() ?? 'unknown';
+  let status: TaskStatus | undefined;
+  let createdBy = 'unknown';
+  let createdAt = '';
+  let reason = 'unknown';
+
+  for (const line of content.split('\n')) {
+    if (line.startsWith('status:')) {
+      status = line.slice('status:'.length).trim() as TaskStatus;
+    } else if (line.startsWith('created_by:')) {
+      createdBy = line.slice('created_by:'.length).trim() || 'unknown';
+    } else if (line.startsWith('created_at:')) {
+      createdAt = line.slice('created_at:'.length).trim();
+    } else if (line.startsWith('reason:')) {
+      reason = line.slice('reason:'.length).trim() || 'unknown';
+    }
+  }
 
   return { status, createdBy, createdAt, reason };
 }
@@ -144,7 +156,10 @@ export function listPendingTasks(tasksDir?: string): { filepath: string; task: P
 
 export function markTaskInProgress(filepath: string): void {
   const content = readFileSync(filepath, 'utf-8');
-  const updated = content.replace(/^status:\s*.+$/m, 'status: in_progress');
+  const updated = content
+    .split('\n')
+    .map((line) => (line.startsWith('status:') ? 'status: in_progress' : line))
+    .join('\n');
   writeFileSync(filepath, updated, 'utf-8');
 }
 
