@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_03
+
+**[config] Remove redundant sonarcloud.yml — Automatic Analysis already gates PRs**
+- `.github/workflows/sonarcloud.yml`: deleted. SonarCloud's built-in Automatic Analysis already runs on every PR and push, making a separate CI workflow redundant and causing the "You are running CI analysis while Automatic Analysis is enabled" conflict error.
+
+---
+
 ### 2026-03-12_02
 
 **[fix] Downgrade react/react-test-renderer to 19.2.3 and eslint to ^9.39.4 after dependabot bumps**
