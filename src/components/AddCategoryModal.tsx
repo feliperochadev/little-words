@@ -24,9 +24,9 @@ interface AddCategoryModalProps {
   editCategory?: CategoryToEdit | null;
 }
 
-export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
+export function AddCategoryModal({
   visible, onClose, onSave, onDeleted, editCategory,
-}) => {
+}: AddCategoryModalProps) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -136,8 +136,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       }
       onSave(id);
       handleClose();
-    } catch (e: any) {
-      const msg = e?.message || '';
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
       Alert.alert(
         t('common.error'),
         msg.includes('UNIQUE') ? t('addCategory.errorDuplicate') : msg || t('addCategory.errorName')
@@ -233,7 +233,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       </View>
     </Modal>
   );
-};
+}
 
 const styles = StyleSheet.create({
   backdrop:         { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },

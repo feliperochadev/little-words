@@ -6,6 +6,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 
@@ -17,14 +20,14 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   icon?: string;
-  style?: any;
-  textStyle?: any;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   testID?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export function Button({
   title, onPress, variant = 'primary', loading, disabled, style, textStyle, testID
-}) => {
+}: ButtonProps) {
   const styles = getButtonStyles(variant);
   return (
     <TouchableOpacity
@@ -41,7 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
       )}
     </TouchableOpacity>
   );
-};
+}
 
 const getButtonStyles = (variant: string) => StyleSheet.create({
   button: {
@@ -74,12 +77,12 @@ const getButtonStyles = (variant: string) => StyleSheet.create({
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
   children: React.ReactNode;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   testID?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style, onPress, testID }) => {
+export function Card({ children, style, onPress, testID }: CardProps) {
   if (onPress) {
     return (
       <TouchableOpacity style={[cardStyles.card, style]} onPress={onPress} activeOpacity={0.9} testID={testID}>
@@ -88,7 +91,7 @@ export const Card: React.FC<CardProps> = ({ children, style, onPress, testID }) 
     );
   }
   return <View style={[cardStyles.card, style]} testID={testID}>{children}</View>;
-};
+}
 
 const cardStyles = StyleSheet.create({
   card: {
@@ -112,7 +115,8 @@ interface SearchBarProps {
   testID?: string;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, placeholder, testID }) => (
+export function SearchBar({ value, onChangeText, placeholder, testID }: SearchBarProps) {
+  return (
   <View style={searchStyles.container}>
     <Text style={searchStyles.icon}>🔍</Text>
     <TextInput
@@ -129,7 +133,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, place
       </TouchableOpacity>
     )}
   </View>
-);
+  );
+}
 
 const searchStyles = StyleSheet.create({
   container: {
@@ -160,12 +165,14 @@ interface CategoryBadgeProps {
   size?: 'small' | 'normal';
 }
 
-export const CategoryBadge: React.FC<CategoryBadgeProps> = ({ name, color, emoji, size = 'normal' }) => (
-  <View style={[badgeStyles.badge, { backgroundColor: color + '20', borderColor: color + '40' }, size === 'small' && badgeStyles.small]}>
-    <Text style={[badgeStyles.emoji, size === 'small' && { fontSize: 10 }]}>{emoji}</Text>
-    <Text style={[badgeStyles.text, { color }, size === 'small' && { fontSize: 10 }]}>{name}</Text>
-  </View>
-);
+export function CategoryBadge({ name, color, emoji, size = 'normal' }: CategoryBadgeProps) {
+  return (
+    <View style={[badgeStyles.badge, { backgroundColor: color + '20', borderColor: color + '40' }, size === 'small' && badgeStyles.small]}>
+      <Text style={[badgeStyles.emoji, size === 'small' && badgeStyles.smallEmoji]}>{emoji}</Text>
+      <Text style={[badgeStyles.text, { color }, size === 'small' && badgeStyles.smallText]}>{name}</Text>
+    </View>
+  );
+}
 
 const badgeStyles = StyleSheet.create({
   badge: {
@@ -179,7 +186,9 @@ const badgeStyles = StyleSheet.create({
   },
   small: { paddingHorizontal: 6, paddingVertical: 2 },
   emoji: { fontSize: 12, marginRight: 4 },
+  smallEmoji: { fontSize: 10 },
   text: { fontSize: 12, fontWeight: '600' },
+  smallText: { fontSize: 10 },
 });
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
@@ -190,22 +199,25 @@ interface EmptyStateProps {
   action?: { label: string; onPress: () => void };
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ emoji, title, subtitle, action }) => (
-  <View style={emptyStyles.container}>
-    <Text style={emptyStyles.emoji}>{emoji}</Text>
-    <Text style={emptyStyles.title}>{title}</Text>
-    {subtitle && <Text style={emptyStyles.subtitle}>{subtitle}</Text>}
-    {action && (
-      <Button title={action.label} onPress={action.onPress} style={{ marginTop: 16 }} />
-    )}
-  </View>
-);
+export function EmptyState({ emoji, title, subtitle, action }: EmptyStateProps) {
+  return (
+    <View style={emptyStyles.container}>
+      <Text style={emptyStyles.emoji}>{emoji}</Text>
+      <Text style={emptyStyles.title}>{title}</Text>
+      {subtitle && <Text style={emptyStyles.subtitle}>{subtitle}</Text>}
+      {action && (
+        <Button title={action.label} onPress={action.onPress} style={emptyStyles.actionButton} />
+      )}
+    </View>
+  );
+}
 
 const emptyStyles = StyleSheet.create({
   container: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
   emoji: { fontSize: 64, marginBottom: 16 },
   title: { fontSize: 20, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
+  actionButton: { marginTop: 16 },
 });
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
@@ -217,15 +229,17 @@ interface StatCardProps {
   testID?: string;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ emoji, value, label, color, testID }) => (
-  <View style={[statStyles.card, { borderColor: color + '30' }]}>
-    <View style={[statStyles.iconBg, { backgroundColor: color + '15' }]}>
-      <Text style={statStyles.emoji}>{emoji}</Text>
+export function StatCard({ emoji, value, label, color, testID }: StatCardProps) {
+  return (
+    <View style={[statStyles.card, { borderColor: color + '30' }]}>
+      <View style={[statStyles.iconBg, { backgroundColor: color + '15' }]}>
+        <Text style={statStyles.emoji}>{emoji}</Text>
+      </View>
+      <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
+      <Text style={statStyles.label}>{label}</Text>
     </View>
-    <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
-    <Text style={statStyles.label}>{label}</Text>
-  </View>
-);
+  );
+}
 
 const statStyles = StyleSheet.create({
   card: {
@@ -235,7 +249,7 @@ const statStyles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     borderWidth: 1.5,
-    shadowColor: '#000',
+    shadowColor: COLORS.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,

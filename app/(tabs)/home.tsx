@@ -30,7 +30,7 @@ export default function DashboardScreen() {
   };
 
   const emoji = sex === 'girl' ? '👧' : sex === 'boy' ? '👦' : '👶';
-  const accentColor = sex === 'girl' ? '#FF6B9D' : sex === 'boy' ? '#74B9FF' : COLORS.primary;
+  const accentColor = sex === 'girl' ? COLORS.profileGirl : sex === 'boy' ? COLORS.profileBoy : COLORS.primary;
   const ageText = birth ? getAgeText(birth, t) : null;
 
   return (
@@ -63,7 +63,7 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} testID="stat-words-today" />
           <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} testID="stat-words-week" />
-          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color="#6C5CE7" testID="stat-words-month" />
+          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color={COLORS.info} testID="stat-words-month" />
         </View>
 
         {/* Monthly progress */}
@@ -141,7 +141,7 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        <View style={{ height: 20 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -181,4 +181,5 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
   emptyText: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  bottomSpacer: { height: 20 },
 });

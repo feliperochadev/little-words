@@ -2,6 +2,42 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_05
+
+**[config] SonarCloud — hardcode project key and organization**
+- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
+- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
+- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)
+
+---
+
+### 2026-03-12_04
+
+**[refactor] Standards compliance migration across components, hooks, and typing**
+- Removed `React.FC` usage from shared components and modals (`UIComponents`, `AddWordModal`, `AddVariantModal`, `AddCategoryModal`, `ManageCategoryModal`, `DatePickerField`, `ImportModal`) in favor of typed function component signatures.
+- Replaced broad `any` patterns in production code with narrowed `unknown` handling and explicit row interfaces in `src/database/database.ts`, `src/utils/googleDrive.ts`, and `src/utils/csvExport.ts`.
+- Eliminated unsafe non-null assertions in touched flows (`AddVariantModal`, `WordsScreen`, onboarding submit path) with explicit guards and narrowed local values.
+- Added `useGoogleDriveStatus` hook and moved settings-screen focus refresh behavior into the hook to align focus/refetch ownership with hook standards.
+
+**[fix] Styling and color constant compliance**
+- Removed inline JSX style objects in touched screens/components (`home`, `settings`, onboarding, `ImportModal`, `UIComponents`) by moving styles into StyleSheet entries.
+- Replaced hardcoded color literals in app/component logic with centralized theme constants (`COLORS.profileGirl`, `COLORS.profileBoy`, `COLORS.info`, etc.) and updated dependent styles accordingly.
+- Kept unavoidable brand-asset embedded SVG colors (Google Drive logo paths) as-is.
+
+**[test] Selector and interaction alignment updates**
+- Updated `__tests__/integration/UIComponents.test.tsx` to use `userEvent` for interactive flows and stronger testID-driven presses where available.
+- Added onboarding-specific `testID` targets in `app/onboarding.tsx` for sex/date actions and updated `__tests__/e2e/onboarding.yaml` to use `id:` selectors for those interactions/assertions.
+
+**[config] Planning artifacts for migration**
+- Added design and audit artifacts for this migration:
+  - `.agents/plan/design/2026-03-12_01-standards-compliance-migration.md`
+  - `.agents/plan/research-documents/2026-03-12_01-standards-compliance-migration/compliance-audit.md`
+
+**Validation**
+- Ran `npm run ci` successfully after migration changes.
+
+---
+
 ### 2026-03-12_03
 
 **[config] Remove redundant sonarcloud.yml — Automatic Analysis already gates PRs**
@@ -692,11 +728,3 @@ Entries are added after every approved change. Most recent first.
 - Added E2E testing conventions (testID rules, scrolling, text input pitfalls)
 - Added Rules section (write tests, run CI, update CLAUDE.md, maintain changelog)
 - Updated Project Overview with full stack versions and feature list
-
-
-### 2026-03-12_1
-
-**[config] SonarCloud — hardcode project key and organization**
-- Added `sonar.projectKey=feliperochadev_little-words` and `sonar.organization=feliperochadev` to `sonar-project.properties` so no GitHub repository variables are required
-- Simplified `sonarcloud.yml` to remove `args` block referencing `vars.SONAR_PROJECT_KEY` and `vars.SONAR_ORG`; SonarCloud action now reads these values from `sonar-project.properties` automatically
-- `SONAR_TOKEN` remains as `secrets.SONAR_TOKEN` (sensitive, must stay a secret in GitHub settings)

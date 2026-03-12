@@ -36,7 +36,7 @@ interface VariantEntry {
   text: string;
 }
 
-export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }) => {
+export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }: AddWordModalProps) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -478,7 +478,7 @@ export const AddWordModal: React.FC<AddWordModalProps> = ({ visible, onClose, on
 
     </>
   );
-};
+}
 
 const s = StyleSheet.create({
   backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -493,11 +493,11 @@ const s = StyleSheet.create({
   deleteBtnText:  { fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:          { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:          { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
-  inputDup:       { borderColor: '#E17055', backgroundColor: '#FFF5F4' },
-  dupCard:        { backgroundColor: '#FFF5F4', borderRadius: 14, borderWidth: 1.5, borderColor: '#E17055', padding: 14, marginTop: -8, marginBottom: 16 },
-  dupTitle:       { fontSize: 13, fontWeight: '700', color: '#E17055' },
+  inputDup:       { borderColor: COLORS.warning, backgroundColor: COLORS.warning + '22' },
+  dupCard:        { backgroundColor: COLORS.warning + '22', borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
+  dupTitle:       { fontSize: 13, fontWeight: '700', color: COLORS.warning },
   dupCardHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  dupEditHint:    { fontSize: 12, fontWeight: '600', color: '#E17055', opacity: 0.7 },
+  dupEditHint:    { fontSize: 12, fontWeight: '600', color: COLORS.warning, opacity: 0.7 },
   dupRecord:      { backgroundColor: COLORS.white, borderRadius: 10, padding: 12 },
   dupWord:        { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
   dupMeta:        { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },

@@ -41,6 +41,8 @@ interface ImportResult {
   errors: string[];
 }
 
+const DEFAULT_IMPORT_CATEGORY_COLOR = DEFAULT_CATEGORIES.find(({ key }) => key === 'others')?.color ?? COLORS.textLight;
+
 async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   const result: ImportResult = { wordsAdded: 0, variantsAdded: 0, skipped: [], errors: [] };
   const existingCats = await getCategories();
@@ -52,7 +54,7 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
     const normalized = labelToKey.get(deaccent(name)) ?? name;
     const key = deaccent(normalized);
     if (catMap.has(key)) return catMap.get(key)!;
-    const id = await addCategory(normalized, '#B2BEC3', '🏷️');
+    const id = await addCategory(normalized, DEFAULT_IMPORT_CATEGORY_COLOR, '🏷️');
     catMap.set(key, id);
     return id;
   };
@@ -81,14 +83,15 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
           result.variantsAdded++;
         }
       }
-    } catch (e: any) {
-      result.errors.push(`"${firstRow.word}": ${e?.message || 'error'}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'error';
+      result.errors.push(`"${firstRow.word}": ${message}`);
     }
   }
   return result;
 }
 
-export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onImported }) => {
+export function ImportModal({ visible, onClose, onImported }: ImportModalProps) {
   const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -154,8 +157,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
       setCsvFileName(file.name);
       setCsvContent(content);
       setPreview(parseCSV(content).slice(0, 5));
-    } catch (e: any) {
-      Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: e.message }));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('common.error');
+      Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: message }));
     }
   };
 
@@ -186,9 +190,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
       }
       if (result.errors.length > 0) lines.push(t('importModal.resultErrors', { count: result.errors.length }));
       Alert.alert(t('importModal.resultTitle'), lines.join('\n'));
-    } catch (e: any) {
+    } catch (e: unknown) {
       setLoading(false);
-      Alert.alert(t('common.error'), e.message);
+      const message = e instanceof Error ? e.message : t('common.error');
+      Alert.alert(t('common.error'), message);
     }
   };
 
@@ -301,13 +306,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onIm
               }
             </TouchableOpacity>
 
-            <View style={{ height: 20 }} />
+            <View style={styles.bottomSpacer} />
           </ScrollView>
         </Animated.View>
       </View>
     </Modal>
   );
-};
+}
 
 const styles = StyleSheet.create({
   backdrop:          { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -321,7 +326,7 @@ const styles = StyleSheet.create({
   closeText:         { fontSize: 18, color: COLORS.textLight },
   tabs:              { flexDirection: 'row', backgroundColor: COLORS.border, borderRadius: 12, padding: 3, marginBottom: 18 },
   tab:               { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  tabActive:         { backgroundColor: COLORS.white, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  tabActive:         { backgroundColor: COLORS.white, shadowColor: COLORS.text, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
   tabText:           { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   tabTextActive:     { color: COLORS.text, fontWeight: '700' },
   hint:              { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 12 },
@@ -343,4 +348,5 @@ const styles = StyleSheet.create({
   importBtn:         { backgroundColor: COLORS.primary, borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   importBtnDisabled: { backgroundColor: COLORS.primaryLight, shadowOpacity: 0, elevation: 0 },
   importBtnText:     { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+  bottomSpacer:      { height: 20 },
 });

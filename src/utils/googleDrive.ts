@@ -7,6 +7,23 @@ export const isNativeBuild = (): boolean => {
   return Constants.executionEnvironment !== 'storeClient';
 };
 
+const getErrorCode = (error: unknown): string | undefined => {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+};
+
 // ── Locale-aware Drive helpers ─────────────────────────────────────────────────
 
 export function buildDriveFolderName(t: (key: string) => string): string {
@@ -41,12 +58,13 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
     await setSetting('google_user_email', email);
     await setSetting('google_signed_in', '1');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { statusCodes } = require('@react-native-google-signin/google-signin');
-    if (error.code === statusCodes.SIGN_IN_CANCELLED) return { success: false, error: 'cancelled' };
-    if (error.code === statusCodes.IN_PROGRESS) return { success: false, error: 'in_progress' };
-    if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) return { success: false, error: 'Google Play Services nao disponivel.' };
-    return { success: false, error: error.message ?? 'Erro ao conectar.' };
+    const errorCode = getErrorCode(error);
+    if (errorCode === statusCodes.SIGN_IN_CANCELLED) return { success: false, error: 'cancelled' };
+    if (errorCode === statusCodes.IN_PROGRESS) return { success: false, error: 'in_progress' };
+    if (errorCode === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) return { success: false, error: 'Google Play Services nao disponivel.' };
+    return { success: false, error: getErrorMessage(error, 'Erro ao conectar.') };
   }
 };
 
@@ -148,8 +166,8 @@ const uploadToDrive = async (
     }
     const data = await response.json();
     return { fileId: data.id, success: true };
-  } catch (e: any) {
-    return { fileId: existingFileId ?? '', success: false, error: e.message };
+  } catch (error: unknown) {
+    return { fileId: existingFileId ?? '', success: false, error: getErrorMessage(error, 'Erro desconhecido') };
   }
 };
 
@@ -218,7 +236,7 @@ export const performSync = async (
     }
 
     return { success: false, error: result.error };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error, 'Erro desconhecido') };
   }
 };

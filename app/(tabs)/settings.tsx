@@ -1,17 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSetting, clearAllData } from '../../src/database/database';
+import { clearAllData } from '../../src/database/database';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import {
-  isGoogleConnected, signInWithGoogle, signOutGoogle,
-  performSync, getGoogleUserEmail,
+  signInWithGoogle, signOutGoogle, performSync,
 } from '../../src/utils/googleDrive';
 import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
@@ -20,6 +19,7 @@ import { ImportModal } from '../../src/components/ImportModal';
 import { useI18n, LANGUAGES, type Locale } from '../../src/i18n/i18n';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useGoogleDriveStatus } from '../../src/hooks/useGoogleDriveStatus';
 
 const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
   <path fill="#4285f4" d="M29.5,21l-3.1708,5.5489A3.07,3.07,0,0,1,23.6459,28H8.3541a3.07,3.07,0,0,1-2.6833-1.4511L4.3687,24.27,9.7578,21Z"/>
@@ -43,28 +43,17 @@ export default function SettingsScreen() {
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<string | null>(null);
+  const {
+    googleConnected,
+    googleEmail,
+    lastSync,
+    reloadGoogleState,
+  } = useGoogleDriveStatus();
   const [syncing, setSyncing] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
-
-  const load = useCallback(async () => {
-    const connected = await isGoogleConnected();
-    setGoogleConnected(connected);
-    if (connected) {
-      setGoogleEmail(await getGoogleUserEmail());
-      setLastSync(await getSetting('google_last_sync'));
-    } else {
-      setGoogleEmail(null);
-      setLastSync(null);
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleShare = async () => {
     setExporting(true);
@@ -89,13 +78,12 @@ export default function SettingsScreen() {
     const result = await performSync(t);
     setSyncing(false);
     if (result.success) {
-      setLastSync(result.lastSync || null);
+      await reloadGoogleState();
       Alert.alert(t('settings.syncSuccess'), t('settings.syncSuccessMsg'));
     } else if (result.error !== 'cancelled') {
       Alert.alert(t('common.error'), result.error || t('settings.errorSync'));
       if (result.error?.includes('expirada') || result.error?.includes('expired')) {
-        setGoogleConnected(false);
-        setGoogleEmail(null);
+        await reloadGoogleState();
       }
     }
   };
@@ -105,7 +93,7 @@ export default function SettingsScreen() {
     const result = await signInWithGoogle();
     setSigningIn(false);
     if (result.success) {
-      await load();
+      await reloadGoogleState();
       performSync(t).catch(console.error);
     } else if (result.error && result.error !== 'cancelled' && result.error !== 'in_progress') {
       Alert.alert(t('common.error'), result.error);
@@ -122,9 +110,7 @@ export default function SettingsScreen() {
           text: t('settings.disconnect'), style: 'destructive',
           onPress: async () => {
             await signOutGoogle();
-            setGoogleConnected(false);
-            setGoogleEmail(null);
-            setLastSync(null);
+            await reloadGoogleState();
           },
         },
       ]
@@ -172,7 +158,7 @@ export default function SettingsScreen() {
       : '—';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.pageTitle}>{t('settings.title')}</Text>
 
@@ -263,7 +249,7 @@ export default function SettingsScreen() {
               onPress={handleSaveToDevice}
               loading={saving}
               style={[styles.flexBtn, styles.exportBtn]}
-              textStyle={{ fontSize: 12, fontWeight: '700' }}
+              textStyle={styles.exportButtonText}
               testID="settings-save-btn"
             />
             <Button
@@ -272,7 +258,7 @@ export default function SettingsScreen() {
               loading={exporting}
               variant="outline"
               style={[styles.flexBtn, styles.exportBtn]}
-              textStyle={{ fontSize: 12, fontWeight: '700' }}
+              textStyle={styles.exportButtonText}
               testID="settings-share-btn"
             />
           </View>
@@ -281,7 +267,7 @@ export default function SettingsScreen() {
         {/* Google Drive */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={styles.driveTitleRow}>
               <SvgXml xml={GOOGLE_DRIVE_SVG} width={20} height={20} />
               <Text style={styles.sectionTitle}>{t('settings.googleDrive')}</Text>
             </View>
@@ -352,12 +338,12 @@ export default function SettingsScreen() {
           </Text>
         </Card>
 
-        <View style={{ height: 40 }} />
+        <View style={styles.bottomSpacer} />
 
         <ImportModal
           visible={showImport}
           onClose={() => setShowImport(false)}
-          onImported={load}
+          onImported={reloadGoogleState}
         />
 
         <AddCategoryModal
@@ -373,6 +359,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20 },
   pageTitle: { fontSize: 26, fontWeight: '900', color: COLORS.text, marginBottom: 20 },
@@ -384,8 +371,10 @@ const styles = StyleSheet.create({
   lastSync: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 },
   actionButton: { marginTop: 4 },
   buttonRow: { flexDirection: 'row', gap: 10 },
+  exportButtonText: { fontSize: 12, fontWeight: '700' },
   flexBtn: { flex: 1 },
   exportBtn: { paddingVertical: 10, paddingHorizontal: 8 },
+  driveTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   connectedRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   connectedIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.success + '20', alignItems: 'center', justifyContent: 'center' },
   connectedIconText: { fontSize: 18, color: COLORS.success, fontWeight: '800' },
@@ -418,4 +407,5 @@ const styles = StyleSheet.create({
   langLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   langLabelActive: { color: COLORS.primary, fontWeight: '800' },
   langCheck: { fontSize: 13, color: COLORS.primary, fontWeight: '900' },
+  bottomSpacer: { height: 40 },
 });
