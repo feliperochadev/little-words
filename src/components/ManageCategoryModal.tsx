@@ -25,7 +25,7 @@ interface ManageCategoryModalProps {
 
 export function ManageCategoryModal({
   visible, category, onClose, onEdit, onDeleted,
-}: ManageCategoryModalProps) {
+}: Readonly<ManageCategoryModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();

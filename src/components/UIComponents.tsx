@@ -19,7 +19,6 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
   loading?: boolean;
   disabled?: boolean;
-  icon?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   testID?: string;
@@ -27,7 +26,7 @@ interface ButtonProps {
 
 export function Button({
   title, onPress, variant = 'primary', loading, disabled, style, textStyle, testID
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   const styles = getButtonStyles(variant);
   return (
     <TouchableOpacity
@@ -46,18 +45,22 @@ export function Button({
   );
 }
 
-const getButtonStyles = (variant: string) => StyleSheet.create({
+const getButtonStyles = (variant: string) => {
+  const getBackgroundColor = () => {
+    if (variant === 'primary') return COLORS.primary;
+    if (variant === 'secondary') return COLORS.secondary;
+    if (variant === 'danger') return COLORS.error;
+    return 'transparent';
+  };
+
+  return StyleSheet.create({
   button: {
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor:
-      variant === 'primary' ? COLORS.primary :
-      variant === 'secondary' ? COLORS.secondary :
-      variant === 'danger' ? COLORS.error :
-      'transparent',
+    backgroundColor: getBackgroundColor(),
     borderWidth: variant === 'outline' ? 2 : 0,
     borderColor: COLORS.primary,
     shadowColor: variant === 'primary' ? COLORS.primary : 'transparent',
@@ -72,7 +75,8 @@ const getButtonStyles = (variant: string) => StyleSheet.create({
     color: variant === 'outline' ? COLORS.primary : COLORS.white,
     letterSpacing: 0.5,
   },
-});
+  });
+};
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
@@ -82,7 +86,7 @@ interface CardProps {
   testID?: string;
 }
 
-export function Card({ children, style, onPress, testID }: CardProps) {
+export function Card({ children, style, onPress, testID }: Readonly<CardProps>) {
   if (onPress) {
     return (
       <TouchableOpacity style={[cardStyles.card, style]} onPress={onPress} activeOpacity={0.9} testID={testID}>
@@ -115,7 +119,7 @@ interface SearchBarProps {
   testID?: string;
 }
 
-export function SearchBar({ value, onChangeText, placeholder, testID }: SearchBarProps) {
+export function SearchBar({ value, onChangeText, placeholder, testID }: Readonly<SearchBarProps>) {
   return (
   <View style={searchStyles.container}>
     <Text style={searchStyles.icon}>🔍</Text>
@@ -165,7 +169,7 @@ interface CategoryBadgeProps {
   size?: 'small' | 'normal';
 }
 
-export function CategoryBadge({ name, color, emoji, size = 'normal' }: CategoryBadgeProps) {
+export function CategoryBadge({ name, color, emoji, size = 'normal' }: Readonly<CategoryBadgeProps>) {
   return (
     <View style={[badgeStyles.badge, { backgroundColor: color + '20', borderColor: color + '40' }, size === 'small' && badgeStyles.small]}>
       <Text style={[badgeStyles.emoji, size === 'small' && badgeStyles.smallEmoji]}>{emoji}</Text>
@@ -199,7 +203,7 @@ interface EmptyStateProps {
   action?: { label: string; onPress: () => void };
 }
 
-export function EmptyState({ emoji, title, subtitle, action }: EmptyStateProps) {
+export function EmptyState({ emoji, title, subtitle, action }: Readonly<EmptyStateProps>) {
   return (
     <View style={emptyStyles.container}>
       <Text style={emptyStyles.emoji}>{emoji}</Text>
@@ -229,7 +233,7 @@ interface StatCardProps {
   testID?: string;
 }
 
-export function StatCard({ emoji, value, label, color, testID }: StatCardProps) {
+export function StatCard({ emoji, value, label, color, testID }: Readonly<StatCardProps>) {
   return (
     <View style={[statStyles.card, { borderColor: color + '30' }]}>
       <View style={[statStyles.iconBg, { backgroundColor: color + '15' }]}>

@@ -2,6 +2,20 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_06
+
+**[fix] Sonar remediation pass — readonly props, readability, and key stability**
+- Marked component props as `Readonly<...>` where Sonar requested immutable parameters (`UIComponents`, `AddCategoryModal`, `AddVariantModal`, `AddWordModal`, `ManageCategoryModal`, `ImportModal`, `DatePickerField`, onboarding wheel component).
+- Removed nested ternaries flagged for readability by replacing them with explicit mappings/derived values in `home.tsx`, `onboarding.tsx`, and `UIComponents.tsx`.
+- Replaced index-based keys with stable keys in dashboard monthly/category/recent-word rendering and import preview rows.
+- Updated additional Sonar-targeted patterns: `parseInt` → `Number.parseInt`, optional-chaining callback invocation for duplicate edit, and regex `replace` calls to `replaceAll` in recent-word testID sanitization.
+- Simplified inline variant edit handlers in `AddWordModal` into dedicated helper handlers to reduce nesting and improve maintainability.
+
+**Validation**
+- Ran `npm run ci` successfully after changes.
+
+---
+
 ### 2026-03-12_05
 
 **[config] SonarCloud — hardcode project key and organization**

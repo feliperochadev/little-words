@@ -26,7 +26,7 @@ interface AddCategoryModalProps {
 
 export function AddCategoryModal({
   visible, onClose, onSave, onDeleted, editCategory,
-}: AddCategoryModalProps) {
+}: Readonly<AddCategoryModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();

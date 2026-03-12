@@ -91,7 +91,7 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   return result;
 }
 
-export function ImportModal({ visible, onClose, onImported }: ImportModalProps) {
+export function ImportModal({ visible, onClose, onImported }: Readonly<ImportModalProps>) {
   const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -197,9 +197,11 @@ export function ImportModal({ visible, onClose, onImported }: ImportModalProps) 
     }
   };
 
-  const wordCount = tab === 'text'
-    ? parseTextInput(textInput).length
-    : csvContent ? parseCSV(csvContent).length : 0;
+  const wordCount = (() => {
+    if (tab === 'text') return parseTextInput(textInput).length;
+    if (!csvContent) return 0;
+    return parseCSV(csvContent).length;
+  })();
 
   const importBtnLabel = wordCount > 0
     ? tc('importModal.importBtn', wordCount)
@@ -280,8 +282,8 @@ export function ImportModal({ visible, onClose, onImported }: ImportModalProps) 
                 <Text style={styles.previewTitle} testID="import-preview-title">
                   {tc('importModal.previewTitle', wordCount)}
                 </Text>
-                {preview.map((row, i) => (
-                  <View key={i} style={styles.previewRow}>
+                {preview.map(row => (
+                  <View key={`${row.word}-${row.category ?? ''}-${row.date ?? ''}-${row.variant ?? ''}`} style={styles.previewRow}>
                     <Text style={styles.previewWord} testID={`import-preview-word-${row.word}`}>{row.word}</Text>
                     {row.category && <Text style={styles.previewMeta}>{row.category}</Text>}
                     {row.date && <Text style={styles.previewMeta}>{row.date}</Text>}

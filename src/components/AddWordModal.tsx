@@ -36,7 +36,7 @@ interface VariantEntry {
   text: string;
 }
 
-export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }: AddWordModalProps) {
+export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, onEditDuplicate }: Readonly<AddWordModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
@@ -189,6 +189,29 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     return `${day}/${m}/${y}`;
   };
 
+  const stopEditingVariant = (variantId: number) => {
+    setEditingVariantIds(prev => {
+      const updated = new Set(prev);
+      updated.delete(variantId);
+      return updated;
+    });
+  };
+
+  const handleExistingVariantBlur = (variant: Variant) => async () => {
+    const text = (editingVariantTexts[variant.id] ?? variant.variant).trim();
+    if (text && text !== variant.variant) {
+      await updateVariantMutation.mutateAsync({ id: variant.id, variant: text, dateAdded: today, notes: variant.notes || '' });
+      setExistingVariants(prev => prev.map(ev => ev.id === variant.id ? { ...ev, variant: text } : ev));
+    }
+    stopEditingVariant(variant.id);
+  };
+
+  const handleExistingVariantDelete = (variant: Variant) => async () => {
+    await deleteVariantMutation.mutateAsync({ id: variant.id });
+    setExistingVariants(prev => prev.filter(v => v.id !== variant.id));
+    stopEditingVariant(variant.id);
+  };
+
   const handleSave = async () => {
     if (!word.trim()) { Alert.alert(t('common.attention'), t('addWord.errorWord')); return; }
     if (duplicate) { Alert.alert(t('addWord.duplicateTitle'), t('addWord.duplicateAlert', { word: duplicate.word })); return; }
@@ -267,7 +290,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             {duplicate && (
               <TouchableOpacity
                 style={s.dupCard}
-                onPress={() => onEditDuplicate && onEditDuplicate(duplicate)}
+                onPress={() => onEditDuplicate?.(duplicate)}
                 activeOpacity={onEditDuplicate ? 0.7 : 1}
               >
                 <View style={s.dupCardHeader}>
@@ -368,23 +391,12 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
                     value={editingVariantTexts[v.id] ?? v.variant}
                     onChangeText={txt => setEditingVariantTexts(prev => ({ ...prev, [v.id]: txt }))}
                     placeholder={v.variant}
-                    placeholderTextColor={COLORS.textLight}
-                    autoCapitalize="none"
-                    autoFocus
-                    onBlur={async () => {
-                      const text = (editingVariantTexts[v.id] ?? v.variant).trim();
-                      if (text && text !== v.variant) {
-                        await updateVariantMutation.mutateAsync({ id: v.id, variant: text, dateAdded: today, notes: v.notes || '' });
-                        setExistingVariants(prev => prev.map(ev => ev.id === v.id ? { ...ev, variant: text } : ev));
-                      }
-                      setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
-                    }}
-                  />
-                  <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={async () => {
-                    await deleteVariantMutation.mutateAsync({ id: v.id });
-                    setExistingVariants(prev => prev.filter(e => e.id !== v.id));
-                    setEditingVariantIds(prev => { const s = new Set(prev); s.delete(v.id); return s; });
-                  }}>
+                     placeholderTextColor={COLORS.textLight}
+                     autoCapitalize="none"
+                     autoFocus
+                     onBlur={handleExistingVariantBlur(v)}
+                   />
+                   <TouchableOpacity style={s.varRemove} testID={`existing-variant-delete-${v.variant}`} onPress={handleExistingVariantDelete(v)}>
                     <Text style={s.varRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>

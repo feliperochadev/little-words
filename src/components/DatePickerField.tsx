@@ -26,7 +26,7 @@ interface WheelProps {
   testID?: string;
 }
 
-function WheelColumn({ data, selected, onChange, accent, width, testID }: WheelProps) {
+function WheelColumn({ data, selected, onChange, accent, width, testID }: Readonly<WheelProps>) {
   const ref = useRef<FlatList>(null);
   const idx = data.findIndex(i => i.value === selected);
   const momentumStarted = useRef(false);
@@ -108,7 +108,7 @@ interface Props {
 
 export function DatePickerField({
   value, onChange, accentColor = COLORS.primary, label,
-}: Props) {
+}: Readonly<Props>) {
   const { t, ta } = useI18n();
   // Pull locale-aware month names from catalogue
   const MONTHS: string[] = ta('datePicker.months');

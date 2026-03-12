@@ -23,7 +23,7 @@ interface Props {
   editVariant?: Variant | null;
 }
 
-export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, editVariant }: Props) {
+export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, editVariant }: Readonly<Props>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();

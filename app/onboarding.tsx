@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../src/utils/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { BrandHeader } from '../src/components/BrandHeader';
-import { useI18n, LANGUAGES, type Locale } from '../src/i18n/i18n';
+import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
 
 /* ───────── constants ───────── */
@@ -30,7 +30,7 @@ interface WheelColumnProps {
   width?: number;
 }
 
-function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }: WheelColumnProps) {
+function WheelColumn({ data, selectedValue, onValueChange, accentColor, width }: Readonly<WheelColumnProps>) {
   const flatListRef = useRef<FlatList>(null);
   const initialIndexRef = useRef(data.findIndex((item) => item.value === selectedValue));
 
@@ -140,8 +140,11 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
-  const accentColor = isGirl ? COLORS.profileGirl : isBoy ? COLORS.profileBoy : COLORS.primary;
+  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
+  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
+  const emojiBySex = { girl: '👧', boy: '👦' } as const;
+  const profileEmoji = sex ? emojiBySex[sex] : '👶';
 
   useEffect(() => {
     if (allFilled) {
@@ -215,7 +218,7 @@ export default function OnboardingScreen() {
 
         <BrandHeader />
 
-        <Text style={styles.emoji}>{isGirl ? '👧' : isBoy ? '👦' : '👶'}</Text>
+        <Text style={styles.emoji}>{profileEmoji}</Text>
         <Text style={styles.title}>{t('onboarding.welcome')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
 
@@ -230,7 +233,7 @@ export default function OnboardingScreen() {
                   styles.langBtn,
                   locale === lang.locale && { borderColor: accentColor, backgroundColor: accentColor + '12' },
                 ]}
-                onPress={() => setLocale(lang.locale as Locale)}
+                onPress={() => setLocale(lang.locale)}
               >
                 <Text style={styles.langFlag}>{lang.flag}</Text>
                 <Text style={[
@@ -308,7 +311,7 @@ export default function OnboardingScreen() {
         {allFilled && (
           <View style={[styles.preview, { borderColor: accentColor }]}>
             <View style={styles.previewRow}>
-              <Text style={styles.previewEmoji}>{isGirl ? '👧' : '👦'}</Text>
+              <Text style={styles.previewEmoji}>{profileEmoji}</Text>
               <Text style={[styles.previewName, { color: accentColor }]}>{name}</Text>
             </View>
             <Text style={styles.previewDate}>
