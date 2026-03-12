@@ -2,6 +2,20 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_09
+
+**[fix] Restore Android APK build compatibility for Expo SDK 55**
+- Downgraded `react-native` from `0.84.1` to `0.83.2` to match Expo SDK 55 compatibility and resolve Kotlin bridge API mismatches in `expo-modules-core`.
+- Aligned `react` and `react-test-renderer` from `19.2.3` to `19.2.0` to stay consistent with the React Native renderer version used by `react-native@0.83.2`.
+- Updated `package-lock.json` via `npm install` to persist the dependency graph changes.
+
+**Validation**
+- Ran `npm run ci` successfully.
+- Ran `./gradlew :expo-modules-core:compileReleaseKotlin` successfully.
+- Ran `./gradlew :app:assembleRelease` successfully (`BUILD SUCCESSFUL`).
+
+---
+
 ### 2026-03-12_08
 
 **[fix] Sonar PR #19 nesting-depth cleanup in AddWordModal**
