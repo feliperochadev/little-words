@@ -2,6 +2,25 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_14
+
+**[fix] Fix 7 remaining SonarCloud issues (empty catch blocks and console.error usage)**
+- `src/utils/googleDrive.ts`: Added error logging to empty catch block in `signOutGoogle()` with documentation explaining the intentional non-blocking behavior.
+- `src/i18n/i18n.tsx`: Added error logging to silent catch block in locale loading with fallback comment.
+- `src/hooks/useGoogleDriveStatus.ts`: Added error logging to catch block in `reloadGoogleState()`.
+- `src/hooks/useSyncOnSuccess.ts`: Wrapped bare `console.error` in proper error handler with context tag `[GoogleDrive]`.
+- `app/index.tsx`: Wrapped bare `console.error` in proper error handler with context tag `[GoogleDrive] Initial sync failed`.
+- `app/(tabs)/settings.tsx`: Wrapped bare `console.error` in proper error handler with context tag `[GoogleDrive] Post-signin sync failed`.
+
+**[config] Add SonarQube rule exclusion for implicit return types**
+- `sonar-project.properties`: Added `sonar.issue.ignore.multicriteria` configuration to disable TypeScript rule S3800 (explicit return types) for `.tsx` files, as React components with implicit return types are correctly inferred by TypeScript.
+
+**Validation**
+- All 37 test suites, 645 tests pass.
+- CI passes (lint, typecheck, test).
+
+---
+
 ### 2026-03-12_13
 
 **[fix] Fix 16 new SonarCloud issues introduced by PR #21 (S905, S7781, S1128)**

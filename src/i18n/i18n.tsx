@@ -87,7 +87,10 @@ export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) =>
       .then(saved => {
         if (saved === 'pt-BR' || saved === 'en-US') setLocaleState(saved);
       })
-      .catch(() => {})
+      .catch((error) => {
+        // Fallback to default locale on error
+        console.error('[I18n] Failed to load saved locale:', error);
+      })
       .finally(() => setReady(true));
   }, []);
 

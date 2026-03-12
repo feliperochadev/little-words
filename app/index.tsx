@@ -22,7 +22,9 @@ export default function Index() {
       const { isOnboardingDone } = useSettingsStore.getState();
       if (isOnboardingDone) {
         if (useAuthStore.getState().isConnected) {
-          performSync(t).catch(console.error);
+          performSync(t).catch((error) => {
+            console.error('[GoogleDrive] Initial sync failed:', error);
+          });
         }
         router.replace('/(tabs)/home');
       } else {

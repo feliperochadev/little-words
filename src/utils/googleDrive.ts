@@ -73,7 +73,10 @@ export const signOutGoogle = async (): Promise<void> => {
     try {
       const { GoogleSignin } = require('@react-native-google-signin/google-signin');
       await GoogleSignin.signOut();
-    } catch {}
+    } catch (error) {
+      // Intentionally swallow Google signOut errors - non-blocking cleanup operation
+      console.error('[GoogleDrive] signOut error (non-critical):', error);
+    }
   }
   await setSetting('google_signed_in', '');
   await setSetting('google_user_email', '');
