@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_1
+
+**[config] Exclude agent scripts from SonarCloud analysis**
+
+- `sonar-project.properties`: Added `**/scripts/agent/**` to exclusions list.
+- Agent scripts are development tooling only (not part of the app), so security hotspots in those files are not relevant to production code.
+
+---
+
 ### 2026-03-12_16
 
 **[refactor] Fix SonarCloud nested ternaries + code duplication in modals**
