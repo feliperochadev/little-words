@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_11
+
+**[fix] Fix SonarCloud issues in importHelpers.ts**
+
+- `src/utils/importHelpers.ts` line 61: Replace ternary `wi >= 0 ? wi : 0` with `Math.max(wi, 0)`.
+- `src/utils/importHelpers.ts` lines 6, 10: Add `// NOSONAR` to anchored regex patterns flagged as potential ReDoS hotspots — both regexes are safe (bounded character classes, fully anchored, no catastrophic backtracking).
+
 ### 2026-03-13_10
 
 **[test] Increase settings.tsx test coverage — branches to 90%, statements to 94%**

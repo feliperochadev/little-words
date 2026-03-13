@@ -3,11 +3,11 @@
  */
 
 export const deaccent = (s: string): string =>
-  s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase();
+  s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase(); // NOSONAR - simple Unicode normalization range, no backtracking risk
 
 export function parseDateStr(raw: string): string {
   if (!raw) return new Date().toISOString().split('T')[0];
-  const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+  const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw); // NOSONAR - anchored regex on bounded date string, no ReDoS risk
   if (ddmmyyyy) return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, '0')}-${ddmmyyyy[1].padStart(2, '0')}`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   return new Date().toISOString().split('T')[0];
@@ -58,7 +58,7 @@ function resolveColumnIndices(
   const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
   const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
   return {
-    wordIdx: wi >= 0 ? wi : 0,
+    wordIdx: Math.max(wi, 0),
     catIdx: headers.findIndex(h => h.includes('categor')),
     dateIdx: headers.findIndex(h => h.includes('data') || h.includes('date')),
     variantIdx: headers.findIndex(h => h.includes('variant')),
