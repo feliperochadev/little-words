@@ -51,6 +51,20 @@ function splitCSVLine(line: string, delim: string): string[] {
   return parts;
 }
 
+function resolveColumnIndices(
+  lines: string[],
+  delim: string,
+): { wordIdx: number; catIdx: number; dateIdx: number; variantIdx: number } {
+  const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
+  const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
+  return {
+    wordIdx: wi >= 0 ? wi : 0,
+    catIdx: headers.findIndex(h => h.includes('categor')),
+    dateIdx: headers.findIndex(h => h.includes('data') || h.includes('date')),
+    variantIdx: headers.findIndex(h => h.includes('variant')),
+  };
+}
+
 export function parseCSV(text: string): ParsedRow[] {
   const rows: ParsedRow[] = [];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -64,12 +78,7 @@ export function parseCSV(text: string): ParsedRow[] {
 
   let wordIdx = 0, catIdx = 1, dateIdx = 2, variantIdx = 3;
   if (hasHeader) {
-    const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
-    const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
-    if (wi >= 0) wordIdx = wi;
-    catIdx     = headers.findIndex(h => h.includes('categor'));
-    dateIdx    = headers.findIndex(h => h.includes('data') || h.includes('date'));
-    variantIdx = headers.findIndex(h => h.includes('variant'));
+    ({ wordIdx, catIdx, dateIdx, variantIdx } = resolveColumnIndices(lines, delim));
   }
 
   for (const line of dataLines) {

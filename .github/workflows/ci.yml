@@ -3,7 +3,7 @@
 #
 # Jobs:
 #   unit-tests  → runs on every push to any branch
-#                 lint + typecheck + jest
+#                 lint + typecheck + jest (with coverage) + SonarCloud scan
 #
 # E2E tests (Maestro) are run manually for now.
 # See options below for future automation.
@@ -24,12 +24,14 @@ concurrency:
 
 jobs:
   unit-tests:
-    name: Lint · Typecheck · Jest
+    name: Lint · Typecheck · Jest · SonarCloud
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarCloud blame data and new-code detection
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -40,5 +42,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: CI suite (lint → typecheck → jest)
-        run: npm run ci
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

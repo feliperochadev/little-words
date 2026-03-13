@@ -50,10 +50,12 @@ export function deepGet(obj: Record<string, unknown>, path: string): unknown {
 
 /** Interpolate {{placeholder}} tokens in a string. */
 export function interpolate(str: string, params?: Record<string, string | number>): string {
-  if (!params) return str;
-  return str.replaceAll(/\{\{(\w+)\}\}/g, (_, k) =>
-    params[k] !== undefined ? String(params[k]) : `{{${k}}}`
-  );
+  if (params) {
+    return str.replaceAll(/\{\{(\w+)\}\}/g, (_, k) =>
+      params[k] !== undefined ? String(params[k]) : `{{${k}}}`
+    );
+  }
+  return str;
 }
 
 /** Resolve a translation key with optional param interpolation. Falls back to key. */
@@ -78,14 +80,14 @@ function resolve(
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) => {
-  const [locale, setLocaleState] = useState<Locale>('en-US');
+  const [locale, setLocale] = useState<Locale>('en-US');
   const [ready, setReady] = useState(false);
 
   // Load persisted locale on mount
   useEffect(() => {
     getSetting('app_locale')
       .then(saved => {
-        if (saved === 'pt-BR' || saved === 'en-US') setLocaleState(saved);
+        if (saved === 'pt-BR' || saved === 'en-US') setLocale(saved);
       })
       .catch((error) => {
         // Fallback to default locale on error
@@ -94,10 +96,10 @@ export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) =>
       .finally(() => setReady(true));
   }, []);
 
-  const setLocale = useCallback(async (next: Locale) => {
-    setLocaleState(next);
+  const handleSetLocale = useCallback(async (next: Locale) => {
+    setLocale(next);
     await setSetting('app_locale', next);
-  }, []);
+  }, [setLocale]);
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>) =>
@@ -128,8 +130,8 @@ export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) =>
   );
 
   const contextValue = useMemo(
-    () => ({ locale, setLocale, t, ta, tc }),
-    [locale, setLocale, t, ta, tc],
+    () => ({ locale, setLocale: handleSetLocale, t, ta, tc }),
+    [locale, handleSetLocale, t, ta, tc],
   );
 
   if (!ready) return null; // Don't render until locale is loaded

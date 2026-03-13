@@ -16,6 +16,12 @@ import { ImportModal } from '../../src/components/ImportModal';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 
+function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): { emoji: string; label: string } {
+  if (sex === 'girl') return { emoji: '👧', label: t('settings.girl') };
+  if (sex === 'boy') return { emoji: '👦', label: t('settings.boy') };
+  return { emoji: '👶', label: '—' };
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
@@ -80,22 +86,7 @@ export default function SettingsScreen() {
     );
   };
 
-  let sexEmoji: string;
-  if (childSex === 'girl') {
-    sexEmoji = '👧';
-  } else if (childSex === 'boy') {
-    sexEmoji = '👦';
-  } else {
-    sexEmoji = '👶';
-  }
-  let sexLabel: string;
-  if (childSex === 'girl') {
-    sexLabel = t('settings.girl');
-  } else if (childSex === 'boy') {
-    sexLabel = t('settings.boy');
-  } else {
-    sexLabel = '—';
-  }
+  const { emoji: sexEmoji, label: sexLabel } = getSexDisplay(childSex, t);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
