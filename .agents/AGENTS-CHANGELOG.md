@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_12
+
+**[security] Pin GitHub Actions to full commit SHAs**
+
+- `.github/workflows/ci.yml`: Pinned all three actions to their full commit SHA to prevent supply chain attacks (Sonar hotspot S6437):
+  - `actions/checkout@v4` → `@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4`
+  - `actions/setup-node@v4` → `@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4`
+  - `SonarSource/sonarqube-scan-action@v5` → `@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5`
+
 ### 2026-03-13_11
 
 **[fix] Fix SonarCloud issues in importHelpers.ts**

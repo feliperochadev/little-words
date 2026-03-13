@@ -29,12 +29,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0  # Required for SonarCloud blame data and new-code detection
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
           cache: "npm"
@@ -46,6 +46,6 @@ jobs:
         run: npm run ci
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
