@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_8
+
+**[config] Consolidate CI: npm run ci now includes coverage; workflow uses single step**
+
+- `package.json`: Changed `ci` script from `npm run test` to `npm run test:coverage` — coverage is now always generated locally and in CI.
+- `.github/workflows/ci.yml`: Replaced 3 separate Lint / Typecheck / Test steps with a single `npm run ci` step, eliminating duplication.
+
 ### 2026-03-13_7
 
 **[refactor] Extract magic numbers into named constants; reduce cognitive complexity in parseCSV and importRows**

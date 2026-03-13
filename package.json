@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "ci": "npm run lint && npm run typecheck && npm run test",
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage",
     "agent:review": "npx tsx scripts/agent/review-loop.ts",
     "agent:check-tasks": "npx tsx scripts/agent/task-persistence.ts",
     "agent:availability": "npx tsx scripts/agent/agent-availability.ts",
