@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_13
+
+**[fix] Suppress Semgrep false positive on pinned SonarCloud action SHA**
+
+- `.github/workflows/ci.yml`: Added `# nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key` annotation — the 40-char hex commit SHA for `sonarqube-scan-action@v5` was incorrectly detected as a SonarQube API key.
+
 ### 2026-03-13_12
 
 **[security] Pin GitHub Actions to full commit SHAs**
