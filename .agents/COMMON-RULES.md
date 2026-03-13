@@ -52,3 +52,26 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - Set `agents.{self}.available: false` in `.agents/agent-config.json`.
    - Stop immediately. Do not proceed to `/ship`.
    At session start, call `/check-unfinished-tasks`: re-mark yourself available, list pending tasks, pick the oldest, and resume from `## Next Steps`.
+
+## Permanently Allowed Commands
+
+The following commands are pre-approved for all agents and may be executed at any time without asking for user permission. They are also listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |

@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_4
+
+**[config] Add permanently allowed commands to agent-config and all vendor readmes**
+
+- `.agents/agent-config.json`: Added `allowed_commands` array listing 16 pre-approved shell commands that all agents may execute without asking for user permission (`npm run ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run test:coverage`, `npm run agent:review`, `npm run agent:check-tasks`, `npm run agent:availability`, `git status`, `git diff`, `git add`, `git commit`, `git push`, `git tag`, `git log`, `git branch`).
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/COMMON-RULES.md`: Added `## Permanently Allowed Commands` section with the same table, keeping all vendor readmes in sync.
+
+---
+
 ### 2026-03-13_3
 
 **[fix] Fix 7 SonarCloud issues and 2 security hotspots**

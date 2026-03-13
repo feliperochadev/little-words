@@ -123,3 +123,26 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Hooks | `.agents/standards/hooks.md` |
 | Testing | `.agents/standards/testing.md` |
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
+
+## Permanently Allowed Commands
+
+The following commands are pre-approved and may be run at any time without asking for user permission. They are listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |
