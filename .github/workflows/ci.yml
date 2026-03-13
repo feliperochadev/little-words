@@ -3,7 +3,7 @@
 #
 # Jobs:
 #   unit-tests  → runs on every push to any branch
-#                 lint + typecheck + jest (with coverage) + SonarCloud scan
+#                 lint + typecheck + jest (with coverage) + semgrep + SonarCloud scan
 #
 # E2E tests (Maestro) are run manually for now.
 # See options below for future automation.
@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   unit-tests:
-    name: Lint · Typecheck · Jest · SonarCloud
+    name: Lint · Typecheck · Jest · Semgrep · SonarCloud
     runs-on: ubuntu-latest
 
     steps:
@@ -42,11 +42,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint · Typecheck · Test with coverage
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Lint · Typecheck · Test · Semgrep
         run: npm run ci
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5 # nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key
+        # nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
         continue-on-error: true  # Remove once Automatic Analysis is disabled in SonarCloud project settings
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

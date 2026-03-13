@@ -13,7 +13,7 @@
 - **Build System:** EAS Build (Android targeted)
 - **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 ## Architecture & Core Modules
 
@@ -51,7 +51,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions and integration tests for components. Coverage goal: 99% lines, 95% functions/branches/statements. Place tests under `__tests__/unit/`, `__tests__/integration/`, or `__tests__/screens/`.
 
-2. **Always run `npm run ci` after changes and only consider the task done when it passes.** CI runs `eslint` (warnings count), `tsc --noEmit`, and `jest` in sequence.
+2. **Always run `npm run ci` after changes and only consider the task done when it passes.** CI runs `eslint` (warnings count), `tsc --noEmit`, `jest`, and `semgrep` in sequence (`npm run lint && npm run typecheck && npm run test:coverage && npm run semgrep`).
 
 3. **Always update `GEMINI.md` and `.agents/AGENTS-CHANGELOG.md` after every approved change.** Update `GEMINI.md` when architecture, conventions, or tooling change. Always append a changelog entry using `### YYYY-MM-DD_N` format with category tags (`[fix]`, `[feature]`, `[config]`, `[test]`, `[upgrade]`, etc.).
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, or architecture, update **all** vendor readmes listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
@@ -144,7 +144,7 @@ The following commands are pre-approved and may be run at any time without askin
 
 | Command | Purpose |
 |---------|---------|
-| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
 | `npm run lint` | ESLint only |
 | `npm run typecheck` | TypeScript type-check only |
 | `npm run test` | Jest tests (no coverage) |

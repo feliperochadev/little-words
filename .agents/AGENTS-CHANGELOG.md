@@ -2,6 +2,23 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_19
+
+[feature] Add Semgrep to `npm run ci` — runs `p/default` ruleset as a blocking step after jest coverage.
+
+- `package.json`: Added `"semgrep": "semgrep --config p/default --error ."` script; updated `"ci"` to append `&& npm run semgrep`.
+- `.github/workflows/ci.yml`: Added `Install Semgrep` step (`pip install semgrep`) before `npm run ci`; updated job and header descriptions.
+- `.github/workflows/security.yml`: Removed the `semgrep` job (now covered by `npm run ci` in `ci.yml`).
+- `.semgrepignore`: Created to exclude `.agents/`, `release-notes/`, `coverage/`, `node_modules/`, `android/`, `ios/` from scans.
+- `scripts/agent/load-config.ts:40`: Added `// nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring` — false positive; `console.error` with a template literal is not a printf format-string vulnerability.
+- Verified locally: `npm run ci` exits 0 with 0 Semgrep findings (250 rules, 148 files).
+
+### 2026-03-13_18
+
+[fix] Fix `nosemgrep` annotation in `.github/workflows/ci.yml` not suppressing the `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` finding.
+
+Two issues: (1) The annotation was placed inline after `# v5` on the same `uses:` line — Semgrep requires the annotation to be on a **dedicated preceding comment line** for regex-language rules. (2) Entry `2026-03-13_17` incorrectly shortened the rule ID; the full form `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` is correct (Semgrep constructs it as `<folder-path>.<rule-id>`). Fix: moved annotation to its own `# nosemgrep:` line immediately before the `uses:` line. Verified locally with `semgrep --config p/secrets` → 0 findings.
+
 ### 2026-03-13_17
 
 [fix] Fix duplicated rule ID in `nosemgrep` annotation in `.github/workflows/ci.yml` line 49. The annotation referenced `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` (rule path segment repeated twice); corrected to `generic.secrets.security.detected-sonarqube-docs-api-key` — the actual rule ID from the Semgrep registry.

@@ -9,14 +9,14 @@ Use `npm start` for the Expo dev server and `npm run android` or `npm run ios` f
 - `npm run lint`: ESLint 9 with `eslint-config-expo`
 - `npm run typecheck`: TypeScript compile check without emit
 - `npm test`: Jest unit, integration, and screen tests
-- `npm run ci`: required completion gate; runs lint, typecheck, and Jest
+- `npm run ci`: required completion gate; runs lint, typecheck, Jest, and Semgrep
 - `npm run e2e`, `npm run e2e:import`, `npm run e2e:export`: Maestro flows in `__tests__/e2e/`
 
 Do not consider work complete until `npm run ci` passes.
 
 Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
@@ -135,7 +135,7 @@ The following commands are pre-approved and may be run at any time without askin
 
 | Command | Purpose |
 |---------|---------|
-| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
 | `npm run lint` | ESLint only |
 | `npm run typecheck` | TypeScript type-check only |
 | `npm run test` | Jest tests (no coverage) |

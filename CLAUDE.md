@@ -23,13 +23,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 ### Rules
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions (helpers, utils, parsers) and integration tests for components. Tests must cover at least of the changed code: 99% in lines and 95% in funcs, branch and stmts — every branch, edge case, and error path. Place them in the matching subdirectory under `__tests__/` (`unit/`, `integration/`, or `screens/`).
 
-2. **Always run `npm run ci` after changes and only consider the task done when it passes.** The CI script runs `eslint` (fixes must include warnings, not just errors), `tsc --noEmit`, and `jest` in sequence (`npm run lint && npm run typecheck && npm run test`). A passing CI is required before any work is considered complete — do not skip or work around failures.
+2. **Always run `npm run ci` after changes and only consider the task done when it passes.** The CI script runs `eslint` (fixes must include warnings, not just errors), `tsc --noEmit`, `jest`, and `semgrep` in sequence (`npm run lint && npm run typecheck && npm run test:coverage && npm run semgrep`). A passing CI is required before any work is considered complete — do not skip or work around failures.
 
 3. **Always update `CLAUDE.md` and `CLAUDE-CHANGELOG.md` after every approved change.** Once changes pass CI and are approved: update the relevant sections of `CLAUDE.md` if architecture, conventions, or utilities changed; always append a new entry to `CLAUDE-CHANGELOG.md` regardless — it is the permanent record of every approved change. Each entry heading follows the format `### YYYY-MM-DD_N` (e.g. `2026-03-09_1`, `2026-03-09_2`) where N increments within the same day, making every entry uniquely identifiable. Each change group within an entry must be prefixed with a category tag:
    - `[fix]` — bug fixes and test corrections
@@ -240,7 +240,7 @@ The following commands are pre-approved and may be run at any time without askin
 
 | Command | Purpose |
 |---------|---------|
-| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
 | `npm run lint` | ESLint only |
 | `npm run typecheck` | TypeScript type-check only |
 | `npm run test` | Jest tests (no coverage) |

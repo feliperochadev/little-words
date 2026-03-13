@@ -26,31 +26,6 @@ jobs:
         with:
           fail-on-severity: high
 
-  semgrep:
-    name: Semgrep
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-
-      - name: Run Semgrep (SARIF)
-        uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d
-        with:
-          config: p/default
-          generateSarif: "1"
-          sarif_file: semgrep.sarif
-        continue-on-error: true
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: hashFiles('semgrep.sarif') != ''
-        with:
-          sarif_file: semgrep.sarif
-
   trivy:
     name: Trivy FS Scan
     runs-on: ubuntu-latest
