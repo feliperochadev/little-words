@@ -52,7 +52,7 @@ After every approved change, update the relevant agent documentation when conven
 If keep → proceed. If change → ask which flag(s) and new value(s), update the file, then proceed. Do this before any other work.
 
 **Automatic Commit Gate (`/commit`):** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
-- `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+- `false` → wait for the user to explicitly call `/commit`; never self-trigger.
 - `true` → agent may call `/commit` automatically once work is complete.
 - Vendor-specific steps live in `.claude/commands/commit.md`, `.codex/commands/commit.md`, `.gemini/commands/commit.md`.
 
@@ -104,7 +104,7 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 - `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)

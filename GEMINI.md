@@ -11,7 +11,7 @@
 - **Language:** TypeScript 5.9
 - **Testing:** Jest 30 (Unit/Integration), Maestro (E2E)
 - **Build System:** EAS Build (Android targeted)
-- **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest
+- **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest, Semgrep (`p/default` ruleset)
 
 CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
@@ -30,7 +30,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `theme.ts`: Centralized color and style constants.
-  - `agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
+- `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
 ### State Management Strategy
 
@@ -69,7 +69,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 5. **Automatic Commit Gate (`/commit`):**
    - `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. Follow `.gemini/commands/commit.md` for detailed steps.
    - `features.automatic_commit` controls only whether the agent self-triggers it:
-     - `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+     - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
      - `true` → agent may call `/commit` automatically once work is complete.
 
 6. **Shipping code (`/ship`):**

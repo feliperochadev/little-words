@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_21
+
+[config] Sync vendor readme files (CLAUDE.md, AGENTS.md, GEMINI.md) with current codebase state.
+
+- `AGENTS.md`: Removed stale "Google auth" example from state management table (Google Drive sync was removed in PR #29); removed misleading `(default)` qualifier from `automatic_commit: false` description (current config has it set to `true`).
+- `GEMINI.md`: Updated CI/CD tech stack line to include Semgrep (`p/default` ruleset); moved agent scripts from incorrect `src/utils/agent/` path to correct `scripts/agent/`; removed misleading `(default)` qualifier from `automatic_commit: false` description.
+- `CLAUDE.md`: Removed misleading `(default)` qualifier from `automatic_commit: false` description.
+
 ### 2026-03-13_20
 
 [fix] Fix SonarCloud S2004 — nesting depth > 4 in `app/(tabs)/settings.tsx`.

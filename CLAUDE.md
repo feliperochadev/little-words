@@ -51,7 +51,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    If keep → proceed. If change → ask which flag(s) and new value(s), update `.agents/agent-config.json`, then proceed. Do this before any other work.
 
 5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
-   - `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+   - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
    - `true` → agent may call `/commit` automatically once work is complete.
 
 6. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
