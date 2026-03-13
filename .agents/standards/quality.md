@@ -159,7 +159,50 @@ import os from 'node:os';
 
 ---
 
-## General Maintainability Checklist
+## Async Callbacks on Event Handler Props (S6544)
+
+React Native props like `onPress`, `onChangeText`, `onSubmit` expect `() => void`. Passing `async () => Promise<void>` is a type mismatch (Sonar rule **S6544**, BUG/MAJOR).
+
+```tsx
+// ❌ Don't — async onPress returns Promise where void is expected
+{ text: t('common.remove'), onPress: async () => {
+    await deleteItem.mutateAsync({ id });
+    onClose();
+}}
+
+// ✅ Do — use void operator to fire-and-forget
+{ text: t('common.remove'), onPress: () => {
+    void deleteItem.mutateAsync({ id }).then(() => { onClose(); });
+}}
+
+// ✅ Also fine — chain with .catch() for error handling
+{ text: t('common.remove'), onPress: () => {
+    deleteItem.mutateAsync({ id })
+      .then(() => { onClose(); })
+      .catch(() => { Alert.alert('Error', 'Could not delete.'); });
+}}
+```
+
+---
+
+## Deprecated StyleSheet APIs (S1874)
+
+`StyleSheet.absoluteFillObject` is deprecated. Use explicit absolute position properties instead.
+
+```tsx
+// ❌ Don't — deprecated API
+backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' }
+
+// ✅ Do — explicit properties
+backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }
+
+// ✅ Also fine — absoluteFill (non-deprecated) when no extra properties needed
+<View style={StyleSheet.absoluteFill} />
+```
+
+---
+
+
 
 Before every commit, verify new code:
 
@@ -171,3 +214,5 @@ Before every commit, verify new code:
 - [ ] `useState` destructuring follows `[value, setValue]` naming
 - [ ] Magic numbers replaced with named constants
 - [ ] `node:` prefix used for all Node.js built-in imports
+- [ ] No `async` callback on `onPress` / event handler props (S6544) — use `void fn()` instead
+- [ ] No `StyleSheet.absoluteFillObject` (deprecated, S1874) — use explicit properties or `StyleSheet.absoluteFill`

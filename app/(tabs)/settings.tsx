@@ -73,10 +73,7 @@ export default function SettingsScreen() {
                 { text: t('settings.deleteAllNo'), style: 'cancel' },
                 {
                   text: t('settings.deleteAllYes'), style: 'destructive',
-                  onPress: async () => {
-                    await clearAllData();
-                    router.replace('/onboarding');
-                  },
+                  onPress: () => { void clearAllData().then(() => router.replace('/onboarding')); },
                 },
               ]
             );

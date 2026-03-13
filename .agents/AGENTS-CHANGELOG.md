@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_15
+
+**[fix] Fix 8 new SonarCloud issues introduced in PR #29**
+
+- `app/(tabs)/settings.tsx:76`: S6544 — replaced `async onPress` with `void fn().then(...)` pattern
+- `src/components/AddVariantModal.tsx:87,244`: S6544 + S1874 — async onPress → void chain; `absoluteFillObject` → explicit position properties
+- `src/components/AddWordModal.tsx:64,466`: S6544 + S1874 — same fixes
+- `src/components/ImportModal.tsx:304`: S1874 — `absoluteFillObject` → explicit properties
+- `src/components/ManageCategoryModal.tsx:57,119`: S6544 + S1874 — async onPress → void+catch chain; explicit properties
+- `.agents/standards/quality.md`: Added S6544 (async void) and S1874 (absoluteFillObject) sections with examples and checklist items
+
 ### 2026-03-13_14
 
 **[fix] Unblock CI from SonarCloud Automatic Analysis conflict**
