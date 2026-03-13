@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_14
+
+**[fix] Unblock CI from SonarCloud Automatic Analysis conflict**
+
+- `.github/workflows/ci.yml`: Added `continue-on-error: true` to SonarCloud Scan step — the project has both Automatic Analysis and CI-based analysis active simultaneously, causing exit code 3. This unblocks CI while the user disables Automatic Analysis in SonarCloud project settings (Administration → Analysis Method).
+
 ### 2026-03-13_13
 
 **[fix] Suppress Semgrep false positive on pinned SonarCloud action SHA**
