@@ -19,7 +19,6 @@ export default function Index() {
         router.replace('/onboarding');
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   return (

@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_9
+
+**[fix] Remove stale eslint-disable comment in app/index.tsx**
+
+- `app/index.tsx`: Removed unused `// eslint-disable-next-line react-hooks/exhaustive-deps` — the deps are correct and no suppression is needed.
+
 ### 2026-03-13_8
 
 **[config] Consolidate CI: npm run ci now includes coverage; workflow uses single step**
