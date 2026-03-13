@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Modal, StyleSheet,
-  Alert, TouchableOpacity, ScrollView, Animated, PanResponder,
+  Alert, TouchableOpacity, ScrollView, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
-import { MODAL_ANIMATION } from '../utils/animationConstants';
 import { findVariantByName, Variant, Word } from '../database/database';
 import { useWords } from '../hooks/useWords';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useAddVariant, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
@@ -31,28 +31,8 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
   const insets = useSafeAreaInsets();
   const today = new Date().toISOString().split('T')[0];
 
-  const translateY = useRef(new Animated.Value(800)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-  const dismissModal = useRef(() => {
-    Animated.parallel([
-      Animated.timing(translateY, { toValue: MODAL_ANIMATION.SLIDE_OUT_DISTANCE, duration: MODAL_ANIMATION.SLIDE_OUT_DURATION, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_HIDDEN, duration: MODAL_ANIMATION.FADE_OUT_DURATION, useNativeDriver: true }),
-    ]).start(() => { onCloseRef.current(); });
-  }).current;
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
-    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
-    onPanResponderRelease: (_, { dy, vy }) => {
-      if (dy > 100 || vy > 0.8) {
-        dismissModal();
-      } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.QUICK_CLOSE_FRICTION }).start();
-      }
-    },
-  })).current;
+  // Modal animation and gesture handling
+  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, onClose);
 
   const { data: words = EMPTY_WORDS } = useWords();
   const addVariantMutation    = useAddVariant();
@@ -70,17 +50,6 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
 
   const effectiveWord = word ?? chosenWord;
   const showSearch    = !word && !editVariant;
-
-  useEffect(() => {
-    if (visible) {
-      translateY.setValue(MODAL_ANIMATION.SLIDE_OUT_DISTANCE);
-      backdropOpacity.setValue(MODAL_ANIMATION.BACKDROP_HIDDEN);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.SLIDE_IN_FRICTION, tension: MODAL_ANIMATION.SLIDE_IN_TENSION }),
-        Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_VISIBLE, duration: MODAL_ANIMATION.FADE_IN_DURATION, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible, translateY, backdropOpacity]);
 
   useEffect(() => {
     if (!visible) return;

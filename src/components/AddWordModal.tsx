@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, Animated, PanResponder,
+  StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { MODAL_ANIMATION } from '../utils/animationConstants';
 import { withOpacity } from '../utils/colorHelpers';
 import { findWordByName, Word, Variant, Category } from '../database/database';
 import * as variantService from '../services/variantService';
@@ -19,6 +18,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
 import { useSyncOnSuccess } from '../hooks/useSyncOnSuccess';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -84,28 +84,8 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const [editingVariantIds, setEditingVariantIds]   = useState<Set<number>>(new Set());
   const [editingVariantTexts, setEditingVariantTexts] = useState<Record<number, string>>({});
 
-  const translateY = useRef(new Animated.Value(800)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-  const dismissModal = useRef(() => {
-    Animated.parallel([
-      Animated.timing(translateY, { toValue: MODAL_ANIMATION.SLIDE_OUT_DISTANCE, duration: MODAL_ANIMATION.SLIDE_OUT_DURATION, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_HIDDEN, duration: MODAL_ANIMATION.FADE_OUT_DURATION, useNativeDriver: true }),
-    ]).start(() => { onCloseRef.current(); });
-  }).current;
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
-    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
-    onPanResponderRelease: (_, { dy, vy }) => {
-      if (dy > 100 || vy > 0.8) {
-        dismissModal();
-      } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.QUICK_CLOSE_FRICTION }).start();
-      }
-    },
-  })).current;
+  // Modal animation and gesture handling
+  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, onClose);
 
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
@@ -115,17 +95,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const [catAtEnd, setCatAtEnd] = useState(false);
   const nextVariantKeyRef = useRef(0);
   const catItemWidth = 110; // approximate chip width + gap
-
-  useEffect(() => {
-    if (visible) {
-      translateY.setValue(MODAL_ANIMATION.SLIDE_OUT_DISTANCE);
-      backdropOpacity.setValue(MODAL_ANIMATION.BACKDROP_HIDDEN);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: MODAL_ANIMATION.SLIDE_IN_FRICTION, tension: MODAL_ANIMATION.SLIDE_IN_TENSION }),
-        Animated.timing(backdropOpacity, { toValue: MODAL_ANIMATION.BACKDROP_VISIBLE, duration: MODAL_ANIMATION.FADE_IN_DURATION, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible, translateY, backdropOpacity]);
 
   // Sync fetched variants into local editable state when modal opens or data arrives
   useEffect(() => {

@@ -2,6 +2,36 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-12_16
+
+**[refactor] Fix SonarCloud nested ternaries + code duplication in modals**
+
+**SonarCloud PR #25 follow-up fixes:**
+- Fixed 2 nested ternary operator issues in `src/utils/dashboardHelpers.ts` by reverting to if-else blocks (SonarCloud prefers explicit conditional logic over nested ternaries).
+- Eliminated ~225 lines of duplicated animation code across 5 modal components by extracting to shared hook.
+
+**New shared hook:**
+- `src/hooks/useModalAnimation.ts`: Custom hook encapsulating all modal animation logic (slide-in/slide-out animations, pan responder for swipe-to-dismiss, backdrop opacity). Returns `{ translateY, backdropOpacity, dismissModal, panResponder }`.
+
+**Updated modal components (eliminated duplication):**
+- `src/components/AddWordModal.tsx`: Removed 35 lines of animation code, replaced with `useModalAnimation` hook.
+- `src/components/AddVariantModal.tsx`: Removed 35 lines of animation code, replaced with `useModalAnimation` hook.
+- `src/components/AddCategoryModal.tsx`: Removed 35 lines of animation code, replaced with `useModalAnimation` hook.
+- `src/components/ManageCategoryModal.tsx`: Removed 35 lines of animation code, replaced with `useModalAnimation` hook.
+- `src/components/ImportModal.tsx`: Removed 35 lines of animation code, replaced with `useModalAnimation` hook.
+
+**Code quality improvements:**
+- Removed unused imports (`useRef`, `useEffect`, `PanResponder`, `MODAL_ANIMATION`) from all 5 modal components.
+- All modals now share identical animation behavior with zero code duplication.
+
+**Validation**
+- All 37 test suites, 645 tests pass.
+- CI passes (lint, typecheck, test).
+- Addresses SonarCloud issues: nested ternaries (cognitive complexity), code duplication in modal animation blocks.
+- Total reduction: ~175 lines of duplicated code eliminated.
+
+---
+
 ### 2026-03-12_15
 
 **[refactor] Fix remaining SonarCloud issues - magic numbers, duplicate code, code smells**
