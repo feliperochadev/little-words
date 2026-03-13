@@ -112,6 +112,8 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
+12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
 ## Commands
 
 ```bash

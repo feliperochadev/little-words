@@ -26,6 +26,8 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
 
+11. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
 ## Coding Style & Naming Conventions
 Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
 

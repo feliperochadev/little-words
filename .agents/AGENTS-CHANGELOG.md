@@ -2,6 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_5
+
+**[config] Add project-root-only command scope rule to agent-config and all vendor readmes**
+
+- `.agents/agent-config.json`: Added `"command_scope": "project_root_only"` — enforces that every shell command an agent runs must execute inside the repository's root directory only.
+- `CLAUDE.md`: Added rule 12 — all commands must run within the project root only.
+- `AGENTS.md`: Added rule 11 — same rule.
+- `GEMINI.md`: Added rule 12 — same rule.
+- `.agents/COMMON-RULES.md`: Added rule 8 — same rule.
+
+---
+
 ### 2026-03-13_4
 
 **[config] Add permanently allowed commands to agent-config and all vendor readmes**
