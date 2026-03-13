@@ -3,6 +3,7 @@ import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useRouter } from 'expo-router';
 
 jest.spyOn(Alert, 'alert');
 
@@ -95,10 +96,29 @@ describe('SettingsScreen', () => {
     expect(Alert.alert).not.toHaveBeenCalled();
   });
 
+  it('shows alert when save to device fails with non-cancelled error', async () => {
+    (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'disk full' });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByText(/Save/));
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+    });
+  });
+
   it('opens import modal', async () => {
     const { findByTestId, findByPlaceholderText } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-import-btn'));
     expect(await findByPlaceholderText(/mamãe/)).toBeTruthy();
+  });
+
+  it('closes import modal via onClose', async () => {
+    const { findByTestId, queryByPlaceholderText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-import-btn'));
+    const closeBtn = await findByTestId('import-close-btn');
+    fireEvent.press(closeBtn);
+    await waitFor(() => {
+      expect(queryByPlaceholderText(/mamãe/)).toBeNull();
+    });
   });
 
   it('opens add category modal', async () => {
@@ -107,10 +127,55 @@ describe('SettingsScreen', () => {
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
+  it('opens edit category modal when tapping a category row', async () => {
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    await findByText(/Settings/);
+    const categoryRow = await findByText('Animals');
+    fireEvent.press(categoryRow);
+    expect(await findByText(/Edit Category/)).toBeTruthy();
+  });
+
+  it('closes add category modal via onClose', async () => {
+    const { findByText, queryByText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByText(/\+ Category/));
+    await findByText(/New Category/);
+    const cancelBtn = await findByText(/Cancel/);
+    fireEvent.press(cancelBtn);
+    await waitFor(() => {
+      expect(queryByText(/New Category/)).toBeNull();
+    });
+  });
+
   it('changes language when selecting another locale', async () => {
     const { findByText } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByText('Português'));
     expect(await findByText('English')).toBeTruthy();
+  });
+
+  it('renders boy emoji and label when sex is boy', async () => {
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByText(/Leo · /)).toBeTruthy();
+  });
+
+  it('renders neutral emoji when sex is undefined', async () => {
+    useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByText(/Baby · /)).toBeTruthy();
+  });
+
+  it('renders no profile message when name is empty', async () => {
+    useSettingsStore.setState({ name: '', sex: undefined, birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByText(/no profile/i)).toBeTruthy();
+  });
+
+  it('navigates to onboarding when edit profile is pressed', async () => {
+    const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByText(/✏️ Edit/));
+    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding');
   });
 
   it('handles clear data double confirmation', async () => {

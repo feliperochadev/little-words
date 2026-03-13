@@ -2,7 +2,21 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-13_9
+### 2026-03-13_10
+
+**[test] Increase settings.tsx test coverage — branches to 90%, statements to 94%**
+
+- `__tests__/screens/settings.test.tsx`: Expanded from 10 to 18 tests, covering previously untested paths:
+  - `getSexDisplay` boy branch and null/undefined default branch
+  - `handleSaveToDevice` non-cancelled error path (line 56)
+  - Edit profile button pressing → `router.push('/onboarding')` (line 102)
+  - Category row tap → opens edit category modal (line 150)
+  - Import modal close via `onClose` callback (line 224)
+  - `closes add category modal via onClose` callback (line 230)
+  - No-profile message when name is empty
+- Coverage improvements: branches 63% → 90%, statements 79% → 94%, lines 77% → 94%.
+- Functions (84.21%) accepted; 3 uncovered inline arrow functions (lines 225, 231, 232) require triggering full async modal mutations which causes Jest open-handle warnings.
+
 
 **[fix] Remove stale eslint-disable comment in app/index.tsx**
 
