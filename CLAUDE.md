@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories, with optional Google Drive backup.
+**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories.
 
 **Stack (current, fully up to date):**
 - Expo SDK 55, expo-router 55 (file-based navigation)
@@ -19,7 +19,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Track pronunciation variants per word
 - Bilingual UI: English (`en-US`) and Brazilian Portuguese (`pt-BR`), locale persisted to SQLite
 - CSV export (share or save to device) and text/CSV import with preview
-- Optional Google Drive backup (native builds only — guarded by `isNativeBuild()`)
 - Swipeable bottom-sheet modals with pan gesture dismiss
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
@@ -168,7 +167,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
   - `unit/` — pure logic (helpers, i18n catalogues, date utils, import helpers)
   - `integration/` — component tests (modals, UI components, database layer)
   - `screens/` — full screen render tests
-- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `@react-native-google-signin/google-signin`, `expo-asset`.
+- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `expo-asset`.
 - The shared mock DB instance is exposed as `global.__mockDb` — reset mocks with `jest.clearAllMocks()` in `beforeEach`.
 - `react-test-renderer` version must exactly match the installed `react` version (enforced by RNTL at runtime).
 
@@ -176,9 +175,9 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 ### Navigation (expo-router file-based)
 
-- `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates Zustand stores (`useSettingsStore`, `useAuthStore`), then routes to `/(tabs)/home` or `/onboarding`. Also triggers Google Drive sync on startup.
-- `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>`, `<I18nProvider>`, calls `configureGoogleSignIn()`.
-- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export, Google Drive).
+- `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates `useSettingsStore`, then routes to `/(tabs)/home` or `/onboarding`.
+- `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>` and `<I18nProvider>`.
+- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export).
 - `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
 
 ### State Management
@@ -188,7 +187,7 @@ The app uses a three-tier state strategy:
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard stats |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding flag |
+| Global client state | **Zustand v5** | child profile, onboarding flag |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 **Service layer** (`src/services/`): thin wrappers over `database.ts` that provide a clean import boundary for hooks.
@@ -202,11 +201,10 @@ The app uses a three-tier state strategy:
 
 **Stores** (`src/stores/`):
 - `useSettingsStore` — `name`, `sex`, `birth`, `isOnboardingDone`; `hydrate()`, `setProfile()`, `setOnboardingDone()`
-- `useAuthStore` — `isConnected`, `email`, `lastSync`; `hydrate()`, `setConnected()`, `setLastSync()`, `clear()`
 
-Both stores call `hydrate()` during app startup in `app/index.tsx`.
+The settings store calls `hydrate()` during app startup in `app/index.tsx`.
 
-**Test helper**: `__tests__/helpers/renderWithProviders.tsx` — wraps components in `QueryClientProvider` + `I18nProvider` for all tests. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
+**Test helper**: `__tests__/helpers/renderWithProviders.tsx` — wraps components in `QueryClientProvider` + `I18nProvider` for all tests. Use `useSettingsStore.setState(...)` to seed store state in tests.
 
 **IMPORTANT — stable empty array defaults**: When destructuring TQ data with a fallback array (`= []`), always use a **module-level constant** (e.g. `const EMPTY_ITEMS: Item[] = []`) instead of an inline `[]`. Inline `[]` creates a new reference on every render, causing infinite loops when used in `useEffect` deps.
 
@@ -216,7 +214,7 @@ Both stores call `hydrate()` during app startup in `app/index.tsx`.
 
 Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`. All DB operations use two internal helpers — `query<T>()` for SELECT and `run()` for INSERT/UPDATE/DELETE — both returning Promises despite using the sync expo-sqlite API under the hood.
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale, Google tokens, onboarding flag).
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag).
 
 **Category i18n pattern:** Built-in categories are stored in the DB using locale-neutral English keys (e.g. `'animals'`, `'food'`). At render time, `useCategoryName()` resolves them to translated strings. User-created categories are stored as literal names and are never translated.
 
@@ -230,8 +228,7 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 
 - `src/utils/theme.ts` — All colors (`COLORS`), category color palette (`CATEGORY_COLORS`), and category emojis (`CATEGORY_EMOJIS`). Always import colors from here.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
-- `src/utils/googleDrive.ts` — Google Sign-In + Drive v3 REST API for CSV backup. **Only works in native builds**, not in Expo Go (`isNativeBuild()` guard throughout). Tokens stored in the `settings` table.
-- `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string. Google Drive backup calls `getAllDataForCSV` directly with the Portuguese default.
+- `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
 

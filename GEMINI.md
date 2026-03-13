@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Palavrinhas** is a React Native / Expo mobile application designed to track a baby's first words, pronunciation variants, and developmental progress. It features a bilingual UI (English and Brazilian Portuguese), local SQLite storage, CSV export/import, and optional Google Drive backup.
+**Palavrinhas** is a React Native / Expo mobile application designed to track a baby's first words, pronunciation variants, and developmental progress. It features a bilingual UI (English and Brazilian Portuguese), local SQLite storage, and CSV export/import.
 
 ### Tech Stack
 - **Framework:** Expo SDK 55 (React Native 0.83.2, React 19.2.0)
@@ -18,17 +18,16 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 ## Architecture & Core Modules
 
 - `app/`: Expo Router screens and layouts.
-  - `_layout.tsx`: Root layout with `QueryClientProvider`, `I18nProvider`, and Google Sign-In config.
+  - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
 - `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`.
 - `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`).
 - `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`.
-- `src/stores/`: Zustand stores for global client state (`settingsStore` — child profile/onboarding; `authStore` — Google auth).
+- `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
 - `src/components/`: Reusable UI components and modals.
 - `src/i18n/`: Internationalization logic and translation catalogues (`en-US`, `pt-BR`).
 - `src/utils/`:
-  - `googleDrive.ts`: Cloud backup integration (native builds only — guarded by `isNativeBuild()`).
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `theme.ts`: Centralized color and style constants.
   - `agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
@@ -38,7 +37,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 **Key patterns:**
@@ -46,7 +45,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `useFocusEffect` refetch lives inside the hooks (e.g. `useDashboardStats`), not in screens.
 - Module-level stable empty arrays for TQ defaults: `const EMPTY: T[] = []` — never `= []` inline in JSX/hooks when used in `useEffect` deps.
 - `useEffect` that resets form state must NOT include TQ data arrays in deps — split into separate effects.
-- Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
+- Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` to seed store state in tests.
 
 ## Rules
 

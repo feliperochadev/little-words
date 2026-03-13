@@ -3,7 +3,6 @@ import { useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { QUERY_KEYS, WORD_MUTATION_KEYS } from './queryKeys';
 import * as wordService from '../services/wordService';
-import { useSyncOnSuccess } from './useSyncOnSuccess';
 
 export function useWords(search?: string) {
   const query = useQuery({
@@ -27,7 +26,6 @@ export function useWords(search?: string) {
 
 export function useAddWord() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({
       word,
@@ -44,14 +42,12 @@ export function useAddWord() {
       WORD_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }
 
 export function useUpdateWord() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({
       id,
@@ -70,21 +66,18 @@ export function useUpdateWord() {
       WORD_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }
 
 export function useDeleteWord() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => wordService.deleteWord(id),
     onSuccess: () => {
       WORD_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }

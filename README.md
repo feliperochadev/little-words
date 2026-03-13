@@ -2,7 +2,7 @@
 
 English | [Português (Brasil)](./README.pt-BR.md)
 
-Little Words is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting or backing up data. The current app targets Android first, with local SQLite storage and optional Google Drive sync in native builds.
+Little Words is an Expo / React Native mobile app for recording a baby's first words, tracking pronunciation variants, and exporting data. The current app targets Android first, with local SQLite storage.
 
 ## Features
 
@@ -12,7 +12,6 @@ Little Words is an Expo / React Native mobile app for recording a baby's first w
 - Import from pasted text or CSV with preview before saving
 - Export CSV with locale-aware column headers
 - Save or share exports from the device
-- Optional Google Drive backup on supported native builds
 - Swipeable bottom-sheet modals and dashboard statistics
 
 ## Tech Stack
@@ -32,7 +31,7 @@ app/(tabs)/          Home, words, variants, settings tabs
 src/components/      Shared UI and modal components
 src/database/        SQLite schema and data access
 src/i18n/            en-US / pt-BR catalogues and provider
-src/utils/           CSV, Google Drive, theme, and helper utilities
+src/utils/           CSV, theme, and helper utilities
 __tests__/           unit, integration, screen, and e2e coverage
 assets/              icons, splash, and branding assets
 ```
@@ -59,8 +58,6 @@ Useful commands:
 - Built-in categories are stored as locale-neutral English keys and translated at render time
 - `src/utils/csvExport.ts` builds locale-aware CSV headers and category labels
 - `src/utils/importHelpers.ts` parses both plain text and CSV input
-- Google Drive backup is guarded by `isNativeBuild()` and does not work in Expo Go
-- Google Drive backups are stored in a `palavrinhas-app` folder and use the `palavrinhas_backup.csv` filename
 - The local SQLite file is `little-words.db` for new installs
 
 ## Multi-Agent Workflow

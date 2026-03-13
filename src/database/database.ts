@@ -52,6 +52,12 @@ export const initDatabase = (): Promise<void> => {
           );
         `);
 
+        // Remove legacy Google Sync settings from older releases.
+        db.execSync(`
+          DELETE FROM settings
+          WHERE key IN ('google_signed_in', 'google_user_email', 'google_file_id', 'google_last_sync');
+        `);
+
         // Seed default categories using locale-neutral keys.
         // The display name is resolved at render time via useCategoryName().
         for (const { key, color, emoji } of DEFAULT_CATEGORIES) {

@@ -10,25 +10,11 @@ import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
-import {
-  signInWithGoogle, signOutGoogle, performSync,
-} from '../../src/utils/googleDrive';
 import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
-import { SvgXml } from 'react-native-svg';
 import { ImportModal } from '../../src/components/ImportModal';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
-import { useGoogleDriveStatus } from '../../src/hooks/useGoogleDriveStatus';
-
-const GOOGLE_DRIVE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
-  <path fill="#4285f4" d="M29.5,21l-3.1708,5.5489A3.07,3.07,0,0,1,23.6459,28H8.3541a3.07,3.07,0,0,1-2.6833-1.4511L4.3687,24.27,9.7578,21Z"/>
-  <path fill="#00ac47" d="M12.3822,4.13a3.2262,3.2262,0,0,0-1.7067,1.4276L2.9591,18.76a3.07,3.07,0,0,0-.1012,3.0489l1.53,2.4658L9.7579,21,16,10.32Z"/>
-  <path fill="#0066da" d="M9.7578,21H2.568a2.6543,2.6543,0,0,0,.29.8089L4.38,24.2632l-.0115.007L5.6709,26.549A2.8267,2.8267,0,0,0,7.008,27.6974L9.7578,21l-.0081.0049Z"/>
-  <path fill="#ffba00" d="M19.6068,4.13a3.2256,3.2256,0,0,1,1.7066,1.4276L29.03,18.76a3.07,3.07,0,0,1,.1013,3.0489l-1.5295,2.4658L22.2311,21,15.9889,10.32Z"/>
-  <path fill="#ea4435" d="M22.2311,21h7.19a2.6541,2.6541,0,0,1-.29.8089l-1.5224,2.4544.0116.007L26.3181,26.549a2.8272,2.8272,0,0,1-1.3371,1.1484L22.2312,21l.0081.0049Z"/>
-  <path fill="#188038" d="M19.6155,4.1342l.0023-.004a2.7726,2.7726,0,0,0-.3609-.0983L16,4l-3.2569.0319a2.7726,2.7726,0,0,0-.3609.0983,3.0224,3.0224,0,0,0-.367.1666L15.9889,10.32,19.977,4.2993A3.03,3.03,0,0,0,19.6155,4.1342Z"/>
-</svg>`;
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -43,14 +29,6 @@ export default function SettingsScreen() {
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  const {
-    googleConnected,
-    googleEmail,
-    lastSync,
-    reloadGoogleState,
-  } = useGoogleDriveStatus();
-  const [syncing, setSyncing] = useState(false);
-  const [signingIn, setSigningIn] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -71,52 +49,6 @@ export default function SettingsScreen() {
     } else if (result.error !== 'cancelled') {
       Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
     }
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    const result = await performSync(t);
-    setSyncing(false);
-    if (result.success) {
-      await reloadGoogleState();
-      Alert.alert(t('settings.syncSuccess'), t('settings.syncSuccessMsg'));
-    } else if (result.error !== 'cancelled') {
-      Alert.alert(t('common.error'), result.error || t('settings.errorSync'));
-      if (result.error?.includes('expirada') || result.error?.includes('expired')) {
-        await reloadGoogleState();
-      }
-    }
-  };
-
-  const handleSignIn = async () => {
-    setSigningIn(true);
-    const result = await signInWithGoogle();
-    setSigningIn(false);
-    if (result.success) {
-      await reloadGoogleState();
-      performSync(t).catch((error) => {
-        console.error('[GoogleDrive] Post-signin sync failed:', error);
-      });
-    } else if (result.error && result.error !== 'cancelled' && result.error !== 'in_progress') {
-      Alert.alert(t('common.error'), result.error);
-    }
-  };
-
-  const handleSignOut = () => {
-    Alert.alert(
-      t('settings.disconnectTitle'),
-      t('settings.disconnectMsg'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('settings.disconnect'), style: 'destructive',
-          onPress: async () => {
-            await signOutGoogle();
-            await reloadGoogleState();
-          },
-        },
-      ]
-    );
   };
 
   const handleClearData = () => {
@@ -146,11 +78,6 @@ export default function SettingsScreen() {
         },
       ]
     );
-  };
-
-  const formatDate = (iso: string) => {
-    try { return new Date(iso).toLocaleString(locale === 'pt-BR' ? 'pt-BR' : 'en-US'); }
-    catch { return iso; }
   };
 
   let sexEmoji: string;
@@ -277,58 +204,6 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Google Drive */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.driveTitleRow}>
-              <SvgXml xml={GOOGLE_DRIVE_SVG} width={20} height={20} />
-              <Text style={styles.sectionTitle}>{t('settings.googleDrive')}</Text>
-            </View>
-            <View style={[styles.statusDot, { backgroundColor: googleConnected ? COLORS.success : COLORS.textLight }]} />
-          </View>
-
-          {googleConnected ? (
-            <>
-              <View style={styles.connectedRow}>
-                <View style={styles.connectedIcon}>
-                  <Text style={styles.connectedIconText}>✓</Text>
-                </View>
-                <View style={styles.connectedInfo}>
-                  <Text style={styles.connectedLabel}>{t('settings.autoBackupActive')}</Text>
-                  {googleEmail ? <Text style={styles.connectedEmail}>{googleEmail}</Text> : null}
-                </View>
-              </View>
-              {lastSync ? (
-                <Text style={styles.lastSync}>{t('settings.lastSync', { date: formatDate(lastSync) })}</Text>
-              ) : null}
-              <View style={styles.buttonRow}>
-                <Button
-                  title={syncing ? t('settings.syncing') : t('settings.sync')}
-                  onPress={handleSync}
-                  loading={syncing}
-                  style={styles.flexBtn}
-                />
-                <Button
-                  title={t('settings.disconnect')}
-                  onPress={handleSignOut}
-                  variant="outline"
-                  style={styles.flexBtn}
-                />
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={styles.sectionDesc}>{t('settings.googleDesc')}</Text>
-              <Button
-                title={signingIn ? t('settings.connecting') : t('settings.connectGoogle')}
-                onPress={handleSignIn}
-                loading={signingIn}
-                style={styles.actionButton}
-              />
-            </>
-          )}
-        </Card>
-
         {/* Danger Zone */}
         <Card style={[styles.section, styles.dangerCard]}>
           <Text style={styles.sectionTitle}>{t('settings.dangerZone')}</Text>
@@ -356,7 +231,7 @@ export default function SettingsScreen() {
         <ImportModal
           visible={showImport}
           onClose={() => setShowImport(false)}
-          onImported={reloadGoogleState}
+          onImported={() => setShowImport(false)}
         />
 
         <AddCategoryModal
@@ -380,20 +255,11 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text },
   sectionDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 14 },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  lastSync: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 },
   actionButton: { marginTop: 4 },
   buttonRow: { flexDirection: 'row', gap: 10 },
   exportButtonText: { fontSize: 12, fontWeight: '700' },
   flexBtn: { flex: 1 },
   exportBtn: { paddingVertical: 10, paddingHorizontal: 8 },
-  driveTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  connectedRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
-  connectedIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: withOpacity(COLORS.success, '20'), alignItems: 'center', justifyContent: 'center' },
-  connectedIconText: { fontSize: 18, color: COLORS.success, fontWeight: '800' },
-  connectedInfo: { flex: 1 },
-  connectedLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-  connectedEmail: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   aboutText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
   versionText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 8, opacity: 0.6 },
   dangerCard: { borderWidth: 1.5, borderColor: withOpacity(COLORS.error, '40') },

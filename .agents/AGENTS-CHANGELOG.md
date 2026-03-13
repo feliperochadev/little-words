@@ -2,6 +2,33 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_2
+
+**[refactor] Remove Google Sync feature end-to-end**
+
+- Removed Google Sync runtime modules and wiring: deleted `src/utils/googleDrive.ts`, `src/hooks/useGoogleDriveStatus.ts`, `src/hooks/useSyncOnSuccess.ts`, and `src/stores/authStore.ts`.
+- Removed startup and mutation sync hooks by updating `app/_layout.tsx`, `app/index.tsx`, `src/hooks/useWords.ts`, `src/hooks/useVariants.ts`, and `src/components/AddWordModal.tsx`.
+- Removed the Google Drive section/UI logic from `app/(tabs)/settings.tsx` while preserving the rest of the Settings layout and flows.
+- Added one-time DB cleanup in `src/database/database.ts` `initDatabase()` to delete legacy `google_signed_in`, `google_user_email`, `google_file_id`, and `google_last_sync` keys from `settings`.
+
+**[test] Remove sync-specific tests and update impacted suites**
+
+- Deleted sync-only tests: `__tests__/integration/googleDrive.test.ts` and `__tests__/unit/useSyncOnSuccess.test.ts`.
+- Updated affected tests to match the new architecture: `__tests__/screens/settings.test.tsx`, `__tests__/screens/index.test.tsx`, `__tests__/screens/words.test.tsx`, and `__tests__/integration/AddWordModal.test.tsx`.
+- Added DB init assertions for legacy Google key cleanup in `__tests__/integration/database.test.ts` and `__tests__/unit/database.test.ts`.
+
+**[config] Remove Google Sign-In dependency and refresh docs**
+
+- Removed `@react-native-google-signin/google-signin` from `package.json` and regenerated `package-lock.json`.
+- Removed obsolete Google Sign-In Jest mock from `jest.setup.js`.
+- Updated shared/product docs to reflect sync removal: `README.md`, `README.pt-BR.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.
+- Removed now-dead i18n keys from `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`.
+
+**Validation**
+- Ran `npm run ci` successfully (lint + typecheck + tests).
+
+---
+
 ### 2026-03-13_1
 
 **[config] Exclude agent scripts from SonarCloud analysis**

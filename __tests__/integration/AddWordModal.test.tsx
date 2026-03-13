@@ -27,13 +27,6 @@ jest.mock('../../src/database/database', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../src/utils/googleDrive', () => ({
-  isGoogleConnected: jest.fn().mockResolvedValue(false),
-  performSync: jest.fn().mockResolvedValue({ success: true }),
-  getGoogleUserEmail: jest.fn().mockResolvedValue(null),
-  configureGoogleSignIn: jest.fn(),
-}));
-
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 const mockWord: Word = {

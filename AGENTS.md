@@ -95,7 +95,7 @@ When starting a new session, call `/check-unfinished-tasks`:
 Task files and agent availability are managed by `scripts/agent/task-persistence.ts` and `scripts/agent/agent-availability.ts`. Shared config lives in `.agents/agent-config.json`.
 
 ## Architecture Notes
-The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.
+The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time.
 
 ### State Management Strategy
 
@@ -107,7 +107,7 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 
 - `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
 - `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`
-- `src/stores/` — Zustand stores (`settingsStore`, `authStore`); hydrated at app start in `app/index.tsx`
+- `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
 - `__tests__/helpers/renderWithProviders.tsx` — test wrapper with `QueryClientProvider` + `I18nProvider`
 - **Stable empty-array defaults**: always use a module-level `const EMPTY: T[] = []` instead of inline `= []` for TQ defaults used in `useEffect` deps.
 

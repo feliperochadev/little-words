@@ -1,7 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { I18nProvider } from '../src/i18n/i18n';
-import { configureGoogleSignIn } from '../src/utils/googleDrive';
 import { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
@@ -24,7 +23,6 @@ function onAppStateChange(status: AppStateStatus) {
 
 export default function RootLayout() {
   useEffect(() => {
-    configureGoogleSignIn();
     const subscription = AppState.addEventListener('change', onAppStateChange);
     return () => subscription.remove();
   }, []);

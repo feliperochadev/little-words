@@ -29,17 +29,8 @@ jest.mock('../../src/database/database', () => {
   };
 });
 
-jest.mock('../../src/utils/googleDrive', () => ({
-  isGoogleConnected: jest.fn().mockResolvedValue(false),
-  performSync: jest.fn().mockResolvedValue({ success: true }),
-  getGoogleUserEmail: jest.fn().mockResolvedValue(null),
-  configureGoogleSignIn: jest.fn(),
-}));
-
 import WordsScreen from '../../app/(tabs)/words';
 import * as db from '../../src/database/database';
-import * as googleDrive from '../../src/utils/googleDrive';
-import { useAuthStore } from '../../src/stores/authStore';
 
 const mockUpdateCategory = db.updateCategory as jest.Mock;
 const mockDeleteCategory = db.deleteCategory as jest.Mock;
@@ -62,8 +53,6 @@ describe('WordsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (db.getWords as jest.Mock).mockResolvedValue(sampleWords);
-    // Reset auth store to disconnected by default
-    useAuthStore.setState({ isConnected: false, email: null, lastSync: null, isHydrated: false });
   });
 
   it('renders words list', async () => {
@@ -161,19 +150,6 @@ describe('WordsScreen', () => {
     const addBtn = await findByText(/Add Word/);
     fireEvent.press(addBtn);
     expect(await findByText(/New Word/)).toBeTruthy();
-  });
-
-  it('triggers sync after saving when google connected', async () => {
-    // Set auth store to connected (replaces isGoogleConnected check in mutation onSuccess)
-    useAuthStore.setState({ isConnected: true, email: 'test@example.com', lastSync: null, isHydrated: true });
-    const { findByText, findByPlaceholderText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('+ New'));
-    const input = await findByPlaceholderText(/E\.g\./);
-    fireEvent.changeText(input, 'hello');
-    await act(async () => { fireEvent.press(await findByText('Add')); });
-    await waitFor(() => {
-      expect(googleDrive.performSync).toHaveBeenCalled();
-    });
   });
 
   it('handles word deletion from modal', async () => {

@@ -96,23 +96,6 @@ jest.mock('react-native-svg', () => ({
   SvgXml: 'SvgXml',
 }));
 
-// Mock @react-native-google-signin/google-signin
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: {
-    configure: jest.fn(),
-    hasPlayServices: jest.fn(),
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    signInSilently: jest.fn(),
-    getTokens: jest.fn(() => ({ accessToken: 'mock-token' })),
-  },
-  statusCodes: {
-    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
-    IN_PROGRESS: 'IN_PROGRESS',
-    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
-  },
-}));
-
 // Mock expo-asset
 jest.mock('expo-asset', () => ({}));
 

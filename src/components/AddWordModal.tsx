@@ -17,7 +17,6 @@ import { VARIANT_MUTATION_KEYS, CATEGORY_MUTATION_KEYS } from '../hooks/queryKey
 import { useCategories } from '../hooks/useCategories';
 import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
-import { useSyncOnSuccess } from '../hooks/useSyncOnSuccess';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 
 // Stable empty arrays to avoid creating new references on every render
@@ -53,7 +52,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const deleteWordMutation = useDeleteWord();
   const updateVariantMutation = useUpdateVariant();
   const deleteVariantMutation = useDeleteVariant();
-  const syncOnSuccess = useSyncOnSuccess();
 
   const handleDelete = () => {
     if (!editWord) return;
@@ -213,11 +211,10 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
           existingTexts.add(text.toLowerCase());
         }
       }
-      // Invalidate all variant-related caches and trigger Drive sync
+      // Invalidate all variant-related caches
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
       onClose();
       onSave?.();
     } finally {
