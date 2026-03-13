@@ -4,7 +4,7 @@ import {
   Alert, TouchableOpacity, ScrollView, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../utils/theme';
+import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
 import { findVariantByName, Variant, Word } from '../database/database';
 import { useWords } from '../hooks/useWords';
@@ -13,6 +13,7 @@ import { useAddVariant, useUpdateVariant, useDeleteVariant } from '../hooks/useV
 import { Button } from './UIComponents';
 import { DatePickerField } from './DatePickerField';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+import { TIMING } from '../utils/animationConstants';
 
 const EMPTY_WORDS: Word[] = [];
 
@@ -68,7 +69,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
 
   useEffect(() => {
     if (editVariant || !variant.trim() || !effectiveWord) { setDuplicate(null); return; }
-    const timer = setTimeout(async () => setDuplicate(await findVariantByName(effectiveWord.id, variant.trim())), 400);
+    const timer = setTimeout(async () => setDuplicate(await findVariantByName(effectiveWord.id, variant.trim())), TIMING.DUPLICATE_CHECK_DEBOUNCE);
     return () => clearTimeout(timer);
   }, [variant, editVariant, effectiveWord]);
 
@@ -252,7 +253,7 @@ const s = StyleSheet.create({
   deleteBtnText:{ fontSize: 13, fontWeight: '700', color: COLORS.error },
   label:        { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:        { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
-  textArea:     { height: 80, textAlignVertical: 'top' },
+  textArea:     { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
   btnDisabled:  { opacity: 0.5 },

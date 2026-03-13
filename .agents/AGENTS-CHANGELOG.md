@@ -2,6 +2,28 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_7
+
+**[refactor] Extract magic numbers into named constants; reduce cognitive complexity in parseCSV and importRows**
+
+- `src/utils/animationConstants.ts`: Added `TIMING` object with `SCROLL_INITIAL_DELAY` (60), `DRAG_SNAP_DELAY` (80), `SCROLL_TRANSITION_DELAY` (300), `DUPLICATE_CHECK_DEBOUNCE` (400).
+- `src/utils/theme.ts`: Added `LAYOUT` object with `TEXTAREA_HEIGHT` (80), `HIGHLIGHT_BORDER_RADIUS` (10), `STAT_ICON_SIZE` (44), `STAT_ICON_RADIUS` (22), `EMPTY_STATE_VERTICAL_PADDING` (60).
+- `src/components/DatePickerField.tsx`: Replaced 3 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/AddWordModal.tsx`: Replaced 3 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/AddVariantModal.tsx`: Replaced 2 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/ManageCategoryModal.tsx`: Replaced 1 magic number with `TIMING.SCROLL_TRANSITION_DELAY`.
+- `src/components/UIComponents.tsx`: Replaced 3 magic numbers in `StatCard` and `EmptyState` with `LAYOUT` constants.
+- `src/utils/importHelpers.ts`: Extracted `buildParsedRow()` helper from `parseCSV()` to reduce cognitive complexity.
+- `src/components/ImportModal.tsx`: Extracted `processGroup()` helper from `importRows()` to reduce cognitive complexity.
+
+### 2026-03-13_6
+
+**[config] Add code quality and security standards files; update standards table in all vendor docs**
+
+- `.agents/standards/quality.md`: New file. Covers Sonar Way quality gate thresholds (maintainability A, reliability A, coverage ≥ 80 %, duplication < 3 %), cognitive complexity limit (≤ 15), negated conditions (S7735), useState naming (S6754), code duplication, magic numbers, explicit return types, Node.js `node:` imports, and a maintainability checklist.
+- `.agents/standards/security.md`: New file. Covers Sonar Way security gate thresholds (security rating A, hotspots reviewed 100 %), `// NOSONAR` placement protocol, child process execution safety (S4036), no hardcoded secrets, SQL injection prevention, sensitive data storage (expo-secure-store), deep link validation, dependency security, input sanitisation, network security, and a security checklist.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/COMMON-RULES.md`: Added Code Quality and Security rows to the standards reference table.
+
 ### 2026-03-13_5
 
 **[config] Add project-root-only command scope rule to agent-config and all vendor readmes**

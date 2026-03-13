@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
-import { COLORS } from '../utils/theme';
+import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
 import { findWordByName, Word, Variant, Category } from '../database/database';
 import * as variantService from '../services/variantService';
@@ -18,6 +18,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
 import { useModalAnimation } from '../hooks/useModalAnimation';
+import { TIMING } from '../utils/animationConstants';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -134,13 +135,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       setTimeout(() => {
         const offset = idx * catItemWidth - catScrollWidth.current / 2 + catItemWidth / 2;
         catScrollRef.current?.scrollTo({ x: Math.max(0, offset), animated: true });
-      }, 300);
+      }, TIMING.SCROLL_TRANSITION_DELAY);
     }
   }, [visible, editWord?.category_id, categories, catItemWidth]);
 
   useEffect(() => {
     if (editWord || !word.trim()) { setDuplicate(null); return; }
-    const timer = setTimeout(async () => setDuplicate(await findWordByName(word.trim())), 400);
+    const timer = setTimeout(async () => setDuplicate(await findWordByName(word.trim())), TIMING.DUPLICATE_CHECK_DEBOUNCE);
     return () => clearTimeout(timer);
   }, [word, editWord]);
 
@@ -485,7 +486,7 @@ const s = StyleSheet.create({
   dupDate:        { fontSize: 12, color: COLORS.textSecondary },
   dupVariants:    { fontSize: 12, color: COLORS.secondary, fontWeight: '600' },
   dupNotes:       { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
-  textArea:       { height: 80, textAlignVertical: 'top' },
+  textArea:       { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
   carouselWrapper:{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   catScroll:      { flex: 1 },
   carouselArrow:  { paddingHorizontal: 6, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },

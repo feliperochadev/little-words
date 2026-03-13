@@ -8,6 +8,7 @@ import { useDeleteCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+import { TIMING } from '../utils/animationConstants';
 
 export interface CategoryItem {
   id: number;
@@ -92,7 +93,7 @@ export function ManageCategoryModal({
           {/* Actions */}
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => { dismissModal(); setTimeout(() => onEdit(category), 300); }}
+            onPress={() => { dismissModal(); setTimeout(() => onEdit(category), TIMING.SCROLL_TRANSITION_DELAY); }}
           >
             <Text style={styles.actionIcon}>✏️</Text>
             <Text style={styles.actionText}>{t('manageCategory.edit')}</Text>

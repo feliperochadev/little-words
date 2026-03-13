@@ -20,3 +20,11 @@ export const MODAL_ANIMATION = {
   BACKDROP_VISIBLE: 1,
   BACKDROP_HIDDEN: 0,
 } as const;
+
+// Timing constants for UI interactions
+export const TIMING = {
+  SCROLL_INITIAL_DELAY: 60,
+  DRAG_SNAP_DELAY: 80,
+  SCROLL_TRANSITION_DELAY: 300,
+  DUPLICATE_CHECK_DEBOUNCE: 400,
+} as const;

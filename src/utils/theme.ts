@@ -53,3 +53,12 @@ export const FONTS = {
   medium:  'System',
   bold:    'System',
 };
+
+// Layout constants for shared dimensions
+export const LAYOUT = {
+  TEXTAREA_HEIGHT: 80,
+  HIGHLIGHT_BORDER_RADIUS: 10,
+  STAT_ICON_SIZE: 44,
+  STAT_ICON_RADIUS: 22,
+  EMPTY_STATE_VERTICAL_PADDING: 60,
+} as const;

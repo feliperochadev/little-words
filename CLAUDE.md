@@ -273,6 +273,8 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Hooks | `.agents/standards/hooks.md` |
 | Testing | `.agents/standards/testing.md` |
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |
 
 ## Additional Documentation
 

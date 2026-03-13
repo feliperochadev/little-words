@@ -77,3 +77,18 @@ The following commands are pre-approved for all agents and may be executed at an
 | `git tag` | Create or list tags |
 | `git log` | Inspect commit history |
 | `git branch` | List or show current branch |
+
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |

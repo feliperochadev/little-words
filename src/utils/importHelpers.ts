@@ -65,6 +65,19 @@ function resolveColumnIndices(
   };
 }
 
+function buildParsedRow(
+  parts: string[], wordIdx: number, catIdx: number, dateIdx: number, variantIdx: number,
+): ParsedRow | null {
+  const word = parts[wordIdx]?.replaceAll('"', '').trim();
+  if (!word) return null;
+  return {
+    word,
+    category: catIdx >= 0 ? parts[catIdx]?.replaceAll('"', '').trim() || undefined : undefined,
+    date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll('"', '').trim()) : undefined,
+    variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll('"', '').trim() || undefined : undefined,
+  };
+}
+
 export function parseCSV(text: string): ParsedRow[] {
   const rows: ParsedRow[] = [];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -83,14 +96,8 @@ export function parseCSV(text: string): ParsedRow[] {
 
   for (const line of dataLines) {
     const parts = splitCSVLine(line, delim);
-    const word = parts[wordIdx]?.replaceAll('"', '').trim();
-    if (!word) continue;
-    rows.push({
-      word,
-      category: catIdx >= 0 ? parts[catIdx]?.replaceAll('"', '').trim() || undefined : undefined,
-      date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll('"', '').trim()) : undefined,
-      variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll('"', '').trim() || undefined : undefined,
-    });
+    const row = buildParsedRow(parts, wordIdx, catIdx, dateIdx, variantIdx);
+    if (row) rows.push(row);
   }
   return rows;
 }

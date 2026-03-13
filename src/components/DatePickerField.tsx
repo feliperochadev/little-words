@@ -6,9 +6,10 @@ import {
   View, Text, TouchableOpacity, Modal,
   StyleSheet, FlatList, Platform,
 } from 'react-native';
-import { COLORS } from '../utils/theme';
+import { COLORS, LAYOUT } from '../utils/theme';
 import { useI18n } from '../i18n/i18n';
 import { daysInMonth, parseDate, toStorage, toDisplay } from '../utils/dateHelpers';
+import { TIMING } from '../utils/animationConstants';
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const ITEM_H = 44;
@@ -33,7 +34,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: Readon
 
   useEffect(() => {
     if (ref.current && idx >= 0) {
-      setTimeout(() => ref.current?.scrollToOffset({ offset: idx * ITEM_H, animated: false }), 60);
+      setTimeout(() => ref.current?.scrollToOffset({ offset: idx * ITEM_H, animated: false }), TIMING.SCROLL_INITIAL_DELAY);
     }
   }, [selected, idx]);
 
@@ -66,7 +67,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: Readon
           momentumStarted.current = false;
           setTimeout(() => {
             if (!momentumStarted.current) snapAndNotify(offsetY);
-          }, 80);
+          }, TIMING.DRAG_SNAP_DELAY);
         }}
         renderItem={({ item, index }) => {
           const sel = item.value === selected;
@@ -93,7 +94,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: Readon
 
 const wh = StyleSheet.create({
   col:       { height: WHEEL_H, overflow: 'hidden' },
-  highlight: { position: 'absolute', left: 4, right: 4, height: ITEM_H, borderRadius: 10, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1 },
+  highlight: { position: 'absolute', left: 4, right: 4, height: ITEM_H, borderRadius: LAYOUT.HIGHLIGHT_BORDER_RADIUS, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1 },
   item:      { height: ITEM_H, justifyContent: 'center', alignItems: 'center' },
   text:      { fontSize: 15, color: COLORS.textSecondary, fontWeight: '500' },
 });
