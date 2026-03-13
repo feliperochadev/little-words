@@ -2,6 +2,10 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_17
+
+[fix] Fix duplicated rule ID in `nosemgrep` annotation in `.github/workflows/ci.yml` line 49. The annotation referenced `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` (rule path segment repeated twice); corrected to `generic.secrets.security.detected-sonarqube-docs-api-key` — the actual rule ID from the Semgrep registry.
+
 ### 2026-03-13_16
 
 [config] Add `.agents/standards/sonar.md` — SonarQube AI CodeFix rule reference for TypeScript/JavaScript. Documents key rules grouped by category (bugs, code smells, security, TypeScript-specific, React/RN) with code examples. Includes full rule ID table and per-commit checklist.
