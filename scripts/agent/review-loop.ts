@@ -73,6 +73,7 @@ export function buildTimestamp(existingCount: number): string {
 
 export function getCurrentBranch(): string {
   try {
+    // NOSONAR - execFileSync is safe here: uses array-based arguments, no shell expansion
     return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf-8' }).trim();
   } catch {
     return 'unknown';
@@ -81,6 +82,7 @@ export function getCurrentBranch(): string {
 
 export function getModifiedFiles(): string[] {
   try {
+    // NOSONAR - execFileSync is safe here: uses array-based arguments, no shell expansion
     const output = execFileSync('git', ['diff', '--name-only', 'HEAD'], { encoding: 'utf-8' });
     return output.trim().split('\n').filter(Boolean);
   } catch {

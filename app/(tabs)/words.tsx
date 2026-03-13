@@ -1,3 +1,4 @@
+import { withOpacity } from '../../src/utils/colorHelpers';
 import React, { useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
@@ -222,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 6, overflow: 'hidden',
   },
   sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  sortMenuItemActive: { backgroundColor: COLORS.primary + '10' },
+  sortMenuItemActive: { backgroundColor: withOpacity(COLORS.primary, '10') },
   sortMenuText: { fontSize: 14, color: COLORS.text },
   sortMenuTextActive: { color: COLORS.primary, fontWeight: '700' },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
@@ -234,6 +235,6 @@ const styles = StyleSheet.create({
   wordMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   wordDate: { fontSize: 12, color: COLORS.textSecondary },
   notePreview: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-  variantChip: { backgroundColor: COLORS.secondary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  variantChip: { backgroundColor: withOpacity(COLORS.secondary, '20'), paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   variantChipText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
 });

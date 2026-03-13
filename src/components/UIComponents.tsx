@@ -11,6 +11,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { withOpacity } from '../utils/colorHelpers';
 
 // ─── Button ───────────────────────────────────────────────────────────────────
 interface ButtonProps {
@@ -171,7 +172,7 @@ interface CategoryBadgeProps {
 
 export function CategoryBadge({ name, color, emoji, size = 'normal' }: Readonly<CategoryBadgeProps>) {
   return (
-    <View style={[badgeStyles.badge, { backgroundColor: color + '20', borderColor: color + '40' }, size === 'small' && badgeStyles.small]}>
+    <View style={[badgeStyles.badge, { backgroundColor: withOpacity(color, '20'), borderColor: withOpacity(color, '40') }, size === 'small' && badgeStyles.small]}>
       <Text style={[badgeStyles.emoji, size === 'small' && badgeStyles.smallEmoji]}>{emoji}</Text>
       <Text style={[badgeStyles.text, { color }, size === 'small' && badgeStyles.smallText]}>{name}</Text>
     </View>
@@ -235,8 +236,8 @@ interface StatCardProps {
 
 export function StatCard({ emoji, value, label, color, testID }: Readonly<StatCardProps>) {
   return (
-    <View style={[statStyles.card, { borderColor: color + '30' }]}>
-      <View style={[statStyles.iconBg, { backgroundColor: color + '15' }]}>
+    <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
+      <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
         <Text style={statStyles.emoji}>{emoji}</Text>
       </View>
       <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>

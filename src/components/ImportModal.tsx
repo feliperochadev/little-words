@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated, PanResponder,
+  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
@@ -12,6 +12,7 @@ import {
   getCategories, addCategory, findWordByName, addWord, addVariant,
 } from '../database/database';
 import { QUERY_KEYS } from '../hooks/queryKeys';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 import { deaccent, parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
@@ -112,39 +113,8 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); };
   const handleClose = () => { reset(); onClose(); };
 
-  const translateY = useRef(new Animated.Value(800)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const handleCloseRef = useRef(handleClose);
-  useEffect(() => { handleCloseRef.current = handleClose; });
-  const dismissModal = useRef(() => {
-    Animated.parallel([
-      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => { handleCloseRef.current(); });
-  }).current;
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
-    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
-    onPanResponderRelease: (_, { dy, vy }) => {
-      if (dy > 100 || vy > 0.8) {
-        dismissModal();
-      } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
-      }
-    },
-  })).current;
-
-  useEffect(() => {
-    if (visible) {
-      translateY.setValue(800);
-      backdropOpacity.setValue(0);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
-        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible, translateY, backdropOpacity]);
+  // Modal animation and gesture handling
+  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, handleClose);
 
   const updateTextPreview = (text: string) => {
     setTextInput(text);

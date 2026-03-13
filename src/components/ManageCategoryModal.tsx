@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated, PanResponder,
+  View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { getWordCountByCategory } from '../database/database';
 import { useDeleteCategory } from '../hooks/useCategories';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 
@@ -31,39 +32,8 @@ export function ManageCategoryModal({
   const insets = useSafeAreaInsets();
   const deleteCategory = useDeleteCategory();
 
-  const translateY = useRef(new Animated.Value(800)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-  const dismissModal = useRef(() => {
-    Animated.parallel([
-      Animated.timing(translateY, { toValue: 800, duration: 250, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => { onCloseRef.current(); });
-  }).current;
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, { dy }) => dy > 0,
-    onPanResponderMove: (_, { dy }) => { if (dy > 0) translateY.setValue(dy); },
-    onPanResponderRelease: (_, { dy, vy }) => {
-      if (dy > 100 || vy > 0.8) {
-        dismissModal();
-      } else {
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
-      }
-    },
-  })).current;
-
-  useEffect(() => {
-    if (visible) {
-      translateY.setValue(800);
-      backdropOpacity.setValue(0);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 65 }),
-        Animated.timing(backdropOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible, translateY, backdropOpacity]);
+  // Modal animation and gesture handling
+  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, onClose);
 
   if (!category) return null;
 
