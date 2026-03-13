@@ -37,6 +37,16 @@ describe('database', () => {
       expect(mockDb.execSync).toHaveBeenCalled();
       expect(mockDb.withTransactionSync).toHaveBeenCalled();
     });
+
+    it('removes legacy google settings keys during init', async () => {
+      await initDatabase();
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM settings')
+      );
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('google_signed_in')
+      );
+    });
   });
 
   describe('getCategories', () => {

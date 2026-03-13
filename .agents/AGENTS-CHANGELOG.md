@@ -2,6 +2,208 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_21
+
+[config] Sync vendor readme files (CLAUDE.md, AGENTS.md, GEMINI.md) with current codebase state.
+
+- `AGENTS.md`: Removed stale "Google auth" example from state management table (Google Drive sync was removed in PR #29); removed misleading `(default)` qualifier from `automatic_commit: false` description (current config has it set to `true`).
+- `GEMINI.md`: Updated CI/CD tech stack line to include Semgrep (`p/default` ruleset); moved agent scripts from incorrect `src/utils/agent/` path to correct `scripts/agent/`; removed misleading `(default)` qualifier from `automatic_commit: false` description.
+- `CLAUDE.md`: Removed misleading `(default)` qualifier from `automatic_commit: false` description.
+
+### 2026-03-13_20
+
+[fix] Fix SonarCloud S2004 — nesting depth > 4 in `app/(tabs)/settings.tsx`.
+
+- Extracted `handleConfirmClearData` function from the innermost `onPress` callback inside `handleClearData`. The double-confirmation Alert chain was nesting 5 levels deep (function → Alert → onPress → Alert → onPress). `onPress: handleConfirmClearData` reduces it to 4.
+
+### 2026-03-13_19
+
+[feature] Add Semgrep to `npm run ci` — runs `p/default` ruleset as a blocking step after jest coverage.
+
+- `package.json`: Added `"semgrep": "semgrep --config p/default --error ."` script; updated `"ci"` to append `&& npm run semgrep`.
+- `.github/workflows/ci.yml`: Added `Install Semgrep` step (`pip install semgrep`) before `npm run ci`; updated job and header descriptions.
+- `.github/workflows/security.yml`: Removed the `semgrep` job (now covered by `npm run ci` in `ci.yml`).
+- `.semgrepignore`: Created to exclude `.agents/`, `release-notes/`, `coverage/`, `node_modules/`, `android/`, `ios/` from scans.
+- `scripts/agent/load-config.ts:40`: Added `// nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring` — false positive; `console.error` with a template literal is not a printf format-string vulnerability.
+- Verified locally: `npm run ci` exits 0 with 0 Semgrep findings (250 rules, 148 files).
+
+### 2026-03-13_18
+
+[fix] Fix `nosemgrep` annotation in `.github/workflows/ci.yml` not suppressing the `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` finding.
+
+Two issues: (1) The annotation was placed inline after `# v5` on the same `uses:` line — Semgrep requires the annotation to be on a **dedicated preceding comment line** for regex-language rules. (2) Entry `2026-03-13_17` incorrectly shortened the rule ID; the full form `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` is correct (Semgrep constructs it as `<folder-path>.<rule-id>`). Fix: moved annotation to its own `# nosemgrep:` line immediately before the `uses:` line. Verified locally with `semgrep --config p/secrets` → 0 findings.
+
+### 2026-03-13_17
+
+[fix] Fix duplicated rule ID in `nosemgrep` annotation in `.github/workflows/ci.yml` line 49. The annotation referenced `generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key` (rule path segment repeated twice); corrected to `generic.secrets.security.detected-sonarqube-docs-api-key` — the actual rule ID from the Semgrep registry.
+
+### 2026-03-13_16
+
+[config] Add `.agents/standards/sonar.md` — SonarQube AI CodeFix rule reference for TypeScript/JavaScript. Documents key rules grouped by category (bugs, code smells, security, TypeScript-specific, React/RN) with code examples. Includes full rule ID table and per-commit checklist.
+
+[config] Updated `.agents/standards/README.md`, `CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` to reference the new `sonar.md` standards file in the Code Standards table.
+
+
+
+**[fix] Fix 8 new SonarCloud issues introduced in PR #29**
+
+- `app/(tabs)/settings.tsx:76`: S6544 — replaced `async onPress` with `void fn().then(...)` pattern
+- `src/components/AddVariantModal.tsx:87,244`: S6544 + S1874 — async onPress → void chain; `absoluteFillObject` → explicit position properties
+- `src/components/AddWordModal.tsx:64,466`: S6544 + S1874 — same fixes
+- `src/components/ImportModal.tsx:304`: S1874 — `absoluteFillObject` → explicit properties
+- `src/components/ManageCategoryModal.tsx:57,119`: S6544 + S1874 — async onPress → void+catch chain; explicit properties
+- `.agents/standards/quality.md`: Added S6544 (async void) and S1874 (absoluteFillObject) sections with examples and checklist items
+
+### 2026-03-13_14
+
+**[fix] Unblock CI from SonarCloud Automatic Analysis conflict**
+
+- `.github/workflows/ci.yml`: Added `continue-on-error: true` to SonarCloud Scan step — the project has both Automatic Analysis and CI-based analysis active simultaneously, causing exit code 3. This unblocks CI while the user disables Automatic Analysis in SonarCloud project settings (Administration → Analysis Method).
+
+### 2026-03-13_13
+
+**[fix] Suppress Semgrep false positive on pinned SonarCloud action SHA**
+
+- `.github/workflows/ci.yml`: Added `# nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key` annotation — the 40-char hex commit SHA for `sonarqube-scan-action@v5` was incorrectly detected as a SonarQube API key.
+
+### 2026-03-13_12
+
+**[security] Pin GitHub Actions to full commit SHAs**
+
+- `.github/workflows/ci.yml`: Pinned all three actions to their full commit SHA to prevent supply chain attacks (Sonar hotspot S6437):
+  - `actions/checkout@v4` → `@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4`
+  - `actions/setup-node@v4` → `@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4`
+  - `SonarSource/sonarqube-scan-action@v5` → `@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5`
+
+### 2026-03-13_11
+
+**[fix] Fix SonarCloud issues in importHelpers.ts**
+
+- `src/utils/importHelpers.ts` line 61: Replace ternary `wi >= 0 ? wi : 0` with `Math.max(wi, 0)`.
+- `src/utils/importHelpers.ts` lines 6, 10: Add `// NOSONAR` to anchored regex patterns flagged as potential ReDoS hotspots — both regexes are safe (bounded character classes, fully anchored, no catastrophic backtracking).
+
+### 2026-03-13_10
+
+**[test] Increase settings.tsx test coverage — branches to 90%, statements to 94%**
+
+- `__tests__/screens/settings.test.tsx`: Expanded from 10 to 18 tests, covering previously untested paths:
+  - `getSexDisplay` boy branch and null/undefined default branch
+  - `handleSaveToDevice` non-cancelled error path (line 56)
+  - Edit profile button pressing → `router.push('/onboarding')` (line 102)
+  - Category row tap → opens edit category modal (line 150)
+  - Import modal close via `onClose` callback (line 224)
+  - `closes add category modal via onClose` callback (line 230)
+  - No-profile message when name is empty
+- Coverage improvements: branches 63% → 90%, statements 79% → 94%, lines 77% → 94%.
+- Functions (84.21%) accepted; 3 uncovered inline arrow functions (lines 225, 231, 232) require triggering full async modal mutations which causes Jest open-handle warnings.
+
+
+**[fix] Remove stale eslint-disable comment in app/index.tsx**
+
+- `app/index.tsx`: Removed unused `// eslint-disable-next-line react-hooks/exhaustive-deps` — the deps are correct and no suppression is needed.
+
+### 2026-03-13_8
+
+**[config] Consolidate CI: npm run ci now includes coverage; workflow uses single step**
+
+- `package.json`: Changed `ci` script from `npm run test` to `npm run test:coverage` — coverage is now always generated locally and in CI.
+- `.github/workflows/ci.yml`: Replaced 3 separate Lint / Typecheck / Test steps with a single `npm run ci` step, eliminating duplication.
+
+### 2026-03-13_7
+
+**[refactor] Extract magic numbers into named constants; reduce cognitive complexity in parseCSV and importRows**
+
+- `src/utils/animationConstants.ts`: Added `TIMING` object with `SCROLL_INITIAL_DELAY` (60), `DRAG_SNAP_DELAY` (80), `SCROLL_TRANSITION_DELAY` (300), `DUPLICATE_CHECK_DEBOUNCE` (400).
+- `src/utils/theme.ts`: Added `LAYOUT` object with `TEXTAREA_HEIGHT` (80), `HIGHLIGHT_BORDER_RADIUS` (10), `STAT_ICON_SIZE` (44), `STAT_ICON_RADIUS` (22), `EMPTY_STATE_VERTICAL_PADDING` (60).
+- `src/components/DatePickerField.tsx`: Replaced 3 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/AddWordModal.tsx`: Replaced 3 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/AddVariantModal.tsx`: Replaced 2 magic numbers with `TIMING` and `LAYOUT` constants.
+- `src/components/ManageCategoryModal.tsx`: Replaced 1 magic number with `TIMING.SCROLL_TRANSITION_DELAY`.
+- `src/components/UIComponents.tsx`: Replaced 3 magic numbers in `StatCard` and `EmptyState` with `LAYOUT` constants.
+- `src/utils/importHelpers.ts`: Extracted `buildParsedRow()` helper from `parseCSV()` to reduce cognitive complexity.
+- `src/components/ImportModal.tsx`: Extracted `processGroup()` helper from `importRows()` to reduce cognitive complexity.
+
+### 2026-03-13_6
+
+**[config] Add code quality and security standards files; update standards table in all vendor docs**
+
+- `.agents/standards/quality.md`: New file. Covers Sonar Way quality gate thresholds (maintainability A, reliability A, coverage ≥ 80 %, duplication < 3 %), cognitive complexity limit (≤ 15), negated conditions (S7735), useState naming (S6754), code duplication, magic numbers, explicit return types, Node.js `node:` imports, and a maintainability checklist.
+- `.agents/standards/security.md`: New file. Covers Sonar Way security gate thresholds (security rating A, hotspots reviewed 100 %), `// NOSONAR` placement protocol, child process execution safety (S4036), no hardcoded secrets, SQL injection prevention, sensitive data storage (expo-secure-store), deep link validation, dependency security, input sanitisation, network security, and a security checklist.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/COMMON-RULES.md`: Added Code Quality and Security rows to the standards reference table.
+
+### 2026-03-13_5
+
+**[config] Add project-root-only command scope rule to agent-config and all vendor readmes**
+
+- `.agents/agent-config.json`: Added `"command_scope": "project_root_only"` — enforces that every shell command an agent runs must execute inside the repository's root directory only.
+- `CLAUDE.md`: Added rule 12 — all commands must run within the project root only.
+- `AGENTS.md`: Added rule 11 — same rule.
+- `GEMINI.md`: Added rule 12 — same rule.
+- `.agents/COMMON-RULES.md`: Added rule 8 — same rule.
+
+---
+
+### 2026-03-13_4
+
+**[config] Add permanently allowed commands to agent-config and all vendor readmes**
+
+- `.agents/agent-config.json`: Added `allowed_commands` array listing 16 pre-approved shell commands that all agents may execute without asking for user permission (`npm run ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run test:coverage`, `npm run agent:review`, `npm run agent:check-tasks`, `npm run agent:availability`, `git status`, `git diff`, `git add`, `git commit`, `git push`, `git tag`, `git log`, `git branch`).
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/COMMON-RULES.md`: Added `## Permanently Allowed Commands` section with the same table, keeping all vendor readmes in sync.
+
+---
+
+### 2026-03-13_3
+
+**[fix] Fix 7 SonarCloud issues and 2 security hotspots**
+
+- `src/i18n/i18n.tsx`: Fixed S7735 negated condition `if (!params)` → positive `if (params)` in `interpolate()`.
+- `src/i18n/i18n.tsx`: Fixed S6754 useState naming — renamed internal setter to `setLocale` and `useCallback` wrapper to `handleSetLocale`; public API (`setLocale` on context) unchanged.
+- `scripts/agent/review-loop.ts`: Fixed S7735 negated ternary conditions on lines 170–171 by flipping `x !== undefined ? val : default` to `x === undefined ? default : val`.
+- `scripts/agent/review-loop.ts`: Fixed S4036 PATH hotspots on lines 77 and 86 — moved `// NOSONAR` comment inline on the flagged lines (was previously on the preceding line and not recognized by SonarCloud).
+- `src/utils/importHelpers.ts`: Fixed S3776 cognitive complexity 16 → 15 in `parseCSV` by extracting `resolveColumnIndices()` helper.
+- `app/(tabs)/settings.tsx`: Fixed S3776 cognitive complexity 19 → 15 in `SettingsScreen` by extracting `getSexDisplay(sex, t)` helper outside the component.
+
+**[config] Add __tests__/scripts/** to SonarCloud exclusions**
+
+- `sonar-project.properties`: Added `**/__tests__/scripts/**` to `sonar.exclusions` — these files are agent-internal tooling and not part of the app.
+
+**[config] Configure SonarCloud test coverage reporting**
+
+- `sonar-project.properties`: Added `sonar.javascript.lcov.reportPaths=./coverage/lcov.info` to enable LCOV coverage ingestion.
+- `.github/workflows/ci.yml`: Added `fetch-depth: 0` to checkout (required for SonarCloud blame data); split `npm run ci` into separate Lint, Typecheck, and Test steps; replaced `npm run test` with `npm run test:coverage` to generate the LCOV report; added `SonarSource/sonarqube-scan-action@v5` step consuming `SONAR_TOKEN` secret.
+
+**Validation**
+- `npm run ci` passes (lint + typecheck + 576 tests across 35 suites).
+
+---
+
+### 2026-03-13_2
+
+**[refactor] Remove Google Sync feature end-to-end**
+
+- Removed Google Sync runtime modules and wiring: deleted `src/utils/googleDrive.ts`, `src/hooks/useGoogleDriveStatus.ts`, `src/hooks/useSyncOnSuccess.ts`, and `src/stores/authStore.ts`.
+- Removed startup and mutation sync hooks by updating `app/_layout.tsx`, `app/index.tsx`, `src/hooks/useWords.ts`, `src/hooks/useVariants.ts`, and `src/components/AddWordModal.tsx`.
+- Removed the Google Drive section/UI logic from `app/(tabs)/settings.tsx` while preserving the rest of the Settings layout and flows.
+- Added one-time DB cleanup in `src/database/database.ts` `initDatabase()` to delete legacy `google_signed_in`, `google_user_email`, `google_file_id`, and `google_last_sync` keys from `settings`.
+
+**[test] Remove sync-specific tests and update impacted suites**
+
+- Deleted sync-only tests: `__tests__/integration/googleDrive.test.ts` and `__tests__/unit/useSyncOnSuccess.test.ts`.
+- Updated affected tests to match the new architecture: `__tests__/screens/settings.test.tsx`, `__tests__/screens/index.test.tsx`, `__tests__/screens/words.test.tsx`, and `__tests__/integration/AddWordModal.test.tsx`.
+- Added DB init assertions for legacy Google key cleanup in `__tests__/integration/database.test.ts` and `__tests__/unit/database.test.ts`.
+
+**[config] Remove Google Sign-In dependency and refresh docs**
+
+- Removed `@react-native-google-signin/google-signin` from `package.json` and regenerated `package-lock.json`.
+- Removed obsolete Google Sign-In Jest mock from `jest.setup.js`.
+- Updated shared/product docs to reflect sync removal: `README.md`, `README.pt-BR.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.
+- Removed now-dead i18n keys from `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`.
+
+**Validation**
+- Ran `npm run ci` successfully (lint + typecheck + tests).
+
+---
+
 ### 2026-03-13_1
 
 **[config] Exclude agent scripts from SonarCloud analysis**

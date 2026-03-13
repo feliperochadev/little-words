@@ -8,6 +8,7 @@ import { useDeleteCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
+import { TIMING } from '../utils/animationConstants';
 
 export interface CategoryItem {
   id: number;
@@ -53,14 +54,10 @@ export function ManageCategoryModal({
         {
           text: t('common.remove'),
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteCategory.mutateAsync({ id: category.id });
-              onClose();
-              onDeleted();
-            } catch {
-              Alert.alert(t('common.error'), t('manageCategory.deleteFailed'));
-            }
+          onPress: () => {
+            void deleteCategory.mutateAsync({ id: category.id })
+              .then(() => { onClose(); onDeleted(); })
+              .catch(() => { Alert.alert(t('common.error'), t('manageCategory.deleteFailed')); });
           },
         },
       ]
@@ -92,7 +89,7 @@ export function ManageCategoryModal({
           {/* Actions */}
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => { dismissModal(); setTimeout(() => onEdit(category), 300); }}
+            onPress={() => { dismissModal(); setTimeout(() => onEdit(category), TIMING.SCROLL_TRANSITION_DELAY); }}
           >
             <Text style={styles.actionIcon}>✏️</Text>
             <Text style={styles.actionText}>{t('manageCategory.edit')}</Text>
@@ -115,7 +112,7 @@ export function ManageCategoryModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
   overlay:        { flex: 1, justifyContent: 'flex-end' },
   sheet:          { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
   handleWrap:     { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },

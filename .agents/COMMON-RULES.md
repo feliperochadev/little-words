@@ -52,3 +52,43 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
    - Set `agents.{self}.available: false` in `.agents/agent-config.json`.
    - Stop immediately. Do not proceed to `/ship`.
    At session start, call `/check-unfinished-tasks`: re-mark yourself available, list pending tasks, pick the oldest, and resume from `## Next Steps`.
+
+8. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
+## Permanently Allowed Commands
+
+The following commands are pre-approved for all agents and may be executed at any time without asking for user permission. They are also listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |
+
+## Code Standards
+
+Authoritative coding standards live in `.agents/standards/`. Read the relevant file before making changes in that domain.
+
+| Domain | File |
+|--------|------|
+| TypeScript | `.agents/standards/typescript.md` |
+| Components | `.agents/standards/components.md` |
+| State Management | `.agents/standards/state-management.md` |
+| Hooks | `.agents/standards/hooks.md` |
+| Testing | `.agents/standards/testing.md` |
+| Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |

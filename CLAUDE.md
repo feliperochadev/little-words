@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories, with optional Google Drive backup.
+**Palavrinhas** ("Little Words") is a React Native / Expo mobile app for recording a baby's first words. It tracks words, pronunciation variants, and categories.
 
 **Stack (current, fully up to date):**
 - Expo SDK 55, expo-router 55 (file-based navigation)
@@ -19,18 +19,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Track pronunciation variants per word
 - Bilingual UI: English (`en-US`) and Brazilian Portuguese (`pt-BR`), locale persisted to SQLite
 - CSV export (share or save to device) and text/CSV import with preview
-- Optional Google Drive backup (native builds only — guarded by `isNativeBuild()`)
 - Swipeable bottom-sheet modals with pan gesture dismiss
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 ### Rules
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions (helpers, utils, parsers) and integration tests for components. Tests must cover at least of the changed code: 99% in lines and 95% in funcs, branch and stmts — every branch, edge case, and error path. Place them in the matching subdirectory under `__tests__/` (`unit/`, `integration/`, or `screens/`).
 
-2. **Always run `npm run ci` after changes and only consider the task done when it passes.** The CI script runs `eslint` (fixes must include warnings, not just errors), `tsc --noEmit`, and `jest` in sequence (`npm run lint && npm run typecheck && npm run test`). A passing CI is required before any work is considered complete — do not skip or work around failures.
+2. **Always run `npm run ci` after changes and only consider the task done when it passes.** The CI script runs `eslint` (fixes must include warnings, not just errors), `tsc --noEmit`, `jest`, and `semgrep` in sequence (`npm run lint && npm run typecheck && npm run test:coverage && npm run semgrep`). A passing CI is required before any work is considered complete — do not skip or work around failures.
 
 3. **Always update `CLAUDE.md` and `CLAUDE-CHANGELOG.md` after every approved change.** Once changes pass CI and are approved: update the relevant sections of `CLAUDE.md` if architecture, conventions, or utilities changed; always append a new entry to `CLAUDE-CHANGELOG.md` regardless — it is the permanent record of every approved change. Each entry heading follows the format `### YYYY-MM-DD_N` (e.g. `2026-03-09_1`, `2026-03-09_2`) where N increments within the same day, making every entry uniquely identifiable. Each change group within an entry must be prefixed with a category tag:
    - `[fix]` — bug fixes and test corrections
@@ -52,7 +51,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    If keep → proceed. If change → ask which flag(s) and new value(s), update `.agents/agent-config.json`, then proceed. Do this before any other work.
 
 5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
-   - `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+   - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
    - `true` → agent may call `/commit` automatically once work is complete.
 
 6. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
@@ -84,6 +83,8 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+
+12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
 ## Commands
 
@@ -168,7 +169,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
   - `unit/` — pure logic (helpers, i18n catalogues, date utils, import helpers)
   - `integration/` — component tests (modals, UI components, database layer)
   - `screens/` — full screen render tests
-- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `@react-native-google-signin/google-signin`, `expo-asset`.
+- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `expo-asset`.
 - The shared mock DB instance is exposed as `global.__mockDb` — reset mocks with `jest.clearAllMocks()` in `beforeEach`.
 - `react-test-renderer` version must exactly match the installed `react` version (enforced by RNTL at runtime).
 
@@ -176,9 +177,9 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 ### Navigation (expo-router file-based)
 
-- `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates Zustand stores (`useSettingsStore`, `useAuthStore`), then routes to `/(tabs)/home` or `/onboarding`. Also triggers Google Drive sync on startup.
-- `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>`, `<I18nProvider>`, calls `configureGoogleSignIn()`.
-- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export, Google Drive).
+- `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates `useSettingsStore`, then routes to `/(tabs)/home` or `/onboarding`.
+- `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>` and `<I18nProvider>`.
+- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export).
 - `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
 
 ### State Management
@@ -188,7 +189,7 @@ The app uses a three-tier state strategy:
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard stats |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding flag |
+| Global client state | **Zustand v5** | child profile, onboarding flag |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 **Service layer** (`src/services/`): thin wrappers over `database.ts` that provide a clean import boundary for hooks.
@@ -202,11 +203,10 @@ The app uses a three-tier state strategy:
 
 **Stores** (`src/stores/`):
 - `useSettingsStore` — `name`, `sex`, `birth`, `isOnboardingDone`; `hydrate()`, `setProfile()`, `setOnboardingDone()`
-- `useAuthStore` — `isConnected`, `email`, `lastSync`; `hydrate()`, `setConnected()`, `setLastSync()`, `clear()`
 
-Both stores call `hydrate()` during app startup in `app/index.tsx`.
+The settings store calls `hydrate()` during app startup in `app/index.tsx`.
 
-**Test helper**: `__tests__/helpers/renderWithProviders.tsx` — wraps components in `QueryClientProvider` + `I18nProvider` for all tests. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
+**Test helper**: `__tests__/helpers/renderWithProviders.tsx` — wraps components in `QueryClientProvider` + `I18nProvider` for all tests. Use `useSettingsStore.setState(...)` to seed store state in tests.
 
 **IMPORTANT — stable empty array defaults**: When destructuring TQ data with a fallback array (`= []`), always use a **module-level constant** (e.g. `const EMPTY_ITEMS: Item[] = []`) instead of an inline `[]`. Inline `[]` creates a new reference on every render, causing infinite loops when used in `useEffect` deps.
 
@@ -216,7 +216,7 @@ Both stores call `hydrate()` during app startup in `app/index.tsx`.
 
 Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`. All DB operations use two internal helpers — `query<T>()` for SELECT and `run()` for INSERT/UPDATE/DELETE — both returning Promises despite using the sync expo-sqlite API under the hood.
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale, Google tokens, onboarding flag).
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag).
 
 **Category i18n pattern:** Built-in categories are stored in the DB using locale-neutral English keys (e.g. `'animals'`, `'food'`). At render time, `useCategoryName()` resolves them to translated strings. User-created categories are stored as literal names and are never translated.
 
@@ -230,10 +230,32 @@ Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`
 
 - `src/utils/theme.ts` — All colors (`COLORS`), category color palette (`CATEGORY_COLORS`), and category emojis (`CATEGORY_EMOJIS`). Always import colors from here.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
-- `src/utils/googleDrive.ts` — Google Sign-In + Drive v3 REST API for CSV backup. **Only works in native builds**, not in Expo Go (`isNativeBuild()` guard throughout). Tokens stored in the `settings` table.
-- `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string. Google Drive backup calls `getAllDataForCSV` directly with the Portuguese default.
+- `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
+
+## Permanently Allowed Commands
+
+The following commands are pre-approved and may be run at any time without asking for user permission. They are listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |
 
 ## Changelog
 
@@ -251,6 +273,9 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Hooks | `.agents/standards/hooks.md` |
 | Testing | `.agents/standards/testing.md` |
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |
+| SonarQube Rules | `.agents/standards/sonar.md` |
 
 ## Additional Documentation
 

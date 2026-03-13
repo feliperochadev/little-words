@@ -10,7 +10,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { COLORS } from '../utils/theme';
+import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
 
 // ─── Button ───────────────────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ export function EmptyState({ emoji, title, subtitle, action }: Readonly<EmptySta
 }
 
 const emptyStyles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  container: { alignItems: 'center', paddingVertical: LAYOUT.EMPTY_STATE_VERTICAL_PADDING, paddingHorizontal: 32 },
   emoji: { fontSize: 64, marginBottom: 16 },
   title: { fontSize: 20, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
@@ -261,7 +261,7 @@ const statStyles = StyleSheet.create({
     elevation: 2,
     margin: 4,
   },
-  iconBg: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  iconBg: { width: LAYOUT.STAT_ICON_SIZE, height: LAYOUT.STAT_ICON_SIZE, borderRadius: LAYOUT.STAT_ICON_RADIUS, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emoji: { fontSize: 22 },
   value: { fontSize: 28, fontWeight: '800', marginBottom: 2 },
   label: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '500' },

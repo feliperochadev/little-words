@@ -37,7 +37,7 @@ export function loadAgentConfig(configPath?: string): AgentConfig {
       maxIterations: config.review?.max_review_iterations ?? DEFAULT_CONFIG.maxIterations,
     };
   } catch (error) {
-    console.error(`Warning: Failed to parse agent config at ${resolvedPath}. Using defaults.`, error);
+    console.error(`Warning: Failed to parse agent config at ${resolvedPath}. Using defaults.`, error); // nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
     return DEFAULT_CONFIG;
   }
 }

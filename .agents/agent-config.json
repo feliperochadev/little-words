@@ -8,6 +8,25 @@
     "external_agents_required_for_auto_ship": 2,
     "max_review_iterations": 3
   },
+  "allowed_commands": [
+    "npm run ci",
+    "npm run lint",
+    "npm run typecheck",
+    "npm run test",
+    "npm run test:coverage",
+    "npm run agent:review",
+    "npm run agent:check-tasks",
+    "npm run agent:availability",
+    "git status",
+    "git diff",
+    "git add",
+    "git commit",
+    "git push",
+    "git tag",
+    "git log",
+    "git branch"
+  ],
+  "command_scope": "project_root_only",
   "agents": {
     "claude": {
       "available": true,

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Palavrinhas** is a React Native / Expo mobile application designed to track a baby's first words, pronunciation variants, and developmental progress. It features a bilingual UI (English and Brazilian Portuguese), local SQLite storage, CSV export/import, and optional Google Drive backup.
+**Palavrinhas** is a React Native / Expo mobile application designed to track a baby's first words, pronunciation variants, and developmental progress. It features a bilingual UI (English and Brazilian Portuguese), local SQLite storage, and CSV export/import.
 
 ### Tech Stack
 - **Framework:** Expo SDK 55 (React Native 0.83.2, React 19.2.0)
@@ -11,34 +11,33 @@
 - **Language:** TypeScript 5.9
 - **Testing:** Jest 30 (Unit/Integration), Maestro (E2E)
 - **Build System:** EAS Build (Android targeted)
-- **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest
+- **CI/CD:** ESLint 9 (flat config), TypeScript type-checking, Jest, Semgrep (`p/default` ruleset)
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 ## Architecture & Core Modules
 
 - `app/`: Expo Router screens and layouts.
-  - `_layout.tsx`: Root layout with `QueryClientProvider`, `I18nProvider`, and Google Sign-In config.
+  - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
 - `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`.
 - `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`).
 - `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`.
-- `src/stores/`: Zustand stores for global client state (`settingsStore` — child profile/onboarding; `authStore` — Google auth).
+- `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
 - `src/components/`: Reusable UI components and modals.
 - `src/i18n/`: Internationalization logic and translation catalogues (`en-US`, `pt-BR`).
 - `src/utils/`:
-  - `googleDrive.ts`: Cloud backup integration (native builds only — guarded by `isNativeBuild()`).
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `theme.ts`: Centralized color and style constants.
-  - `agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
+- `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
 ### State Management Strategy
 
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 **Key patterns:**
@@ -46,13 +45,13 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `useFocusEffect` refetch lives inside the hooks (e.g. `useDashboardStats`), not in screens.
 - Module-level stable empty arrays for TQ defaults: `const EMPTY: T[] = []` — never `= []` inline in JSX/hooks when used in `useEffect` deps.
 - `useEffect` that resets form state must NOT include TQ data arrays in deps — split into separate effects.
-- Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` / `useAuthStore.setState(...)` to seed store state in tests.
+- Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` to seed store state in tests.
 
 ## Rules
 
 1. **Always write tests for every code change.** Use unit tests for isolated functions and integration tests for components. Coverage goal: 99% lines, 95% functions/branches/statements. Place tests under `__tests__/unit/`, `__tests__/integration/`, or `__tests__/screens/`.
 
-2. **Always run `npm run ci` after changes and only consider the task done when it passes.** CI runs `eslint` (warnings count), `tsc --noEmit`, and `jest` in sequence.
+2. **Always run `npm run ci` after changes and only consider the task done when it passes.** CI runs `eslint` (warnings count), `tsc --noEmit`, `jest`, and `semgrep` in sequence (`npm run lint && npm run typecheck && npm run test:coverage && npm run semgrep`).
 
 3. **Always update `GEMINI.md` and `.agents/AGENTS-CHANGELOG.md` after every approved change.** Update `GEMINI.md` when architecture, conventions, or tooling change. Always append a changelog entry using `### YYYY-MM-DD_N` format with category tags (`[fix]`, `[feature]`, `[config]`, `[test]`, `[upgrade]`, etc.).
    - **Cross-vendor documentation rule:** When a change affects general rules, workflow, or architecture, update **all** vendor readmes listed in `.agents/agent-config.json` under `agents.{name}.readme_file`: `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `GEMINI.md` (Gemini). All readmes must stay in sync on shared rules.
@@ -70,7 +69,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 5. **Automatic Commit Gate (`/commit`):**
    - `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. Follow `.gemini/commands/commit.md` for detailed steps.
    - `features.automatic_commit` controls only whether the agent self-triggers it:
-     - `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+     - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
      - `true` → agent may call `/commit` automatically once work is complete.
 
 6. **Shipping code (`/ship`):**
@@ -113,6 +112,8 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
+12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
 ## Commands
 
 ```bash
@@ -137,6 +138,29 @@ npm run agent:review "Change summary"
 /ship
 ```
 
+## Permanently Allowed Commands
+
+The following commands are pre-approved and may be run at any time without asking for user permission. They are listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |
+
 ## Changelog
 
 See [.agents/AGENTS-CHANGELOG.md](.agents/AGENTS-CHANGELOG.md).
@@ -153,6 +177,9 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Hooks | `.agents/standards/hooks.md` |
 | Testing | `.agents/standards/testing.md` |
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |
+| SonarQube Rules | `.agents/standards/sonar.md` |
 
 ## Additional Documentation
 

@@ -9,14 +9,14 @@ Use `npm start` for the Expo dev server and `npm run android` or `npm run ios` f
 - `npm run lint`: ESLint 9 with `eslint-config-expo`
 - `npm run typecheck`: TypeScript compile check without emit
 - `npm test`: Jest unit, integration, and screen tests
-- `npm run ci`: required completion gate; runs lint, typecheck, and Jest
+- `npm run ci`: required completion gate; runs lint, typecheck, Jest, and Semgrep
 - `npm run e2e`, `npm run e2e:import`, `npm run e2e:export`: Maestro flows in `__tests__/e2e/`
 
 Do not consider work complete until `npm run ci` passes.
 
 Pre-push protection: the git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
-CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE, Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
+CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on high/critical), Semgrep CE (via `npm run ci`), Trivy FS, OWASP Dependency-Check, SonarCloud, and Dependabot for npm updates. Findings are surfaced in the GitHub Security tab via SARIF uploads.
 
 10. **Architecture & Design Planning (`/plan`).** Before making any big or core change, run `/plan` to produce the appropriate planning artifact:
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
@@ -25,6 +25,8 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+
+11. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
 ## Coding Style & Naming Conventions
 Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
@@ -50,7 +52,7 @@ After every approved change, update the relevant agent documentation when conven
 If keep → proceed. If change → ask which flag(s) and new value(s), update the file, then proceed. Do this before any other work.
 
 **Automatic Commit Gate (`/commit`):** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
-- `false` (default) → wait for the user to explicitly call `/commit`; never self-trigger.
+- `false` → wait for the user to explicitly call `/commit`; never self-trigger.
 - `true` → agent may call `/commit` automatically once work is complete.
 - Vendor-specific steps live in `.claude/commands/commit.md`, `.codex/commands/commit.md`, `.gemini/commands/commit.md`.
 
@@ -95,19 +97,19 @@ When starting a new session, call `/check-unfinished-tasks`:
 Task files and agent availability are managed by `scripts/agent/task-persistence.ts` and `scripts/agent/agent-availability.ts`. Shared config lives in `.agents/agent-config.json`.
 
 ## Architecture Notes
-The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time. Google Drive backup is native-build only, so preserve `isNativeBuild()` guards when changing sync or settings code.
+The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in categories are stored as locale-neutral English keys and translated at render time.
 
 ### State Management Strategy
 
 | Category | Tool | Examples |
 |---|---|---|
 | Server / SQLite state | **TanStack Query v5** | words, variants, categories, dashboard |
-| Global client state | **Zustand v5** | child profile, Google auth, onboarding |
+| Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 - `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
 - `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`
-- `src/stores/` — Zustand stores (`settingsStore`, `authStore`); hydrated at app start in `app/index.tsx`
+- `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
 - `__tests__/helpers/renderWithProviders.tsx` — test wrapper with `QueryClientProvider` + `I18nProvider`
 - **Stable empty-array defaults**: always use a module-level `const EMPTY: T[] = []` instead of inline `= []` for TQ defaults used in `useEffect` deps.
 
@@ -123,3 +125,29 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Hooks | `.agents/standards/hooks.md` |
 | Testing | `.agents/standards/testing.md` |
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
+| Code Quality | `.agents/standards/quality.md` |
+| Security | `.agents/standards/security.md` |
+| SonarQube Rules | `.agents/standards/sonar.md` |
+
+## Permanently Allowed Commands
+
+The following commands are pre-approved and may be run at any time without asking for user permission. They are listed in `.agents/agent-config.json` under `allowed_commands`.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
+| `npm run lint` | ESLint only |
+| `npm run typecheck` | TypeScript type-check only |
+| `npm run test` | Jest tests (no coverage) |
+| `npm run test:coverage` | Jest tests with LCOV coverage report |
+| `npm run agent:review` | Complexity check + review file creation |
+| `npm run agent:check-tasks` | List pending unfinished agent tasks |
+| `npm run agent:availability` | Show which agents are online/offline |
+| `git status` | Working tree status |
+| `git diff` | Show unstaged / staged changes |
+| `git add` | Stage files for commit |
+| `git commit` | Create a commit |
+| `git push` | Push branch and/or tags to remote |
+| `git tag` | Create or list tags |
+| `git log` | Inspect commit history |
+| `git branch` | List or show current branch |

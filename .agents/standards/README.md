@@ -24,6 +24,9 @@ Before making changes in a given domain, read the relevant standard file. Before
 | Hooks | [`hooks.md`](hooks.md) | naming, `useEffect` rules, stable closures, empty-array consts |
 | Testing | [`testing.md`](testing.md) | Jest structure, RNTL, Maestro, coverage floors, mocking |
 | Styling & Naming | [`styling-and-naming.md`](styling-and-naming.md) | StyleSheet, colors, file/variable naming conventions |
+| Quality | [`quality.md`](quality.md) | Sonar gate thresholds, complexity, duplication, magic numbers |
+| Security | [`security.md`](security.md) | Secrets, SQL injection, secure storage, child processes |
+| SonarQube Rules | [`sonar.md`](sonar.md) | Full AI CodeFix rule reference for TypeScript/JavaScript |
 
 ---
 

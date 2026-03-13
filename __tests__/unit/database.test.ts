@@ -29,6 +29,16 @@ describe('database', () => {
       await expect(initDatabase()).resolves.toBeUndefined();
     });
 
+    it('deletes legacy google sync keys from settings', async () => {
+      await expect(initDatabase()).resolves.toBeUndefined();
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM settings')
+      );
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('google_last_sync')
+      );
+    });
+
     it('rejects when execSync throws', async () => {
       mockDb.execSync.mockImplementationOnce(() => { throw new Error('pragma error'); });
       await expect(initDatabase()).rejects.toThrow('pragma error');

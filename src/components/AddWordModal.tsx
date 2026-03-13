@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
-import { COLORS } from '../utils/theme';
+import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
 import { findWordByName, Word, Variant, Category } from '../database/database';
 import * as variantService from '../services/variantService';
@@ -17,8 +17,8 @@ import { VARIANT_MUTATION_KEYS, CATEGORY_MUTATION_KEYS } from '../hooks/queryKey
 import { useCategories } from '../hooks/useCategories';
 import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
-import { useSyncOnSuccess } from '../hooks/useSyncOnSuccess';
 import { useModalAnimation } from '../hooks/useModalAnimation';
+import { TIMING } from '../utils/animationConstants';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -53,7 +53,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const deleteWordMutation = useDeleteWord();
   const updateVariantMutation = useUpdateVariant();
   const deleteVariantMutation = useDeleteVariant();
-  const syncOnSuccess = useSyncOnSuccess();
 
   const handleDelete = () => {
     if (!editWord) return;
@@ -62,11 +61,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       t('words.deleteMessage', { word: editWord.word }),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.remove'), style: 'destructive', onPress: async () => {
-          await deleteWordMutation.mutateAsync({ id: editWord.id });
-          onClose();
-          onDeleted?.();
-        }},
+        { text: t('common.remove'), style: 'destructive', onPress: () => { void deleteWordMutation.mutateAsync({ id: editWord.id }).then(() => { onClose(); onDeleted?.(); }); }},
       ]
     );
   };
@@ -136,13 +131,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       setTimeout(() => {
         const offset = idx * catItemWidth - catScrollWidth.current / 2 + catItemWidth / 2;
         catScrollRef.current?.scrollTo({ x: Math.max(0, offset), animated: true });
-      }, 300);
+      }, TIMING.SCROLL_TRANSITION_DELAY);
     }
   }, [visible, editWord?.category_id, categories, catItemWidth]);
 
   useEffect(() => {
     if (editWord || !word.trim()) { setDuplicate(null); return; }
-    const timer = setTimeout(async () => setDuplicate(await findWordByName(word.trim())), 400);
+    const timer = setTimeout(async () => setDuplicate(await findWordByName(word.trim())), TIMING.DUPLICATE_CHECK_DEBOUNCE);
     return () => clearTimeout(timer);
   }, [word, editWord]);
 
@@ -213,11 +208,10 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
           existingTexts.add(text.toLowerCase());
         }
       }
-      // Invalidate all variant-related caches and trigger Drive sync
+      // Invalidate all variant-related caches
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
       onClose();
       onSave?.();
     } finally {
@@ -465,7 +459,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
 }
 
 const s = StyleSheet.create({
-  backdrop:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  backdrop:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' },
   overlay:        { flex: 1, justifyContent: 'flex-end' },
   container:      { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
   handleWrap:     { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
@@ -488,7 +482,7 @@ const s = StyleSheet.create({
   dupDate:        { fontSize: 12, color: COLORS.textSecondary },
   dupVariants:    { fontSize: 12, color: COLORS.secondary, fontWeight: '600' },
   dupNotes:       { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
-  textArea:       { height: 80, textAlignVertical: 'top' },
+  textArea:       { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
   carouselWrapper:{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   catScroll:      { flex: 1 },
   carouselArrow:  { paddingHorizontal: 6, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },

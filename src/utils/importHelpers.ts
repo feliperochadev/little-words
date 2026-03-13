@@ -3,11 +3,11 @@
  */
 
 export const deaccent = (s: string): string =>
-  s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase();
+  s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase(); // NOSONAR - simple Unicode normalization range, no backtracking risk
 
 export function parseDateStr(raw: string): string {
   if (!raw) return new Date().toISOString().split('T')[0];
-  const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+  const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw); // NOSONAR - anchored regex on bounded date string, no ReDoS risk
   if (ddmmyyyy) return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, '0')}-${ddmmyyyy[1].padStart(2, '0')}`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   return new Date().toISOString().split('T')[0];
@@ -51,6 +51,33 @@ function splitCSVLine(line: string, delim: string): string[] {
   return parts;
 }
 
+function resolveColumnIndices(
+  lines: string[],
+  delim: string,
+): { wordIdx: number; catIdx: number; dateIdx: number; variantIdx: number } {
+  const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
+  const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
+  return {
+    wordIdx: Math.max(wi, 0),
+    catIdx: headers.findIndex(h => h.includes('categor')),
+    dateIdx: headers.findIndex(h => h.includes('data') || h.includes('date')),
+    variantIdx: headers.findIndex(h => h.includes('variant')),
+  };
+}
+
+function buildParsedRow(
+  parts: string[], wordIdx: number, catIdx: number, dateIdx: number, variantIdx: number,
+): ParsedRow | null {
+  const word = parts[wordIdx]?.replaceAll('"', '').trim();
+  if (!word) return null;
+  return {
+    word,
+    category: catIdx >= 0 ? parts[catIdx]?.replaceAll('"', '').trim() || undefined : undefined,
+    date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll('"', '').trim()) : undefined,
+    variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll('"', '').trim() || undefined : undefined,
+  };
+}
+
 export function parseCSV(text: string): ParsedRow[] {
   const rows: ParsedRow[] = [];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -64,24 +91,13 @@ export function parseCSV(text: string): ParsedRow[] {
 
   let wordIdx = 0, catIdx = 1, dateIdx = 2, variantIdx = 3;
   if (hasHeader) {
-    const headers = lines[0].split(delim).map(h => h.replaceAll('"', '').toLowerCase().trim());
-    const wi = headers.findIndex(h => h.includes('palavra') || h.includes('word'));
-    if (wi >= 0) wordIdx = wi;
-    catIdx     = headers.findIndex(h => h.includes('categor'));
-    dateIdx    = headers.findIndex(h => h.includes('data') || h.includes('date'));
-    variantIdx = headers.findIndex(h => h.includes('variant'));
+    ({ wordIdx, catIdx, dateIdx, variantIdx } = resolveColumnIndices(lines, delim));
   }
 
   for (const line of dataLines) {
     const parts = splitCSVLine(line, delim);
-    const word = parts[wordIdx]?.replaceAll('"', '').trim();
-    if (!word) continue;
-    rows.push({
-      word,
-      category: catIdx >= 0 ? parts[catIdx]?.replaceAll('"', '').trim() || undefined : undefined,
-      date: dateIdx >= 0 && parts[dateIdx] ? parseDateStr(parts[dateIdx].replaceAll('"', '').trim()) : undefined,
-      variant: variantIdx >= 0 ? parts[variantIdx]?.replaceAll('"', '').trim() || undefined : undefined,
-    });
+    const row = buildParsedRow(parts, wordIdx, catIdx, dateIdx, variantIdx);
+    if (row) rows.push(row);
   }
   return rows;
 }

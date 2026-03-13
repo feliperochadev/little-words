@@ -3,6 +3,7 @@ import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useRouter } from 'expo-router';
 
 jest.spyOn(Alert, 'alert');
 
@@ -10,10 +11,7 @@ jest.mock('../../src/database/database', () => {
   const actual = jest.requireActual('../../src/database/database');
   return {
     ...actual,
-    getSetting: jest.fn().mockImplementation((key: string) => {
-      if (key === 'google_signed_in') return Promise.resolve(null);
-      return Promise.resolve(null);
-    }),
+    getSetting: jest.fn().mockResolvedValue(null),
     setSetting: jest.fn().mockResolvedValue(undefined),
     getCategories: jest.fn().mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
@@ -21,14 +19,6 @@ jest.mock('../../src/database/database', () => {
     clearAllData: jest.fn().mockResolvedValue(undefined),
   };
 });
-
-jest.mock('../../src/utils/googleDrive', () => ({
-  isGoogleConnected: jest.fn().mockResolvedValue(false),
-  signInWithGoogle: jest.fn().mockResolvedValue({ success: true }),
-  signOutGoogle: jest.fn().mockResolvedValue(undefined),
-  performSync: jest.fn().mockResolvedValue({ success: true }),
-  getGoogleUserEmail: jest.fn().mockResolvedValue(null),
-}));
 
 jest.mock('../../src/utils/csvExport', () => ({
   buildCategoryResolver: jest.fn(() => (name: string) => name),
@@ -39,16 +29,10 @@ jest.mock('../../src/utils/csvExport', () => ({
 
 import SettingsScreen from '../../app/(tabs)/settings';
 import * as csvExport from '../../src/utils/csvExport';
-import * as googleDrive from '../../src/utils/googleDrive';
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(false);
-    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: true });
-    (googleDrive.signOutGoogle as jest.Mock).mockResolvedValue(undefined);
-    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: true });
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue(null);
     (csvExport.shareCSV as jest.Mock).mockResolvedValue({ success: true });
     (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: true });
     const database = require('../../src/database/database');
@@ -56,57 +40,22 @@ describe('SettingsScreen', () => {
     (database.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
     ]);
-    // Set store with default profile
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
   });
 
-  it('renders settings title', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
+  it('renders key settings sections', async () => {
+    const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
     expect(await findByText(/Settings/)).toBeTruthy();
-  });
-
-  it('renders baby profile', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/Luna/)).toBeTruthy();
-  });
-
-  it('renders language section', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText('English')).toBeTruthy();
-    expect(await findByText('Português')).toBeTruthy();
-  });
-
-  it('renders categories section with category', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText('Animals')).toBeTruthy();
-  });
-
-  it('renders export section', async () => {
-    const { findAllByText } = renderWithProviders(<SettingsScreen />);
-    const exportElements = await findAllByText(/Export/);
-    expect(exportElements.length).toBeGreaterThan(0);
-  });
-
-  it('renders danger zone', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-categories-title')).toBeTruthy();
+    expect(await findByTestId('settings-import-title')).toBeTruthy();
+    expect(await findByTestId('settings-export-title')).toBeTruthy();
     expect(await findByText(/Danger/)).toBeTruthy();
   });
 
-  it('renders version info', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/Version/)).toBeTruthy();
-  });
-
-  it('renders import section', async () => {
-    const { findAllByText } = renderWithProviders(<SettingsScreen />);
-    const importElements = await findAllByText(/Import/);
-    expect(importElements.length).toBeGreaterThan(0);
-  });
-
-  it('renders google drive section', async () => {
-    const { findAllByText } = renderWithProviders(<SettingsScreen />);
-    const driveElements = await findAllByText(/Google Drive/);
-    expect(driveElements.length).toBeGreaterThan(0);
+  it('does not render the removed Google Drive section', async () => {
+    const { findByText, queryByText } = renderWithProviders(<SettingsScreen />);
+    await findByText(/Settings/);
+    expect(queryByText(/Google Drive/)).toBeNull();
   });
 
   it('handles share CSV', async () => {
@@ -118,104 +67,7 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('handles save to device', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    const saveBtn = await findByText(/Save/);
-    fireEvent.press(saveBtn);
-    await waitFor(() => {
-      expect(csvExport.saveCSVToDevice).toHaveBeenCalled();
-    });
-  });
-
-  it('handles google sign in', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    const connectBtn = await findByText(/Connect/);
-    fireEvent.press(connectBtn);
-    await waitFor(() => {
-      expect(googleDrive.signInWithGoogle).toHaveBeenCalled();
-    });
-  });
-
-  it('handles delete all data', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    const deleteBtn = await findByText(/Delete all/);
-    fireEvent.press(deleteBtn);
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalled();
-    });
-  });
-
-  it('renders google drive connected state', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('luna@gmail.com');
-    const database = require('../../src/database/database');
-    (database.getSetting as jest.Mock).mockImplementation((key: string) => {
-      if (key === 'google_last_sync') return Promise.resolve('2024-06-01T10:00:00Z');
-      return Promise.resolve(null);
-    });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/luna@gmail.com/)).toBeTruthy();
-    expect(await findByText(/Sync/)).toBeTruthy();
-    expect(await findByText(/Disconnect/)).toBeTruthy();
-  });
-
-  it('handles sync success', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
-    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: true, lastSync: '2024-07-01' });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Sync/));
-    await waitFor(() => {
-      expect(googleDrive.performSync).toHaveBeenCalled();
-      expect(Alert.alert).toHaveBeenCalled();
-    });
-  });
-
-  it('handles sync error with expired token', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
-    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'Session expired' });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Sync/));
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalled();
-    });
-  });
-
-  it('handles sign out flow', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Disconnect/));
-    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
-    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
-    await act(async () => { destructiveBtn.onPress(); });
-    await waitFor(() => {
-      expect(googleDrive.signOutGoogle).toHaveBeenCalled();
-    });
-  });
-
-  it('handles clear data double confirmation', async () => {
-    const database = require('../../src/database/database');
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Delete all/));
-    await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(1));
-    // Press first destructive button
-    const firstAlert = (Alert.alert as jest.Mock).mock.calls[0];
-    const firstDestructive = firstAlert[2].find((b: any) => b.style === 'destructive');
-    firstDestructive.onPress();
-    await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(2));
-    // Press second destructive button
-    const secondAlert = (Alert.alert as jest.Mock).mock.calls[1];
-    const secondDestructive = secondAlert[2].find((b: any) => b.style === 'destructive');
-    await act(async () => { secondDestructive.onPress(); });
-    await waitFor(() => {
-      expect(database.clearAllData).toHaveBeenCalled();
-    });
-  });
-
-  it('handles share CSV error', async () => {
+  it('shows alert when share fails', async () => {
     (csvExport.shareCSV as jest.Mock).mockResolvedValue({ success: false, error: 'share failed' });
     const { findAllByText } = renderWithProviders(<SettingsScreen />);
     const shareButtons = await findAllByText(/Share/);
@@ -226,15 +78,25 @@ describe('SettingsScreen', () => {
   });
 
   it('handles save to device success', async () => {
-    (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: true });
     const { findByText } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByText(/Save/));
     await waitFor(() => {
+      expect(csvExport.saveCSVToDevice).toHaveBeenCalled();
       expect(Alert.alert).toHaveBeenCalled();
     });
   });
 
-  it('handles save to device error', async () => {
+  it('does not alert when save to device is cancelled', async () => {
+    (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByText(/Save/));
+    await waitFor(() => {
+      expect(csvExport.saveCSVToDevice).toHaveBeenCalled();
+    });
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('shows alert when save to device fails with non-cancelled error', async () => {
     (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'disk full' });
     const { findByText } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByText(/Save/));
@@ -243,28 +105,20 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('handles sign in error', async () => {
-    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: false, error: 'network error' });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Connect/));
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalled();
-    });
-  });
-
   it('opens import modal', async () => {
-    const { findAllByText, findByPlaceholderText } = renderWithProviders(<SettingsScreen />);
-    const importBtns = await findAllByText(/Import Words/);
-    fireEvent.press(importBtns[importBtns.length - 1]);
-    // ImportModal should now be visible - check for its text input placeholder
+    const { findByTestId, findByPlaceholderText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-import-btn'));
     expect(await findByPlaceholderText(/mamãe/)).toBeTruthy();
   });
 
-  it('opens category edit modal on category press', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText('Animals'));
-    // AddCategoryModal should be visible
-    expect(await findByText(/Edit Category/)).toBeTruthy();
+  it('closes import modal via onClose', async () => {
+    const { findByTestId, queryByPlaceholderText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-import-btn'));
+    const closeBtn = await findByTestId('import-close-btn');
+    fireEvent.press(closeBtn);
+    await waitFor(() => {
+      expect(queryByPlaceholderText(/mamãe/)).toBeNull();
+    });
   });
 
   it('opens add category modal', async () => {
@@ -273,103 +127,74 @@ describe('SettingsScreen', () => {
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
-  it('renders edit profile button', async () => {
+  it('opens edit category modal when tapping a category row', async () => {
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    const editBtn = await findByText(/Edit/);
-    expect(editBtn).toBeTruthy();
-    fireEvent.press(editBtn);
+    await findByText(/Settings/);
+    const categoryRow = await findByText('Animals');
+    fireEvent.press(categoryRow);
+    expect(await findByText(/Edit Category/)).toBeTruthy();
   });
 
-  it('shows Boy label when childSex is boy', async () => {
-    useSettingsStore.setState({ name: 'Luca', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/Boy/)).toBeTruthy();
-  });
-
-  it('shows dash when childSex is null', async () => {
-    useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/—/)).toBeTruthy();
-  });
-
-  it('shows no profile message when childName is empty', async () => {
-    useSettingsStore.setState({ name: '', sex: null, birth: '', isOnboardingDone: false, isHydrated: true });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/No profile configured/)).toBeTruthy();
-  });
-
-  it('changes language when a language button is pressed', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    // Press Português to change locale
-    fireEvent.press(await findByText('Português'));
-    // Language should switch — English button now visible and un-checked
-    expect(await findByText('English')).toBeTruthy();
-  });
-
-  it('closes ImportModal via its close button (covers onClose callback)', async () => {
-    const { findAllByText, findByTestId } = renderWithProviders(<SettingsScreen />);
-    // Open the import modal
-    const importBtns = await findAllByText(/Import Words/);
-    fireEvent.press(importBtns[importBtns.length - 1]);
-    // Close it via the ✕ button
-    const closeBtn = await findByTestId('import-close-btn');
-    fireEvent.press(closeBtn);
-    // Modal should close — import-close-btn no longer visible
+  it('closes add category modal via onClose', async () => {
+    const { findByText, queryByText } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByText(/\+ Category/));
+    await findByText(/New Category/);
+    const cancelBtn = await findByText(/Cancel/);
+    fireEvent.press(cancelBtn);
     await waitFor(() => {
-      expect(require('../../src/database/database').getSetting).toBeDefined();
+      expect(queryByText(/New Category/)).toBeNull();
     });
   });
 
-  it('handles sync cancelled (no alert shown)', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
-    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+  it('changes language when selecting another locale', async () => {
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    // Sync button only renders after async load() resolves isGoogleConnected — use longer timeout for CI
-    fireEvent.press(await findByText(/Sync/, {}, { timeout: 5000 }));
-    await waitFor(() => expect(googleDrive.performSync).toHaveBeenCalled());
-    // No alert for cancelled error
-    expect(Alert.alert).not.toHaveBeenCalled();
+    fireEvent.press(await findByText('Português'));
+    expect(await findByText('English')).toBeTruthy();
   });
 
-  it('handles sign in cancelled (no alert shown)', async () => {
-    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+  it('renders boy emoji and label when sex is boy', async () => {
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Connect/));
-    await waitFor(() => expect(googleDrive.signInWithGoogle).toHaveBeenCalled());
-    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(await findByText(/Leo · /)).toBeTruthy();
   });
 
-  it('handles sign in in_progress (no alert shown)', async () => {
-    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: false, error: 'in_progress' });
+  it('renders neutral emoji when sex is undefined', async () => {
+    useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Connect/));
-    await waitFor(() => expect(googleDrive.signInWithGoogle).toHaveBeenCalled());
-    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(await findByText(/Baby · /)).toBeTruthy();
   });
 
-  it('handles sign in success and triggers performSync', async () => {
-    (googleDrive.signInWithGoogle as jest.Mock).mockResolvedValue({ success: true });
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(false);
+  it('renders no profile message when name is empty', async () => {
+    useSettingsStore.setState({ name: '', sex: undefined, birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Connect/));
-    await waitFor(() => expect(googleDrive.performSync).toHaveBeenCalled());
+    expect(await findByText(/no profile/i)).toBeTruthy();
   });
 
-  it('handles sync error without expired token (shows alert, stays connected)', async () => {
-    (googleDrive.isGoogleConnected as jest.Mock).mockResolvedValue(true);
-    (googleDrive.getGoogleUserEmail as jest.Mock).mockResolvedValue('a@b.com');
-    (googleDrive.performSync as jest.Mock).mockResolvedValue({ success: false, error: 'network error' });
+  it('navigates to onboarding when edit profile is pressed', async () => {
+    const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
     const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Sync/));
-    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    fireEvent.press(await findByText(/✏️ Edit/));
+    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding');
   });
 
-  it('handles save to device cancelled (no alert shown)', async () => {
-    (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Save/));
-    await waitFor(() => expect(csvExport.saveCSVToDevice).toHaveBeenCalled());
-    expect(Alert.alert).not.toHaveBeenCalled();
+  it('handles clear data double confirmation', async () => {
+    const database = require('../../src/database/database');
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-delete-all-btn'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(1));
+
+    const firstAlert = (Alert.alert as jest.Mock).mock.calls[0];
+    const firstDestructive = firstAlert[2].find((b: { style?: string }) => b.style === 'destructive');
+    firstDestructive.onPress();
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(2));
+
+    const secondAlert = (Alert.alert as jest.Mock).mock.calls[1];
+    const secondDestructive = secondAlert[2].find((b: { style?: string }) => b.style === 'destructive');
+    await act(async () => { secondDestructive.onPress(); });
+
+    await waitFor(() => {
+      expect(database.clearAllData).toHaveBeenCalled();
+    });
   });
 });

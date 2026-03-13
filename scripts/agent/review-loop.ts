@@ -73,8 +73,7 @@ export function buildTimestamp(existingCount: number): string {
 
 export function getCurrentBranch(): string {
   try {
-    // NOSONAR - execFileSync is safe here: uses array-based arguments, no shell expansion
-    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf-8' }).trim();
+    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf-8' }).trim(); // NOSONAR - execFileSync with array args, no shell expansion
   } catch {
     return 'unknown';
   }
@@ -82,8 +81,7 @@ export function getCurrentBranch(): string {
 
 export function getModifiedFiles(): string[] {
   try {
-    // NOSONAR - execFileSync is safe here: uses array-based arguments, no shell expansion
-    const output = execFileSync('git', ['diff', '--name-only', 'HEAD'], { encoding: 'utf-8' });
+    const output = execFileSync('git', ['diff', '--name-only', 'HEAD'], { encoding: 'utf-8' }); // NOSONAR - execFileSync with array args, no shell expansion
     return output.trim().split('\n').filter(Boolean);
   } catch {
     return [];
@@ -167,8 +165,8 @@ export function parseReviewFile(content: string): Partial<ReviewFile> {
 
   return {
     status,
-    iteration: iterationStr !== undefined ? Number.parseInt(iterationStr, 10) : 1,
-    maxIterations: maxIterationsStr !== undefined ? Number.parseInt(maxIterationsStr, 10) : 3,
+    iteration: iterationStr === undefined ? 1 : Number.parseInt(iterationStr, 10),
+    maxIterations: maxIterationsStr === undefined ? 3 : Number.parseInt(maxIterationsStr, 10),
     branch,
     targetAgent,
     reviewers,

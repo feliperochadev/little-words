@@ -55,6 +55,23 @@ async function addVariantsForWord(wordId: number, rows: ParsedRow[], today: stri
   return count;
 }
 
+async function processGroup(
+  group: { rows: ParsedRow[] },
+  result: ImportResult,
+  getOrCreateCat: (name: string) => Promise<number>,
+): Promise<void> {
+  const firstRow = group.rows[0];
+  let categoryId: number | null = null;
+  if (firstRow.category) categoryId = await getOrCreateCat(firstRow.category);
+  const today = new Date().toISOString().split('T')[0];
+  const dateAdded = firstRow.date || today;
+  const existing = await findWordByName(firstRow.word);
+  let wordId: number;
+  if (existing) { wordId = existing.id; result.skipped.push(firstRow.word); }
+  else { wordId = await addWord(firstRow.word, categoryId, dateAdded); result.wordsAdded++; }
+  result.variantsAdded += await addVariantsForWord(wordId, group.rows, today);
+}
+
 async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   const result: ImportResult = { wordsAdded: 0, variantsAdded: 0, skipped: [], errors: [] };
   const existingCats = await getCategories();
@@ -79,20 +96,11 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   }
 
   for (const [, group] of grouped) {
-    const firstRow = group.rows[0];
     try {
-      let categoryId: number | null = null;
-      if (firstRow.category) categoryId = await getOrCreateCat(firstRow.category);
-      const today = new Date().toISOString().split('T')[0];
-      const dateAdded = firstRow.date || today;
-      const existing = await findWordByName(firstRow.word);
-      let wordId: number;
-      if (existing) { wordId = existing.id; result.skipped.push(firstRow.word); }
-      else { wordId = await addWord(firstRow.word, categoryId, dateAdded); result.wordsAdded++; }
-      result.variantsAdded += await addVariantsForWord(wordId, group.rows, today);
+      await processGroup(group, result, getOrCreateCat);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'error';
-      result.errors.push(`"${firstRow.word}": ${message}`);
+      result.errors.push(`"${group.rows[0].word}": ${message}`);
     }
   }
   return result;
@@ -293,7 +301,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
 }
 
 const styles = StyleSheet.create({
-  backdrop:          { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  backdrop:          { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' },
   overlay:           { flex: 1, justifyContent: 'flex-end' },
   container:         { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
   handleWrap:        { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 6 },

@@ -1,0 +1,8 @@
+# Semgrep ignore patterns (gitignore syntax)
+# Exclude agent tooling and documentation — not app source code
+.agents/
+release-notes/
+coverage/
+node_modules/
+android/
+ios/

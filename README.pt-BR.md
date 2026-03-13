@@ -2,7 +2,7 @@
 
 [English](./README.md) | Português (Brasil)
 
-Palavrinhas é um aplicativo mobile em Expo / React Native para registrar as primeiras palavras do bebê, acompanhar variantes de pronúncia e exportar ou fazer backup dos dados. O foco atual é Android, com armazenamento local em SQLite e sincronização opcional com Google Drive em builds nativas.
+Palavrinhas é um aplicativo mobile em Expo / React Native para registrar as primeiras palavras do bebê, acompanhar variantes de pronúncia e exportar dados. O foco atual é Android, com armazenamento local em SQLite.
 
 ## Funcionalidades
 
@@ -12,7 +12,6 @@ Palavrinhas é um aplicativo mobile em Expo / React Native para registrar as pri
 - Importar texto colado ou CSV com pré-visualização antes de salvar
 - Exportar CSV com cabeçalhos ajustados ao idioma atual
 - Salvar ou compartilhar exports no dispositivo
-- Backup opcional no Google Drive em builds nativas compatíveis
 - Modais em bottom sheet com gesto de arrastar e dashboard com estatísticas
 
 ## Stack
@@ -32,7 +31,7 @@ app/(tabs)/          abas de início, palavras, variantes e ajustes
 src/components/      UI compartilhada e componentes de modal
 src/database/        esquema SQLite e acesso a dados
 src/i18n/            catálogos en-US / pt-BR e provider
-src/utils/           utilitários de CSV, Google Drive, tema e helpers
+src/utils/           utilitários de CSV, tema e helpers
 __tests__/           cobertura unitária, integração, telas e e2e
 assets/              ícones, splash e assets de marca
 ```
@@ -59,8 +58,6 @@ Comandos úteis:
 - Categorias nativas são armazenadas como chaves neutras em inglês e traduzidas na renderização
 - `src/utils/csvExport.ts` monta cabeçalhos CSV e rótulos de categoria de acordo com o locale
 - `src/utils/importHelpers.ts` faz o parse tanto de texto simples quanto de CSV
-- O backup com Google Drive é protegido por `isNativeBuild()` e não funciona no Expo Go
-- Os backups do Google Drive ficam na pasta `palavrinhas-app` e usam o nome `palavrinhas_backup.csv`
 - O arquivo local do SQLite é `little-words.db` em instalações novas
 
 ## Fluxo Multi-Agente

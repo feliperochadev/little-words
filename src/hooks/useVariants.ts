@@ -3,7 +3,6 @@ import { useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { QUERY_KEYS, VARIANT_MUTATION_KEYS } from './queryKeys';
 import * as variantService from '../services/variantService';
-import { useSyncOnSuccess } from './useSyncOnSuccess';
 
 export function useAllVariants() {
   const query = useQuery({
@@ -33,7 +32,6 @@ export function useVariantsByWord(wordId: number | undefined, enabled = true) {
 
 export function useAddVariant() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({
       wordId,
@@ -50,14 +48,12 @@ export function useAddVariant() {
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }
 
 export function useUpdateVariant() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({
       id,
@@ -74,21 +70,18 @@ export function useUpdateVariant() {
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }
 
 export function useDeleteVariant() {
   const queryClient = useQueryClient();
-  const syncOnSuccess = useSyncOnSuccess();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => variantService.deleteVariant(id),
     onSuccess: () => {
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      syncOnSuccess();
     },
   });
 }
