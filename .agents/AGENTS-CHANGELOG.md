@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-13_20
+
+[fix] Fix SonarCloud S2004 — nesting depth > 4 in `app/(tabs)/settings.tsx`.
+
+- Extracted `handleConfirmClearData` function from the innermost `onPress` callback inside `handleClearData`. The double-confirmation Alert chain was nesting 5 levels deep (function → Alert → onPress → Alert → onPress). `onPress: handleConfirmClearData` reduces it to 4.
+
 ### 2026-03-13_19
 
 [feature] Add Semgrep to `npm run ci` — runs `p/default` ruleset as a blocking step after jest coverage.

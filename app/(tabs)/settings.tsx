@@ -57,6 +57,10 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleConfirmClearData = () => {
+    void clearAllData().then(() => router.replace('/onboarding'));
+  };
+
   const handleClearData = () => {
     Alert.alert(
       t('settings.deleteAllTitle'),
@@ -73,7 +77,7 @@ export default function SettingsScreen() {
                 { text: t('settings.deleteAllNo'), style: 'cancel' },
                 {
                   text: t('settings.deleteAllYes'), style: 'destructive',
-                  onPress: () => { void clearAllData().then(() => router.replace('/onboarding')); },
+                  onPress: handleConfirmClearData,
                 },
               ]
             );
