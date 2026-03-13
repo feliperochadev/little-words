@@ -275,6 +275,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Styling & Naming | `.agents/standards/styling-and-naming.md` |
 | Code Quality | `.agents/standards/quality.md` |
 | Security | `.agents/standards/security.md` |
+| SonarQube Rules | `.agents/standards/sonar.md` |
 
 ## Additional Documentation
 

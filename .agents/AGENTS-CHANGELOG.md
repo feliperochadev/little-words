@@ -2,7 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-13_15
+### 2026-03-13_16
+
+[config] Add `.agents/standards/sonar.md` — SonarQube AI CodeFix rule reference for TypeScript/JavaScript. Documents key rules grouped by category (bugs, code smells, security, TypeScript-specific, React/RN) with code examples. Includes full rule ID table and per-commit checklist.
+
+[config] Updated `.agents/standards/README.md`, `CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` to reference the new `sonar.md` standards file in the Code Standards table.
+
+
 
 **[fix] Fix 8 new SonarCloud issues introduced in PR #29**
 
