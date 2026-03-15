@@ -81,6 +81,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
+   - **⛔ `/plan` must NEVER auto-implement.** Its only output is documents in `.agents/plan/`. Implementation requires an explicit user request via `/implement [plan-name]`. No agent may self-trigger implementation after planning, regardless of mode (fleet, autopilot, or interactive).
 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 

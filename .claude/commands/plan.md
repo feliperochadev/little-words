@@ -7,6 +7,9 @@ Call this command **before making any big or core change** to the codebase. It p
 - An **Architecture Decision Record (ADR)** in `.agents/plan/architecture/` capturing a significant architectural choice.
 - **Research documents** in `.agents/plan/research-documents/` containing supporting analysis.
 
+> **⛔ PLANNING ONLY — NO IMPLEMENTATION.**
+> `/plan` must ONLY produce documents in `.agents/plan/`. It must NEVER proceed to implementation, write production code, install dependencies, or create test files. Implementation requires an explicit user request — preferably via `/implement [plan-name]`. This rule applies to ALL agents regardless of mode (fleet, autopilot, or interactive). No agent may self-trigger implementation after planning.
+
 ---
 
 ## When to Run `/plan`
@@ -100,13 +103,16 @@ If the planning phase generates multiple analysis files (audits, logs, benchmark
 
 ---
 
-## Step 4 — Link Plan to Implementation
+## Step 4 — Stop and Report
 
-Before starting implementation:
+After producing the plan documents, **stop**. Do not begin implementation.
 
-- Add a reference to the design/ADR file in your first commit message or changelog entry.
-- If the design has **Open Questions**, resolve them before writing production code.
-- If the ADR status remains `Proposed`, do not merge the implementation until it is `Accepted`.
+- Present a summary of what was planned and which documents were created.
+- Remind the user they can start implementation with `/implement [plan-name]`.
+- If the design has **Open Questions**, flag them as blockers that must be resolved before implementation.
+- If the ADR status remains `Proposed`, note that it must be `Accepted` before implementation begins.
+
+> **The `/plan` command ends here.** Any implementation must be triggered separately by the user.
 
 ---
 
