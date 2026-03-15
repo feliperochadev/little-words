@@ -2,6 +2,62 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_7
+
+[config] Rename `/review` command to `/review-custom` to avoid conflicts with native Claude commands.
+
+- Renamed command definition files: `.claude/commands/review.md` → `.claude/commands/review-custom.md`, `.codex/commands/review.md` → `.codex/commands/review-custom.md`, `.gemini/commands/review.md` → `.gemini/commands/review-custom.md`.
+- Updated all vendor readme files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) to replace all references to `/review` with `/review-custom` in command descriptions, rules, and examples.
+- Updated `.agents/COMMON-RULES.md` to reference `/review-custom` in the Automatic Commit Gate and Auto-Ship rules.
+- All documentation now consistently references the `/review-custom` command across all vendor guides.
+
+### 2026-03-15_6
+
+[fix] Fix 26 SonarCloud issues — re-exports, boolean conversion, and async void callback.
+
+- `src/services/assetService.ts`, `src/services/wordService.ts`, `src/services/variantService.ts`, `src/database/database.ts`: Fixed 24 SonarCloud issues by converting imports followed by exports to use `export...from` syntax, eliminating unused variable warnings and following SonarQube best practices. Includes 4 re-export type issues in database.ts (Asset, NewAsset, ParentType, AssetType).
+- `app/(tabs)/home.tsx:L48`: Fixed "Convert the conditional to a boolean to avoid leaked value" — changed `{name && (` to `{!!name && (` to ensure proper boolean return instead of leaked string value.
+- `src/components/AddCategoryModal.tsx:L84`: Fixed "Promise-returning function provided to property where a void return was expected" — removed `async` from `onPress` callback and used `.then()` chain instead to match Alert's void callback signature.
+- All changes pass CI: ESLint, TypeScript, Jest (799 tests), and Semgrep with 0 findings.
+
+### 2026-03-15_5
+
+[config] Update agent command files — remove ship- prefix from tag search logic.
+
+- `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`: Updated tag search from `git tag --list "ship-*"` to `git tag --list "2026-*"` pattern and removed logic to strip `ship-` prefix (no longer needed with simplified tag naming).
+- `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md`: Updated tag format reference from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+
+### 2026-03-15_4
+
+[config] Change tag naming scheme from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+
+- `.agents/COMMON-RULES.md`: Updated tag format in tag-based shipping boundary section from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Updated all references to new tag naming in `/ship` documentation and removed `ship-` prefix from example tags.
+- `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`: Updated tag format and example tags to remove `ship-` prefix.
+- **Git tag renaming:** All 57 existing `ship-YYYY-MM-DD_N` tags have been renamed to `YYYY-MM-DD_N` and pushed to remote. Old tags have been deleted from remote.
+
+### 2026-03-15_3
+
+[fix] Fix CI workflow — change `npm ci` to `npm install` and update Node.js to LTS.
+
+- `.github/workflows/ci.yml`: Changed `npm ci` to `npm install` in the install dependencies step to prevent hanging on GitHub runners. Updated Node.js version from `"20"` to `"lts/*"` to automatically use the latest LTS release.
+
+### 2026-03-15_2
+
+[feature] Media asset foundation — database schema, file storage, service layer, hooks, and tests.
+
+- `src/types/asset.ts`: New file — `ParentType` (`word`|`variant`), `AssetType` (`audio`|`photo`|`video`), `Asset` and `NewAsset` interfaces, `ACCEPTED_MIME_TYPES`, `ASSET_EXTENSIONS`, `MAX_FILE_SIZE` (50 MB), `MEDIA_ROOT_DIR`, validation helpers (`validateMimeType`, `validateFileSize`, `getExtensionForMime`).
+- `src/database/database.ts`: Added `assets` table with indexes (`idx_assets_parent`, `idx_assets_type`); CRUD functions (`getAssetsByParent`, `getAssetsByParentAndType`, `addAsset`, `deleteAsset`, `deleteAssetsByParent`, `updateAssetFilename`); `asset_count` subquery in `getWords()` and `getAllVariants()`; cascade deletion in `deleteWord`/`deleteVariant` via `withTransactionSync`; `clearAllData` now purges assets first.
+- `src/utils/assetStorage.ts`: New file — file-system layer using expo-file-system `File`/`Directory`/`Paths` API. Path resolution, `ensureDir`, `saveAssetFile` (copy to documents), `deleteAssetFile`, `deleteAllAssetsForParent`, `deleteAllMedia`, `assetFileExists`.
+- `src/services/assetService.ts`: New file — atomic orchestration: `saveAsset` (DB insert → get ID → build filename → copy file → update DB; rollback on failure), `removeAsset`, `removeAllAssetsForParent`, `removeAllMedia`.
+- `src/hooks/useAssets.ts`: New file — TanStack Query hooks: `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
+- `src/hooks/queryKeys.ts`: Added `QUERY_KEYS.assets()`, `QUERY_KEYS.assetsByType()`, `ASSET_MUTATION_KEYS`.
+- `package.json`: Added `expo-av` (^16.0.8) and `expo-image-picker` (~55.0.12).
+- `jest.setup.js`: Added mocks for `expo-av`, `expo-image-picker`; enhanced `expo-file-system` mock with `Paths.document`, `Directory` constructor, `File.copy`/`delete`/`exists`/`size`.
+- Tests: 5 new test files (48 + 30 + 73 + 30 + 21 = 202 tests), all at 100% coverage. 786 total tests passing.
+- `.agents/plan/design/2026-03-15_01-media-asset-foundation.md`: Design document.
+- `.agents/plan/prompts/2026-03-15_01-media-asset-foundation.md`: Prompt record.
+
 ### 2026-03-15_2
 
 [config] Add strict "planning-only" rule to `/plan` — no auto-implementation.

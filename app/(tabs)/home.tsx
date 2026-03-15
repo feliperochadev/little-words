@@ -45,7 +45,7 @@ export default function DashboardScreen() {
       >
         <BrandHeader />
 
-        {name && (
+        {!!name && (
           <View style={styles.profileBlock}>
             <View style={styles.profileRow}>
               <Text style={styles.profileEmoji}>{emoji}</Text>
