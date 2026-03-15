@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_3
+
+[fix] Fix CI workflow — change `npm ci` to `npm install` and update Node.js to LTS.
+
+- `.github/workflows/ci.yml`: Changed `npm ci` to `npm install` in the install dependencies step to prevent hanging on GitHub runners. Updated Node.js version from `"20"` to `"lts/*"` to automatically use the latest LTS release.
+
 ### 2026-03-15_2
 
 [feature] Media asset foundation — database schema, file storage, service layer, hooks, and tests.
