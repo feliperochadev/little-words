@@ -52,13 +52,13 @@ After every approved change, update the relevant agent documentation when conven
 
 If keep → proceed. If change → ask which flag(s) and new value(s), update the file, then proceed. Do this before any other work.
 
-**Automatic Commit Gate (`/commit`):** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
+**Automatic Commit Gate (`/commit`):** `/commit` always runs CI → `/review-custom` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
 - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
 - `true` → agent may call `/commit` automatically once work is complete.
 - Vendor-specific steps live in `.claude/commands/commit.md`, `.codex/commands/commit.md`, `.gemini/commands/commit.md`.
 
 `/ship` is the standard push flow. Before running it, read `features.automatic_ship` from `.agents/agent-config.json`:
-- `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change `status: approved` with required approvals met).
+- `true` → run `/ship` automatically once `/review-custom` confirms approval (simple checklist passed, or complex change `status: approved` with required approvals met).
 - `false` → **never run `/ship` automatically**; wait for explicit user request.
 - **Agent Markers:** Commits must include a vendor marker: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
 - **Clean History:** Commit messages must have Markdown markers (`**`, `###`) stripped. Standard tags (`[fix]`) and vendor markers must be kept.
@@ -93,7 +93,7 @@ When starting a new session, call `/check-unfinished-tasks`:
 - Mark yourself as `"available": true` in `agent-config.json`.
 - List pending tasks in `.agents/unfinished-tasks/`.
 - Pick the oldest pending task, mark it `in_progress`, and follow the `## Next Steps` section.
-- On completion: run CI, update changelog, run `/review`, delete the task file.
+- On completion: run CI, update changelog, run `/review-custom`, delete the task file.
 
 Task files and agent availability are managed by `scripts/agent/task-persistence.ts` and `scripts/agent/agent-availability.ts`. Shared config lives in `.agents/agent-config.json`.
 

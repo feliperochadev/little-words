@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_7
+
+[config] Rename `/review` command to `/review-custom` to avoid conflicts with native Claude commands.
+
+- Renamed command definition files: `.claude/commands/review.md` → `.claude/commands/review-custom.md`, `.codex/commands/review.md` → `.codex/commands/review-custom.md`, `.gemini/commands/review.md` → `.gemini/commands/review-custom.md`.
+- Updated all vendor readme files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) to replace all references to `/review` with `/review-custom` in command descriptions, rules, and examples.
+- Updated `.agents/COMMON-RULES.md` to reference `/review-custom` in the Automatic Commit Gate and Auto-Ship rules.
+- All documentation now consistently references the `/review-custom` command across all vendor guides.
+
 ### 2026-03-15_6
 
 [fix] Fix 26 SonarCloud issues — re-exports, boolean conversion, and async void callback.

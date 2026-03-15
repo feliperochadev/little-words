@@ -50,12 +50,12 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 
    If keep → proceed. If change → ask which flag(s) and new value(s), update `.agents/agent-config.json`, then proceed. Do this before any other work.
 
-5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
+5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review-custom` → respects `automatic_ship` when invoked. `features.automatic_commit` controls only whether the agent self-triggers it:
    - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
    - `true` → agent may call `/commit` automatically once work is complete.
 
 6. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
-   - `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change has `status: approved` with required approvals).
+   - `true` → run `/ship` automatically once `/review-custom` confirms approval (simple checklist passed, or complex change has `status: approved` with required approvals).
    - `false` → **never run `/ship` automatically**; wait for explicit user request.
    - **Tag-based shipping boundary:** `/ship` uses git tags named `YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
    - **Changelog immutability after push:** Never modify a changelog entry after it has been pushed. If corrections are needed, add a new entry referencing the old ID.
@@ -122,7 +122,7 @@ npm run agent:availability   # show which agents are online/offline
 
 ### Shipping code (`/ship`)
 
-`/ship` is the standard way to commit and push approved changes. Run it automatically when `features.automatic_ship` is `true` in `.agents/agent-config.json` and `/review` confirms approval; wait for explicit user request only when it is `false`.
+`/ship` is the standard way to commit and push approved changes. Run it automatically when `features.automatic_ship` is `true` in `.agents/agent-config.json` and `/review-custom` confirms approval; wait for explicit user request only when it is `false`.
 
 ```
 /ship

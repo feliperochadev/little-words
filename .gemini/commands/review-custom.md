@@ -1,6 +1,8 @@
-# /review — Run post-CI review before shipping (Codex)
+# /review-custom — Run post-CI review before shipping (Gemini)
 
 Call this command after `npm run ci` passes and the changelog has been updated. It detects whether the change is simple or complex and performs the appropriate review.
+
+This process is governed by `.agents/agent-config.json`.
 
 ## Steps
 
@@ -23,14 +25,18 @@ Perform this checklist by reading the relevant files. Report each item as `[ok]`
 [ ] No dead code   — no unused imports, variables, or unreachable branches
 [ ] No secrets     — no tokens, passwords, or .env values hardcoded
 [ ] Changelog      — .agents/AGENTS-CHANGELOG.md updated with correct format
-[ ] Docs           — AGENTS.md or vendor doc updated if architecture/conventions changed
+[ ] Docs           — GEMINI.md updated if architecture/conventions changed
 ```
 
 If all items are `[ok]`, output:
 
 ```
-Internal review passed. Safe to /ship.
+Internal review passed.
 ```
+
+Check `.agents/agent-config.json`:
+- If `features.automatic_ship` is `true`, proceed to `/ship` automatically.
+- Otherwise, output: `Safe to /ship.`
 
 If any item is `[fail]`, list the failures and fix them before /ship.
 
@@ -44,7 +50,7 @@ If any item is `[fail]`, list the failures and fix them before /ship.
    ```
    npm run agent:review "<summary>"
    ```
-   This creates `.agents/reviews/review-{timestamp}.md` with `status: pending`.
+   This creates or updates `.agents/reviews/review-{timestamp}.md` with `status: pending`.
 
 3. Output the path to the review file and the following message:
 
@@ -52,16 +58,23 @@ If any item is `[fail]`, list the failures and fix them before /ship.
    Complex change — external review required.
    Review file: .agents/reviews/review-{timestamp}.md
 
-   Hand this file to an external reviewer (Claude or Gemini).
+   Hand this file to an external reviewer (Codex or Claude).
    The reviewer must update the file and set:
-     status: approved        → proceed to /ship
+     status: approved        → records approval for this agent
      status: changes_requested → apply fixes, re-run CI, re-run /review
 
-   Do NOT run /ship until status is approved.
-   Maximum 3 iterations. If still unresolved, set status: escalation_required and stop.
+   A total of <requiredApprovals> independent approvals are required.
    ```
 
-4. Stop. Do not proceed to `/ship` until the review file is resolved.
+4. Check if approvals are sufficient:
+   - Read `.agents/agent-config.json` for `review.external_agents_required_for_auto_ship`.
+   - Read the review file and count agents in the `approvals:` list.
+   - If `status: approved` AND `approvals >= required`:
+     - If `features.automatic_ship` is `true`, proceed to `/ship` automatically.
+     - Otherwise, output: `Required approvals met. Safe to /ship.`
+   - Else:
+     - Output: `Awaiting more external reviewers.`
+     - Stop. Do not proceed to `/ship` until approvals are met.
 
 ---
 
@@ -69,5 +82,6 @@ If any item is `[fail]`, list the failures and fix them before /ship.
 
 - Never approve your own complex changes.
 - Never skip this command before `/ship` on a complex change.
+- Approval is recorded when a DIFFERENT vendor agent sets `status: approved` and adds their marker (e.g., `apsc - ce` for Claude, `apsc - cx` for Codex) to the `approvals:` list in the review file.
 - An external reviewer may run `/commit` and `/ship` only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` allow it.
 - Always delete the review file after the code is committed (`rm .agents/reviews/review-*.md`).
