@@ -28,11 +28,11 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
    - Use a HEREDOC to pass the message so formatting is preserved.
 
 5. **Tag** — create a ship tag for the newest shipped changelog entry:
-   - Tag format: `ship-YYYY-MM-DD_N` (e.g. `ship-2026-03-10_28`).
+   - Tag format: `YYYY-MM-DD_N` (e.g. `2026-03-10_28`).
    - The tag must point to the commit you just created.
    - **Do not** move or recreate an existing ship tag; if it already exists, stop and ask for guidance.
 
-6. **Push** — run `git push -u origin <branch>` and push the new tag (e.g. `git push origin ship-2026-03-10_28`).
+6. **Push** — run `git push -u origin <branch>` and push the new tag (e.g. `git push origin 2026-03-10_28`).
 
 7. **Confirm** — output the commit hash and a one-line summary of how many changelog entries were included.
 

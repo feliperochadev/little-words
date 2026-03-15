@@ -57,7 +57,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 6. `/ship` is the standard way to commit and push approved changes. Before running it, always read `features.automatic_ship` from `.agents/agent-config.json`:
    - `true` → run `/ship` automatically once `/review` confirms approval (simple checklist passed, or complex change has `status: approved` with required approvals).
    - `false` → **never run `/ship` automatically**; wait for explicit user request.
-   - **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
+   - **Tag-based shipping boundary:** `/ship` uses git tags named `YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
    - **Changelog immutability after push:** Never modify a changelog entry after it has been pushed. If corrections are needed, add a new entry referencing the old ID.
 
 7. **Multi-Agent Review Protocol.** Before `/ship`, evaluate the latest changelog entry for complexity and run the appropriate review:
@@ -130,12 +130,12 @@ npm run agent:availability   # show which agents are online/offline
 
 What it does:
 1. Verifies the current branch is not `main`/`master` (asks the user to create a branch if so).
-2. Reads `.agents/AGENTS-CHANGELOG.md` and collects entries above the most recent `ship-YYYY-MM-DD_N` tag (fallback to the git-log method once if no tag exists).
+2. Reads `.agents/AGENTS-CHANGELOG.md` and collects entries above the most recent `YYYY-MM-DD_N` tag (fallback to the git-log method once if no tag exists).
 3. Stages modified/untracked files (no `.env` or secrets).
 4. Commits with a message built from all unshipped changelog entries:
    - **Subject line**: titles joined with ` / `, followed by ` (apsc - ce)`. **Strip the `**` bold markers.**
    - **Body**: full content of entries, chronologically (most recent first). **Strip Markdown formatting** (`###` headings, `**` bold text).
-5. Creates a `ship-YYYY-MM-DD_N` tag for the newest shipped entry and pushes branch + tag.
+5. Creates a `YYYY-MM-DD_N` tag for the newest shipped entry and pushes branch + tag.
 
 ## Testing
 

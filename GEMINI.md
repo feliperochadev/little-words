@@ -90,7 +90,7 @@ The app supports audio, photo, and video attachments on words and variants:
    - **Auto-ship:** Before every `/ship` decision, read `features.automatic_ship` from `.agents/agent-config.json`:
      - `true` → run `/ship` automatically once `/review` confirms approval.
      - `false` → **never run `/ship` automatically**; wait for explicit user request.
-   - **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
+   - **Tag-based shipping boundary:** `/ship` uses git tags named `YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
    - **Changelog immutability after push:** Never modify a changelog entry after it has been pushed. If corrections are needed, add a new entry referencing the old ID.
 
 7. **Multi-Agent Review Protocol (`/review`):**

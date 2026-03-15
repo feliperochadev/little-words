@@ -21,7 +21,7 @@ COMMON RULES ACROSS DIFFERENT AGENT VENDORS ALWAYS USE THIS ONE AS BASELINE FOR 
      - `false` → **never run `/ship` automatically**; wait for explicit user request.
    - **Agent Markers:** Every commit must include a standardized marker to identify the vendor: `apsc - gi` (Gemini), `apsc - ce` (Claude), or `apsc - cx` (Codex).
    - **Clean History:** Commit messages must have all Markdown formatting markers (like `**` and `###`) stripped to ensure a clean, unpolluted git log. Standard tags like `[fix]` and agent markers must be preserved.
-   - **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to locate the most recently shipped changelog entry. Collect entries above that ID only. If no tag exists yet, fall back to the git-log method once, then create the first tag.
+   - **Tag-based shipping boundary:** `/ship` uses git tags named `YYYY-MM-DD_N` to locate the most recently shipped changelog entry. Collect entries above that ID only. If no tag exists yet, fall back to the git-log method once, then create the first tag.
    - **Changelog immutability after push:** Once a changelog entry has been pushed, never modify it. If a correction is needed, add a new entry and reference the old ID.
 
 5. **Automatic Commit Gate (`/commit`).** `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. `features.automatic_commit` in `.agents/agent-config.json` controls only **whether the agent self-triggers `/commit`** after finishing work:
