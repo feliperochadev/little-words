@@ -2,7 +2,7 @@ import { openDatabaseSync, type SQLiteBindParams } from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
 import type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
-export type { Asset, NewAsset, ParentType, AssetType };
+export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
 const db = openDatabaseSync('little-words.db');
 

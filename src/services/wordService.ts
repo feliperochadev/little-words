@@ -1,11 +1,6 @@
 import {
-  getWords,
-  findWordByName,
-  addWord,
-  updateWord,
   deleteWord as dbDeleteWord,
   getVariantsByWord,
-  getAssetsByParent,
 } from '../database/database';
 import {
   deleteAllAssetsForParent,
@@ -16,7 +11,7 @@ export {
   findWordByName,
   addWord,
   updateWord,
-};
+} from '../database/database';
 
 export async function deleteWord(id: number): Promise<void> {
   const variants = await getVariantsByWord(id);

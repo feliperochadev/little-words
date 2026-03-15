@@ -1,6 +1,4 @@
 import {
-  getAssetsByParent,
-  getAssetsByParentAndType,
   getAssetById,
   addAsset,
   deleteAsset,
@@ -16,11 +14,11 @@ import {
   getAssetFileUri,
 } from '../utils/assetStorage';
 import { validateMimeType, validateFileSize } from '../types/asset';
-import type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
+import type { Asset, ParentType, AssetType } from '../types/asset';
 
-export type { Asset, NewAsset, ParentType, AssetType };
+export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
-export { getAssetsByParent, getAssetsByParentAndType };
+export { getAssetsByParent, getAssetsByParentAndType } from '../database/database';
 
 export interface SaveAssetParams {
   sourceUri: string;

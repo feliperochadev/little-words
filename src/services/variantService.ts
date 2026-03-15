@@ -1,9 +1,4 @@
 import {
-  getVariantsByWord,
-  findVariantByName,
-  getAllVariants,
-  addVariant,
-  updateVariant,
   deleteVariant as dbDeleteVariant,
 } from '../database/database';
 import {
@@ -16,7 +11,7 @@ export {
   getAllVariants,
   addVariant,
   updateVariant,
-};
+} from '../database/database';
 
 export async function deleteVariant(id: number): Promise<void> {
   await dbDeleteVariant(id);

@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_6
+
+[fix] Fix 26 SonarCloud issues — re-exports, boolean conversion, and async void callback.
+
+- `src/services/assetService.ts`, `src/services/wordService.ts`, `src/services/variantService.ts`, `src/database/database.ts`: Fixed 24 SonarCloud issues by converting imports followed by exports to use `export...from` syntax, eliminating unused variable warnings and following SonarQube best practices. Includes 4 re-export type issues in database.ts (Asset, NewAsset, ParentType, AssetType).
+- `app/(tabs)/home.tsx:L48`: Fixed "Convert the conditional to a boolean to avoid leaked value" — changed `{name && (` to `{!!name && (` to ensure proper boolean return instead of leaked string value.
+- `src/components/AddCategoryModal.tsx:L84`: Fixed "Promise-returning function provided to property where a void return was expected" — removed `async` from `onPress` callback and used `.then()` chain instead to match Alert's void callback signature.
+- All changes pass CI: ESLint, TypeScript, Jest (799 tests), and Semgrep with 0 findings.
+
 ### 2026-03-15_5
 
 [config] Update agent command files — remove ship- prefix from tag search logic.
