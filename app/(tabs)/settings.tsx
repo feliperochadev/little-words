@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { clearAllData } from '../../src/database/database';
+import { clearAllData } from '../../src/services/settingsService';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { COLORS } from '../../src/utils/theme';

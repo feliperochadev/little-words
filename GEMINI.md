@@ -21,14 +21,16 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
   - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
-- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`.
-- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`).
-- `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`.
+- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`, `assets`.
+- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
+- `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`.
 - `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
+- `src/types/`: Shared TypeScript types (`asset.ts` — media asset types, MIME validation, file size limits).
 - `src/components/`: Reusable UI components and modals.
 - `src/i18n/`: Internationalization logic and translation catalogues (`en-US`, `pt-BR`).
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
+  - `assetStorage.ts`: File-system management for media assets.
   - `theme.ts`: Centralized color and style constants.
 - `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
@@ -46,6 +48,16 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - Module-level stable empty arrays for TQ defaults: `const EMPTY: T[] = []` — never `= []` inline in JSX/hooks when used in `useEffect` deps.
 - `useEffect` that resets form state must NOT include TQ data arrays in deps — split into separate effects.
 - Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` to seed store state in tests.
+
+### Media Asset Layer
+
+The app supports audio, photo, and video attachments on words and variants:
+- **Types** (`src/types/asset.ts`): `ParentType` (`word`|`variant`), `AssetType` (`audio`|`photo`|`video`), MIME validation, file size limits (50 MB).
+- **Storage** (`src/utils/assetStorage.ts`): File-system layer using `expo-file-system` class API (`File`, `Directory`, `Paths.document`). Files stored in `Documents/media/{words|variants}/{id}/{audio|photos|videos}/`.
+- **Service** (`src/services/assetService.ts`): Atomic save (DB insert → build filename → copy file → update DB; rollback on failure), remove, bulk cleanup.
+- **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
+- **DB**: `assets` table with `parent_type` discriminator + indexes, cascade deletion via `withTransactionSync`, `asset_count` subquery in word/variant queries.
+- **Dependencies**: `expo-av` (audio), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 
 ## Rules
 

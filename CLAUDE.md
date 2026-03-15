@@ -199,6 +199,7 @@ The app uses a three-tier state strategy:
 - `useWords(search?)` / `useAddWord` / `useUpdateWord` / `useDeleteWord`
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
+- `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
 - `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
 
 **Stores** (`src/stores/`):
@@ -216,9 +217,21 @@ The settings store calls `hydrate()` during app startup in `app/index.tsx`.
 
 Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`. All DB operations use two internal helpers — `query<T>()` for SELECT and `run()` for INSERT/UPDATE/DELETE — both returning Promises despite using the sync expo-sqlite API under the hood.
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag).
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants).
+
+**Assets table:** Stores metadata for audio/photo/video files attached to words or variants. Uses `parent_type` (`word`|`variant`) + `parent_id` as a polymorphic foreign key. Files live in `Documents/media/{words|variants}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
 
 **Category i18n pattern:** Built-in categories are stored in the DB using locale-neutral English keys (e.g. `'animals'`, `'food'`). At render time, `useCategoryName()` resolves them to translated strings. User-created categories are stored as literal names and are never translated.
+
+### Media Asset Layer
+
+**Types** (`src/types/asset.ts`): `ParentType`, `AssetType`, `Asset`, `NewAsset`, MIME type validation, file size limits (50 MB), extension mapping.
+
+**Storage** (`src/utils/assetStorage.ts`): File-system operations using expo-file-system's class-based API (`File`, `Directory`, `Paths.document`). Handles path resolution, directory creation, file copy/delete, and bulk cleanup.
+
+**Service** (`src/services/assetService.ts`): Atomic orchestration — `saveAsset` inserts a DB record, builds the filename from the DB ID, copies the file, then updates the DB. On failure, rolls back the DB record. `removeAsset`, `removeAllAssetsForParent`, `removeAllMedia` for cleanup.
+
+**Dependencies:** `expo-av` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 
 ### Internationalization (`src/i18n/`)
 

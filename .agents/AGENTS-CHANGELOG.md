@@ -2,6 +2,22 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_2
+
+[feature] Media asset foundation — database schema, file storage, service layer, hooks, and tests.
+
+- `src/types/asset.ts`: New file — `ParentType` (`word`|`variant`), `AssetType` (`audio`|`photo`|`video`), `Asset` and `NewAsset` interfaces, `ACCEPTED_MIME_TYPES`, `ASSET_EXTENSIONS`, `MAX_FILE_SIZE` (50 MB), `MEDIA_ROOT_DIR`, validation helpers (`validateMimeType`, `validateFileSize`, `getExtensionForMime`).
+- `src/database/database.ts`: Added `assets` table with indexes (`idx_assets_parent`, `idx_assets_type`); CRUD functions (`getAssetsByParent`, `getAssetsByParentAndType`, `addAsset`, `deleteAsset`, `deleteAssetsByParent`, `updateAssetFilename`); `asset_count` subquery in `getWords()` and `getAllVariants()`; cascade deletion in `deleteWord`/`deleteVariant` via `withTransactionSync`; `clearAllData` now purges assets first.
+- `src/utils/assetStorage.ts`: New file — file-system layer using expo-file-system `File`/`Directory`/`Paths` API. Path resolution, `ensureDir`, `saveAssetFile` (copy to documents), `deleteAssetFile`, `deleteAllAssetsForParent`, `deleteAllMedia`, `assetFileExists`.
+- `src/services/assetService.ts`: New file — atomic orchestration: `saveAsset` (DB insert → get ID → build filename → copy file → update DB; rollback on failure), `removeAsset`, `removeAllAssetsForParent`, `removeAllMedia`.
+- `src/hooks/useAssets.ts`: New file — TanStack Query hooks: `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
+- `src/hooks/queryKeys.ts`: Added `QUERY_KEYS.assets()`, `QUERY_KEYS.assetsByType()`, `ASSET_MUTATION_KEYS`.
+- `package.json`: Added `expo-av` (^16.0.8) and `expo-image-picker` (~55.0.12).
+- `jest.setup.js`: Added mocks for `expo-av`, `expo-image-picker`; enhanced `expo-file-system` mock with `Paths.document`, `Directory` constructor, `File.copy`/`delete`/`exists`/`size`.
+- Tests: 5 new test files (48 + 30 + 73 + 30 + 21 = 202 tests), all at 100% coverage. 786 total tests passing.
+- `.agents/plan/design/2026-03-15_01-media-asset-foundation.md`: Design document.
+- `.agents/plan/prompts/2026-03-15_01-media-asset-foundation.md`: Prompt record.
+
 ### 2026-03-15_1
 
 [config] Add `/refine`, `/implement` commands and update `/plan` across all agent command folders.

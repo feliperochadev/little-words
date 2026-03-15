@@ -108,10 +108,20 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 - `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
-- `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`
+- `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`
 - `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
+- `src/types/` — Shared TypeScript types (e.g. `asset.ts` for media asset types)
 - `__tests__/helpers/renderWithProviders.tsx` — test wrapper with `QueryClientProvider` + `I18nProvider`
 - **Stable empty-array defaults**: always use a module-level `const EMPTY: T[] = []` instead of inline `= []` for TQ defaults used in `useEffect` deps.
+
+### Media Asset Layer
+
+The app supports audio, photo, and video attachments on words and variants:
+- **Types** (`src/types/asset.ts`): `ParentType` (`word`|`variant`), `AssetType` (`audio`|`photo`|`video`), MIME validation, file size limits.
+- **Storage** (`src/utils/assetStorage.ts`): File-system layer using `expo-file-system` class API. Files stored in `Documents/media/{words|variants}/{id}/{audio|photos|videos}/`.
+- **Service** (`src/services/assetService.ts`): Atomic save (DB + file with rollback), remove, bulk cleanup.
+- **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
+- **DB**: `assets` table with `parent_type` discriminator, cascade deletion, `asset_count` in word/variant queries.
 
 ## Code Standards
 

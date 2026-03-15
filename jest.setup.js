@@ -30,14 +30,49 @@ globalThis.__mockDb = mockDbInstance;
 jest.mock('expo-file-system', () => {
   const _textMock = jest.fn(() => Promise.resolve(''));
   const _writeMock = jest.fn();
-  const _fileMock = { text: _textMock, write: _writeMock, uri: 'file:///mock/cache/test.csv' };
-  const _dirMock = { createFile: jest.fn(() => _fileMock) };
+  const _copyMock = jest.fn();
+  const _deleteMock = jest.fn();
+  const _fileMock = {
+    text: _textMock,
+    write: _writeMock,
+    copy: _copyMock,
+    delete: _deleteMock,
+    uri: 'file:///mock/cache/test.csv',
+    exists: true,
+    size: 1024,
+  };
+  const _dirMock = {
+    createFile: jest.fn(() => _fileMock),
+    create: jest.fn(),
+    delete: jest.fn(),
+    exists: true,
+    uri: 'file:///mock/cache/',
+  };
+  const _docDirMock = {
+    createFile: jest.fn(() => _fileMock),
+    create: jest.fn(),
+    delete: jest.fn(),
+    exists: true,
+    uri: 'file:///mock/document/',
+  };
+  const DirectoryMock = jest.fn(() => ({
+    create: jest.fn(),
+    delete: jest.fn(),
+    exists: false,
+    uri: '',
+  }));
+  DirectoryMock.pickDirectoryAsync = jest.fn(() => Promise.resolve(_dirMock));
   return {
     _fileMock,
     _dirMock,
+    _docDirMock,
     File: jest.fn(() => _fileMock),
-    Directory: { pickDirectoryAsync: jest.fn(() => Promise.resolve(_dirMock)) },
-    Paths: { cache: _dirMock, join: (...parts) => parts.filter(Boolean).join('/') },
+    Directory: DirectoryMock,
+    Paths: {
+      cache: _dirMock,
+      document: _docDirMock,
+      join: (...parts) => parts.filter(Boolean).join('/'),
+    },
   };
 });
 
@@ -94,6 +129,30 @@ jest.mock('react-native-safe-area-context', () => ({
 // Mock react-native-svg
 jest.mock('react-native-svg', () => ({
   SvgXml: 'SvgXml',
+}));
+
+// Mock expo-av
+jest.mock('expo-av', () => ({
+  Audio: {
+    Recording: jest.fn(),
+    Sound: {
+      createAsync: jest.fn(() =>
+        Promise.resolve({ sound: { unloadAsync: jest.fn(), playAsync: jest.fn(), stopAsync: jest.fn() }, status: {} })
+      ),
+    },
+    setAudioModeAsync: jest.fn(() => Promise.resolve()),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
+  },
+  Video: jest.fn(),
+}));
+
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => ({
+  launchCameraAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] })),
+  launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] })),
+  requestCameraPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
+  requestMediaLibraryPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
+  MediaTypeOptions: { All: 'All', Images: 'Images', Videos: 'Videos' },
 }));
 
 // Mock expo-asset
