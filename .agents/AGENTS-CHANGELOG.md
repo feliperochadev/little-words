@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_4
+
+[config] Change tag naming scheme from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+
+- `.agents/COMMON-RULES.md`: Updated tag format in tag-based shipping boundary section from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Updated all references to new tag naming in `/ship` documentation and removed `ship-` prefix from example tags.
+- `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`: Updated tag format and example tags to remove `ship-` prefix.
+- **Git tag renaming:** All 57 existing `ship-YYYY-MM-DD_N` tags have been renamed to `YYYY-MM-DD_N` and pushed to remote. Old tags have been deleted from remote.
+
 ### 2026-03-15_3
 
 [fix] Fix CI workflow — change `npm ci` to `npm install` and update Node.js to LTS.
