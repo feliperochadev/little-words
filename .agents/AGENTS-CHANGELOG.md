@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_5
+
+[config] Update agent command files — remove ship- prefix from tag search logic.
+
+- `.claude/commands/ship.md`, `.gemini/commands/ship.md`, `.codex/commands/ship.md`: Updated tag search from `git tag --list "ship-*"` to `git tag --list "2026-*"` pattern and removed logic to strip `ship-` prefix (no longer needed with simplified tag naming).
+- `.claude/commands/commit.md`, `.gemini/commands/commit.md`, `.codex/commands/commit.md`: Updated tag format reference from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
+
 ### 2026-03-15_4
 
 [config] Change tag naming scheme from `ship-YYYY-MM-DD_N` to `YYYY-MM-DD_N`.
