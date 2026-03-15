@@ -2,6 +2,7 @@
 
 Call this command **before making any big or core change** to the codebase. It produces one or more of:
 
+- A **Prompt record** in `.agents/plan/prompts/` capturing the original and refined request.
 - A **Design document** in `.agents/plan/design/` describing what to build and how.
 - An **Architecture Decision Record (ADR)** in `.agents/plan/architecture/` capturing a significant architectural choice.
 - **Research documents** in `.agents/plan/research-documents/` containing supporting analysis.
@@ -19,6 +20,30 @@ Run `/plan` whenever the change involves any of the following:
 - Any feature that will touch ≥ 5 files or require ≥ 3 changelog categories
 
 For small, self-contained bug fixes or additions of a single UI element, `/plan` is optional but encouraged.
+
+---
+
+## Step 0 — Refine the Prompt
+
+Before any scoping or planning work begins, run `/refine` on the user's original request.
+
+1. Run `/refine` against the full original prompt as provided by the user.
+2. Determine the plan slug using the same `YYYY-MM-DD_NN-<slug>` naming convention that will be used for the resulting design/ADR/research output.
+3. Save the prompt record to `.agents/plan/prompts/YYYY-MM-DD_NN-<slug>.md` using this template:
+
+```markdown
+# Prompt — YYYY-MM-DD_NN-<slug>
+
+## Original Prompt
+<paste the user's original prompt verbatim>
+
+## Refined Prompt
+<paste the full output of /refine — all five sections>
+```
+
+4. Use the **Refined Prompt** as the basis for all subsequent planning steps.
+
+**Naming convention mirrors the plan output:** if the design doc will be `2026-03-11_01-google-drive-backup.md`, the prompt file is `.agents/plan/prompts/2026-03-11_01-google-drive-backup.md`.
 
 ---
 
