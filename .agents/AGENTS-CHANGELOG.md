@@ -2,6 +2,22 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_1
+
+[config] Add `/refine`, `/implement` commands and update `/plan` across all agent command folders.
+
+- `.claude/commands/refine.md`, `.codex/commands/refine.md`, `.gemini/commands/refine.md`: New `/refine` command — analyzes a prompt for clarity, ambiguities, missing constraints, and edge cases, then outputs a structured refined version ready for execution.
+- `.claude/commands/implement.md`, `.codex/commands/implement.md`, `.gemini/commands/implement.md`: New `/implement [implementation-name]` command — locates a plan by slug, reviews all artifacts (prompts, design, architecture, research), scopes the work, and executes it following code standards with CI gate and decision-pause protocol.
+- `.claude/commands/plan.md`, `.codex/commands/plan.md`, `.gemini/commands/plan.md`: Updated `/plan` to run `/refine` as Step 0 before any scoping work; saves original + refined prompt to `.agents/plan/prompts/YYYY-MM-DD_NN-<slug>.md` using the same naming convention as the resulting design/ADR/research file.
+- `.agents/plan/prompts/`: New folder created (with `.gitkeep`) to hold prompt records.
+
+### 2026-03-13_22
+
+[upgrade] Add expo-system-ui dependency (required for userInterfaceStyle)
+
+- Installed `expo-system-ui@~55.0.9` (SDK 55 compatible) to satisfy Expo's requirement when `userInterfaceStyle` is set in `app.json`.
+- Fixes `build:apk-local` failing with a warning about missing `expo-system-ui`.
+
 ### 2026-03-13_21
 
 [config] Sync vendor readme files (CLAUDE.md, AGENTS.md, GEMINI.md) with current codebase state.
