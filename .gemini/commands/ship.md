@@ -9,10 +9,10 @@ Commit all staged/unstaged changes and push to the remote branch. The commit mes
 1. **Branch check** — run `git branch --show-current`. If the current branch is `main` or `master`, stop immediately and ask the user to create a feature branch before shipping. Do not proceed.
 
 2. **Find unshipped changelog entries** — do all of the following:
-   - Run `git tag --list "ship-*" --sort=-creatordate | head -n 1` to find the most recent ship tag.
+   - Run `git tag --list "2026-*" --sort=-creatordate | head -n 1` to find the most recent ship tag.
    - Read `.agents/AGENTS-CHANGELOG.md` in full.
 
-   If a ship tag exists, strip the `ship-` prefix to get the last shipped changelog ID (e.g. `2026-03-09_5`). Working from the top of the changelog (most recent first), collect every entry (heading + content) until you hit that ID. Everything above it is unshipped.
+   If a ship tag exists, use that changelog ID directly (e.g. `2026-03-09_5`). Working from the top of the changelog (most recent first), collect every entry (heading + content) until you hit that ID. Everything above it is unshipped.
 
    If **no** ship tag exists yet, fall back to the git-log method once:
    - Run `git log --oneline -20` to get recent commit subjects.
