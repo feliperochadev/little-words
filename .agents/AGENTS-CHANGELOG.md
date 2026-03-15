@@ -24,6 +24,13 @@ Entries are added after every approved change. Most recent first.
 - `.agents/plan/design/2026-03-15_01-media-asset-foundation.md`: Design document.
 - `.agents/plan/prompts/2026-03-15_01-media-asset-foundation.md`: Prompt record.
 
+### 2026-03-15_2
+
+[config] Add strict "planning-only" rule to `/plan` — no auto-implementation.
+
+- `.claude/commands/plan.md`, `.codex/commands/plan.md`, `.gemini/commands/plan.md`: Added prominent `⛔ PLANNING ONLY — NO IMPLEMENTATION` callout at the top. Replaced Step 4 ("Link Plan to Implementation") with Step 4 ("Stop and Report") that explicitly halts the agent and directs the user to `/implement [plan-name]`.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added `⛔ /plan must NEVER auto-implement` rule to the Architecture & Design Planning section in all three vendor readmes.
+
 ### 2026-03-15_1
 
 [config] Add `/refine`, `/implement` commands and update `/plan` across all agent command folders.
