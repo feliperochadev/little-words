@@ -6,6 +6,6 @@ export {
   deleteCategoryWithUnlink,
   unlinkWordsFromCategory,
   getWordCountByCategory,
-} from '../database/database';
+} from '../repositories/categoryRepository';
 
-export type { Category } from '../database/database';
+export type { Category } from '../types/domain';

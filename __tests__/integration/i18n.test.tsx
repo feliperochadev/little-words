@@ -2,10 +2,10 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render, act, waitFor } from '@testing-library/react-native';
 import { I18nProvider, useI18n, useCategoryName, LANGUAGES } from '../../src/i18n/i18n';
-import * as db from '../../src/database/database';
+import * as db from '../../src/services/settingsService';
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));

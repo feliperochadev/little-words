@@ -3,14 +3,16 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import OnboardingScreen from '../../app/onboarding';
-import * as db from '../../src/database/database';
+import * as db from '../../src/services/settingsService';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   setSetting: jest.fn().mockResolvedValue(undefined),
   getSetting: jest.fn().mockResolvedValue(null),
+  setChildProfile: jest.fn().mockResolvedValue(undefined),
+  getChildProfile: jest.fn().mockResolvedValue({ name: '', sex: null, birth: '' }),
 }));
 
 describe('OnboardingScreen', () => {
@@ -130,8 +132,9 @@ describe('OnboardingScreen', () => {
     const continueBtn = await findByText(/Start with Luna/);
     await act(async () => { fireEvent.press(continueBtn); });
     await waitFor(() => {
-      expect(db.setSetting).toHaveBeenCalledWith('child_name', 'Luna');
-      expect(db.setSetting).toHaveBeenCalledWith('child_sex', 'girl');
+      expect(db.setChildProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Luna', sex: 'girl' }),
+      );
       expect(db.setSetting).toHaveBeenCalledWith('onboarding_done', '1');
     });
   });

@@ -21,8 +21,9 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
   - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
-- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`, `assets`.
-- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
+- `src/db/`: DB client (`client.ts` — `query`/`run`/`withTransaction` async helpers), initialization (`init.ts` — DDL at startup), migrations (`migrator.ts` + `migrations/` — schema versioning via `schema_migrations` table). Only `init.ts` and `migrator.ts` call `getDb()` directly.
+- `src/repositories/`: Per-entity SQL modules — `categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`. No React, hooks, or Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `schema_migrations`.
+- `src/services/`: Thin service wrappers over repositories providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
 - `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`.
 - `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
 - `src/types/`: Shared TypeScript types (`asset.ts` — media asset types, MIME validation, file size limits).

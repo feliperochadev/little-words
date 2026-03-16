@@ -4,7 +4,7 @@ import {
   deleteAsset,
   deleteAssetsByParent,
   updateAssetFilename,
-} from '../database/database';
+} from '../repositories/assetRepository';
 import {
   saveAssetFile,
   deleteAssetFile,
@@ -18,7 +18,7 @@ import type { Asset, ParentType, AssetType } from '../types/asset';
 
 export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
-export { getAssetsByParent, getAssetsByParentAndType } from '../database/database';
+export { getAssetsByParent, getAssetsByParentAndType } from '../repositories/assetRepository';
 
 export interface SaveAssetParams {
   sourceUri: string;

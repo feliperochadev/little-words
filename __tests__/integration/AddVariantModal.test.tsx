@@ -2,19 +2,29 @@ import React from 'react';
 import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
-import type { Word, Variant } from '../../src/database/database';
-import * as database from '../../src/database/database';
+import type { Word, Variant } from '../../src/types/domain';
+import * as variantService from '../../src/services/variantService';
+import * as wordService from '../../src/services/wordService';
+import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
   addVariant: jest.fn().mockResolvedValue(1),
   updateVariant: jest.fn().mockResolvedValue(undefined),
   deleteVariant: jest.fn().mockResolvedValue(undefined),
   findVariantByName: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
   getWords: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
@@ -39,7 +49,7 @@ function renderModal(props: Partial<React.ComponentProps<typeof AddVariantModal>
 describe('AddVariantModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (database.getWords as jest.Mock).mockResolvedValue([mockWord]);
+    (wordService.getWords as jest.Mock).mockResolvedValue([mockWord]);
   });
 
   it('renders new variant title', async () => {
@@ -84,7 +94,7 @@ describe('AddVariantModal', () => {
     fireEvent.changeText(input, 'mamá');
     fireEvent.press(await findByText('Add'));
     await waitFor(() => {
-      expect(database.addVariant).toHaveBeenCalledWith(1, 'mamá', expect.any(String), '');
+      expect(variantService.addVariant).toHaveBeenCalledWith(1, 'mamá', expect.any(String), '');
       expect(onSave).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });
@@ -96,7 +106,7 @@ describe('AddVariantModal', () => {
     await findByDisplayValue('mamá');
     fireEvent.press(await findByText('Save'));
     await waitFor(() => {
-      expect(database.updateVariant).toHaveBeenCalledWith(10, 'mamá', '2024-01-01', 'test note');
+      expect(variantService.updateVariant).toHaveBeenCalledWith(10, 'mamá', '2024-01-01', 'test note');
       expect(onSave).toHaveBeenCalled();
     });
   });
@@ -111,7 +121,7 @@ describe('AddVariantModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.deleteVariant).toHaveBeenCalledWith(10);
+      expect(variantService.deleteVariant).toHaveBeenCalledWith(10);
       expect(onClose).toHaveBeenCalled();
       expect(onDeleted).toHaveBeenCalled();
     });
@@ -134,7 +144,7 @@ describe('AddVariantModal', () => {
   });
 
   it('filters word search results', async () => {
-    (database.getWords as jest.Mock).mockResolvedValue([
+    (wordService.getWords as jest.Mock).mockResolvedValue([
       mockWord,
       { id: 2, word: 'água', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
     ]);
@@ -167,35 +177,35 @@ describe('AddVariantModal', () => {
 
   it('shows duplicate warning card when variant already exists for word', async () => {
     const existingVariant: Variant = { id: 99, word_id: 1, variant: 'mamá', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
-    (database.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
+    (variantService.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
     const { findByPlaceholderText, findByText } = renderModal();
     const input = await findByPlaceholderText(/How the child says/);
     fireEvent.changeText(input, 'mamá');
-    await waitFor(() => expect(database.findVariantByName).toHaveBeenCalledWith(1, 'mamá'));
+    await waitFor(() => expect(variantService.findVariantByName).toHaveBeenCalledWith(1, 'mamá'));
     expect(await findByText(/Variant already exists for/i)).toBeTruthy();
   });
 
   it('blocks save and shows alert when duplicate variant is submitted', async () => {
     const existingVariant: Variant = { id: 99, word_id: 1, variant: 'mamá', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
-    (database.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
+    (variantService.findVariantByName as jest.Mock).mockResolvedValue(existingVariant);
     const { findByPlaceholderText, findByText } = renderModal();
     const input = await findByPlaceholderText(/How the child says/);
     fireEvent.changeText(input, 'mamá');
-    await waitFor(() => expect(database.findVariantByName).toHaveBeenCalled());
+    await waitFor(() => expect(variantService.findVariantByName).toHaveBeenCalled());
     fireEvent.press(await findByText('Add'));
     await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
-    expect(database.addVariant).not.toHaveBeenCalled();
+    expect(variantService.addVariant).not.toHaveBeenCalled();
   });
 
   it('skips duplicate check when editing a variant', async () => {
-    (database.findVariantByName as jest.Mock).mockResolvedValue(null);
+    (variantService.findVariantByName as jest.Mock).mockResolvedValue(null);
     const { findByDisplayValue } = renderModal({ editVariant: mockVariant });
     await findByDisplayValue('mamá');
-    expect(database.findVariantByName).not.toHaveBeenCalled();
+    expect(variantService.findVariantByName).not.toHaveBeenCalled();
   });
 
   it('clears duplicate state when modal reopens', async () => {
-    (database.findVariantByName as jest.Mock).mockResolvedValue(null);
+    (variantService.findVariantByName as jest.Mock).mockResolvedValue(null);
     const view = renderWithProviders(
       <AddVariantModal visible={true} onClose={jest.fn()} onSave={jest.fn()} word={mockWord} />
     );
@@ -228,7 +238,7 @@ describe('AddVariantModal — panResponder gesture handlers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     capturedConfig = null;
-    (database.getWords as jest.Mock).mockResolvedValue([mockWord]);
+    (wordService.getWords as jest.Mock).mockResolvedValue([mockWord]);
     jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
       capturedConfig = config;
       return { panHandlers: {} };

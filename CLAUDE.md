@@ -193,7 +193,7 @@ The app uses a three-tier state strategy:
 | Global client state | **Zustand v5** | child profile, onboarding flag |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
-**Service layer** (`src/services/`): thin wrappers over `database.ts` that provide a clean import boundary for hooks.
+**Service layer** (`src/services/`): thin wrappers over repositories that provide a clean import boundary for hooks.
 
 **Hooks** (`src/hooks/`):
 - `useCategories` / `useAddCategory` / `useUpdateCategory` / `useDeleteCategory`
@@ -214,11 +214,23 @@ The settings store calls `hydrate()` during app startup in `app/index.tsx`.
 
 **IMPORTANT — `useEffect` deps and TQ data**: Never include TanStack Query data arrays in the deps of a `useEffect` that also resets form state. If the same effect both resets UI and uses TQ data for UX (e.g. scroll position), split them into two separate effects.
 
-### Data Layer (`src/database/database.ts`)
+### Data Layer
 
-Single SQLite database (`palavrinhas.db`) opened synchronously via `expo-sqlite`. All DB operations use two internal helpers — `query<T>()` for SELECT and `run()` for INSERT/UPDATE/DELETE — both returning Promises despite using the sync expo-sqlite API under the hood.
+The data layer follows a strict three-tier hierarchy:
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants).
+```
+components/hooks → services → repositories → db/client
+```
+
+**DB client** (`src/db/client.ts`): Single SQLite connection (`little-words.db`, WAL mode). Exports `query<T>()`, `run()`, and `withTransaction()` — all async, using expo-sqlite's background thread API (`getAllAsync`, `runAsync`). Only `src/db/init.ts` and `src/db/migrator.ts` may call `getDb()` directly.
+
+**Initialization** (`src/db/init.ts`): Runs at splash screen startup using sync DDL (`execSync`). Creates all tables with `CREATE TABLE IF NOT EXISTS`, seeds default categories, and cleans up legacy data.
+
+**Migrations** (`src/db/migrator.ts`): Lightweight schema version runner using a `schema_migrations` table. Uses sync methods since it runs at startup. Migration files in `src/db/migrations/` export `{ version, name, up(db), down(db) }`.
+
+**Repositories** (`src/repositories/`): Per-entity SQL modules — `categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`. No React, hooks, or Zustand. All SQL uses `?` placeholders — never string interpolation.
+
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `schema_migrations`.
 
 **Assets table:** Stores metadata for audio/photo/video files attached to words or variants. Uses `parent_type` (`word`|`variant`) + `parent_id` as a polymorphic foreign key. Files live in `Documents/media/{words|variants}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
 

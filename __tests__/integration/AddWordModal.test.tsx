@@ -3,26 +3,42 @@ import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { AddWordModal } from '../../src/components/AddWordModal';
-import type { Word } from '../../src/database/database';
-import * as database from '../../src/database/database';
+import type { Word } from '../../src/types/domain';
+import * as categoryService from '../../src/services/categoryService';
+import * as wordService from '../../src/services/wordService';
+import * as variantService from '../../src/services/variantService';
+import * as settingsService from '../../src/services/settingsService';
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
   getCategories: jest.fn().mockResolvedValue([]),
-  addWord: jest.fn().mockResolvedValue(1),
-  updateWord: jest.fn().mockResolvedValue(undefined),
-  deleteWord: jest.fn().mockResolvedValue(undefined),
-  addVariant: jest.fn().mockResolvedValue(1),
-  updateVariant: jest.fn().mockResolvedValue(undefined),
-  deleteVariant: jest.fn().mockResolvedValue(undefined),
-  getVariantsByWord: jest.fn().mockResolvedValue([]),
-  findWordByName: jest.fn().mockResolvedValue(null),
   addCategory: jest.fn().mockResolvedValue(1),
   updateCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
+}));
+
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
+  addWord: jest.fn().mockResolvedValue(1),
+  updateWord: jest.fn().mockResolvedValue(undefined),
+  deleteWord: jest.fn().mockResolvedValue(undefined),
+  findWordByName: jest.fn().mockResolvedValue(null),
+  getVariantsByWord: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
+  getVariantsByWord: jest.fn().mockResolvedValue([]),
+  addVariant: jest.fn().mockResolvedValue(1),
+  updateVariant: jest.fn().mockResolvedValue(undefined),
+  deleteVariant: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
@@ -44,12 +60,12 @@ function renderModal(props: Partial<React.ComponentProps<typeof AddWordModal>> =
 describe('AddWordModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (database.getCategories as jest.Mock).mockResolvedValue([
+    (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
     ]);
-    (database.findWordByName as jest.Mock).mockResolvedValue(null);
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([]);
-    (database.getSetting as jest.Mock).mockResolvedValue(null);
+    (wordService.findWordByName as jest.Mock).mockResolvedValue(null);
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([]);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
   });
 
   it('renders new word title', async () => {
@@ -95,7 +111,7 @@ describe('AddWordModal', () => {
     fireEvent.changeText(input, 'hello');
     await act(async () => { fireEvent.press(await findByText('Add')); });
     await waitFor(() => {
-      expect(database.addWord).toHaveBeenCalledWith('hello', null, expect.any(String), '');
+      expect(wordService.addWord).toHaveBeenCalledWith('hello', null, expect.any(String), '');
       expect(onSave).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });
@@ -109,7 +125,7 @@ describe('AddWordModal', () => {
     await findByDisplayValue('mamãe');
     await act(async () => { fireEvent.press(await findByText('Save')); });
     await waitFor(() => {
-      expect(database.updateWord).toHaveBeenCalledWith(1, 'mamãe', 1, '2024-01-01', 'a note');
+      expect(wordService.updateWord).toHaveBeenCalledWith(1, 'mamãe', 1, '2024-01-01', 'a note');
       expect(onSave).toHaveBeenCalled();
     });
   });
@@ -125,7 +141,7 @@ describe('AddWordModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.deleteWord).toHaveBeenCalledWith(1);
+      expect(wordService.deleteWord).toHaveBeenCalledWith(1);
       expect(onClose).toHaveBeenCalled();
       expect(onDeleted).toHaveBeenCalled();
     });
@@ -160,12 +176,12 @@ describe('AddWordModal', () => {
 
     await act(async () => { fireEvent.press(await findByText('Add')); });
     await waitFor(() => {
-      expect(database.addVariant).toHaveBeenCalledWith(1, 'hewwo', expect.any(String));
+      expect(variantService.addVariant).toHaveBeenCalledWith(1, 'hewwo', expect.any(String));
     });
   });
 
   it('shows existing variants in edit mode', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText } = renderModal({ editWord: mockWord });
@@ -173,7 +189,7 @@ describe('AddWordModal', () => {
   });
 
   it('allows inline editing of existing variant', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText } = renderModal({ editWord: mockWord });
@@ -186,7 +202,7 @@ describe('AddWordModal', () => {
 
   it('shows duplicate detection card', async () => {
     jest.useFakeTimers();
-    (database.findWordByName as jest.Mock).mockResolvedValue({
+    (wordService.findWordByName as jest.Mock).mockResolvedValue({
       id: 99, word: 'hello', date_added: '2024-06-01', category_name: 'food',
       category_color: '#00B894', category_emoji: '🍎', variant_count: 2, notes: 'test note',
     });
@@ -207,7 +223,7 @@ describe('AddWordModal', () => {
 
   it('alerts when trying to save a duplicate word', async () => {
     jest.useFakeTimers();
-    (database.findWordByName as jest.Mock).mockResolvedValue({
+    (wordService.findWordByName as jest.Mock).mockResolvedValue({
       id: 99, word: 'hello', date_added: '2024-06-01',
     });
     const { findByPlaceholderText, findByText } = renderModal();
@@ -255,7 +271,7 @@ describe('AddWordModal', () => {
   });
 
   it('deletes an existing variant in edit mode', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText, findAllByText } = renderModal({ editWord: mockWord });
@@ -265,12 +281,12 @@ describe('AddWordModal', () => {
     const removeBtns = await findAllByText('✕');
     await act(async () => { fireEvent.press(removeBtns[0]); });
     await waitFor(() => {
-      expect(database.deleteVariant).toHaveBeenCalledWith(10);
+      expect(variantService.deleteVariant).toHaveBeenCalledWith(10);
     });
   });
 
   it('saves inline variant edit on blur', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
@@ -282,12 +298,12 @@ describe('AddWordModal', () => {
     // Blur to trigger save
     await act(async () => { fireEvent(varInput, 'blur'); });
     await waitFor(() => {
-      expect(database.updateVariant).toHaveBeenCalledWith(10, 'mamãzinha', expect.any(String), '');
+      expect(variantService.updateVariant).toHaveBeenCalledWith(10, 'mamãzinha', expect.any(String), '');
     });
   });
 
   it('flushes inline variant edits during save', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const onSave = jest.fn();
@@ -300,8 +316,8 @@ describe('AddWordModal', () => {
     // Save without blurring - should flush
     await act(async () => { fireEvent.press(await findByText('Save')); });
     await waitFor(() => {
-      expect(database.updateVariant).toHaveBeenCalledWith(10, 'mamã', expect.any(String), '');
-      expect(database.updateWord).toHaveBeenCalled();
+      expect(variantService.updateVariant).toHaveBeenCalledWith(10, 'mamã', expect.any(String), '');
+      expect(wordService.updateWord).toHaveBeenCalled();
     });
   });
 
@@ -326,7 +342,7 @@ describe('AddWordModal', () => {
 
   it('scrolls to selected category index > 0 on open with editWord (covers lines 115-116)', async () => {
     jest.useFakeTimers();
-    (database.getCategories as jest.Mock).mockResolvedValue([
+    (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 99, name: 'food', color: '#00B894', emoji: '🍎', created_at: '' },
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
     ]);
@@ -368,7 +384,7 @@ describe('AddWordModal', () => {
   });
 
   it('blur on inline variant with unchanged text is a no-op (covers line 335 text===v.variant branch)', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
@@ -376,11 +392,11 @@ describe('AddWordModal', () => {
     const varInput = await findByDisplayValue('mamá');
     // Blur without changing text — text === v.variant, no update
     await act(async () => { fireEvent(varInput, 'blur'); });
-    expect(database.updateVariant).not.toHaveBeenCalled();
+    expect(variantService.updateVariant).not.toHaveBeenCalled();
   });
 
   it('flush inline variant edit with unchanged text is no-op (covers line 180 text===original.variant)', async () => {
-    (database.getVariantsByWord as jest.Mock).mockResolvedValue([
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
     const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
@@ -389,13 +405,13 @@ describe('AddWordModal', () => {
     fireEvent.press(await findByText(/mamá/));
     // Save — flush loop sees text === original.variant → skip updateVariant
     await act(async () => { fireEvent.press(await findByText('Save')); });
-    await waitFor(() => expect(database.updateWord).toHaveBeenCalled());
-    expect(database.updateVariant).not.toHaveBeenCalled();
+    await waitFor(() => expect(wordService.updateWord).toHaveBeenCalled());
+    expect(variantService.updateVariant).not.toHaveBeenCalled();
   });
 
   it('duplicate card shows singular variant label (covers line 244 count===1 branch)', async () => {
     jest.useFakeTimers();
-    (database.findWordByName as jest.Mock).mockResolvedValue({
+    (wordService.findWordByName as jest.Mock).mockResolvedValue({
       id: 99, word: 'hello', date_added: '2024-06-01', category_name: null,
       category_color: null, category_emoji: null, variant_count: 1, notes: null,
     });
@@ -408,7 +424,7 @@ describe('AddWordModal', () => {
 
   it('AddCategoryModal onSave refreshes categories, selects the new one and scrolls', async () => {
     // First call returns original list; subsequent calls return updated list after invalidation
-    (database.getCategories as jest.Mock)
+    (categoryService.getCategories as jest.Mock)
       .mockResolvedValueOnce([
         { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
       ])
@@ -426,11 +442,11 @@ describe('AddWordModal', () => {
     expect(await findByText(/New Category/)).toBeTruthy();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
 
-    (database.addCategory as jest.Mock).mockResolvedValue(2);
+    (categoryService.addCategory as jest.Mock).mockResolvedValue(2);
     await act(async () => { fireEvent.press(await findByText('Create Category')); });
 
     await waitFor(() => {
-      expect(database.addCategory).toHaveBeenCalled();
+      expect(categoryService.addCategory).toHaveBeenCalled();
     });
 
     // After invalidation triggers refetch, new category should appear
@@ -447,7 +463,7 @@ describe('AddWordModal', () => {
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
-    await waitFor(() => expect(database.deleteCategoryWithUnlink).toHaveBeenCalled());
+    await waitFor(() => expect(categoryService.deleteCategoryWithUnlink).toHaveBeenCalled());
   });
 });
 
@@ -457,10 +473,10 @@ describe('AddWordModal — panResponder gesture handlers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     capturedConfig = null;
-    (database.getCategories as jest.Mock).mockResolvedValue([
+    (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
     ]);
-    (database.getSetting as jest.Mock).mockResolvedValue(null);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
     jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => {
       capturedConfig = config;
       return { panHandlers: {} };

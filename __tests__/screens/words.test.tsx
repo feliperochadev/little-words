@@ -5,35 +5,45 @@ import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => {
-  const actual = jest.requireActual('../../src/database/database');
-  return {
-    ...actual,
-    getWords: jest.fn(),
-    getCategories: jest.fn().mockResolvedValue([]),
-    findWordByName: jest.fn().mockResolvedValue(null),
-    getVariantsByWord: jest.fn().mockResolvedValue([]),
-    addWord: jest.fn().mockResolvedValue(1),
-    updateWord: jest.fn().mockResolvedValue(undefined),
-    deleteWord: jest.fn().mockResolvedValue(undefined),
-    addVariant: jest.fn().mockResolvedValue(1),
-    updateVariant: jest.fn().mockResolvedValue(undefined),
-    deleteVariant: jest.fn().mockResolvedValue(undefined),
-    updateCategory: jest.fn().mockResolvedValue(undefined),
-    deleteCategory: jest.fn().mockResolvedValue(undefined),
-    deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
-    unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
-    getWordCountByCategory: jest.fn().mockResolvedValue(0),
-    getSetting: jest.fn().mockResolvedValue(null),
-    setSetting: jest.fn().mockResolvedValue(undefined),
-  };
-});
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
+  getWords: jest.fn(),
+  findWordByName: jest.fn().mockResolvedValue(null),
+  getVariantsByWord: jest.fn().mockResolvedValue([]),
+  addWord: jest.fn().mockResolvedValue(1),
+  updateWord: jest.fn().mockResolvedValue(undefined),
+  deleteWord: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
+  getCategories: jest.fn().mockResolvedValue([]),
+  updateCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategory: jest.fn().mockResolvedValue(undefined),
+  deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
+  unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
+  getWordCountByCategory: jest.fn().mockResolvedValue(0),
+}));
+
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
+  addVariant: jest.fn().mockResolvedValue(1),
+  updateVariant: jest.fn().mockResolvedValue(undefined),
+  deleteVariant: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
+  getSetting: jest.fn().mockResolvedValue(null),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+}));
 
 import WordsScreen from '../../app/(tabs)/words';
-import * as db from '../../src/database/database';
+import * as db from '../../src/services/wordService';
+import * as categoryService from '../../src/services/categoryService';
 
-const mockUpdateCategory = db.updateCategory as jest.Mock;
-const mockDeleteCategory = db.deleteCategory as jest.Mock;
+const mockUpdateCategory = categoryService.updateCategory as jest.Mock;
+const mockDeleteCategory = categoryService.deleteCategory as jest.Mock;
 
 const sampleWords = [
   {
@@ -241,7 +251,7 @@ describe('WordsScreen', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(db.deleteCategoryWithUnlink as jest.Mock).toHaveBeenCalled();
+      expect(categoryService.deleteCategoryWithUnlink as jest.Mock).toHaveBeenCalled();
     });
   });
 });

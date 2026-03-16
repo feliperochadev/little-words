@@ -2,8 +2,8 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import RootLayout from '../../app/_layout';
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));

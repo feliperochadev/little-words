@@ -2,19 +2,24 @@ import React from 'react';
 import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { AddCategoryModal } from '../../src/components/AddCategoryModal';
-import * as database from '../../src/database/database';
+import * as categoryService from '../../src/services/categoryService';
+import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
   addCategory: jest.fn().mockResolvedValue(1),
   updateCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
@@ -71,7 +76,7 @@ describe('AddCategoryModal', () => {
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
     fireEvent.press(await findByText('Create Category'));
     await waitFor(() => {
-      expect(database.addCategory).toHaveBeenCalledWith('NewCat', expect.any(String), expect.any(String));
+      expect(categoryService.addCategory).toHaveBeenCalledWith('NewCat', expect.any(String), expect.any(String));
       expect(onSave).toHaveBeenCalledWith(1);
     });
   });
@@ -82,7 +87,7 @@ describe('AddCategoryModal', () => {
     await findByDisplayValue('Test');
     fireEvent.press(await findByText(/Save/));
     await waitFor(() => {
-      expect(database.updateCategory).toHaveBeenCalledWith(1, 'Test', '#FF6B9D', '🐾');
+      expect(categoryService.updateCategory).toHaveBeenCalledWith(1, 'Test', '#FF6B9D', '🐾');
       expect(onSave).toHaveBeenCalledWith(1);
     });
   });
@@ -97,13 +102,13 @@ describe('AddCategoryModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
+      expect(categoryService.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
       expect(onDeleted).toHaveBeenCalled();
     });
   });
 
   it('handles save error with UNIQUE constraint', async () => {
-    (database.addCategory as jest.Mock).mockRejectedValue(new Error('UNIQUE constraint failed'));
+    (categoryService.addCategory as jest.Mock).mockRejectedValue(new Error('UNIQUE constraint failed'));
     const { findByText, findByPlaceholderText } = renderModal();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'Duplicate');
     fireEvent.press(await findByText('Create Category'));
@@ -138,13 +143,13 @@ describe('AddCategoryModal', () => {
     const destructiveBtn = alertCall[2].find((b: any) => b.style === 'destructive');
     await act(async () => { destructiveBtn.onPress(); });
     await waitFor(() => {
-      expect(database.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
+      expect(categoryService.deleteCategoryWithUnlink).toHaveBeenCalledWith(1);
       expect(onClose).toHaveBeenCalled();
     });
   });
 
   it('handles save error with non-UNIQUE message', async () => {
-    (database.addCategory as jest.Mock).mockRejectedValue(new Error('some other error'));
+    (categoryService.addCategory as jest.Mock).mockRejectedValue(new Error('some other error'));
     const { findByText, findByPlaceholderText } = renderModal();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'AnotherCat');
     fireEvent.press(await findByText('Create Category'));
@@ -156,10 +161,10 @@ describe('AddCategoryModal', () => {
   });
 
   it('handleDelete shows word count message when category has words', async () => {
-    (database.getWordCountByCategory as jest.Mock).mockResolvedValue(5);
+    (categoryService.getWordCountByCategory as jest.Mock).mockResolvedValue(5);
     const { findByText } = renderModal({ editCategory: editCat });
     // Wait for the word count query to resolve before pressing delete
-    await waitFor(() => expect(database.getWordCountByCategory).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(categoryService.getWordCountByCategory).toHaveBeenCalledWith(1));
     fireEvent.press(await findByText(/Remove/));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalled();

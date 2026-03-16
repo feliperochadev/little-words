@@ -1,7 +1,11 @@
-import { getSetting, setSetting, clearAllData as dbClearAllData } from '../database/database';
+import {
+  getSetting,
+  setSetting,
+  clearAllData as dbClearAllData,
+} from '../repositories/settingsRepository';
 import { deleteAllMedia } from '../utils/assetStorage';
 
-export { getSetting, setSetting } from '../database/database';
+export { getSetting, setSetting } from '../repositories/settingsRepository';
 
 export async function clearAllData(): Promise<void> {
   await dbClearAllData();

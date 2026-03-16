@@ -1,7 +1,7 @@
 /**
  * Sort helpers for words and variants lists.
  */
-import type { Word, Variant } from '../database/database';
+import type { Word, Variant } from '../types/domain';
 
 export type SortKey = 'date_desc' | 'date_asc' | 'alpha_asc' | 'alpha_desc';
 

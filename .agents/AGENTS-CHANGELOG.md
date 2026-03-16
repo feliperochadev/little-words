@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-15_8
+
+[refactor] Add proper repository layer — replace monolithic database.ts with three-tier data architecture.
+
+- `src/database/database.ts`: Deleted — replaced by the layered architecture below.
+- `src/db/client.ts`: New DB client — single `little-words.db` connection (WAL mode), exports `query<T>()`, `run()`, `withTransaction()` using expo-sqlite background thread API (`getAllAsync`, `runAsync`, `withTransactionAsync`). Conditional single-arg calls when `args` is `undefined` to satisfy TypeScript overloads. Only `init.ts` and `migrator.ts` may call `getDb()` directly.
+- `src/db/init.ts`: New initialization module — sync DDL at splash screen startup using `execSync`; creates all tables with `CREATE TABLE IF NOT EXISTS`; seeds default categories; handles legacy PT-BR category cleanup.
+- `src/db/migrator.ts`: New lightweight migration runner — `schema_migrations` table, sync methods (`withTransactionSync`, `runSync`, `getAllSync`, `getFirstSync`); exports `runMigrations()`, `rollbackMigration()`, `getCurrentVersion()`.
+- `src/db/migrations/0001_initial_schema.ts`: Initial migration exporting `{ version, name, up(db), down(db) }`.
+- `src/repositories/categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`: New per-entity SQL modules — only `query`/`run`/`withTransaction` from `db/client`; no React/hooks/Zustand; all SQL uses `?` placeholders.
+- `src/services/`: Updated to re-export from repositories instead of `database.ts`; import boundary for hooks is unchanged.
+- `app/(tabs)/variants.tsx`, `app/(tabs)/words.tsx`: Updated type imports from `src/types/domain`.
+- `eslint.config.mjs`: Added `.claude/` to ignores to prevent worktree code from being linted by main project.
+- All test files updated: integration tests mock individual service modules instead of `database/database`; unit tests updated for single-arg `getAllAsync` calls (no trailing `undefined`).
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Updated architecture documentation — replaced `database.ts` description with three-tier hierarchy (`db/`, `repositories/`, `services/`).
+- `.agents/standards/data-layer.md`: New standard covering architecture, file locations, DB client API, repositories, services, migrations, initialization, testing patterns, and SQL conventions.
+- `.agents/standards/README.md`: Added `data-layer.md` row to Quick Reference table.
+- CI passes: 1507 tests, 84 suites, 0 lint errors, 0 type errors, 0 semgrep findings.
+
+---
+
 ### 2026-03-15_7
 
 [config] Rename `/review` command to `/review-custom` to avoid conflicts with native Claude commands.

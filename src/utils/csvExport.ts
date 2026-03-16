@@ -1,6 +1,6 @@
 import { File as FSFile, Directory, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { getAllDataForCSV } from '../database/database';
+import { getCsvRows } from '../repositories/csvRepository';
 import { DEFAULT_CATEGORY_KEY_SET } from './categoryKeys';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -38,6 +38,20 @@ export function buildCategoryResolver(
     return name;
   };
 }
+
+export const getAllDataForCSV = async (
+  resolveCategoryName: (name: string) => string,
+  headerRow = 'palavra,categoria,data,variante',
+): Promise<string> => {
+  const rows = await getCsvRows();
+
+  const header = headerRow + '\n';
+  const body = rows.map((r) =>
+    `"${(r.word ?? '').replaceAll('"', '""')}","${(resolveCategoryName(r.categoria ?? '') ?? '').replaceAll('"', '""')}","${r.data ?? ''}","${(r.variante ?? '').replaceAll('"', '""')}"`
+  ).join('\n');
+
+  return header + body;
+};
 
 const writeTempFile = async (
   resolveCategoryName: (name: string) => string,

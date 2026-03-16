@@ -4,7 +4,7 @@ import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Variant, Word } from '../../src/database/database';
+import type { Variant, Word } from '../../src/types/domain';
 import { COLORS } from '../../src/utils/theme';
 import { Card, EmptyState, SearchBar } from '../../src/components/UIComponents';
 import { AddVariantModal } from '../../src/components/AddVariantModal';

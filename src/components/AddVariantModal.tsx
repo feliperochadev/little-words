@@ -6,7 +6,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
-import { findVariantByName, Variant, Word } from '../database/database';
+import { findVariantByName } from '../services/variantService';
+import type { Variant, Word } from '../types/domain';
 import { useWords } from '../hooks/useWords';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useAddVariant, useUpdateVariant, useDeleteVariant } from '../hooks/useVariants';

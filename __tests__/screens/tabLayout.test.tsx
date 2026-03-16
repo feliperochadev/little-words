@@ -2,8 +2,8 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));

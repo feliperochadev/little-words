@@ -1,18 +1,22 @@
+import { initDatabase } from '../../src/db/init';
 import {
-  initDatabase,
   addCategory,
   getCategories,
   getWordCountByCategory,
+} from '../../src/repositories/categoryRepository';
+import {
   addWord,
-  addVariant,
   getWords,
   findWordByName,
+} from '../../src/repositories/wordRepository';
+import {
+  addVariant,
   findVariantByName,
-  getSetting,
-  getAllDataForCSV,
-  clearAllData,
-  getDashboardStats,
-} from '../../src/database/database';
+} from '../../src/repositories/variantRepository';
+import { getSetting } from '../../src/repositories/settingsRepository';
+import { clearAllData } from '../../src/repositories/settingsRepository';
+import { getDashboardStats } from '../../src/services/dashboardService';
+import { getAllDataForCSV } from '../../src/utils/csvExport';
 
 describe('database', () => {
   let mockDb: any;
@@ -74,20 +78,20 @@ describe('database', () => {
     });
   });
 
-  // ─── query helper error path ────────────────────────────────────────────────
+  // ─── query helper error path (via getCategories) ─────────────────────────
 
   describe('query error path (via getCategories)', () => {
-    it('rejects when getAllSync throws', async () => {
-      mockDb.getAllSync.mockImplementationOnce(() => { throw new Error('db read error'); });
+    it('rejects when getAllAsync throws', async () => {
+      mockDb.getAllAsync.mockRejectedValueOnce(new Error('db read error'));
       await expect(getCategories()).rejects.toThrow('db read error');
     });
   });
 
-  // ─── run helper error path ──────────────────────────────────────────────────
+  // ─── run helper error path (via addCategory) ─────────────────────────────
 
   describe('run error path (via addCategory)', () => {
-    it('rejects when runSync throws', async () => {
-      mockDb.runSync.mockImplementationOnce(() => { throw new Error('db write error'); });
+    it('rejects when runAsync throws', async () => {
+      mockDb.runAsync.mockRejectedValueOnce(new Error('db write error'));
       await expect(addCategory('test', '#000', '🎨')).rejects.toThrow('db write error');
     });
   });
@@ -99,8 +103,8 @@ describe('database', () => {
       await expect(clearAllData()).resolves.toBeUndefined();
     });
 
-    it('rejects when withTransactionSync throws', async () => {
-      mockDb.withTransactionSync.mockImplementationOnce(() => { throw new Error('tx error'); });
+    it('rejects when withTransactionAsync throws', async () => {
+      mockDb.withTransactionAsync.mockRejectedValueOnce(new Error('tx error'));
       await expect(clearAllData()).rejects.toThrow('tx error');
     });
   });
@@ -109,12 +113,12 @@ describe('database', () => {
 
   describe('getWordCountByCategory', () => {
     it('returns the count when rows exist', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([{ count: 7 }]);
+      mockDb.getAllAsync.mockResolvedValueOnce([{ count: 7 }]);
       await expect(getWordCountByCategory(1)).resolves.toBe(7);
     });
 
     it('returns 0 when rows array is empty (nullish coalescing)', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await expect(getWordCountByCategory(1)).resolves.toBe(0);
     });
   });
@@ -123,20 +127,20 @@ describe('database', () => {
 
   describe('addCategory insertId fallback', () => {
     it('returns 0 when lastInsertRowId is undefined', async () => {
-      mockDb.runSync.mockReturnValueOnce({ lastInsertRowId: undefined, changes: 1 });
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: undefined, changes: 1 });
       await expect(addCategory('x', '#fff', '🎨')).resolves.toBe(0);
     });
   });
 
   describe('addWord insertId fallback', () => {
     it('returns 0 when lastInsertRowId is undefined', async () => {
-      mockDb.runSync.mockReturnValueOnce({ lastInsertRowId: undefined, changes: 1 });
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: undefined, changes: 1 });
       await expect(addWord('hello', null, '2024-01-01')).resolves.toBe(0);
     });
 
     it('passes null when notes is omitted', async () => {
       await addWord('hello', null, '2024-01-01');
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.any(String),
         ['hello', null, '2024-01-01', null]
       );
@@ -145,7 +149,7 @@ describe('database', () => {
 
   describe('addVariant insertId fallback', () => {
     it('returns 0 when lastInsertRowId is undefined', async () => {
-      mockDb.runSync.mockReturnValueOnce({ lastInsertRowId: undefined, changes: 1 });
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: undefined, changes: 1 });
       await expect(addVariant(1, 'mama', '2024-01-01')).resolves.toBe(0);
     });
   });
@@ -154,38 +158,35 @@ describe('database', () => {
 
   describe('getWords', () => {
     it('uses LIKE query when search string is provided', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await getWords('hello');
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
         expect.stringContaining('LIKE'),
         ['%hello%']
       );
     });
 
     it('uses base query when search is an empty string', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await getWords('');
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
         expect.not.stringContaining('LIKE'),
-        []
       );
     });
 
     it('uses base query when search is only whitespace', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await getWords('   ');
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
         expect.not.stringContaining('LIKE'),
-        []
       );
     });
 
     it('uses base query when search is omitted', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await getWords();
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
         expect.not.stringContaining('LIKE'),
-        []
       );
     });
   });
@@ -194,12 +195,12 @@ describe('database', () => {
 
   describe('getSetting', () => {
     it('returns null when key is not found', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await expect(getSetting('missing')).resolves.toBeNull();
     });
 
     it('returns the stored value when key exists', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([{ value: 'hello' }]);
+      mockDb.getAllAsync.mockResolvedValueOnce([{ value: 'hello' }]);
       await expect(getSetting('mykey')).resolves.toBe('hello');
     });
   });
@@ -208,13 +209,13 @@ describe('database', () => {
 
   describe('findWordByName', () => {
     it('returns null when no matching word', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await expect(findWordByName('unknown')).resolves.toBeNull();
     });
 
     it('returns the first matching word', async () => {
       const word = { id: 1, word: 'hello', category_id: null, date_added: '2024-01-01' };
-      mockDb.getAllSync.mockReturnValueOnce([word]);
+      mockDb.getAllAsync.mockResolvedValueOnce([word]);
       await expect(findWordByName('hello')).resolves.toEqual(word);
     });
   });
@@ -223,13 +224,13 @@ describe('database', () => {
 
   describe('findVariantByName', () => {
     it('returns null when no matching variant', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       await expect(findVariantByName(1, 'maa-maa')).resolves.toBeNull();
     });
 
     it('returns the first matching variant', async () => {
       const v = { id: 5, word_id: 1, variant: 'maa-maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' };
-      mockDb.getAllSync.mockReturnValueOnce([v]);
+      mockDb.getAllAsync.mockResolvedValueOnce([v]);
       await expect(findVariantByName(1, 'maa-maa')).resolves.toEqual(v);
     });
   });
@@ -238,19 +239,19 @@ describe('database', () => {
 
   describe('getAllDataForCSV', () => {
     it('uses the default header when none is provided', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       const csv = await getAllDataForCSV((n) => n);
       expect(csv).toBe('palavra,categoria,data,variante\n');
     });
 
     it('uses the provided header', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([]);
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
       const csv = await getAllDataForCSV((n) => n, 'w,c,d,v');
       expect(csv).toContain('w,c,d,v');
     });
 
     it('escapes double quotes in all fields', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([
+      mockDb.getAllAsync.mockResolvedValueOnce([
         { word: 'he"llo', categoria: 'test"cat', data: '2024-01-01', variante: 'var"iant' },
       ]);
       const csv = await getAllDataForCSV((n) => n, 'header');
@@ -260,7 +261,7 @@ describe('database', () => {
     });
 
     it('handles null/empty fields gracefully', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([
+      mockDb.getAllAsync.mockResolvedValueOnce([
         { word: 'hi', categoria: null, data: '2024-01-01', variante: '' },
       ]);
       const csv = await getAllDataForCSV((n) => n, 'header');
@@ -272,15 +273,15 @@ describe('database', () => {
 
   describe('getDashboardStats', () => {
     it('falls back to 0 for all counts when rows are empty', async () => {
-      mockDb.getAllSync
-        .mockReturnValueOnce([]) // totalWordsRow
-        .mockReturnValueOnce([]) // totalVariantsRow
-        .mockReturnValueOnce([]) // todayRow
-        .mockReturnValueOnce([]) // weekRow
-        .mockReturnValueOnce([]) // monthRow
-        .mockReturnValueOnce([]) // categoryCounts
-        .mockReturnValueOnce([]) // recentWords
-        .mockReturnValueOnce([]); // monthlyProgress
+      mockDb.getAllAsync
+        .mockResolvedValueOnce([]) // totalWords
+        .mockResolvedValueOnce([]) // totalVariants
+        .mockResolvedValueOnce([]) // wordsToday
+        .mockResolvedValueOnce([]) // wordsThisWeek
+        .mockResolvedValueOnce([]) // wordsThisMonth
+        .mockResolvedValueOnce([]) // categoryCounts
+        .mockResolvedValueOnce([]) // recentWords
+        .mockResolvedValueOnce([]); // monthlyProgress
       const stats = await getDashboardStats();
       expect(stats.totalWords).toBe(0);
       expect(stats.totalVariants).toBe(0);

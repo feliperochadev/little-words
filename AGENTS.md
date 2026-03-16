@@ -108,7 +108,9 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 | Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
-- `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
+- `src/db/` — DB client (`client.ts`), initialization (`init.ts`), migrations (`migrator.ts`, `migrations/`)
+- `src/repositories/` — per-entity SQL modules (`categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`); no React/hooks/Zustand
+- `src/services/` — thin wrappers over repositories (import boundary for hooks)
 - `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`
 - `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
 - `src/types/` — Shared TypeScript types (e.g. `asset.ts` for media asset types)

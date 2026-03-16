@@ -13,8 +13,13 @@
   globalThis.structuredClone,
 ].forEach(Boolean);
 
-// Mock expo-sqlite — singleton so database.ts and tests share the same instance
+// Mock expo-sqlite — singleton so all modules and tests share the same instance
 const mockDbInstance = {
+  // Async methods — used by repositories (client.ts)
+  getAllAsync: jest.fn(() => Promise.resolve([])),
+  runAsync: jest.fn(() => Promise.resolve({ lastInsertRowId: 1, changes: 1 })),
+  withTransactionAsync: jest.fn(async (fn) => { await fn(); }),
+  // Sync methods — used by init.ts and migrator.ts
   execSync: jest.fn(),
   runSync: jest.fn(() => ({ lastInsertRowId: 1, changes: 1 })),
   getAllSync: jest.fn(() => []),

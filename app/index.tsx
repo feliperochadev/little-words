@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { initDatabase } from '../src/database/database';
+import { initDatabase } from '../src/db/init';
+import { runMigrations } from '../src/db/migrator';
 import { COLORS } from '../src/utils/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 
@@ -11,6 +12,7 @@ export default function Index() {
   useEffect(() => {
     (async () => {
       await initDatabase();
+      await runMigrations();
       await useSettingsStore.getState().hydrate();
       const { isOnboardingDone } = useSettingsStore.getState();
       if (isOnboardingDone) {
