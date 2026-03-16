@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-16_1
+
+[config] Enhance `/implement` command with implementation tracking, status lifecycle, and concurrent-implementation isolation via git worktrees.
+
+- `.agents/implementation/TEMPLATE.md`: New template for implementation tracking files — frontmatter with `name`, `plan`, `status` (`to do | in progress | done`), `started`, `agent`, `worktree`; `## Summary` and `## Changes` table sections.
+- `.claude/commands/implement.md`, `.codex/commands/implement.md`, `.gemini/commands/implement.md`: Added **Step 0** — scan `.agents/implementation/` for any in-progress entries; if found, create a git worktree (`git worktree add .worktrees/[name] -b impl/[name]`) and work there to prevent file conflicts with concurrent agents. Added tracking file creation at start of Step 1 (`status: in progress`). Added **Step 5** — after CI passes, set `status: done`, fill `## Changes` table, and clean up worktree if one was used.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added `Data Layer | .agents/standards/data-layer.md` row to Code Standards tables (missed in 2026-03-15_8).
+- `AGENTS.md`: Fixed stale `src/database/` reference in Project Structure section — updated to `src/db/`, `src/repositories/`, `src/services/`.
+
+---
+
 ### 2026-03-15_8
 
 [refactor] Add proper repository layer — replace monolithic database.ts with three-tier data architecture.

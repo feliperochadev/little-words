@@ -1,8 +1,8 @@
 {
   "version": 1,
   "features": {
-    "automatic_commit": false,
-    "automatic_ship": false
+    "automatic_commit": true,
+    "automatic_ship": true
   },
   "review": {
     "external_agents_required_for_auto_ship": 2,
