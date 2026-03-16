@@ -81,10 +81,11 @@ export function AddCategoryModal({
         {
           text: t('common.remove'),
           style: 'destructive',
-          onPress: async () => {
-            await deleteCategoryMutation.mutateAsync({ id: editCategory.id });
-            handleClose();
-            onDeleted?.();
+          onPress: () => {
+            deleteCategoryMutation.mutateAsync({ id: editCategory.id }).then(() => {
+              handleClose();
+              onDeleted?.();
+            });
           },
         },
       ]

@@ -1,6 +1,13 @@
-import { getSetting, setSetting } from '../database/database';
+import { getSetting, setSetting, clearAllData as dbClearAllData } from '../database/database';
+import { deleteAllMedia } from '../utils/assetStorage';
 
 export { getSetting, setSetting } from '../database/database';
+
+export async function clearAllData(): Promise<void> {
+  await dbClearAllData();
+  // Best-effort file cleanup after DB purge
+  deleteAllMedia();
+}
 
 export interface ChildProfile {
   name: string;

@@ -1,5 +1,8 @@
 import { openDatabaseSync, type SQLiteBindParams } from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
+import type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
+
+export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
 const db = openDatabaseSync('little-words.db');
 
@@ -51,6 +54,24 @@ export const initDatabase = (): Promise<void> => {
             value TEXT NOT NULL
           );
         `);
+
+        db.execSync(`
+          CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parent_type TEXT NOT NULL CHECK(parent_type IN ('word', 'variant')),
+            parent_id INTEGER NOT NULL,
+            asset_type TEXT NOT NULL CHECK(asset_type IN ('audio', 'photo', 'video')),
+            filename TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            file_size INTEGER NOT NULL DEFAULT 0,
+            duration_ms INTEGER,
+            width INTEGER,
+            height INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+          );
+        `);
+        db.execSync(`CREATE INDEX IF NOT EXISTS idx_assets_parent ON assets(parent_type, parent_id);`);
+        db.execSync(`CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(parent_type, parent_id, asset_type);`);
 
         // Remove legacy Google Sync settings from older releases.
         db.execSync(`
@@ -180,13 +201,15 @@ export interface Word {
   created_at: string;
   variant_count?: number;
   variant_texts?: string;
+  asset_count?: number;
 }
 
 export const getWords = (search?: string): Promise<Word[]> => {
   const base = `
     SELECT w.*, c.name as category_name, c.color as category_color, c.emoji as category_emoji,
            (SELECT COUNT(*) FROM variants v WHERE v.word_id = w.id) as variant_count,
-           (SELECT GROUP_CONCAT(v.variant, '|||') FROM variants v WHERE v.word_id = w.id ORDER BY v.created_at ASC) as variant_texts
+           (SELECT GROUP_CONCAT(v.variant, '|||') FROM variants v WHERE v.word_id = w.id ORDER BY v.created_at ASC) as variant_texts,
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'word' AND a.parent_id = w.id) as asset_count
     FROM words w LEFT JOIN categories c ON w.category_id = c.id
   `;
   if (search?.trim()) {
@@ -215,8 +238,33 @@ export const addWord = async (word: string, categoryId: number | null, dateAdded
 export const updateWord = (id: number, word: string, categoryId: number | null, dateAdded: string, notes?: string) =>
   run('UPDATE words SET word=?, category_id=?, date_added=?, notes=? WHERE id=?', [word, categoryId, dateAdded, notes || null, id]);
 
-export const deleteWord = (id: number) =>
-  run('DELETE FROM words WHERE id=?', [id]);
+export const deleteWord = (id: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    try {
+      db.withTransactionSync(() => {
+        // Delete assets for all variants of this word
+        const variantRows = db.getAllSync<{ id: number }>(
+          'SELECT id FROM variants WHERE word_id = ?', [id]
+        );
+        for (const v of variantRows) {
+          db.runSync(
+            `DELETE FROM assets WHERE parent_type = 'variant' AND parent_id = ?`,
+            [v.id]
+          );
+        }
+        // Delete assets for the word itself
+        db.runSync(
+          `DELETE FROM assets WHERE parent_type = 'word' AND parent_id = ?`,
+          [id]
+        );
+        // Delete the word (CASCADE removes variants)
+        db.runSync('DELETE FROM words WHERE id = ?', [id]);
+      });
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
 
 // ─── VARIANTS ─────────────────────────────────────────────────────────────────
 
@@ -228,6 +276,7 @@ export interface Variant {
   notes: string | null;
   created_at: string;
   main_word?: string;
+  asset_count?: number;
 }
 
 export const getVariantsByWord = (wordId: number): Promise<Variant[]> =>
@@ -241,7 +290,9 @@ export const findVariantByName = (wordId: number, variant: string): Promise<Vari
 
 export const getAllVariants = (): Promise<Variant[]> =>
   query<Variant>(`
-    SELECT v.*, w.word as main_word FROM variants v
+    SELECT v.*, w.word as main_word,
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id) as asset_count
+    FROM variants v
     JOIN words w ON v.word_id = w.id
     ORDER BY v.created_at DESC
   `);
@@ -257,8 +308,77 @@ export const addVariant = async (wordId: number, variant: string, dateAdded: str
 export const updateVariant = (id: number, variant: string, dateAdded: string, notes?: string) =>
   run('UPDATE variants SET variant=?, date_added=?, notes=? WHERE id=?', [variant, dateAdded, notes || null, id]);
 
-export const deleteVariant = (id: number) =>
-  run('DELETE FROM variants WHERE id=?', [id]);
+export const deleteVariant = (id: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    try {
+      db.withTransactionSync(() => {
+        db.runSync(
+          `DELETE FROM assets WHERE parent_type = 'variant' AND parent_id = ?`,
+          [id]
+        );
+        db.runSync('DELETE FROM variants WHERE id = ?', [id]);
+      });
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+// ─── ASSETS ───────────────────────────────────────────────────────────────────
+
+export const getAssetById = (id: number): Promise<Asset | null> =>
+  query<Asset>('SELECT * FROM assets WHERE id = ?', [id])
+    .then(rows => rows[0] ?? null);
+
+export const getAssetsByParent = (
+  parentType: ParentType,
+  parentId: number,
+): Promise<Asset[]> =>
+  query<Asset>(
+    'SELECT * FROM assets WHERE parent_type = ? AND parent_id = ? ORDER BY created_at DESC',
+    [parentType, parentId]
+  );
+
+export const getAssetsByParentAndType = (
+  parentType: ParentType,
+  parentId: number,
+  assetType: AssetType,
+): Promise<Asset[]> =>
+  query<Asset>(
+    'SELECT * FROM assets WHERE parent_type = ? AND parent_id = ? AND asset_type = ? ORDER BY created_at DESC',
+    [parentType, parentId, assetType]
+  );
+
+export const addAsset = async (asset: NewAsset): Promise<number> => {
+  const result = await run(
+    `INSERT INTO assets (parent_type, parent_id, asset_type, filename, mime_type, file_size, duration_ms, width, height)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      asset.parent_type,
+      asset.parent_id,
+      asset.asset_type,
+      asset.filename,
+      asset.mime_type,
+      asset.file_size,
+      asset.duration_ms ?? null,
+      asset.width ?? null,
+      asset.height ?? null,
+    ]
+  );
+  return result.insertId ?? 0;
+};
+
+export const deleteAsset = (id: number) =>
+  run('DELETE FROM assets WHERE id = ?', [id]);
+
+export const deleteAssetsByParent = (
+  parentType: ParentType,
+  parentId: number,
+) =>
+  run('DELETE FROM assets WHERE parent_type = ? AND parent_id = ?', [parentType, parentId]);
+
+export const updateAssetFilename = (id: number, filename: string) =>
+  run('UPDATE assets SET filename = ? WHERE id = ?', [filename, id]);
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
@@ -382,6 +502,7 @@ export const clearAllData = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
       db.withTransactionSync(() => {
+        db.execSync('DELETE FROM assets;');
         db.execSync('DELETE FROM variants;');
         db.execSync('DELETE FROM words;');
         db.execSync('DELETE FROM categories;');

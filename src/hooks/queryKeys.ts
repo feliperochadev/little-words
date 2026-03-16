@@ -1,3 +1,5 @@
+import type { ParentType, AssetType } from '../types/asset';
+
 export const QUERY_KEYS = {
   words: (search?: string) => ['words', { search: search ?? '' }] as const,
   variantsByWord: (wordId: number) => ['words', wordId, 'variants'] as const,
@@ -5,6 +7,10 @@ export const QUERY_KEYS = {
   categories: () => ['categories'] as const,
   dashboard: () => ['dashboard'] as const,
   wordCount: (id: number) => ['wordCounts', id] as const,
+  assets: (parentType: ParentType, parentId: number) =>
+    ['assets', parentType, parentId] as const,
+  assetsByType: (parentType: ParentType, parentId: number, assetType: AssetType) =>
+    ['assets', parentType, parentId, assetType] as const,
 } as const;
 
 // Keys to invalidate after word mutations (word count + variant count affect dashboard)
@@ -25,4 +31,12 @@ export const VARIANT_MUTATION_KEYS = [
 export const CATEGORY_MUTATION_KEYS = [
   ['categories'],
   ['words'], // word list shows category name/color
+] as const;
+
+// Keys to invalidate after asset mutations
+export const ASSET_MUTATION_KEYS = [
+  ['assets'],
+  ['words'],
+  ['variants'],
+  ['dashboard'],
 ] as const;

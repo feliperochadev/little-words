@@ -21,14 +21,16 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
   - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
-- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`.
-- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`).
-- `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`) + `queryKeys.ts`.
+- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`, `assets`.
+- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
+- `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`.
 - `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
+- `src/types/`: Shared TypeScript types (`asset.ts` — media asset types, MIME validation, file size limits).
 - `src/components/`: Reusable UI components and modals.
 - `src/i18n/`: Internationalization logic and translation catalogues (`en-US`, `pt-BR`).
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
+  - `assetStorage.ts`: File-system management for media assets.
   - `theme.ts`: Centralized color and style constants.
 - `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
@@ -46,6 +48,16 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - Module-level stable empty arrays for TQ defaults: `const EMPTY: T[] = []` — never `= []` inline in JSX/hooks when used in `useEffect` deps.
 - `useEffect` that resets form state must NOT include TQ data arrays in deps — split into separate effects.
 - Test helper: `__tests__/helpers/renderWithProviders.tsx` wraps in `QueryClientProvider` + `I18nProvider`. Use `useSettingsStore.setState(...)` to seed store state in tests.
+
+### Media Asset Layer
+
+The app supports audio, photo, and video attachments on words and variants:
+- **Types** (`src/types/asset.ts`): `ParentType` (`word`|`variant`), `AssetType` (`audio`|`photo`|`video`), MIME validation, file size limits (50 MB).
+- **Storage** (`src/utils/assetStorage.ts`): File-system layer using `expo-file-system` class API (`File`, `Directory`, `Paths.document`). Files stored in `Documents/media/{words|variants}/{id}/{audio|photos|videos}/`.
+- **Service** (`src/services/assetService.ts`): Atomic save (DB insert → build filename → copy file → update DB; rollback on failure), remove, bulk cleanup.
+- **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
+- **DB**: `assets` table with `parent_type` discriminator + indexes, cascade deletion via `withTransactionSync`, `asset_count` subquery in word/variant queries.
+- **Dependencies**: `expo-av` (audio), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 
 ## Rules
 
@@ -67,7 +79,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Do this before any other work in the session.
 
 5. **Automatic Commit Gate (`/commit`):**
-   - `/commit` always runs CI → `/review` → respects `automatic_ship` when invoked. Follow `.gemini/commands/commit.md` for detailed steps.
+   - `/commit` always runs CI → `/review-custom` → respects `automatic_ship` when invoked. Follow `.gemini/commands/commit.md` for detailed steps.
    - `features.automatic_commit` controls only whether the agent self-triggers it:
      - `false` → wait for the user to explicitly call `/commit`; never self-trigger.
      - `true` → agent may call `/commit` automatically once work is complete.
@@ -76,18 +88,18 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - `/ship` is the standard way to commit and push approved changes. Follow `.gemini/commands/ship.md` for detailed steps.
    - Appends `(apsc - gi)` to the commit subject to mark it as a Gemini-authored commit.
    - **Auto-ship:** Before every `/ship` decision, read `features.automatic_ship` from `.agents/agent-config.json`:
-     - `true` → run `/ship` automatically once `/review` confirms approval.
+     - `true` → run `/ship` automatically once `/review-custom` confirms approval.
      - `false` → **never run `/ship` automatically**; wait for explicit user request.
-   - **Tag-based shipping boundary:** `/ship` uses git tags named `ship-YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
+   - **Tag-based shipping boundary:** `/ship` uses git tags named `YYYY-MM-DD_N` to identify the last shipped changelog entry and only ships entries above it. If no tag exists yet, it falls back to the git-log method once, then creates the first tag.
    - **Changelog immutability after push:** Never modify a changelog entry after it has been pushed. If corrections are needed, add a new entry referencing the old ID.
 
-7. **Multi-Agent Review Protocol (`/review`):**
-   - Run `/review` after `npm run ci` passes and before `/ship`.
+7. **Multi-Agent Review Protocol (`/review-custom`):**
+   - Run `/review-custom` after `npm run ci` passes and before `/ship`.
    - Internally calls `npm run agent:review` to classify the change as simple or complex.
    - **Simple** (≤ 10 change lines AND < 3 category tags): internal checklist review. If all items pass, output `Internal review passed. Safe to /ship.`
    - **Complex** (> 10 change lines OR ≥ 3 distinct category tags): creates `.agents/reviews/review-{timestamp}.md` and requires an external reviewer (Codex or Claude) to set `status: approved`. Required approvals and iteration limits are read from `.agents/agent-config.json`.
    - Maximum 3 review iterations; if unresolved, set `status: escalation_required` and stop.
-   - Never approve your own complex changes. Never skip `/review` before `/ship`.
+   - Never approve your own complex changes. Never skip `/review-custom` before `/ship`.
 
 8. **Rate Limit Resilience (`/rate-limit-abort` / `/check-unfinished-tasks`):**
    - When approaching 95% of usage quota mid-task, call `/rate-limit-abort` immediately:
@@ -98,7 +110,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - At session start, call `/check-unfinished-tasks`:
       - Re-mark Gemini as `available: true` in `agent-config.json`.
       - List pending tasks. Pick the oldest, mark it `in_progress`, follow its `## Next Steps`.
-      - On completion: run CI, update changelog, run `/review`, delete the task file.
+      - On completion: run CI, update changelog, run `/review-custom`, delete the task file.
 
 9. **Pre-push protection.** The git `pre-push` hook blocks pushes to root branches (`main`, `master`, or the remote default branch from `<remote>/HEAD`). Use a feature branch and open a PR instead.
 
@@ -125,7 +137,7 @@ npx expo start
 npm run ci
 
 # Run post-CI review (required before /ship)
-/review
+/review-custom
 
 # Rate limit resilience
 npm run agent:check-tasks    # list pending unfinished tasks

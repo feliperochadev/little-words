@@ -1,4 +1,4 @@
-# /review — Run post-CI review before shipping
+# /review-custom — Run post-CI review before shipping
 
 Call this command after `npm run ci` passes and the changelog has been updated. It detects whether the change is simple or complex and performs the appropriate review.
 
@@ -65,5 +65,5 @@ If all items are `[ok]`, output `Internal review passed.` then check `.agents/ag
 
 - Never approve your own complex changes.
 - Never skip this command before `/ship` on a complex change.
-- An external reviewer may run `/commit` and `/ship` only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` allow it.
+- An external reviewer may run `/commit` and `/ship` only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` allow it (run `/review-custom` first if the change is complex).
 - Always delete the review file after the code is committed, using `cleanupReviews()` or by removing `.agents/reviews/review-*.md`.
