@@ -22,7 +22,7 @@ export function WordCard({ item }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
-  wordText:  { fontSize: 18, fontWeight: '600', color: COLORS.text },
+  wordText:  { fontSize: 18, fontWeight: '600', color: theme.colors.text },
 });
 
 // ❌ Don't — inline style objects create new references on every render
@@ -38,20 +38,20 @@ const styles = StyleSheet.create({
 
 ### Colors
 
-**Always use `COLORS.*` from `src/utils/theme.ts`.** Never hardcode hex values.
+Always use theme tokens from `src/theme` (or `useTheme()` for runtime-reactive colors). Never hardcode hex values.
 
 ```ts
 // ✅ Do
-color: COLORS.text
-backgroundColor: COLORS.background
-borderColor: COLORS.border
+color: theme.colors.text
+backgroundColor: theme.colors.background
+borderColor: theme.colors.border
 
 // ❌ Don't
 color: '#333333'
 backgroundColor: '#FFF9FB'
 ```
 
-Category colors and emojis are in `CATEGORY_COLORS` and `CATEGORY_EMOJIS` in the same file.
+Category colors and emojis live in `src/theme/category.ts`.
 
 ---
 
@@ -142,7 +142,7 @@ import { useQuery } from '@tanstack/react-query';
 // 4. Internal src imports (absolute or relative)
 import { QUERY_KEYS } from '../hooks/queryKeys';
 import { useWords } from '../hooks/useWords';
-import { COLORS } from '../utils/theme';
+import { theme } from '../theme';
 
 // 5. Type-only imports
 import type { Word } from '../database/database';
@@ -156,7 +156,9 @@ Use the `@/*` path alias for imports that would require 3+ `../` segments.
 
 | Constant type | File |
 |---------------|------|
-| UI colors, category colors/emojis | `src/utils/theme.ts` → `COLORS`, `CATEGORY_COLORS`, `CATEGORY_EMOJIS` |
+| UI colors/tokens | `src/theme/index.ts` → `theme`, `colors`, `space`, `radii`, `shadow` |
+| Category colors/emojis | `src/theme/category.ts` → `CATEGORY_COLORS`, `CATEGORY_EMOJIS` |
+| Shared layout constants | `src/theme/layout.ts` → `layout` |
 | Built-in category keys | `src/utils/categoryKeys.ts` → `DEFAULT_CATEGORIES`, `DEFAULT_CATEGORY_KEY_SET` |
 | TanStack Query keys | `src/hooks/queryKeys.ts` → `QUERY_KEYS`, `*_MUTATION_KEYS` |
 | Module-level empty arrays | Top of the relevant hook file |

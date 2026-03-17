@@ -289,7 +289,7 @@ export function StatCard({ emoji, icon, value, label, color, testID }: Readonly<
   return (
     <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
       <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
-        {icon ? icon : <Text style={statStyles.emoji}>{emoji}</Text>}
+        {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
       </View>
       <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
       <Text style={statStyles.label}>{label}</Text>

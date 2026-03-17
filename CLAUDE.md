@@ -283,7 +283,7 @@ src/theme/
 
 **Static styles** use the module-level `theme` export (DEFAULT_VARIANT colors). **Dynamic/inline color props** use `const { colors } = useTheme()` inside the component. **Onboarding preview** (before store hydration) uses `getThemeForSex(sex)` directly.
 
-**Migration bridge:** `src/utils/theme.ts` re-exports `colors` as `COLORS` for backward compat. New code must import from `'../theme'` directly.
+`src/utils/theme.ts` was removed. Import theme tokens directly from `src/theme`, category constants from `src/theme/category.ts`, and shared layout constants from `src/theme/layout.ts`.
 
 **New shared components** (`src/components/`): `Input`, `Label`, `ScreenHeader`, `SortBar`, `BottomSheet`, `IconButton`, `LanguagePicker` — use theme tokens throughout. See `.agents/standards/design-system.md` for usage rules.
 
@@ -291,7 +291,8 @@ src/theme/
 
 ### Utilities
 
-- `src/utils/theme.ts` — **Migration bridge.** Re-exports `COLORS` from `src/theme`. New code imports from `src/theme` directly. Keeps `CATEGORY_COLORS`, `CATEGORY_EMOJIS`, `FONTS`, `LAYOUT` for backward compat.
+- `src/theme/category.ts` — Category selection constants (`CATEGORY_COLORS`, `CATEGORY_EMOJIS`) used by category picker UI.
+- `src/theme/layout.ts` — Shared layout constants (`textAreaHeight`, `highlightBorderRadius`, etc.) used by reusable form/date components.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
 - `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
+import { CATEGORY_COLORS, CATEGORY_EMOJIS } from '../theme/category';
 import { withOpacity } from '../utils/colorHelpers';
 import { Button } from './UIComponents';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,9 @@ import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useAddCategory, useUpdateCategory, useDeleteCategory, useWordCountByCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useTheme } from '../hooks/useTheme';
+
+const DEFAULT_CATEGORY_COLOR = CATEGORY_COLORS[0];
+const DEFAULT_CATEGORY_EMOJI = CATEGORY_EMOJIS[0];
 
 export interface CategoryToEdit {
   id: number;
@@ -43,14 +46,18 @@ export function AddCategoryModal({
   const { data: wordCount = 0 } = useWordCountByCategory(editCategory?.id ?? 0);
 
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(CATEGORY_COLORS[0]);
-  const [selectedEmoji, setSelectedEmoji] = useState(CATEGORY_EMOJIS[0]);
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_CATEGORY_COLOR);
+  const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_CATEGORY_EMOJI);
   const [loading, setLoading] = useState(false);
 
-  const handleClose = () => {
+  const resetForm = useCallback(() => {
     setName('');
-    setSelectedColor(CATEGORY_COLORS[0]);
-    setSelectedEmoji(CATEGORY_EMOJIS[0]);
+    setSelectedColor(DEFAULT_CATEGORY_COLOR);
+    setSelectedEmoji(DEFAULT_CATEGORY_EMOJI);
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -63,11 +70,9 @@ export function AddCategoryModal({
       setSelectedColor(editCategory.color);
       setSelectedEmoji(editCategory.emoji);
     } else {
-      setName('');
-      setSelectedColor(CATEGORY_COLORS[0]);
-      setSelectedEmoji(CATEGORY_EMOJIS[0]);
+      resetForm();
     }
-  }, [editCategory, visible]);
+  }, [editCategory, visible, resetForm]);
 
   const handleDelete = () => {
     if (!editCategory) return;
@@ -179,7 +184,7 @@ export function AddCategoryModal({
                   style={[
                     styles.emojiBtn,
                     { backgroundColor: colors.surface },
-                    selectedEmoji === emoji && { backgroundColor: selectedColor + '30', borderColor: selectedColor },
+                    selectedEmoji === emoji && { backgroundColor: withOpacity(selectedColor, '30'), borderColor: selectedColor },
                   ]}
                   onPress={() => setSelectedEmoji(emoji)}
                 >

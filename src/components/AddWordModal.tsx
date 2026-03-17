@@ -4,7 +4,7 @@ import {
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LAYOUT } from '../utils/theme';
+import { layout } from '../theme/layout';
 import { withOpacity } from '../utils/colorHelpers';
 import { useTheme } from '../hooks/useTheme';
 import { findWordByName } from '../services/wordService';
@@ -503,7 +503,7 @@ const s = StyleSheet.create({
   dupVariants:    { fontSize: 12, fontWeight: '600' },
   dupNotesRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 6 },
   dupNotes:       { fontSize: 12, flex: 1 },
-  textArea:       { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
+  textArea:       { height: layout.textAreaHeight, textAlignVertical: 'top' },
   carouselWrapper:{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   catScroll:      { flex: 1 },
   carouselArrow:  { paddingHorizontal: 6, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },

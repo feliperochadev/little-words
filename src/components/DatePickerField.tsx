@@ -7,7 +7,7 @@ import {
   StyleSheet, FlatList, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LAYOUT } from '../utils/theme';
+import { layout } from '../theme/layout';
 import { useI18n } from '../i18n/i18n';
 import { daysInMonth, parseDate, toStorage, toDisplay } from '../utils/dateHelpers';
 import { TIMING } from '../utils/animationConstants';
@@ -97,7 +97,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: Readon
 
 const wh = StyleSheet.create({
   col:       { height: WHEEL_H, overflow: 'hidden' },
-  highlight: { position: 'absolute', left: 4, right: 4, height: ITEM_H, borderRadius: LAYOUT.HIGHLIGHT_BORDER_RADIUS, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1 },
+  highlight: { position: 'absolute', left: 4, right: 4, height: ITEM_H, borderRadius: layout.highlightBorderRadius, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1 },
   item:      { height: ITEM_H, justifyContent: 'center', alignItems: 'center' },
   text:      { fontSize: 15, fontWeight: '500' },
 });

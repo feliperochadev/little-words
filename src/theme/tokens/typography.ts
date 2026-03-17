@@ -28,6 +28,6 @@ export const typography: TypographyTokens = {
     tight:  -0.2,
     normal:  0,
     wide:    0.5,
-    wider:   1.0,
+    wider:   1,
   },
 };

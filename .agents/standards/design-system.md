@@ -44,8 +44,8 @@ function MyComponent() {
 import { theme } from '../theme';
 import { colors, space, radii, shadow } from '../theme';
 
-// ❌ Wrong — do not import COLORS from utils/theme in new code
-import { COLORS } from '../utils/theme'; // deprecated bridge
+// ❌ Wrong — do not import from removed bridge file
+import { COLORS } from '../utils/theme';
 ```
 
 ### Variant Switching

@@ -17,11 +17,7 @@ interface IconButtonProps {
 export function IconButton({
   icon, onPress, variant = 'default', size = 48, style, testID, accessibilityLabel, disabled,
 }: Readonly<IconButtonProps>) {
-  const bgColor = variant === 'danger'
-    ? withOpacity(theme.colors.error, '15')
-    : variant === 'ghost'
-      ? 'transparent'
-      : 'transparent';
+  const bgColor = variant === 'danger' ? withOpacity(theme.colors.error, '15') : 'transparent';
 
   return (
     <TouchableOpacity

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LAYOUT } from '../utils/theme';
+import { layout } from '../theme/layout';
 import { withOpacity } from '../utils/colorHelpers';
 import { useTheme } from '../hooks/useTheme';
 import { findVariantByName } from '../services/variantService';
@@ -259,7 +259,7 @@ const s = StyleSheet.create({
   deleteBtnText:{ fontSize: 13, fontWeight: '700' },
   label:        { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:        { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderWidth: 1.5, marginBottom: 16 },
-  textArea:     { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
+  textArea:     { height: layout.textAreaHeight, textAlignVertical: 'top' },
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
   btnDisabled:  { opacity: 0.5 },

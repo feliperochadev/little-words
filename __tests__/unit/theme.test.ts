@@ -1,5 +1,7 @@
-import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS, FONTS } from '../../src/utils/theme';
 import { theme } from '../../src/theme';
+import { colors } from '../../src/theme';
+import { CATEGORY_COLORS, CATEGORY_EMOJIS } from '../../src/theme/category';
+import { layout } from '../../src/theme/layout';
 import { blossomColors } from '../../src/theme/variants/blossom';
 import { honeyColors } from '../../src/theme/variants/honey';
 import { breezeColors } from '../../src/theme/variants/breeze';
@@ -10,33 +12,30 @@ import { typography } from '../../src/theme/tokens/typography';
 import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 describe('theme', () => {
-  describe('COLORS bridge (src/utils/theme)', () => {
+  describe('colors tokens', () => {
     it('has all required brand colors', () => {
-      expect(COLORS.primary).toBeDefined();
-      expect(COLORS.primaryLight).toBeDefined();
-      expect(COLORS.primaryDark).toBeDefined();
-      expect(COLORS.secondary).toBeDefined();
-      expect(COLORS.accent).toBeDefined();
+      expect(colors.primary).toBeDefined();
+      expect(colors.primaryLight).toBeDefined();
+      expect(colors.primaryDark).toBeDefined();
+      expect(colors.secondary).toBeDefined();
+      expect(colors.accent).toBeDefined();
     });
 
     it('has all semantic colors', () => {
-      expect(COLORS.success).toBeDefined();
-      expect(COLORS.error).toBeDefined();
-      expect(COLORS.warning).toBeDefined();
+      expect(colors.success).toBeDefined();
+      expect(colors.error).toBeDefined();
+      expect(colors.warning).toBeDefined();
     });
 
-    it('has legacy alias surface colors', () => {
-      expect(COLORS.surface).toBe('#FFFFFF');
-      expect(COLORS.cardBackground).toBe('#FFFFFF');
-      expect(COLORS.white).toBe('#FFFFFF');
-      expect(COLORS.border).toBeDefined();
+    it('has surface colors', () => {
+      expect(colors.surface).toBe('#FFFFFF');
+      expect(colors.border).toBeDefined();
     });
 
-    it('has all text colors including legacy aliases', () => {
-      expect(COLORS.text).toBeDefined();
-      expect(COLORS.textSecondary).toBeDefined();
-      expect(COLORS.textMuted).toBeDefined();
-      expect(COLORS.textLight).toBeDefined();
+    it('has all text colors', () => {
+      expect(colors.text).toBeDefined();
+      expect(colors.textSecondary).toBeDefined();
+      expect(colors.textMuted).toBeDefined();
     });
 
     it('brand hex colors are valid hex strings', () => {
@@ -48,7 +47,7 @@ describe('theme', () => {
         'text', 'textSecondary', 'textMuted',
       ] as const;
       hexOnlyKeys.forEach(key => {
-        expect(COLORS[key]).toMatch(hexRegex);
+        expect(colors[key]).toMatch(hexRegex);
       });
     });
   });
@@ -78,11 +77,13 @@ describe('theme', () => {
     });
   });
 
-  describe('FONTS', () => {
-    it('has regular, medium, and bold', () => {
-      expect(FONTS.regular).toBe('System');
-      expect(FONTS.medium).toBe('System');
-      expect(FONTS.bold).toBe('System');
+  describe('layout constants', () => {
+    it('exposes shared layout constants', () => {
+      expect(layout.textAreaHeight).toBe(80);
+      expect(layout.highlightBorderRadius).toBe(10);
+      expect(layout.statIconSize).toBe(44);
+      expect(layout.statIconRadius).toBe(22);
+      expect(layout.emptyStateVerticalPadding).toBe(60);
     });
   });
 

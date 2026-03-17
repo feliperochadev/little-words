@@ -32,7 +32,9 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `assetStorage.ts`: File-system management for media assets.
-  - `theme.ts`: Backward-compat bridge re-exporting `COLORS` from `src/theme/`. New code imports from `src/theme/` directly. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors; `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts. All UI chrome icons use Ionicons from `@expo/vector-icons` — never emoji as icons.
+  - `src/theme/category.ts`: Category picker constants (`CATEGORY_COLORS`, `CATEGORY_EMOJIS`).
+  - `src/theme/layout.ts`: Shared layout constants for reusable UI pieces.
+  - `src/utils/theme.ts` was removed. Import colors/tokens from `src/theme/` directly. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors; `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts. All UI chrome icons use Ionicons from `@expo/vector-icons` — never emoji as icons.
 - `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
 ### State Management Strategy

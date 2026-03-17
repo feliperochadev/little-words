@@ -2,6 +2,55 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_14
+
+[config] Remove deprecated `src/utils/theme.ts` bridge and migrate remaining consumers.
+
+- Deleted `src/utils/theme.ts` after confirming migration readiness against UI change plans.
+- Added dedicated theme constants:
+  - `src/theme/category.ts` for `CATEGORY_COLORS` and `CATEGORY_EMOJIS`
+  - `src/theme/layout.ts` for shared layout constants
+- Migrated component imports away from the removed bridge:
+  - `src/components/AddCategoryModal.tsx`
+  - `src/components/AddWordModal.tsx`
+  - `src/components/AddVariantModal.tsx`
+  - `src/components/DatePickerField.tsx`
+- Updated `__tests__/unit/theme.test.ts` to validate canonical theme exports and new category/layout constants (removed bridge-only assertions).
+- Updated cross-vendor docs and standards to reflect bridge removal:
+  - `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
+  - `.agents/standards/styling-and-naming.md`
+  - `.agents/standards/design-system.md`
+- Validation: `npm run ci` passed.
+
+---
+
+### 2026-03-17_13
+
+[fix] Resolve SonarCloud PR 35 duplication and issue findings.
+
+- `sonar-project.properties`: added `sonar.cpd.exclusions=src/i18n/**` to exclude translation catalogs from duplication checks only.
+- Reduced cross-screen duplication by extracting shared list header/search/sort UI into `src/components/ListScreenControls.tsx` and using it in:
+  - `app/(tabs)/words.tsx`
+  - `app/(tabs)/variants.tsx`
+- Added `src/utils/sortOptions.ts` and reused `formatDateDMY` from `src/utils/dateHelpers.ts` to remove repeated sort/date helper logic.
+- Refactored repeated category form reset state in `src/components/AddCategoryModal.tsx`.
+- Fixed open Sonar issues:
+  - `src/components/IconButton.tsx`: removed redundant nested ternary background color logic.
+  - `src/components/UIComponents.tsx`: replaced unnecessary conditional expression with nullish fallback.
+  - `src/theme/tokens/typography.ts`: replaced `1.0` with `1`.
+- Validation: `npm run ci` passed.
+
+---
+
+### 2026-03-17_12
+
+[config] Add `/refine` save-to-file follow-up across all vendors.
+
+- Updated `.claude/commands/refine.md`, `.codex/commands/refine.md`, and `.gemini/commands/refine.md`.
+- Added a final `/refine` instruction requiring an end-of-output question asking whether to write the refined prompt to a `.md` file in the folder where `/refine` was invoked.
+
+---
+
 ### 2026-03-17_11
 
 [fix] Resolve deprecated `COLORS` bridge usage on Sonar-scoped runtime files.
