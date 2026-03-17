@@ -4,8 +4,8 @@ import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../src/utils/theme';
 import { SearchBar, Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { AddVariantModal } from '../../src/components/AddVariantModal';
@@ -13,11 +13,13 @@ import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCatego
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { sortWords, SortKey } from '../../src/utils/sortHelpers';
 import { useWords } from '../../src/hooks/useWords';
+import { useTheme } from '../../src/hooks/useTheme';
 import type { Word, Variant } from '../../src/types/domain';
 
 export default function WordsScreen() {
   const { t, tc } = useI18n();
   const categoryName = useCategoryName();
+  const { colors } = useTheme();
 
   const SORT_OPTIONS: { key: SortKey; label: string }[] = [
     { key: 'date_desc', label: t('words.sortRecent') },
@@ -62,8 +64,8 @@ export default function WordsScreen() {
         <View style={styles.wordRow}>
           <View style={styles.wordMain}>
             <View style={styles.wordHeader}>
-              <Text style={styles.wordText} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
-              <Text style={styles.wordDate} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
+              <Text style={[styles.wordText, { color: colors.text }]} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
+              <Text style={[styles.wordDate, { color: colors.textSecondary }]} testID={`word-date-${item.word}`}>{formatDate(item.date_added)}</Text>
             </View>
             <View style={styles.wordMeta}>
               {(() => {
@@ -75,7 +77,7 @@ export default function WordsScreen() {
                   onLongPress={() => setEditCategory({
                     id: categoryId,
                     name: categoryName(categoryNameValue),
-                    color: item.category_color || COLORS.primary,
+                    color: item.category_color || colors.primary,
                     emoji: item.category_emoji || '🏷️',
                   })}
                   delayLongPress={400}
@@ -83,7 +85,7 @@ export default function WordsScreen() {
                 >
                   <CategoryBadge
                     name={categoryName(categoryNameValue)}
-                    color={item.category_color || COLORS.primary}
+                    color={item.category_color || colors.primary}
                     emoji={item.category_emoji || '📝'}
                     size="small"
                   />
@@ -91,13 +93,17 @@ export default function WordsScreen() {
                 );
               })()}
               {item.variant_texts?.split('|||').map((v: string) => (
-                <View key={v} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
-                  <Text style={styles.variantChipText}>🗣️ {v}</Text>
+                <View key={v} style={[styles.variantChip, { backgroundColor: withOpacity(colors.secondary, '20') }]} testID={`word-variant-chip-${v}`}>
+                  <Ionicons name="chatbubble" size={12} color={colors.secondary} style={styles.variantChipIcon} testID={`word-variant-icon-${v}`} />
+                  <Text style={[styles.variantChipText, { color: colors.primaryDark }]} testID={`word-variant-text-${v}`}>{v}</Text>
                 </View>
               ))}
             </View>
             {item.notes && (
-              <Text style={styles.notePreview} numberOfLines={1}>💬 {item.notes}</Text>
+              <View style={styles.noteRow}>
+                <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
+                <Text style={[styles.notePreview, { color: colors.textSecondary }]} numberOfLines={1}>{item.notes}</Text>
+              </View>
             )}
           </View>
         </View>
@@ -106,15 +112,16 @@ export default function WordsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('words.title')}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('words.title')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={styles.addBtn}
+            style={[styles.addBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
             onPress={() => { setEditWord(null); setShowAddWord(true); }}
+            testID="words-add-btn"
           >
-            <Text style={styles.addBtnText}>{t('words.addWord')}</Text>
+            <Text style={[styles.addBtnText, { color: colors.textOnPrimary }]}>{t('words.addWord')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -124,22 +131,22 @@ export default function WordsScreen() {
       </View>
 
       <View style={styles.sortBar}>
-        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortMenu(!showSortMenu)} testID="words-sort-btn">
-          <Text style={styles.sortBtnText}>{currentSortLabel} ▾</Text>
+        <TouchableOpacity style={[styles.sortBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSortMenu(!showSortMenu)} testID="words-sort-btn">
+          <Text style={[styles.sortBtnText, { color: colors.text }]}>{currentSortLabel} ▾</Text>
         </TouchableOpacity>
-        <Text style={styles.countText}>{tc('words.count', words.length)}</Text>
+        <Text style={[styles.countText, { color: colors.textSecondary }]}>{tc('words.count', words.length)}</Text>
       </View>
 
       {showSortMenu && (
-        <View style={styles.sortMenu}>
+        <View style={[styles.sortMenu, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.text }]}>
           {SORT_OPTIONS.map(opt => (
             <TouchableOpacity
               key={opt.key}
-              style={[styles.sortMenuItem, sort === opt.key && styles.sortMenuItemActive]}
+              style={[styles.sortMenuItem, { borderBottomColor: colors.border }, sort === opt.key && { backgroundColor: withOpacity(colors.primary, '10') }]}
               onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
               testID={`sort-option-${opt.key}`}
             >
-              <Text style={[styles.sortMenuText, sort === opt.key && styles.sortMenuTextActive]}>
+              <Text style={[styles.sortMenuText, { color: colors.text }, sort === opt.key && { color: colors.primary, fontWeight: '700' }]}>
                 {opt.label}
               </Text>
             </TouchableOpacity>
@@ -152,10 +159,10 @@ export default function WordsScreen() {
         keyExtractor={item => item.id.toString()}
         renderItem={renderWord}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <EmptyState
-            emoji={search ? '🔍' : '📝'}
+            icon={<Ionicons name={search ? 'search-outline' : 'create-outline'} size={56} color={colors.textMuted} />}
             title={search ? t('words.emptySearchTitle') : t('words.emptyTitle')}
             subtitle={search ? t('words.emptySearchSubtitle', { search }) : t('words.emptySubtitle')}
             action={search ? undefined : { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true) }}
@@ -192,49 +199,49 @@ export default function WordsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8,
   },
-  title: { fontSize: 26, fontWeight: '900', color: COLORS.text },
+  title: { fontSize: 26, fontWeight: '900' },
   headerButtons: { flexDirection: 'row', gap: 8 },
   addBtn: {
-    backgroundColor: COLORS.primary, paddingHorizontal: 18, paddingVertical: 10,
-    borderRadius: 20, shadowColor: COLORS.primary,
+    paddingHorizontal: 18, paddingVertical: 10,
+    borderRadius: 20,
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  addBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
+  addBtnText: { fontWeight: '700', fontSize: 15 },
   searchContainer: { paddingHorizontal: 20 },
   sortBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 6,
   },
   sortBtn: {
-    backgroundColor: COLORS.white, borderRadius: 12, borderWidth: 1.5,
-    borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 12, borderWidth: 1.5,
+    paddingHorizontal: 12, paddingVertical: 6,
   },
-  sortBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.text },
-  countText: { fontSize: 12, color: COLORS.textSecondary },
+  sortBtnText: { fontSize: 13, fontWeight: '600' },
+  countText: { fontSize: 12 },
   sortMenu: {
-    marginHorizontal: 20, backgroundColor: COLORS.white, borderRadius: 14,
-    borderWidth: 1.5, borderColor: COLORS.border,
-    shadowColor: COLORS.text, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    marginHorizontal: 20, borderRadius: 14,
+    borderWidth: 1.5,
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
     marginBottom: 6, overflow: 'hidden',
   },
-  sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  sortMenuItemActive: { backgroundColor: withOpacity(COLORS.primary, '10') },
-  sortMenuText: { fontSize: 14, color: COLORS.text },
-  sortMenuTextActive: { color: COLORS.primary, fontWeight: '700' },
+  sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  sortMenuText: { fontSize: 14 },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
   wordCard: { marginBottom: 10 },
   wordRow: { flexDirection: 'row', alignItems: 'flex-start' },
   wordMain: { flex: 1 },
   wordHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 },
-  wordText: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+  wordText: { fontSize: 20, fontWeight: '800' },
   wordMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  wordDate: { fontSize: 12, color: COLORS.textSecondary },
-  notePreview: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-  variantChip: { backgroundColor: withOpacity(COLORS.secondary, '20'), paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  variantChipText: { fontSize: 11, color: COLORS.secondary, fontWeight: '700' },
+  wordDate: { fontSize: 12 },
+  noteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  notePreview: { fontSize: 12, flex: 1 },
+  variantChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  variantChipIcon: { marginRight: 3 },
+  variantChipText: { fontSize: 11, fontWeight: '700' },
 });

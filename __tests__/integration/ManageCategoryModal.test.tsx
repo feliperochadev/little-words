@@ -159,7 +159,7 @@ describe('ManageCategoryModal', () => {
     const onEdit = jest.fn();
     jest.useFakeTimers();
     const { findByText } = renderModal({ onClose, onEdit });
-    fireEvent.press(await findByText('✏️'));
+    fireEvent.press(await findByText(/Edit category/));
     // dismissModal runs a 250ms animation before calling onClose, then onEdit fires after a 300ms setTimeout
     act(() => { jest.advanceTimersByTime(600); });
     await waitFor(() => expect(onClose).toHaveBeenCalled());

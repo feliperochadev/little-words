@@ -8,6 +8,8 @@ import * as categoryService from '../../src/services/categoryService';
 import * as wordService from '../../src/services/wordService';
 import * as variantService from '../../src/services/variantService';
 import * as settingsService from '../../src/services/settingsService';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 jest.mock('../../src/services/categoryService', () => ({
   ...jest.requireActual('../../src/services/categoryService'),
@@ -57,6 +59,10 @@ function renderModal(props: Partial<React.ComponentProps<typeof AddWordModal>> =
   );
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
+
 describe('AddWordModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,6 +72,7 @@ describe('AddWordModal', () => {
     (wordService.findWordByName as jest.Mock).mockResolvedValue(null);
     (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([]);
     (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
   });
 
   it('renders new word title', async () => {
@@ -95,6 +102,20 @@ describe('AddWordModal', () => {
     const { findByText } = renderModal({ onClose });
     fireEvent.press(await findByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('uses breeze primary border on cancel button when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const cancelButton = await findByTestId('word-cancel-btn');
+    const style = flattenStyle(cancelButton.props.style);
+    expect(style.borderColor).toBe(getThemeForSex('boy').colors.primary);
+  });
+
+  it('uses breeze primary background on add/save button when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const saveButton = await findByTestId('word-save-btn');
+    const style = flattenStyle(saveButton.props.style);
+    expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
   it('alerts on empty word save', async () => {
@@ -192,12 +213,12 @@ describe('AddWordModal', () => {
     (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
-    const { findByText } = renderModal({ editWord: mockWord });
+    const { findByText, findByTestId } = renderModal({ editWord: mockWord });
     // Click on existing variant to enter edit mode
     fireEvent.press(await findByText(/mamá/));
     // Should now be in editing mode (TextInput visible)
-    // The variant text should be editable
-    expect(await findByText('✕')).toBeTruthy();
+    // The variant text should be editable — remove button has testID
+    expect(await findByTestId('existing-variant-delete-mamá')).toBeTruthy();
   });
 
   it('shows duplicate detection card', async () => {
@@ -246,16 +267,17 @@ describe('AddWordModal', () => {
   });
 
   it('removes a new variant row', async () => {
-    const { findByText, findAllByText } = renderModal();
+    const { findByText, findAllByTestId } = renderModal();
     // Add two variants
     fireEvent.press(await findByText(/Add variant/));
     fireEvent.press(await findByText(/Another variant/));
-    // Find remove buttons
-    const removeBtns = await findAllByText('✕');
+    // Find remove buttons by testID pattern
+    const removeBtns = await findAllByTestId(/new-variant-remove-/);
+    expect(removeBtns.length).toBe(2);
     // Remove the first one
     fireEvent.press(removeBtns[0]);
     // Should still have one variant row left
-    const remainingRemoveBtns = await findAllByText('✕');
+    const remainingRemoveBtns = await findAllByTestId(/new-variant-remove-/);
     expect(remainingRemoveBtns.length).toBe(1);
   });
 
@@ -274,12 +296,12 @@ describe('AddWordModal', () => {
     (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([
       { id: 10, word_id: 1, variant: 'mamá', date_heard: '2024-01-01', notes: '' },
     ]);
-    const { findByText, findAllByText } = renderModal({ editWord: mockWord });
+    const { findByText, findByTestId } = renderModal({ editWord: mockWord });
     // Enter edit mode on variant
     fireEvent.press(await findByText(/mamá/));
-    // Find ✕ button and press to delete
-    const removeBtns = await findAllByText('✕');
-    await act(async () => { fireEvent.press(removeBtns[0]); });
+    // Find delete button by testID and press
+    const removeBtn = await findByTestId('existing-variant-delete-mamá');
+    await act(async () => { fireEvent.press(removeBtn); });
     await waitFor(() => {
       expect(variantService.deleteVariant).toHaveBeenCalledWith(10);
     });

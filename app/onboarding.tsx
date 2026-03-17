@@ -6,10 +6,12 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../src/utils/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
+import { getThemeForSex } from '../src/theme/getThemeForSex';
 import { BrandHeader } from '../src/components/BrandHeader';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
@@ -140,8 +142,7 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
-  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
-  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
+  const accentColor = getThemeForSex(sex).colors.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
   const emojiBySex = { girl: '👧', boy: '👦' } as const;
   const profileEmoji = sex ? emojiBySex[sex] : '👶';
@@ -299,11 +300,11 @@ export default function OnboardingScreen() {
             onPress={openPicker}
             testID="onboarding-birthdate-btn"
           >
-            <Text style={styles.dateBtnIcon}>📅</Text>
+            <Ionicons name="calendar-outline" size={18} color={COLORS.textSecondary} style={styles.dateBtnIcon} />
             <Text style={[styles.dateBtnText, !birthDate && styles.dateBtnPlaceholder]}>
               {birthDate ? formatDisplayDate(birthDate) : t('onboarding.selectDate')}
             </Text>
-            {birthDate && <Text style={[styles.dateBtnArrow, { color: accentColor }]}>▾</Text>}
+            {birthDate && <Ionicons name="chevron-down" size={14} color={accentColor} />}
           </TouchableOpacity>
         </View>
 
@@ -456,10 +457,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white, borderRadius: 14,
     paddingHorizontal: 16, paddingVertical: 16, borderWidth: 2,
   },
-  dateBtnIcon: { fontSize: 22, marginRight: 12 },
+  dateBtnIcon: { marginRight: 12 },
   dateBtnText: { flex: 1, fontSize: 18, fontWeight: '600', color: COLORS.text },
   dateBtnPlaceholder: { color: COLORS.textLight, fontWeight: '400' },
-  dateBtnArrow: { fontSize: 16 },
   // Preview
   preview: {
     width: '75%', alignItems: 'center', padding: 10,

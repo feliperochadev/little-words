@@ -32,6 +32,12 @@ import SettingsScreen from '../../app/(tabs)/settings';
 import * as csvExport from '../../src/utils/csvExport';
 import * as settingsService from '../../src/services/settingsService';
 import * as categoryService from '../../src/services/categoryService';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
+import { withOpacity } from '../../src/utils/colorHelpers';
+
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
@@ -52,6 +58,31 @@ describe('SettingsScreen', () => {
     expect(await findByTestId('settings-import-title')).toBeTruthy();
     expect(await findByTestId('settings-export-title')).toBeTruthy();
     expect(await findByText(/Danger/)).toBeTruthy();
+  });
+
+  it('uses breeze primary-tinted edit profile button background for boy profile', async () => {
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const editBtn = await findByTestId('settings-edit-profile-btn');
+    const style = flattenStyle(editBtn.props.style);
+    expect(style.backgroundColor).toBe(withOpacity(getThemeForSex('boy').colors.primary, '15'));
+  });
+
+  it('uses breeze primary background on import and save buttons in boy profile', async () => {
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const importStyle = flattenStyle((await findByTestId('settings-import-btn')).props.style);
+    const saveStyle = flattenStyle((await findByTestId('settings-save-btn')).props.style);
+    const breeze = getThemeForSex('boy').colors;
+    expect(importStyle.backgroundColor).toBe(breeze.primary);
+    expect(saveStyle.backgroundColor).toBe(breeze.primary);
+  });
+
+  it('uses breeze primary border on share outline button in boy profile', async () => {
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const shareStyle = flattenStyle((await findByTestId('settings-share-btn')).props.style);
+    expect(shareStyle.borderColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
   it('does not render the removed Google Drive section', async () => {

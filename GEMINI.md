@@ -32,7 +32,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `assetStorage.ts`: File-system management for media assets.
-  - `theme.ts`: Centralized color and style constants.
+  - `theme.ts`: Backward-compat bridge re-exporting `COLORS` from `src/theme/`. New code imports from `src/theme/` directly. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors; `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts. All UI chrome icons use Ionicons from `@expo/vector-icons` — never emoji as icons.
 - `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
 ### State Management Strategy
@@ -197,6 +197,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
 | Data Layer | `.agents/standards/data-layer.md` |
+| Design System | `.agents/standards/design-system.md` |
 
 ## Additional Documentation
 

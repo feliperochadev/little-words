@@ -5,6 +5,8 @@ import { AddCategoryModal } from '../../src/components/AddCategoryModal';
 import * as categoryService from '../../src/services/categoryService';
 import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 jest.spyOn(Alert, 'alert');
 
@@ -32,12 +34,40 @@ function renderModal(props: Partial<React.ComponentProps<typeof AddCategoryModal
   );
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
+
 describe('AddCategoryModal', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+  });
 
   it('renders create mode title', async () => {
     const { findByText } = renderModal();
     expect(await findByText(/New Category/)).toBeTruthy();
+  });
+
+  it('uses breeze surface color for category name input when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const input = await findByTestId('category-name-input');
+    const style = flattenStyle(input.props.style);
+    expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.surface);
+  });
+
+  it('uses breeze primary border on cancel button in boy mode', async () => {
+    const { findByTestId } = renderModal();
+    const cancelButton = await findByTestId('category-cancel-btn');
+    const style = flattenStyle(cancelButton.props.style);
+    expect(style.borderColor).toBe(getThemeForSex('boy').colors.primary);
+  });
+
+  it('uses breeze primary background on create/save button in boy mode', async () => {
+    const { findByTestId } = renderModal();
+    const saveButton = await findByTestId('category-save-btn');
+    const style = flattenStyle(saveButton.props.style);
+    expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
   it('renders edit mode title', async () => {

@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
-import { COLORS } from '../../src/utils/theme';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import { Card, Button } from '../../src/components/UIComponents';
@@ -15,6 +15,7 @@ import Constants from 'expo-constants';
 import { ImportModal } from '../../src/components/ImportModal';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useTheme } from '../../src/hooks/useTheme';
 
 function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): { emoji: string; label: string } {
   if (sex === 'girl') return { emoji: '👧', label: t('settings.girl') };
@@ -25,6 +26,7 @@ function getSexDisplay(sex: string | undefined | null, t: (key: string) => strin
 export default function SettingsScreen() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
+  const { colors } = useTheme();
   const categoryName = useCategoryName();
   const categoryResolver = buildCategoryResolver(t);
   const csvHeader = buildCSVHeader(t);
@@ -90,50 +92,57 @@ export default function SettingsScreen() {
   const { emoji: sexEmoji, label: sexLabel } = getSexDisplay(childSex, t);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('settings.title')}</Text>
 
         {/* Baby Profile */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {sexEmoji} {t('settings.babyProfile')}
             </Text>
-            <TouchableOpacity onPress={() => router.push('/onboarding')} style={styles.editProfileBtn}>
-              <Text style={styles.editProfileText}>{t('settings.editProfile')}</Text>
+            <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => router.push('/onboarding')} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
+              <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfile')}</Text>
             </TouchableOpacity>
           </View>
           {childName ? (
-            <Text style={styles.sectionDesc}>{childName} · {sexLabel}</Text>
+            <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{childName} · {sexLabel}</Text>
           ) : (
-            <Text style={styles.sectionDesc}>{t('settings.noProfile')}</Text>
+            <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.noProfile')}</Text>
           )}
         </Card>
 
         {/* Language */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>🌐 {t('settings.language')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.languageDesc')}</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="globe-outline" size={17} color={colors.textSecondary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.language')}</Text>
+          </View>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.languageDesc')}</Text>
           <View style={styles.languageRow}>
             {LANGUAGES.map(lang => (
               <TouchableOpacity
                 key={lang.locale}
                 style={[
                   styles.langBtn,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
                   locale === lang.locale && styles.langBtnActive,
+                  locale === lang.locale && { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '10') },
                 ]}
                 onPress={() => setLocale(lang.locale)}
               >
                 <Text style={styles.langFlag}>{lang.flag}</Text>
                 <Text style={[
                   styles.langLabel,
+                  { color: colors.textSecondary },
                   locale === lang.locale && styles.langLabelActive,
+                  locale === lang.locale && { color: colors.primary },
                 ]}>
                   {lang.label}
                 </Text>
                 {locale === lang.locale && (
-                  <Text style={styles.langCheck}>✓</Text>
+                  <Ionicons name="checkmark" size={14} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -142,8 +151,11 @@ export default function SettingsScreen() {
 
         {/* Categories */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle} testID="settings-categories-title">🏷️ {t('settings.categories')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.categoriesDesc')}</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="pricetag-outline" size={17} color={colors.textSecondary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-categories-title">{t('settings.categories')}</Text>
+          </View>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.categoriesDesc')}</Text>
           {categories.map(cat => (
             <TouchableOpacity
               key={cat.id}
@@ -153,28 +165,28 @@ export default function SettingsScreen() {
               <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
                 <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
               </View>
-              <Text style={styles.categoryRowName} numberOfLines={1}>
+              <Text style={[styles.categoryRowName, { color: colors.text }]} numberOfLines={1}>
                 {categoryName(cat.name)}
               </Text>
-              <Text style={styles.categoryChevron}>›</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.addCategoryBtn} onPress={() => setShowAddCategory(true)}>
-            <Text style={styles.addCategoryBtnText}>{t('words.addCategory')}</Text>
+          <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)}>
+            <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
           </TouchableOpacity>
         </Card>
 
         {/* Import */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle} testID="settings-import-title">{t('settings.importWords')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.importDesc')}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-import-title">{t('settings.importWords')}</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.importDesc')}</Text>
           <Button title={t('settings.importBtn')} onPress={() => setShowImport(true)} style={styles.actionButton} testID="settings-import-btn" />
         </Card>
 
         {/* Export */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle} testID="settings-export-title">{t('settings.exportData')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.exportDesc')}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-export-title">{t('settings.exportData')}</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.exportDesc')}</Text>
           <View style={styles.buttonRow}>
             <Button
               title={saving ? t('settings.saving') : t('settings.saveToDrive')}
@@ -197,23 +209,23 @@ export default function SettingsScreen() {
         </Card>
 
         {/* Danger Zone */}
-        <Card style={[styles.section, styles.dangerCard]}>
-          <Text style={styles.sectionTitle}>{t('settings.dangerZone')}</Text>
-          <Text style={styles.sectionDesc}>{t('settings.dangerDesc')}</Text>
+        <Card style={[styles.section, styles.dangerCard, { borderColor: withOpacity(colors.error, '40') }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.dangerZone')}</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.dangerDesc')}</Text>
           <TouchableOpacity
-            style={styles.dangerBtn}
+            style={[styles.dangerBtn, { backgroundColor: withOpacity(colors.error, '15'), borderColor: colors.error }]}
             onPress={handleClearData}
             testID="settings-delete-all-btn"
           >
-            <Text style={styles.dangerBtnText}>{t('settings.deleteAll')}</Text>
+            <Text style={[styles.dangerBtnText, { color: colors.error }]}>{t('settings.deleteAll')}</Text>
           </TouchableOpacity>
         </Card>
 
         {/* About */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
-          <Text style={styles.aboutText}>{t('settings.aboutText')}</Text>
-          <Text style={styles.versionText}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.about')}</Text>
+          <Text style={[styles.aboutText, { color: colors.textSecondary }]}>{t('settings.aboutText')}</Text>
+          <Text style={[styles.versionText, { color: colors.textSecondary }]}>
             {t('settings.version')} {Constants.expoConfig?.version ?? '—'}
           </Text>
         </Card>
@@ -239,44 +251,43 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.background },
-  container: { flex: 1, backgroundColor: COLORS.background },
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   content: { padding: 20 },
-  pageTitle: { fontSize: 26, fontWeight: '900', color: COLORS.text, marginBottom: 20 },
+  pageTitle: { fontSize: 26, fontWeight: '900', marginBottom: 20 },
   section: { marginBottom: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text },
-  sectionDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 14 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  sectionTitle: { fontSize: 17, fontWeight: '800' },
+  sectionDesc: { fontSize: 13, lineHeight: 18, marginBottom: 14 },
   actionButton: { marginTop: 4 },
   buttonRow: { flexDirection: 'row', gap: 10 },
   exportButtonText: { fontSize: 12, fontWeight: '700' },
   flexBtn: { flex: 1 },
   exportBtn: { paddingVertical: 10, paddingHorizontal: 8 },
-  aboutText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
-  versionText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 8, opacity: 0.6 },
-  dangerCard: { borderWidth: 1.5, borderColor: withOpacity(COLORS.error, '40') },
-  dangerBtn: { backgroundColor: withOpacity(COLORS.error, '15'), borderWidth: 1.5, borderColor: COLORS.error, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  dangerBtnText: { color: COLORS.error, fontWeight: '700', fontSize: 15 },
+  aboutText: { fontSize: 14, lineHeight: 22 },
+  versionText: { fontSize: 12, marginTop: 8, opacity: 0.6 },
+  dangerCard: { borderWidth: 1.5 },
+  dangerBtn: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  dangerBtnText: { fontWeight: '700', fontSize: 15 },
   categoryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
   categoryDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   categoryEmoji: { fontSize: 18 },
-  categoryRowName: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '500' },
-  categoryChevron: { fontSize: 22, color: COLORS.textLight, fontWeight: '300' },
-  addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  addCategoryBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
-  editProfileBtn: { backgroundColor: withOpacity(COLORS.primary, '15'), paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  editProfileText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  categoryRowName: { flex: 1, fontSize: 15, fontWeight: '500' },
+  addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  addCategoryBtnText: { fontWeight: '700', fontSize: 14 },
+  editProfileBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  editProfileText: { fontSize: 13, fontWeight: '700' },
   // Language picker
   languageRow: { flexDirection: 'row', gap: 10 },
   langBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 12, borderRadius: 14,
-    backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.border,
+    borderWidth: 2,
   },
-  langBtnActive: { borderColor: COLORS.primary, backgroundColor: withOpacity(COLORS.primary, '10') },
+  langBtnActive: {},
   langFlag: { fontSize: 20 },
-  langLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
-  langLabelActive: { color: COLORS.primary, fontWeight: '800' },
-  langCheck: { fontSize: 13, color: COLORS.primary, fontWeight: '900' },
+  langLabel: { fontSize: 14, fontWeight: '600' },
+  langLabelActive: { fontWeight: '800' },
   bottomSpacer: { height: 40 },
 });

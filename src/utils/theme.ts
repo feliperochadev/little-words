@@ -1,46 +1,36 @@
+/**
+ * Migration bridge — re-exports from src/theme.
+ * @deprecated Import from '@/theme' instead.
+ * This file will be removed after Phase 4 migration is complete.
+ */
+import { colors } from '../theme';
+
+/**
+ * @deprecated Import colors from '../theme' instead.
+ * Legacy aliases (white, cardBackground, textLight) are kept for backward
+ * compatibility and will be removed after all screens are migrated.
+ */
 export const COLORS = {
-  // ── Brand palette ──────────────────────────────────────────────
-  primary:       '#D2694B',   // Terracota  — CTAs, active states
-  primaryLight:  '#ED9B76',   // Coral      — hover, highlights
-  primaryDark:   '#B8502F',   // Deep terra — pressed states
-  secondary:     '#F4C3B2',   // Bolha      — chips, badges, bubbles
-  accent:        '#ED9B76',   // Coral      — accents, icons
-  profileGirl:   '#FF6B9D',
-  profileGirlBg: '#FFF0F5',
-  profileBoy:    '#74B9FF',
-  profileBoyBg:  '#F0F7FF',
-  info:          '#6C5CE7',
-
-  // ── Semantic ────────────────────────────────────────────────────
-  success:       '#6DBF8A',   // Soft green — unchanged
-  error:         '#D2694B',   // Reuse terracota for errors (warm)
-  warning:       '#F0B96B',   // Warm amber
-
-  // ── Surfaces ────────────────────────────────────────────────────
-  background:    '#FAF4EC',   // Creme      — app background
-  cardBackground:'#FFFFFF',   // White      — card surfaces
-  border:        '#EDD9C8',   // Warm beige — dividers, borders
-  white:         '#FFFFFF',
-
-  // ── Text ────────────────────────────────────────────────────────
-  text:          '#371E19',   // Cacau      — primary text
-  textSecondary: '#7A4F3E',   // Mid brown  — secondary text
-  textLight:     '#B49080',   // Clay       — placeholders, hints
+  ...colors,
+  // Legacy aliases removed from the new token system
+  white:           colors.surface,
+  cardBackground:  colors.surface,
+  textLight:       colors.textMuted,
 };
 
 export const CATEGORY_COLORS = [
-  '#D2694B',   // Terracota
-  '#ED9B76',   // Coral
-  '#F4C3B2',   // Bolha
-  '#B8502F',   // Deep terra
-  '#6DBF8A',   // Soft green
-  '#F0B96B',   // Warm amber
-  '#7AB3C8',   // Dusty blue
-  '#A08FB2',   // Muted lavender
-  '#C8A87A',   // Sand
-  '#E87C6A',   // Salmon
-  '#8BAD7A',   // Sage
-  '#7A4F3E',   // Mid brown
+  '#D2694B',
+  '#ED9B76',
+  '#F4C3B2',
+  '#B8502F',
+  '#6DBF8A',
+  '#F0B96B',
+  '#7AB3C8',
+  '#A08FB2',
+  '#C8A87A',
+  '#E87C6A',
+  '#8BAD7A',
+  '#7A4F3E',
 ];
 
 export const CATEGORY_EMOJIS = [
@@ -54,7 +44,6 @@ export const FONTS = {
   bold:    'System',
 };
 
-// Layout constants for shared dimensions
 export const LAYOUT = {
   TEXTAREA_HEIGHT: 80,
   HIGHLIGHT_BORDER_RADIUS: 10,

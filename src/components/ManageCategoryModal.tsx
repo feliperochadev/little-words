@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/theme';
 import { getWordCountByCategory } from '../services/categoryService';
 import { useDeleteCategory } from '../hooks/useCategories';
@@ -91,14 +92,14 @@ export function ManageCategoryModal({
             style={styles.actionRow}
             onPress={() => { dismissModal(); setTimeout(() => onEdit(category), TIMING.SCROLL_TRANSITION_DELAY); }}
           >
-            <Text style={styles.actionIcon}>✏️</Text>
+            <Ionicons name="pencil-outline" size={20} color={COLORS.text} style={styles.actionIcon} />
             <Text style={styles.actionText}>{t('manageCategory.edit')}</Text>
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
           <TouchableOpacity style={styles.actionRow} onPress={handleDelete}>
-            <Text style={styles.actionIcon}>🗑️</Text>
+            <Ionicons name="trash-outline" size={20} color={COLORS.error} style={styles.actionIcon} />
             <Text style={[styles.actionText, styles.actionTextDanger]}>{t('manageCategory.delete')}</Text>
           </TouchableOpacity>
 
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   emoji:          { fontSize: 24 },
   categoryName:   { fontSize: 20, fontWeight: '800' },
   actionRow:      { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  actionIcon:     { fontSize: 20, width: 28, textAlign: 'center' },
+  actionIcon:     { width: 28, textAlign: 'center' },
   actionText:     { fontSize: 17, color: COLORS.text, fontWeight: '500' },
   actionTextDanger: { color: COLORS.error },
   divider:        { height: 1, backgroundColor: COLORS.border, marginHorizontal: -24 },

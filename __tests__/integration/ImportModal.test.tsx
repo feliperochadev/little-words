@@ -10,6 +10,8 @@ import * as wordService from '../../src/services/wordService';
 import * as variantService from '../../src/services/variantService';
 import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 // Mock service functions
 jest.mock('../../src/services/categoryService', () => ({
@@ -46,8 +48,13 @@ function renderWithProvider(ui: React.ReactElement) {
   return renderWithProviders(ui);
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
+  useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
   mockGetCategories.mockResolvedValue([]);
   mockAddCategory.mockResolvedValue(1);
   mockFindWordByName.mockResolvedValue(null);
@@ -63,6 +70,17 @@ describe('ImportModal', () => {
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     expect(await findByText(/Import words/)).toBeTruthy();
+  });
+
+  it('uses breeze primary on enabled import button when sex is boy', async () => {
+    const { findByPlaceholderText, findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    const input = await findByPlaceholderText(/mamãe/);
+    fireEvent.changeText(input, 'hello');
+    const submit = await findByTestId('import-submit-btn');
+    const style = flattenStyle(submit.props.style);
+    expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
   it('renders correctly after reopening', async () => {

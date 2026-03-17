@@ -6,6 +6,7 @@ import {
   View, Text, TouchableOpacity, Modal,
   StyleSheet, FlatList, Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, LAYOUT } from '../utils/theme';
 import { useI18n } from '../i18n/i18n';
 import { daysInMonth, parseDate, toStorage, toDisplay } from '../utils/dateHelpers';
@@ -145,9 +146,9 @@ export function DatePickerField({
       {label && <Text style={f.label}>{label}</Text>}
 
       <TouchableOpacity style={[f.btn, { borderColor: accentColor }]} onPress={openPicker} testID="date-picker-btn">
-        <Text style={f.icon}>📅</Text>
+        <Ionicons name="calendar-outline" size={18} color={COLORS.textSecondary} style={f.icon} />
         <Text style={f.val}>{toDisplay(value)}</Text>
-        <Text style={[f.arrow, { color: accentColor }]}>▾</Text>
+        <Ionicons name="chevron-down" size={14} color={accentColor} />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="slide">
@@ -182,9 +183,8 @@ export function DatePickerField({
 const f = StyleSheet.create({
   label:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   btn:     { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1.5, marginBottom: 16 },
-  icon:    { fontSize: 18, marginRight: 10 },
+  icon:    { marginRight: 10 },
   val:     { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.text },
-  arrow:   { fontSize: 14 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet:   { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16 },
   header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },

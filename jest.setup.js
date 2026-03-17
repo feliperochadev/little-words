@@ -168,5 +168,10 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: 'StatusBar',
 }));
 
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: 'Ionicons',
+}));
+
 // Suppress console warnings in tests
 jest.spyOn(console, 'warn').mockImplementation(() => {});

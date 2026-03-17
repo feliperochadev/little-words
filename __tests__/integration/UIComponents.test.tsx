@@ -1,8 +1,18 @@
 import React from 'react';
 import { render, userEvent } from '@testing-library/react-native';
 import { Button, Card, SearchBar, CategoryBadge, EmptyState, StatCard } from '../../src/components/UIComponents';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
+
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
 
 describe('UIComponents', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
+  });
+
   describe('Button', () => {
     it('renders with title', () => {
       const { getByText } = render(<Button title="Save" onPress={() => {}} />);
@@ -41,6 +51,20 @@ describe('UIComponents', () => {
     it('renders with secondary variant', () => {
       const { getByText } = render(<Button title="Other" onPress={() => {}} variant="secondary" />);
       expect(getByText('Other')).toBeTruthy();
+    });
+
+    it('uses breeze primary colors for boy profile', () => {
+      useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+      const { getByTestId } = render(<Button title="Save" onPress={() => {}} testID="btn-boy-primary" />);
+      const style = flattenStyle(getByTestId('btn-boy-primary').props.style);
+      expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
+    });
+
+    it('uses breeze primary border for outline variant in boy profile', () => {
+      useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+      const { getByTestId } = render(<Button title="Cancel" onPress={() => {}} variant="outline" testID="btn-boy-outline" />);
+      const style = flattenStyle(getByTestId('btn-boy-outline').props.style);
+      expect(style.borderColor).toBe(getThemeForSex('boy').colors.primary);
     });
   });
 
@@ -101,18 +125,18 @@ describe('UIComponents', () => {
 
     it('shows clear button when value is not empty', async () => {
       const onChangeText = jest.fn();
-      const { getByText } = render(
-        <SearchBar value="test" onChangeText={onChangeText} />
+      const { getByTestId } = render(
+        <SearchBar value="test" onChangeText={onChangeText} testID="search" />
       );
-      await userEvent.press(getByText('✕'));
+      await userEvent.press(getByTestId('search-clear'));
       expect(onChangeText).toHaveBeenCalledWith('');
     });
 
     it('hides clear button when value is empty', () => {
-      const { queryByText } = render(
-        <SearchBar value="" onChangeText={() => {}} />
+      const { queryByTestId } = render(
+        <SearchBar value="" onChangeText={() => {}} testID="search" />
       );
-      expect(queryByText('✕')).toBeNull();
+      expect(queryByTestId('search-clear')).toBeNull();
     });
 
     it('uses default placeholder when none provided', () => {
@@ -167,6 +191,20 @@ describe('UIComponents', () => {
       await userEvent.press(getByText('Add Word'));
       expect(onPress).toHaveBeenCalled();
     });
+
+    it('renders icon node when icon prop is provided', () => {
+      const { getByText } = render(
+        <EmptyState icon={<React.Fragment><EmptyState emoji="📝" title="icon-inner" /></React.Fragment>} title="Outer title" />
+      );
+      expect(getByText('Outer title')).toBeTruthy();
+    });
+
+    it('does not render emoji Text when icon prop is provided', () => {
+      const { queryByText } = render(
+        <EmptyState icon={<React.Fragment />} emoji="📝" title="Title" />
+      );
+      expect(queryByText('📝')).toBeNull();
+    });
   });
 
   describe('StatCard', () => {
@@ -192,6 +230,21 @@ describe('UIComponents', () => {
       );
       const valueEl = getByTestId('stat-total-words');
       expect(valueEl.props.children).toBe(7);
+    });
+
+    it('renders icon prop instead of emoji when provided', () => {
+      const { getByText, queryByText } = render(
+        <StatCard icon={<React.Fragment />} emoji="📝" value={5} label="Words" color="#D2694B" />
+      );
+      expect(getByText('5')).toBeTruthy();
+      expect(queryByText('📝')).toBeNull();
+    });
+
+    it('renders emoji when icon prop is not provided', () => {
+      const { getByText } = render(
+        <StatCard emoji="🎯" value={3} label="Goals" color="#D2694B" />
+      );
+      expect(getByText('🎯')).toBeTruthy();
     });
   });
 });

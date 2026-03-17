@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
@@ -10,6 +11,7 @@ import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function DashboardScreen() {
   const { t } = useI18n();
@@ -29,19 +31,19 @@ export default function DashboardScreen() {
     return showYear ? `${label} '${year.slice(2)}` : label;
   };
 
+  const { colors } = useTheme();
   const emojiBySex = { girl: '👧', boy: '👦' } as const;
-  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
   const emoji = sex ? emojiBySex[sex] : '👶';
-  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
   const ageText = birth ? getAgeText(birth, t) : null;
   const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']} testID="home-safe-area">
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        testID="home-scroll"
       >
         <BrandHeader />
 
@@ -50,8 +52,13 @@ export default function DashboardScreen() {
             <View style={styles.profileRow}>
               <Text style={styles.profileEmoji}>{emoji}</Text>
               <View>
-                <Text style={[styles.profileName, { color: accentColor }]}>{name}</Text>
-                {ageText && <Text style={styles.profileAge}>🎂 {ageText}</Text>}
+                <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
+                {ageText && (
+                  <View style={styles.ageRow}>
+                    <Ionicons name="gift-outline" size={12} color={COLORS.textSecondary} />
+                    <Text style={styles.profileAge}>{ageText}</Text>
+                  </View>
+                )}
               </View>
             </View>
             <Text style={styles.profileGreeting}>{getGreeting(name, sex, t)}</Text>
@@ -60,13 +67,13 @@ export default function DashboardScreen() {
 
         {/* Main stats */}
         <View style={styles.statsGrid}>
-          <StatCard emoji="📝" value={stats?.totalWords ?? 0} label={t('dashboard.totalWords')} color={accentColor} testID="stat-total-words" />
-          <StatCard emoji="🗣️" value={stats?.totalVariants ?? 0} label={t('dashboard.variants')} color={COLORS.secondary} testID="stat-total-variants" />
+          <StatCard icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats?.totalWords ?? 0} label={t('dashboard.totalWords')} color={colors.primary} testID="stat-total-words" />
+          <StatCard icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats?.totalVariants ?? 0} label={t('dashboard.variants')} color={colors.secondary} testID="stat-total-variants" />
         </View>
         <View style={styles.statsGrid}>
-          <StatCard emoji="📅" value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={COLORS.accent} testID="stat-words-today" />
-          <StatCard emoji="📆" value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={COLORS.success} testID="stat-words-week" />
-          <StatCard emoji="🗓️" value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color={COLORS.info} testID="stat-words-month" />
+          <StatCard icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats?.wordsToday ?? 0} label={t('dashboard.today')} color={colors.accent} testID="stat-words-today" />
+          <StatCard icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats?.wordsThisWeek ?? 0} label={t('dashboard.thisWeek')} color={colors.success} testID="stat-words-week" />
+          <StatCard icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats?.wordsThisMonth ?? 0} label={t('dashboard.thisMonth')} color={colors.info} testID="stat-words-month" />
         </View>
 
         {/* Monthly progress */}
@@ -81,10 +88,10 @@ export default function DashboardScreen() {
                 return last6.map(m => (
                   <View key={m.month} style={styles.barItem}>
                     <View style={styles.barWrapper}>
-                      <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: accentColor }]} />
+                      <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: colors.primary }]} />
                     </View>
                     <Text style={styles.barLabel} testID={`bar-label-${m.month}`}>{formatMonth(m.month, showYear)}</Text>
-                    <Text style={[styles.barValue, { color: accentColor }]} testID={`bar-value-${m.month}`}>{m.count}</Text>
+                    <Text style={[styles.barValue, { color: colors.primary }]} testID={`bar-value-${m.month}`}>{m.count}</Text>
                   </View>
                 ));
               })()}
@@ -124,10 +131,10 @@ export default function DashboardScreen() {
               {stats.recentWords.map((w, i) => (
                 <View
                   key={w.id}
-                  style={[styles.wordChip, { backgroundColor: `${w.category_color || accentColor}20` }]}
+                  style={[styles.wordChip, { backgroundColor: `${w.category_color || colors.primary}20` }]}
                   testID={`recent-word-${i}-${w.word.replaceAll(/\s+/g, '-').replaceAll(/[^a-zA-Z0-9-_]/g, '')}`}
                 >
-                  <Text style={[styles.wordChipText, { color: w.category_color || accentColor }]}>
+                  <Text style={[styles.wordChipText, { color: w.category_color || colors.primary }]}>
                     {w.word}
                   </Text>
                 </View>
@@ -138,7 +145,7 @@ export default function DashboardScreen() {
 
         {!stats?.totalWords && (
           <View style={styles.emptyHero}>
-            <Text style={styles.emptyEmoji}>🌟</Text>
+            <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>{t('dashboard.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
               {name
@@ -162,7 +169,8 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   profileEmoji: { fontSize: 40 },
   profileName: { fontSize: 20, fontWeight: '900', color: COLORS.text },
-  profileAge: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, fontWeight: '600' },
+  ageRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  profileAge: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
   profileGreeting: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 18 },
   statsGrid: { flexDirection: 'row', marginBottom: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 16 },
@@ -185,7 +193,7 @@ const styles = StyleSheet.create({
   wordChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   wordChipText: { fontSize: 14, fontWeight: '600' },
   emptyHero: { alignItems: 'center', paddingVertical: 40 },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
+  emptyIcon: { marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
   emptyText: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
   bottomSpacer: { height: 20 },

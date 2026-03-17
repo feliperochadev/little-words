@@ -35,9 +35,9 @@ describe('DatePickerField', () => {
     expect(await findByText('Select Date')).toBeTruthy();
   });
 
-  it('renders calendar emoji', async () => {
-    const { findByText } = renderPicker();
-    expect(await findByText('📅')).toBeTruthy();
+  it('renders date picker button', async () => {
+    const { findByTestId } = renderPicker();
+    expect(await findByTestId('date-picker-btn')).toBeTruthy();
   });
 
   it('confirms date selection', async () => {
