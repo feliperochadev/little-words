@@ -89,9 +89,9 @@ export default {
     today: 'Hoje',
     thisWeek: 'Esta semana',
     thisMonth: 'Este mês',
-    monthlyProgress: '📈 Progresso Mensal',
-    byCategory: '🏷️ Por Categoria',
-    recentWords: '🆕 Palavras Recentes',
+    monthlyProgress: 'Progresso Mensal',
+    byCategory: 'Por Categoria',
+    recentWords: 'Palavras Recentes',
     emptyTitle: 'Comece a registrar!',
     emptyText: 'Vá para a aba "Palavras" e adicione a primeira palavra do seu bebê.',
     emptyTextWithName: 'Vá para "Palavras" e adicione a primeira palavra de {{name}}!',
@@ -119,14 +119,14 @@ export default {
 
   // ── Words screen ────────────────────────────────────────────────────────────
   words: {
-    title: '📚 Palavras',
+    title: 'Palavras',
     addWord: '+ Nova',
     addCategory: '+ Categoria',
     searchPlaceholder: 'Buscar palavras...',
-    sortRecent: '📅 Mais recente',
-    sortOldest: '📅 Mais antigo',
-    sortAZ: '🔤 A → Z',
-    sortZA: '🔤 Z → A',
+    sortRecent: 'Mais recente',
+    sortOldest: 'Mais antigo',
+    sortAZ: 'A → Z',
+    sortZA: 'Z → A',
     emptyTitle: 'Nenhuma palavra ainda',
     emptySubtitle: 'Adicione a primeira palavrinha do seu bebê!',
     emptySearchTitle: 'Nenhuma palavra encontrada',
@@ -144,10 +144,10 @@ export default {
 
   // ── Variants screen ─────────────────────────────────────────────────────────
   variants: {
-    title: '🗣️ Variantes',
+    title: 'Variantes',
     addNew: '+ Nova',
     searchPlaceholder: 'Buscar variantes...',
-    hint: '💡 Variantes são como a criança pronuncia cada palavra antes de aprender o correto',
+    hint: 'Variantes são como a criança pronuncia cada palavra antes de aprender o correto',
     emptyTitle: 'Nenhuma variante ainda',
     emptySubtitle: 'Registre como o seu bebê pronuncia as palavras!',
     emptySearchTitle: 'Nenhuma variante encontrada',
@@ -171,20 +171,20 @@ export default {
 
   // ── Settings screen ─────────────────────────────────────────────────────────
   settings: {
-    title: '⚙️ Configurações',
+    title: 'Configurações',
     babyProfile: 'Perfil do Bebê',
     noProfile: 'Nenhum perfil configurado.',
-    editProfile: '✏️ Editar',
+    editProfile: 'Editar',
     girl: 'Menina',
     boy: 'Menino',
-    importWords: '📥 Importar Palavras',
+    importWords: 'Importar Palavras',
     importDesc: 'Importe palavras via texto ou arquivo CSV. Data, categorias e variantes são opcionais.',
-    importBtn: '📥 Importar Palavras',
-    exportData: '📤 Exportar Dados',
+    importBtn: 'Importar Palavras',
+    exportData: 'Exportar Dados',
     exportDesc: 'Exporte um CSV com todas as palavras, categorias, datas e variantes.',
-    saveToDrive: '💾 Salvar',
+    saveToDrive: 'Salvar',
     saving: 'Salvando...',
-    shareExport: '📤 Compartilhar',
+    shareExport: 'Compartilhar',
     sharing: 'Aguarde...',
     categories: 'Categorias',
     categoriesDesc: 'Gerencie suas categorias de palavras.',
@@ -252,7 +252,7 @@ export default {
 
   // ── Add Category Modal ───────────────────────────────────────────────────────
   addCategory: {
-    title: '🏷️ Nova Categoria',
+    title: 'Nova Categoria',
     nameLabel: 'Nome *',
     namePlaceholder: 'Ex: Brinquedos, Cores...',
     emojiLabel: 'Emoji',
@@ -262,7 +262,7 @@ export default {
     errorDuplicate: 'Já existe uma categoria com esse nome.',
     btnCancel: 'Cancelar',
     btnCreate: 'Criar Categoria',
-    titleEdit: '🏷️ Editar Categoria',
+    titleEdit: 'Editar Categoria',
     btnSave: 'Salvar',
   },
 
@@ -279,8 +279,8 @@ export default {
 
   // ── Import Modal ─────────────────────────────────────────────────────────────
   importModal: {
-    title: '📥 Importar palavras',
-    tabText: '✏️ Texto',
+    title: 'Importar palavras',
+    tabText: 'Texto',
     tabCSV: '📄 Arquivo CSV',
     textHint: 'Uma palavra por linha. Opcionalmente: categoria e/ou data separados por vírgula.',
     examplesLabel: 'Exemplos:',

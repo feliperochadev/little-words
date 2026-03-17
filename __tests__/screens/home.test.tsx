@@ -20,6 +20,11 @@ jest.mock('../../src/services/settingsService', () => ({
 import DashboardScreen from '../../app/(tabs)/home';
 import * as db from '../../src/services/dashboardService';
 import * as settingsService from '../../src/services/settingsService';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
+
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
 
 const emptyStats = {
   totalWords: 0, totalVariants: 0, wordsToday: 0,
@@ -61,6 +66,17 @@ describe('DashboardScreen', () => {
     expect(await findByText('mamãe')).toBeTruthy();
   });
 
+  it('renders semantic section icons for monthly/category/recent blocks', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const monthlyIcon = await findByTestId('home-monthly-progress-icon');
+    const categoryIcon = await findByTestId('home-category-icon');
+    const recentIcon = await findByTestId('home-recent-words-icon');
+    expect(monthlyIcon.props.name).toBe('bar-chart-outline');
+    expect(categoryIcon.props.name).toBe('pricetags-outline');
+    expect(recentIcon.props.name).toBe('sparkles-outline');
+  });
+
   it('renders boy profile', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
     useSettingsStore.setState({ name: 'Miguel', sex: 'boy', birth: '2024-01-01', isOnboardingDone: true, isHydrated: true });
@@ -69,6 +85,15 @@ describe('DashboardScreen', () => {
       expect(getByText('Miguel')).toBeTruthy();
       expect(getByText('👦')).toBeTruthy();
     });
+  });
+
+  it('uses breeze background on home container for boy profile', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    useSettingsStore.setState({ name: 'Miguel', sex: 'boy', birth: '2024-01-01', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const scroll = await findByTestId('home-scroll');
+    const breezeBg = getThemeForSex('boy').colors.background;
+    expect(flattenStyle(scroll.props.style).backgroundColor).toBe(breezeBg);
   });
 
   it('renders without profile', async () => {

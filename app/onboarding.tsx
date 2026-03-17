@@ -6,10 +6,12 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../src/utils/theme';
+import { colors as THEME_COLORS } from '../src/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
+import { getThemeForSex } from '../src/theme/getThemeForSex';
 import { BrandHeader } from '../src/components/BrandHeader';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
@@ -107,7 +109,7 @@ const wheelStyles = StyleSheet.create({
     borderRadius: 10, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1,
   },
   item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' },
-  itemText: { fontSize: 16, color: COLORS.textSecondary, fontWeight: '500' },
+  itemText: { fontSize: 16, color: THEME_COLORS.textSecondary, fontWeight: '500' },
 });
 
 /* ─────────────────────────────────────────────
@@ -140,8 +142,7 @@ export default function OnboardingScreen() {
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
-  const accentColorBySex = { girl: COLORS.profileGirl, boy: COLORS.profileBoy } as const;
-  const accentColor = sex ? accentColorBySex[sex] : COLORS.primary;
+  const accentColor = getThemeForSex(sex).colors.primary;
   const allFilled = !!name.trim() && !!sex && !!birthDate;
   const emojiBySex = { girl: '👧', boy: '👦' } as const;
   const profileEmoji = sex ? emojiBySex[sex] : '👶';
@@ -254,11 +255,11 @@ export default function OnboardingScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>{t('onboarding.babyName').toUpperCase()}</Text>
           <TextInput
-            style={[styles.input, { borderColor: name ? accentColor : COLORS.border }]}
+            style={[styles.input, { borderColor: name ? accentColor : THEME_COLORS.border }]}
             value={name}
             onChangeText={setName}
             placeholder={t('onboarding.babyNamePlaceholder')}
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={THEME_COLORS.textMuted}
             autoCapitalize="words"
             testID="onboarding-name-input"
           />
@@ -295,15 +296,15 @@ export default function OnboardingScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>{t('onboarding.birthDate').toUpperCase()}</Text>
           <TouchableOpacity
-            style={[styles.dateBtn, { borderColor: birthDate ? accentColor : COLORS.border }]}
+            style={[styles.dateBtn, { borderColor: birthDate ? accentColor : THEME_COLORS.border }]}
             onPress={openPicker}
             testID="onboarding-birthdate-btn"
           >
-            <Text style={styles.dateBtnIcon}>📅</Text>
+            <Ionicons name="calendar-outline" size={18} color={THEME_COLORS.textSecondary} style={styles.dateBtnIcon} />
             <Text style={[styles.dateBtnText, !birthDate && styles.dateBtnPlaceholder]}>
               {birthDate ? formatDisplayDate(birthDate) : t('onboarding.selectDate')}
             </Text>
-            {birthDate && <Text style={[styles.dateBtnArrow, { color: accentColor }]}>▾</Text>}
+            {birthDate && <Ionicons name="chevron-down" size={14} color={accentColor} />}
           </TouchableOpacity>
         </View>
 
@@ -344,7 +345,7 @@ export default function OnboardingScreen() {
           <View style={modalStyles.sheet}>
             <View style={modalStyles.header}>
               <TouchableOpacity onPress={() => setShowPicker(false)} testID="onboarding-date-cancel-btn">
-                <Text style={[modalStyles.headerBtn, { color: COLORS.textSecondary }]}>
+                <Text style={[modalStyles.headerBtn, { color: THEME_COLORS.textSecondary }]}>
                   {t('onboarding.datePicker.cancel')}
                 </Text>
               </TouchableOpacity>
@@ -393,33 +394,33 @@ export default function OnboardingScreen() {
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: THEME_COLORS.surface,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: THEME_COLORS.border,
   },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: THEME_COLORS.text },
   headerBtn: { fontSize: 15, fontWeight: '600' },
   wheelsRow: { flexDirection: 'row', marginTop: 8 },
   previewText: {
     textAlign: 'center', fontSize: 15, fontWeight: '600',
-    color: COLORS.textSecondary, paddingVertical: 12,
+    color: THEME_COLORS.textSecondary, paddingVertical: 12,
   },
 });
 
 /* ───────── Screen styles ───────── */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: THEME_COLORS.background },
   content: { padding: 28, alignItems: 'center' },
   emoji: { fontSize: 72, marginBottom: 16, marginTop: 8 },
-  title: { fontSize: 30, fontWeight: '900', color: COLORS.text, textAlign: 'center', lineHeight: 36, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
+  title: { fontSize: 30, fontWeight: '900', color: THEME_COLORS.text, textAlign: 'center', lineHeight: 36, marginBottom: 8 },
+  subtitle: { fontSize: 15, color: THEME_COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
   field: { width: '100%', marginBottom: 24 },
   label: {
-    fontSize: 13, fontWeight: '700', color: COLORS.textSecondary,
+    fontSize: 13, fontWeight: '700', color: THEME_COLORS.textSecondary,
     marginBottom: 10, letterSpacing: 0.5,
   },
   // Language
@@ -427,53 +428,52 @@ const styles = StyleSheet.create({
   langBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 14, borderRadius: 16,
-    backgroundColor: COLORS.white, borderWidth: 2, borderColor: COLORS.border,
+    backgroundColor: THEME_COLORS.surface, borderWidth: 2, borderColor: THEME_COLORS.border,
   },
   langFlag: { fontSize: 22 },
-  langLabel: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
+  langLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
   langCheck: { fontSize: 13, fontWeight: '900' },
   // Name
   input: {
-    backgroundColor: COLORS.white, borderRadius: 14,
+    backgroundColor: THEME_COLORS.surface, borderRadius: 14,
     paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 18, color: COLORS.text, borderWidth: 2,
+    fontSize: 18, color: THEME_COLORS.text, borderWidth: 2,
   },
   // Sex
   sexRow: { flexDirection: 'row', gap: 12 },
   sexBtn: {
     flex: 1, alignItems: 'center', paddingVertical: 18,
-    backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, borderColor: COLORS.border,
+    backgroundColor: THEME_COLORS.surface, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
   },
-  sexBtnGirl: { borderColor: COLORS.profileGirl, backgroundColor: COLORS.profileGirlBg },
-  sexBtnBoy: { borderColor: COLORS.profileBoy, backgroundColor: COLORS.profileBoyBg },
-  sexLabelActiveGirl: { color: COLORS.profileGirl, fontWeight: '800' },
-  sexLabelActiveBoy: { color: COLORS.profileBoy, fontWeight: '800' },
+  sexBtnGirl: { borderColor: THEME_COLORS.profileGirl, backgroundColor: THEME_COLORS.profileGirlBg },
+  sexBtnBoy: { borderColor: THEME_COLORS.profileBoy, backgroundColor: THEME_COLORS.profileBoyBg },
+  sexLabelActiveGirl: { color: THEME_COLORS.profileGirl, fontWeight: '800' },
+  sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },
   sexEmoji: { fontSize: 36, marginBottom: 6 },
-  sexLabel: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
+  sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
   // Date
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 14,
+    backgroundColor: THEME_COLORS.surface, borderRadius: 14,
     paddingHorizontal: 16, paddingVertical: 16, borderWidth: 2,
   },
-  dateBtnIcon: { fontSize: 22, marginRight: 12 },
-  dateBtnText: { flex: 1, fontSize: 18, fontWeight: '600', color: COLORS.text },
-  dateBtnPlaceholder: { color: COLORS.textLight, fontWeight: '400' },
-  dateBtnArrow: { fontSize: 16 },
+  dateBtnIcon: { marginRight: 12 },
+  dateBtnText: { flex: 1, fontSize: 18, fontWeight: '600', color: THEME_COLORS.text },
+  dateBtnPlaceholder: { color: THEME_COLORS.textMuted, fontWeight: '400' },
   // Preview
   preview: {
     width: '75%', alignItems: 'center', padding: 10,
-    backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, marginBottom: 16,
+    backgroundColor: THEME_COLORS.surface, borderRadius: 14, borderWidth: 2, marginBottom: 16,
   },
   previewRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   previewEmoji: { fontSize: 28 },
   previewName:  { fontSize: 15, fontWeight: '900' },
-  previewDate:  { fontSize: 11, color: COLORS.textSecondary },
+  previewDate:  { fontSize: 11, color: THEME_COLORS.textSecondary },
   // Button
   continueBtn: {
     width: '100%', paddingVertical: 18, borderRadius: 18, alignItems: 'center',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
-  continueBtnText: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+  continueBtnText: { color: THEME_COLORS.textOnPrimary, fontSize: 17, fontWeight: '800' },
   bottomSpacer: { height: 40 },
 });

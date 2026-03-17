@@ -89,9 +89,9 @@ export default {
     today: 'Today',
     thisWeek: 'This week',
     thisMonth: 'This month',
-    monthlyProgress: '📈 Monthly Progress',
-    byCategory: '🏷️ By Category',
-    recentWords: '🆕 Recent Words',
+    monthlyProgress: 'Monthly Progress',
+    byCategory: 'By Category',
+    recentWords: 'Recent Words',
     emptyTitle: 'Start recording!',
     emptyText: 'Go to the "Words" tab and add your baby\'s first word.',
     emptyTextWithName: 'Go to "Words" and add {{name}}\'s first word!',
@@ -119,14 +119,14 @@ export default {
 
   // ── Words screen ────────────────────────────────────────────────────────────
   words: {
-    title: '📚 Words',
+    title: 'Words',
     addWord: '+ New',
     addCategory: '+ Category',
     searchPlaceholder: 'Search words...',
-    sortRecent: '📅 Most recent',
-    sortOldest: '📅 Oldest first',
-    sortAZ: '🔤 A → Z',
-    sortZA: '🔤 Z → A',
+    sortRecent: 'Most recent',
+    sortOldest: 'Oldest first',
+    sortAZ: 'A → Z',
+    sortZA: 'Z → A',
     emptyTitle: 'No words yet',
     emptySubtitle: "Add your baby's first little word!",
     emptySearchTitle: 'No words found',
@@ -144,10 +144,10 @@ export default {
 
   // ── Variants screen ─────────────────────────────────────────────────────────
   variants: {
-    title: '🗣️ Variants',
+    title: 'Variants',
     addNew: '+ New',
     searchPlaceholder: 'Search variants...',
-    hint: "💡 Variants are how the child pronounces each word before learning it correctly",
+    hint: "Variants are how the child pronounces each word before learning it correctly",
     emptyTitle: 'No variants yet',
     emptySubtitle: 'Record how your baby pronounces words!',
     emptySearchTitle: 'No variants found',
@@ -171,20 +171,20 @@ export default {
 
   // ── Settings screen ─────────────────────────────────────────────────────────
   settings: {
-    title: '⚙️ Settings',
+    title: 'Settings',
     babyProfile: 'Baby Profile',
     noProfile: 'No profile configured.',
-    editProfile: '✏️ Edit',
+    editProfile: 'Edit',
     girl: 'Girl',
     boy: 'Boy',
-    importWords: '📥 Import Words',
+    importWords: 'Import Words',
     importDesc: 'Import words via text or CSV file. Date, categories and variants are optional.',
-    importBtn: '📥 Import Words',
-    exportData: '📤 Export Data',
+    importBtn: 'Import Words',
+    exportData: 'Export Data',
     exportDesc: 'Export a CSV with all words, categories, dates and variants.',
-    saveToDrive: '💾 Save',
+    saveToDrive: 'Save',
     saving: 'Saving...',
-    shareExport: '📤 Share',
+    shareExport: 'Share',
     sharing: 'Please wait...',
     categories: 'Categories',
     categoriesDesc: 'Manage your word categories.',
@@ -252,7 +252,7 @@ export default {
 
   // ── Add Category Modal ───────────────────────────────────────────────────────
   addCategory: {
-    title: '🏷️ New Category',
+    title: 'New Category',
     nameLabel: 'Name *',
     namePlaceholder: 'E.g.: Toys, Colors...',
     emojiLabel: 'Emoji',
@@ -262,7 +262,7 @@ export default {
     errorDuplicate: 'A category with this name already exists.',
     btnCancel: 'Cancel',
     btnCreate: 'Create Category',
-    titleEdit: '🏷️ Edit Category',
+    titleEdit: 'Edit Category',
     btnSave: 'Save',
   },
 
@@ -279,8 +279,8 @@ export default {
 
   // ── Import Modal ─────────────────────────────────────────────────────────────
   importModal: {
-    title: '📥 Import words',
-    tabText: '✏️ Text',
+    title: 'Import words',
+    tabText: 'Text',
     tabCSV: '📄 CSV File',
     textHint: 'One word per line. Optionally: category and/or date separated by commas.',
     examplesLabel: 'Examples:',

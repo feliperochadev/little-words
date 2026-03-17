@@ -1,0 +1,28 @@
+import type { ColorTokens } from '../types';
+
+export const honeyColors: ColorTokens = {
+  primary:       '#D2864B',
+  primaryLight:  '#EDBE76',
+  primaryDark:   '#B86A2F',
+  secondary:     '#F4D8B2',
+  accent:        '#EDBE76',
+  profileGirl:   '#E88CBB',
+  profileGirlBg: '#FFF0F5',
+  profileBoy:    '#74B9FF',
+  profileBoyBg:  '#F0F7FF',
+  success:       '#7ABD6E',
+  error:         '#D4694B',
+  warning:       '#F0C96B',
+  info:          '#6C8FD4',
+  background:    '#FBF6EE',
+  surface:       '#FFFFFF',
+  surfaceHover:  '#F8F0E4',
+  border:        '#EDD9C2',
+  borderFocus:   '#D2864B',
+  backdrop:      'rgba(55, 35, 20, 0.45)',
+  text:          '#3A2815',
+  textSecondary: '#7A5F3E',
+  textMuted:     '#B09570',
+  textOnPrimary: '#FFFFFF',
+  textOnError:   '#FFFFFF',
+};

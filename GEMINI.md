@@ -32,7 +32,9 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `src/utils/`:
   - `csvExport.ts` / `importHelpers.ts`: Data portability logic.
   - `assetStorage.ts`: File-system management for media assets.
-  - `theme.ts`: Centralized color and style constants.
+  - `src/theme/category.ts`: Category picker constants (`CATEGORY_COLORS`, `CATEGORY_EMOJIS`).
+  - `src/theme/layout.ts`: Shared layout constants for reusable UI pieces.
+  - `src/utils/theme.ts` was removed. Import colors/tokens from `src/theme/` directly. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors; `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts. All UI chrome icons use Ionicons from `@expo/vector-icons` — never emoji as icons.
 - `scripts/agent/`: Multi-agent workflow scripts (`complexity-check.ts`, `review-loop.ts`, `task-persistence.ts`, `agent-availability.ts`, `load-config.ts`).
 
 ### State Management Strategy
@@ -119,6 +121,7 @@ The app supports audio, photo, and video attachments on words and variants:
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
    - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
    - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - **UI/UX & Design System changes** (`.agents/plan/ui-changes/YYYY-MM-DD_NN-<slug>.md`) for visual design system updates, component library changes, screen layout redesigns, theme/branding updates, or accessibility improvements. See `.agents/plan/ui-changes/README.md` for details.
    - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
@@ -196,6 +199,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
 | Data Layer | `.agents/standards/data-layer.md` |
+| Design System | `.agents/standards/design-system.md` |
 
 ## Additional Documentation
 

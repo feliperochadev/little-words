@@ -2,13 +2,14 @@ import React from 'react';
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated,
 } from 'react-native';
-import { COLORS } from '../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { getWordCountByCategory } from '../services/categoryService';
 import { useDeleteCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 import { TIMING } from '../utils/animationConstants';
+import { useTheme } from '../hooks/useTheme';
 
 export interface CategoryItem {
   id: number;
@@ -31,6 +32,7 @@ export function ManageCategoryModal({
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const deleteCategory = useDeleteCategory();
 
   // Modal animation and gesture handling
@@ -71,11 +73,11 @@ export function ManageCategoryModal({
       </Animated.View>
       <View style={styles.overlay} pointerEvents="box-none">
         <Animated.View
-          style={[styles.sheet, { paddingBottom: 36 + insets.bottom, transform: [{ translateY }] }]}
+          style={[styles.sheet, { paddingBottom: 36 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}
           onStartShouldSetResponder={() => true}
         >
           <View style={styles.handleWrap} {...panResponder.panHandlers}>
-            <View style={styles.handle} />
+            <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
           </View>
 
           {/* Category preview */}
@@ -91,19 +93,19 @@ export function ManageCategoryModal({
             style={styles.actionRow}
             onPress={() => { dismissModal(); setTimeout(() => onEdit(category), TIMING.SCROLL_TRANSITION_DELAY); }}
           >
-            <Text style={styles.actionIcon}>✏️</Text>
-            <Text style={styles.actionText}>{t('manageCategory.edit')}</Text>
+            <Ionicons name="pencil-outline" size={20} color={colors.text} style={styles.actionIcon} />
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('manageCategory.edit')}</Text>
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity style={styles.actionRow} onPress={handleDelete}>
-            <Text style={styles.actionIcon}>🗑️</Text>
-            <Text style={[styles.actionText, styles.actionTextDanger]}>{t('manageCategory.delete')}</Text>
+            <Ionicons name="trash-outline" size={20} color={colors.error} style={styles.actionIcon} />
+            <Text style={[styles.actionText, styles.actionTextDanger, { color: colors.error }]}>{t('manageCategory.delete')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.cancelBtn} onPress={dismissModal}>
-            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+          <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.surface }]} onPress={dismissModal}>
+            <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -114,18 +116,18 @@ export function ManageCategoryModal({
 const styles = StyleSheet.create({
   backdrop:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
   overlay:        { flex: 1, justifyContent: 'flex-end' },
-  sheet:          { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
+  sheet:          { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
   handleWrap:     { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
-  handle:         { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
+  handle:         { width: 40, height: 4, borderRadius: 2 },
   preview:        { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
   emojiCircle:    { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   emoji:          { fontSize: 24 },
   categoryName:   { fontSize: 20, fontWeight: '800' },
   actionRow:      { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  actionIcon:     { fontSize: 20, width: 28, textAlign: 'center' },
-  actionText:     { fontSize: 17, color: COLORS.text, fontWeight: '500' },
-  actionTextDanger: { color: COLORS.error },
-  divider:        { height: 1, backgroundColor: COLORS.border, marginHorizontal: -24 },
-  cancelBtn:      { marginTop: 16, alignItems: 'center', paddingVertical: 14, backgroundColor: COLORS.white, borderRadius: 16 },
-  cancelText:     { fontSize: 16, fontWeight: '700', color: COLORS.textSecondary },
+  actionIcon:     { width: 28, textAlign: 'center' },
+  actionText:     { fontSize: 17, fontWeight: '500' },
+  actionTextDanger: {},
+  divider:        { height: 1, marginHorizontal: -24 },
+  cancelBtn:      { marginTop: 16, alignItems: 'center', paddingVertical: 14, borderRadius: 16 },
+  cancelText:     { fontSize: 16, fontWeight: '700' },
 });

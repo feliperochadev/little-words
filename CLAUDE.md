@@ -78,6 +78,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
    - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
    - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - **UI/UX & Design System changes** (`.agents/plan/ui-changes/YYYY-MM-DD_NN-<slug>.md`) for visual design system updates, component library changes, screen layout redesigns, theme/branding updates, or accessibility improvements. See `.agents/plan/ui-changes/README.md` for details.
    - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
@@ -202,6 +203,7 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
+- `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
 - `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
 
 **Stores** (`src/stores/`):
@@ -253,9 +255,44 @@ components/hooks → services → repositories → db/client
 - `en-US.ts` / `pt-BR.ts` — Translation catalogues (nested objects, dot-path access).
 - Interpolation uses `{{placeholder}}` syntax. Pluralization appends `Plural` to the key when `count !== 1`.
 
+### Theme & Design System
+
+**`src/theme/`** is the canonical design token layer. Always import colors, spacing, shape, typography, and elevation from here.
+
+```
+src/theme/
+├── config.ts              ← DEFAULT_VARIANT, GIRL_VARIANT, BOY_VARIANT constants
+├── index.ts               ← Assembles and re-exports active theme; exports: theme, colors, space, radii, shadow, ThemeVariant
+├── types.ts               ← TypeScript interfaces: Theme, ColorTokens, TypographyTokens, etc.
+├── getThemeForSex.ts      ← Pure function: getThemeForSex(sex) → Theme (no React)
+├── tokens/
+│   ├── typography.ts      ← fontSize, fontWeight, lineHeight, letterSpacing
+│   ├── spacing.ts         ← 4pt grid (space['1']–space['10'])
+│   ├── shape.ts           ← Border radii (xs / sm / md / lg / xl / 2xl / full)
+│   ├── elevation.ts       ← buildElevation(textColor, primaryColor) → shadow presets
+│   └── motion.ts          ← Animation durations and easing strings
+└── variants/
+    ├── blossom.ts          ← Dusty rose + lavender palette (girl default)
+    ├── honey.ts            ← Warm amber + honey palette
+    └── breeze.ts           ← Sky blue palette (boy default)
+```
+
+**Runtime hook** (`src/hooks/useTheme.ts`): reads `sex` from `useSettingsStore` and returns the matching theme. Use this for all inline color props in components. Do not use in StyleSheet.create().
+
+**Sex-to-variant mapping:** controlled by `GIRL_VARIANT`, `BOY_VARIANT`, and `DEFAULT_VARIANT` in `src/theme/config.ts`. Change any of these constants to reassign which variant a sex gets without touching logic.
+
+**Static styles** use the module-level `theme` export (DEFAULT_VARIANT colors). **Dynamic/inline color props** use `const { colors } = useTheme()` inside the component. **Onboarding preview** (before store hydration) uses `getThemeForSex(sex)` directly.
+
+`src/utils/theme.ts` was removed. Import theme tokens directly from `src/theme`, category constants from `src/theme/category.ts`, and shared layout constants from `src/theme/layout.ts`.
+
+**New shared components** (`src/components/`): `Input`, `Label`, `ScreenHeader`, `SortBar`, `BottomSheet`, `IconButton`, `LanguagePicker` — use theme tokens throughout. See `.agents/standards/design-system.md` for usage rules.
+
+**Icon strategy:** Use `@expo/vector-icons` (Ionicons) for all UI chrome icons. Category emojis remain as emoji (user-facing content). Tab bar, SearchBar, and all action icons use Ionicons. `EmptyState` and `StatCard` accept an `icon?: React.ReactNode` prop alongside the legacy `emoji?` string prop.
+
 ### Utilities
 
-- `src/utils/theme.ts` — All colors (`COLORS`), category color palette (`CATEGORY_COLORS`), and category emojis (`CATEGORY_EMOJIS`). Always import colors from here.
+- `src/theme/category.ts` — Category selection constants (`CATEGORY_COLORS`, `CATEGORY_EMOJIS`) used by category picker UI.
+- `src/theme/layout.ts` — Shared layout constants (`textAreaHeight`, `highlightBorderRadius`, etc.) used by reusable form/date components.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
 - `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
@@ -304,6 +341,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
 | Data Layer | `.agents/standards/data-layer.md` |
+| Design System | `.agents/standards/design-system.md` |
 
 ## Additional Documentation
 

@@ -22,6 +22,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - **Design document** (`.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`) for new features with UI/data flow.
    - **ADR** (`.agents/plan/architecture/YYYY-MM-DD_NN-<slug>.md`) for significant architectural decisions between competing approaches.
    - **Research documents** (`.agents/plan/research-documents/YYYY-MM-DD_NN-<slug>/`) for analysis logs, benchmarks, or audits.
+   - **UI/UX & Design System changes** (`.agents/plan/ui-changes/YYYY-MM-DD_NN-<slug>.md`) for visual design system updates, component library changes, screen layout redesigns, theme/branding updates, or accessibility improvements. See `.agents/plan/ui-changes/README.md` for details.
    - Templates live in `.agents/plan/design/DESIGN-TEMPLATE.md` and `.agents/plan/architecture/ADR-TEMPLATE.md`.
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
@@ -31,7 +32,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 11. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
 ## Coding Style & Naming Conventions
-Write concise TypeScript and keep shared theme values in `src/utils/theme.ts`. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
+Write concise TypeScript. Design tokens live in `src/theme/` — import from there directly. `src/utils/theme.ts` has been removed. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors in components; use `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts (e.g. onboarding). Category constants live in `src/theme/category.ts` and shared layout constants in `src/theme/layout.ts`. Use Ionicons from `@expo/vector-icons` for all UI chrome icons — never emoji as icons. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
 
 ## Testing Guidelines
 Every code change must include tests. Changed code should reach 99% line coverage and 95% function, branch, and statement coverage, including edge cases and error paths. Put pure logic in `__tests__/unit`, component behavior in `__tests__/integration`, and route-level behavior in `__tests__/screens`. In Maestro, prefer `id:` selectors, call `scrollUntilVisible` before off-screen assertions, and use `waitForAnimationToEnd` after modal or navigation transitions.
@@ -143,6 +144,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
 | Data Layer | `.agents/standards/data-layer.md` |
+| Design System | `.agents/standards/design-system.md` |
 
 ## Permanently Allowed Commands
 

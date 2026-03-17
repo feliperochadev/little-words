@@ -1,6 +1,6 @@
 import { View, Image, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS } from '../src/utils/theme';
+import { colors } from '../src/theme';
 
 export default function LoadingScreen() {
   return (
@@ -14,7 +14,7 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

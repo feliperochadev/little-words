@@ -7,6 +7,8 @@ import * as variantService from '../../src/services/variantService';
 import * as wordService from '../../src/services/wordService';
 import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 jest.spyOn(Alert, 'alert');
 
@@ -46,15 +48,43 @@ function renderModal(props: Partial<React.ComponentProps<typeof AddVariantModal>
   );
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
+}
+
 describe('AddVariantModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (wordService.getWords as jest.Mock).mockResolvedValue([mockWord]);
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
   });
 
   it('renders new variant title', async () => {
     const { findByText } = renderModal();
     expect(await findByText(/New Variant/)).toBeTruthy();
+  });
+
+  it('uses breeze colors for input when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const input = await findByTestId('variant-input');
+    const style = flattenStyle(input.props.style);
+    const breeze = getThemeForSex('boy').colors;
+    expect(style.backgroundColor).toBe(breeze.surface);
+    expect(style.borderColor).toBe(breeze.border);
+  });
+
+  it('uses breeze primary border on cancel button when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const cancelButton = await findByTestId('variant-cancel-btn');
+    const style = flattenStyle(cancelButton.props.style);
+    expect(style.borderColor).toBe(getThemeForSex('boy').colors.primary);
+  });
+
+  it('uses breeze primary background on add/save button when sex is boy', async () => {
+    const { findByTestId } = renderModal();
+    const saveButton = await findByTestId('variant-save-btn');
+    const style = flattenStyle(saveButton.props.style);
+    expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
   it('renders edit variant title', async () => {
@@ -162,16 +192,16 @@ describe('AddVariantModal', () => {
   });
 
   it('clears word search when clear button is pressed', async () => {
-    const { findByPlaceholderText, findByText, queryByText } = renderModal({ word: null });
+    const { findByPlaceholderText, findByTestId, queryByTestId } = renderModal({ word: null });
     const searchInput = await findByPlaceholderText('Search word...');
     fireEvent.changeText(searchInput, 'mama');
-    // The ✕ button should appear when there is text
-    expect(await findByText('✕')).toBeTruthy();
+    // The clear button should appear when there is text
+    expect(await findByTestId('variant-word-search-clear')).toBeTruthy();
     // Press clear
-    fireEvent.press(await findByText('✕'));
-    // Input should be cleared (✕ button gone)
+    fireEvent.press(await findByTestId('variant-word-search-clear'));
+    // Input should be cleared (clear button gone)
     await waitFor(() => {
-      expect(queryByText('✕')).toBeNull();
+      expect(queryByTestId('variant-word-search-clear')).toBeNull();
     });
   });
 

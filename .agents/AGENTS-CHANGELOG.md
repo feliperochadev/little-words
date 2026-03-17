@@ -2,6 +2,224 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_15
+
+[fix] Replace call-signature interface with function type in sort options helper.
+
+- `src/utils/sortOptions.ts`: replaced the `Translator` call-signature interface with a function type alias (`type Translator = (key: string) => string`) to satisfy Sonar/TypeScript style guidance.
+- Validation: `npm run typecheck` passed.
+
+---
+
+### 2026-03-17_14
+
+[config] Remove deprecated `src/utils/theme.ts` bridge and migrate remaining consumers.
+
+- Deleted `src/utils/theme.ts` after confirming migration readiness against UI change plans.
+- Added dedicated theme constants:
+  - `src/theme/category.ts` for `CATEGORY_COLORS` and `CATEGORY_EMOJIS`
+  - `src/theme/layout.ts` for shared layout constants
+- Migrated component imports away from the removed bridge:
+  - `src/components/AddCategoryModal.tsx`
+  - `src/components/AddWordModal.tsx`
+  - `src/components/AddVariantModal.tsx`
+  - `src/components/DatePickerField.tsx`
+- Updated `__tests__/unit/theme.test.ts` to validate canonical theme exports and new category/layout constants (removed bridge-only assertions).
+- Updated cross-vendor docs and standards to reflect bridge removal:
+  - `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
+  - `.agents/standards/styling-and-naming.md`
+  - `.agents/standards/design-system.md`
+- Validation: `npm run ci` passed.
+
+---
+
+### 2026-03-17_13
+
+[fix] Resolve SonarCloud PR 35 duplication and issue findings.
+
+- `sonar-project.properties`: added `sonar.cpd.exclusions=src/i18n/**` to exclude translation catalogs from duplication checks only.
+- Reduced cross-screen duplication by extracting shared list header/search/sort UI into `src/components/ListScreenControls.tsx` and using it in:
+  - `app/(tabs)/words.tsx`
+  - `app/(tabs)/variants.tsx`
+- Added `src/utils/sortOptions.ts` and reused `formatDateDMY` from `src/utils/dateHelpers.ts` to remove repeated sort/date helper logic.
+- Refactored repeated category form reset state in `src/components/AddCategoryModal.tsx`.
+- Fixed open Sonar issues:
+  - `src/components/IconButton.tsx`: removed redundant nested ternary background color logic.
+  - `src/components/UIComponents.tsx`: replaced unnecessary conditional expression with nullish fallback.
+  - `src/theme/tokens/typography.ts`: replaced `1.0` with `1`.
+- Validation: `npm run ci` passed.
+
+---
+
+### 2026-03-17_12
+
+[config] Add `/refine` save-to-file follow-up across all vendors.
+
+- Updated `.claude/commands/refine.md`, `.codex/commands/refine.md`, and `.gemini/commands/refine.md`.
+- Added a final `/refine` instruction requiring an end-of-output question asking whether to write the refined prompt to a `.md` file in the folder where `/refine` was invoked.
+
+---
+
+### 2026-03-17_11
+
+[fix] Resolve deprecated `COLORS` bridge usage on Sonar-scoped runtime files.
+
+- Migrated deprecated bridge color references in:
+  - `app/loading.tsx`
+  - `app/index.tsx`
+  - `app/(tabs)/home.tsx`
+  - `app/onboarding.tsx`
+  - `src/components/BrandHeader.tsx`
+  - `src/components/DatePickerField.tsx`
+  - `src/components/ManageCategoryModal.tsx`
+- Migration strategy:
+  - startup/static surfaces now import canonical tokens from `src/theme`,
+  - runtime-reactive components now read colors via `useTheme()`.
+- Validation:
+  - targeted suites for touched files passed,
+  - `npm run ci` passed.
+
+---
+
+### 2026-03-17_10
+
+[fix] Replace remaining UI-chrome emojis with semantic Ionicons across key screens and modals.
+
+- `app/(tabs)/home.tsx`: added semantic section icons for monthly progress, category breakdown, and recent words headers.
+- `app/(tabs)/words.tsx`: replaced title emoji styling with `book-outline` icon and added explicit `calendar-outline` icon to sort control.
+- `app/(tabs)/variants.tsx`: replaced title/sort/hint emojis with `chatbubbles-outline`, `calendar-outline`, and `bulb-outline`.
+- `app/(tabs)/settings.tsx`: replaced settings title emoji with `settings-outline`; added import/export header icons and semantic icons on import/save/share action buttons.
+- `src/components/ImportModal.tsx`: introduced `download-outline` title icon and Ionicon close button.
+- `src/components/AddCategoryModal.tsx`: added `pricetag-outline` icon in category modal header.
+- `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`: removed emoji prefixes from affected UI labels (home sections, words/variants titles and sort labels, settings/import/export labels, category modal and import modal titles).
+- Tests updated:
+  - `__tests__/screens/home.test.tsx`
+  - `__tests__/screens/words.test.tsx`
+  - `__tests__/screens/variants.test.tsx`
+  - `__tests__/screens/settings.test.tsx`
+  - `__tests__/integration/ImportModal.test.tsx`
+- Validation: focused suites passed and `npm run ci` passed.
+
+---
+
+### 2026-03-17_9
+
+[config] Update automatic ship feature flag.
+
+- `.agents/agent-config.json`: changed `features.automatic_ship` from `true` to `false`.
+
+---
+
+### 2026-03-17_8
+
+[fix] Invert words variant chip icon/text colors for better readability.
+
+- `app/(tabs)/words.tsx`: swapped variant chip color mapping so `chatbubble` icon uses `colors.secondary` and variant text uses `colors.primaryDark`; added `word-variant-text-${variantText}` testID.
+- `__tests__/screens/words.test.tsx`: updated regression to assert boy profile variant chip uses the swapped mapping (icon `secondary`, text `primaryDark`).
+- Validation: focused words suite passed and `npm run ci` passed.
+
+---
+
+### 2026-03-17_7
+
+[fix] Increase words variant icon contrast for blossom and breeze themes.
+
+- `app/(tabs)/words.tsx`: changed variant icon from `chatbubble-outline` to filled `chatbubble`, increased size (`11` → `12`), and switched color to `colors.primaryDark` for stronger line-level readability.
+- Added `testID` `word-variant-icon-${variantText}` for icon-level assertions.
+- `__tests__/screens/words.test.tsx`: added regression test asserting boy profile icon color uses `getThemeForSex('boy').colors.primaryDark`.
+- Validation: focused words test passed and `npm run ci` passed.
+
+---
+
+### 2026-03-17_6
+
+[fix] Fix home background fallback in boy mode and lighten breeze background tone.
+
+- `app/(tabs)/home.tsx`: Root `SafeAreaView` and `ScrollView` backgrounds now use runtime `useTheme().colors.background` (removes default blossom fallback on home screen).
+- `src/theme/variants/breeze.ts`: Lightened `background` from `#F3F8FD` to `#F8FCFF` for a softer near-white light blue.
+- `__tests__/screens/home.test.tsx`: Added regression assertion that boy profile uses breeze background on home container.
+- Validation: targeted home test passed and `npm run ci` passed.
+
+---
+
+### 2026-03-17_5
+
+[fix] Eliminate remaining blossom fallback on action buttons by making shared Button runtime theme-aware.
+
+- `src/components/UIComponents.tsx`: `Button` now uses `useTheme()` colors at render time; primary/secondary/danger/outline styles, border, shadow, and loading spinner colors no longer use static default theme tokens.
+- `src/components/AddCategoryModal.tsx`: added `category-cancel-btn` testID for outline cancel button verification.
+- `src/components/AddVariantModal.tsx`: added `variant-cancel-btn` and `variant-save-btn` testIDs for action buttons.
+- `src/components/AddWordModal.tsx`: added `word-cancel-btn` and `word-save-btn` testIDs for action buttons.
+- `app/(tabs)/words.tsx`: added `words-add-btn` testID for `+ New` button verification.
+- Tests updated with breeze/boy assertions for button surfaces:
+  - `__tests__/integration/UIComponents.test.tsx`
+  - `__tests__/integration/AddCategoryModal.test.tsx`
+  - `__tests__/integration/AddVariantModal.test.tsx`
+  - `__tests__/integration/AddWordModal.test.tsx`
+  - `__tests__/screens/settings.test.tsx`
+  - `__tests__/screens/words.test.tsx`
+- Validation: focused suite run passed and `npm run ci` passed.
+
+---
+
+### 2026-03-17_4
+
+[fix] Complete post-rate-limit breeze theme fix for boy profile controls in settings and modals.
+
+- `app/(tabs)/settings.tsx`: Replaced remaining static color usage with `useTheme()` runtime colors for language controls, category row chevrons, profile edit button, danger zone, headings, and page backgrounds.
+- `src/components/AddCategoryModal.tsx`: Migrated runtime colors to `useTheme().colors` (sheet handle, title, delete button, input/labels, preview surface, emoji buttons).
+- `src/components/AddVariantModal.tsx`: Removed static token usage in styles; duplicate card, delete button, inputs, and search surfaces now use runtime theme colors.
+- `src/components/ImportModal.tsx`: Migrated modal/tab/button/input/preview color surfaces to runtime theme colors and removed static `COLORS` dependency.
+- `src/components/AddWordModal.tsx`: Follow-up compatibility fix for adaptive tokens (`colors.textLight` → `colors.textMuted`).
+- Tests: added breeze regression assertions in `__tests__/screens/settings.test.tsx`, `__tests__/integration/AddCategoryModal.test.tsx`, `__tests__/integration/AddVariantModal.test.tsx`, and `__tests__/integration/ImportModal.test.tsx`.
+- Validation: `npm run ci` passed (lint + typecheck + coverage tests + semgrep).
+
+---
+
+### 2026-03-17_3
+
+[feature] Sex-adaptive theme system — blossom/honey/breeze variants, useTheme hook, Ionicons icon sweep.
+
+- `src/theme/variants/`: Renamed `florzinha.ts` → `blossom.ts` (export `blossomColors`), `mel.ts` → `honey.ts` (export `honeyColors`); new `breeze.ts` (sky-blue palette, `breezeColors`).
+- `src/theme/config.ts`: Replaced `ACTIVE_THEME` with `THEME_OVERRIDE: ThemeVariant | null` and `DEFAULT_VARIANT: ThemeVariant`. Three variants: `'blossom' | 'honey' | 'breeze'`.
+- `src/theme/index.ts`: Updated to import all three variants; `colorMap` record for variant→colors lookup; exports `ThemeVariant` type.
+- `src/theme/getThemeForSex.ts` (new): Pure function `getThemeForSex(sex)` — girl→blossom, boy→breeze, null→blossom. No React dependency.
+- `src/hooks/useTheme.ts` (new): `useTheme()` hook reads `sex` from `useSettingsStore` and returns sex-adaptive theme via `getThemeForSex`.
+- `app/(tabs)/_layout.tsx`: Tab bar now uses `useTheme()` for reactive `tabBarActiveTintColor`.
+- `app/(tabs)/home.tsx`: Removed `accentColorBySex` lookup; uses `useTheme()` for all accent colors. StatCards use `icon={<Ionicons />}` instead of emoji.
+- `app/(tabs)/words.tsx`, `variants.tsx`, `settings.tsx`: Replaced all decorative emoji with Ionicons icons.
+- `app/onboarding.tsx`: Uses `getThemeForSex(sex)` for preview accent color; replaced emoji icons with Ionicons.
+- `src/components/AddWordModal.tsx`, `AddVariantModal.tsx`, `AddCategoryModal.tsx`, `ManageCategoryModal.tsx`, `DatePickerField.tsx`, `ImportModal.tsx`: All decorative emoji replaced with Ionicons.
+- `src/components/UIComponents.tsx`: `EmptyState` and `StatCard` accept `icon?: React.ReactNode` alongside legacy `emoji?`.
+- Tests: New `__tests__/hooks/useTheme.test.ts`; updated unit theme tests for renamed variants + breeze; updated integration tests for emoji→Ionicons testID changes in DatePickerField, ManageCategoryModal, AddWordModal, AddVariantModal, UIComponents.
+- Docs: Updated `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/standards/design-system.md` for new variant names, config, `getThemeForSex`, `useTheme`, and icon strategy.
+
+---
+
+### 2026-03-17_2
+
+[feature] Implement Palavrinhas Design System — token layer, component library, Ionicons tab bar.
+
+- `src/theme/` (10 new files): Types, config, index, typography/spacing/shape/elevation/motion tokens, Florzinha and Mel color variants. One-line variant switch via `ACTIVE_THEME` in `config.ts`.
+- `src/utils/theme.ts`: Refactored as migration bridge — re-exports `COLORS` from `src/theme`, keeps `CATEGORY_COLORS`, `CATEGORY_EMOJIS`, `FONTS`, `LAYOUT` for backward compat.
+- `src/components/UIComponents.tsx`: Button gains `size` (sm/md/lg), `icon`, `iconPosition` props with 48dp min-height on md/lg. Card uses neutral shadow. SearchBar replaces emoji icons with `Ionicons.search` / `Ionicons.close-circle` and 48dp clear target.
+- New shared components (7 files): `Input`, `Label`, `ScreenHeader`, `SortBar`, `BottomSheet`, `IconButton`, `LanguagePicker` — all using theme tokens, all interactive elements ≥ 48dp.
+- `app/(tabs)/_layout.tsx`: Tab bar emoji (🏠📚🗣️⚙️) replaced with Ionicons (home/book/chatbubble-ellipses/settings-sharp).
+- `jest.setup.js`: Added `@expo/vector-icons` mock for Ionicons.
+- Tests (8 new files): `__tests__/unit/theme.test.ts`, integration tests for all 7 new components.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added `Design System | .agents/standards/design-system.md` row to Code Standards table; CLAUDE.md gets new `### Theme & Design System` architecture section.
+
+---
+
+### 2026-03-17_1
+
+[config] Add `ui-changes` plan folder for UI, UX, and Design System planning artifacts.
+
+- `.agents/plan/ui-changes/README.md`: New folder with README documenting when to use it (design system updates, component library changes, layout redesigns, theme/branding updates, accessibility improvements), file naming convention (`YYYY-MM-DD_NN-<slug>.md`), and template guidance.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added **UI/UX & Design System changes** bullet to the `/plan` section under Rule 10, pointing to `.agents/plan/ui-changes/YYYY-MM-DD_NN-<slug>.md` with a reference to the README.
+
+---
+
 ### 2026-03-16_1
 
 [config] Enhance `/implement` command with implementation tracking, status lifecycle, and concurrent-implementation isolation via git worktrees.

@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
-import { COLORS, CATEGORY_COLORS, CATEGORY_EMOJIS } from '../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { CATEGORY_COLORS, CATEGORY_EMOJIS } from '../theme/category';
 import { withOpacity } from '../utils/colorHelpers';
 import { Button } from './UIComponents';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useAddCategory, useUpdateCategory, useDeleteCategory, useWordCountByCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
+import { useTheme } from '../hooks/useTheme';
+
+const DEFAULT_CATEGORY_COLOR = CATEGORY_COLORS[0];
+const DEFAULT_CATEGORY_EMOJI = CATEGORY_EMOJIS[0];
 
 export interface CategoryToEdit {
   id: number;
@@ -32,6 +37,7 @@ export function AddCategoryModal({
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const isEditing = !!editCategory;
 
   const addCategoryMutation    = useAddCategory();
@@ -40,14 +46,18 @@ export function AddCategoryModal({
   const { data: wordCount = 0 } = useWordCountByCategory(editCategory?.id ?? 0);
 
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(CATEGORY_COLORS[0]);
-  const [selectedEmoji, setSelectedEmoji] = useState(CATEGORY_EMOJIS[0]);
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_CATEGORY_COLOR);
+  const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_CATEGORY_EMOJI);
   const [loading, setLoading] = useState(false);
 
-  const handleClose = () => {
+  const resetForm = useCallback(() => {
     setName('');
-    setSelectedColor(CATEGORY_COLORS[0]);
-    setSelectedEmoji(CATEGORY_EMOJIS[0]);
+    setSelectedColor(DEFAULT_CATEGORY_COLOR);
+    setSelectedEmoji(DEFAULT_CATEGORY_EMOJI);
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -60,11 +70,9 @@ export function AddCategoryModal({
       setSelectedColor(editCategory.color);
       setSelectedEmoji(editCategory.emoji);
     } else {
-      setName('');
-      setSelectedColor(CATEGORY_COLORS[0]);
-      setSelectedEmoji(CATEGORY_EMOJIS[0]);
+      resetForm();
     }
-  }, [editCategory, visible]);
+  }, [editCategory, visible, resetForm]);
 
   const handleDelete = () => {
     if (!editCategory) return;
@@ -125,51 +133,59 @@ export function AddCategoryModal({
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
       </Animated.View>
       <View style={styles.overlay} pointerEvents="box-none">
-        <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
           <View style={styles.handleWrap} {...panResponder.panHandlers}>
-            <View style={styles.handle} />
+            <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
           </View>
 
 
           {/* Header row */}
           <View style={styles.header}>
-            <Text style={[styles.title, isEditing && styles.titleLeft]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
-              {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
-            </Text>
+            <View style={styles.titleWrap}>
+              <Ionicons name="pricetag-outline" size={20} color={colors.primary} testID="category-title-icon" />
+              <Text style={[styles.title, isEditing && styles.titleLeft, { color: colors.text }]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
+                {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
+              </Text>
+            </View>
             {isEditing && (
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} testID="category-delete-btn">
-                <Text style={styles.deleteBtnText}>🗑️ {t('common.remove')}</Text>
+              <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="category-delete-btn">
+                <Ionicons name="trash-outline" size={14} color={colors.error} />
+              <Text style={[styles.deleteBtnText, { color: colors.error }]}>{t('common.remove')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Preview */}
-            <View style={[styles.preview, { borderColor: selectedColor }]}>
+            <View style={[styles.preview, { borderColor: selectedColor, backgroundColor: colors.surface }]}>
               <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
               <Text style={[styles.previewName, { color: selectedColor }]}>
                 {name.trim() || t('addCategory.previewNamePlaceholder')}
               </Text>
             </View>
 
-            <Text style={styles.label}>{t('addCategory.nameLabel')}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.nameLabel')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
               value={name}
               onChangeText={setName}
               placeholder={t('addCategory.namePlaceholder')}
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textMuted}
               autoFocus
               autoCapitalize="words"
               testID="category-name-input"
             />
 
-            <Text style={styles.label}>{t('addCategory.emojiLabel')}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.emojiLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
               {CATEGORY_EMOJIS.map(emoji => (
                 <TouchableOpacity
                   key={emoji}
-                  style={[styles.emojiBtn, selectedEmoji === emoji && { backgroundColor: selectedColor + '30', borderColor: selectedColor }]}
+                  style={[
+                    styles.emojiBtn,
+                    { backgroundColor: colors.surface },
+                    selectedEmoji === emoji && { backgroundColor: withOpacity(selectedColor, '30'), borderColor: selectedColor },
+                  ]}
                   onPress={() => setSelectedEmoji(emoji)}
                 >
                   <Text style={styles.emojiText}>{emoji}</Text>
@@ -177,12 +193,12 @@ export function AddCategoryModal({
               ))}
             </ScrollView>
 
-            <Text style={styles.label}>{t('addCategory.colorLabel')}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.colorLabel')}</Text>
             <View style={styles.colorGrid}>
               {CATEGORY_COLORS.map(color => (
                 <TouchableOpacity
                   key={color}
-                  style={[styles.colorBtn, { backgroundColor: color }, selectedColor === color && styles.colorBtnSelected]}
+                  style={[styles.colorBtn, { backgroundColor: color }, selectedColor === color && styles.colorBtnSelected, selectedColor === color && { borderColor: colors.text }]}
                   onPress={() => setSelectedColor(color)}
                 >
                   {selectedColor === color && <Text style={styles.colorCheck}>✓</Text>}
@@ -191,7 +207,7 @@ export function AddCategoryModal({
             </View>
 
             <View style={styles.actions}>
-              <Button title={t('addCategory.btnCancel')} onPress={handleClose} variant="outline" style={styles.actionBtn} />
+              <Button title={t('addCategory.btnCancel')} onPress={handleClose} variant="outline" style={styles.actionBtn} testID="category-cancel-btn" />
               <Button
                 title={isEditing ? t('addCategory.btnSave') : t('addCategory.btnCreate')}
                 onPress={handleSave}
@@ -210,26 +226,27 @@ export function AddCategoryModal({
 const styles = StyleSheet.create({
   backdrop:         { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   overlay:          { flex: 1, justifyContent: 'flex-end' },
-  container:        { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },
+  container:        { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },
   handleWrap:       { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
-  handle:           { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
+  handle:           { width: 40, height: 4, borderRadius: 2 },
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  title:            { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  titleWrap:        { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  title:            { fontSize: 22, fontWeight: '800', textAlign: 'center', flex: 1 },
   titleLeft:      { textAlign: 'left' },
-  deleteBtn:        { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: withOpacity(COLORS.error, '20'), borderRadius: 12 },
-  deleteBtnText:    { fontSize: 13, fontWeight: '700', color: COLORS.error },
-  preview:          { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, padding: 14, marginBottom: 20, gap: 10 },
+  deleteBtn:        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+  deleteBtnText:    { fontSize: 13, fontWeight: '700' },
+  preview:          { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 2, padding: 14, marginBottom: 20, gap: 10 },
   previewEmoji:     { fontSize: 28 },
   previewName:      { fontSize: 18, fontWeight: '700' },
-  label:            { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input:            { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
+  label:            { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input:            { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderWidth: 1.5, marginBottom: 16 },
   emojiScroll:      { marginBottom: 16 },
-  emojiBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 8, borderWidth: 2, borderColor: 'transparent', backgroundColor: COLORS.white },
+  emojiBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
   emojiText:        { fontSize: 24 },
   colorGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   colorBtn:         { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  colorBtnSelected: { borderWidth: 3, borderColor: COLORS.text, transform: [{ scale: 1.15 }] },
-  colorCheck:       { color: COLORS.white, fontSize: 18, fontWeight: '900' },
+  colorBtnSelected: { borderWidth: 3, transform: [{ scale: 1.15 }] },
+  colorCheck:       { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
   actions:          { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:        { flex: 1 },
 });

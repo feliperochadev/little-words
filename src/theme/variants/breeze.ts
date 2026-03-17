@@ -1,0 +1,28 @@
+import type { ColorTokens } from '../types';
+
+export const breezeColors: ColorTokens = {
+  primary:       '#5B9FD4',
+  primaryLight:  '#8CBDE6',
+  primaryDark:   '#3D7CB5',
+  secondary:     '#C5DCF0',
+  accent:        '#8CBDE6',
+  profileGirl:   '#E88CBB',
+  profileGirlBg: '#FFF0F7',
+  profileBoy:    '#5B9FD4',
+  profileBoyBg:  '#EFF5FB',
+  success:       '#7ABD8C',
+  error:         '#D47B7B',
+  warning:       '#E8C879',
+  info:          '#6C8FD4',
+  background:    '#F8FCFF',
+  surface:       '#FFFFFF',
+  surfaceHover:  '#EBF2FA',
+  border:        '#D4E2F0',
+  borderFocus:   '#5B9FD4',
+  backdrop:      'rgba(20, 35, 55, 0.45)',
+  text:          '#1E2D3A',
+  textSecondary: '#4A6478',
+  textMuted:     '#8CA0B3',
+  textOnPrimary: '#FFFFFF',
+  textOnError:   '#FFFFFF',
+};

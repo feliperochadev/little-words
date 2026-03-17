@@ -11,6 +11,7 @@ Analyze and strengthen a prompt provided by the user to make it more precise, co
 3. **Suggest** improvements that make the prompt more precise and actionable.
 4. **Ask** clarifying questions if any important information is missing.
 5. **Provide** an improved version of the prompt.
+6. **Ask at the end** whether the user wants the refined prompt written into a `.md` file in the same folder where `/refine` was invoked.
 
 ---
 
@@ -32,3 +33,7 @@ Questions that should be answered before execution (omit this section if none).
 
 ### 5. Refined Prompt
 The improved version of the prompt, ready to be used as-is.
+
+### 6. Save-to-File Follow-up
+End with this question (or equivalent):
+"Do you want me to write this refined prompt into a `.md` file in this folder?"

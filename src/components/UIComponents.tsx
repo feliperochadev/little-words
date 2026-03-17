@@ -10,74 +10,104 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { COLORS, LAYOUT } from '../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../theme';
 import { withOpacity } from '../utils/colorHelpers';
+import { useTheme } from '../hooks/useTheme';
 
 // ─── Button ───────────────────────────────────────────────────────────────────
 interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   testID?: string;
 }
 
 export function Button({
-  title, onPress, variant = 'primary', loading, disabled, style, textStyle, testID
+  title, onPress, variant = 'primary', size = 'md', loading, disabled,
+  icon, iconPosition = 'left', style, textStyle, testID,
 }: Readonly<ButtonProps>) {
-  const styles = getButtonStyles(variant);
+  const { colors } = useTheme();
+  const btnStyle = getButtonStyle(variant, size, colors);
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && { opacity: 0.5 }, style]}
+      style={[btnStyle.button, disabled && { opacity: 0.5 }, style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
       testID={testID}
+      accessibilityRole="button"
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.white} />
+        <ActivityIndicator color={variant === 'outline' ? colors.primary : colors.textOnPrimary} />
       ) : (
-        <Text style={[styles.text, textStyle]} numberOfLines={1}>{title}</Text>
+        <View style={styles.btnContent}>
+          {icon && iconPosition === 'left' ? <View style={styles.btnIconLeft}>{icon}</View> : null}
+          <Text style={[btnStyle.text, textStyle]} numberOfLines={1}>{title}</Text>
+          {icon && iconPosition === 'right' ? <View style={styles.btnIconRight}>{icon}</View> : null}
+        </View>
       )}
     </TouchableOpacity>
   );
 }
 
-const getButtonStyles = (variant: string) => {
+const BUTTON_PADDING = {
+  sm: { paddingVertical: 8,  paddingHorizontal: 16 },
+  md: { paddingVertical: 14, paddingHorizontal: 24 },
+  lg: { paddingVertical: 18, paddingHorizontal: 32 },
+} as const;
+
+const BUTTON_MIN_HEIGHT = { sm: 36, md: 48, lg: 56 } as const;
+
+function getButtonStyle(
+  variant: string,
+  size: 'sm' | 'md' | 'lg',
+  colors: { primary: string; secondary: string; error: string; textOnPrimary: string },
+) {
   const getBackgroundColor = () => {
-    if (variant === 'primary') return COLORS.primary;
-    if (variant === 'secondary') return COLORS.secondary;
-    if (variant === 'danger') return COLORS.error;
+    if (variant === 'primary') return colors.primary;
+    if (variant === 'secondary') return colors.secondary;
+    if (variant === 'danger') return colors.error;
     return 'transparent';
   };
 
   return StyleSheet.create({
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: getBackgroundColor(),
-    borderWidth: variant === 'outline' ? 2 : 0,
-    borderColor: COLORS.primary,
-    shadowColor: variant === 'primary' ? COLORS.primary : 'transparent',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: variant === 'primary' ? 4 : 0,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: variant === 'outline' ? COLORS.primary : COLORS.white,
-    letterSpacing: 0.5,
-  },
+    button: {
+      ...BUTTON_PADDING[size],
+      minHeight: BUTTON_MIN_HEIGHT[size],
+      borderRadius: theme.shape.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: getBackgroundColor(),
+      borderWidth: variant === 'outline' ? 2 : 0,
+      borderColor: colors.primary,
+      shadowColor: variant === 'primary' ? colors.primary : 'transparent',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: variant === 'primary' ? 4 : 0,
+    },
+    text: {
+      fontSize: size === 'sm' ? theme.typography.fontSize.sm : theme.typography.fontSize.lg,
+      fontWeight: theme.typography.fontWeight.bold,
+      color: variant === 'outline' ? colors.primary : colors.textOnPrimary,
+      letterSpacing: theme.typography.letterSpacing.wide,
+    },
   });
-};
+}
+
+const styles = StyleSheet.create({
+  btnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  btnIconLeft: { marginRight: 8 },
+  btnIconRight: { marginLeft: 8 },
+});
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
@@ -100,15 +130,15 @@ export function Card({ children, style, onPress, testID }: Readonly<CardProps>) 
 
 const cardStyles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: COLORS.primary,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.shape.lg,
+    padding: theme.spacing['4'],
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 3,
-    marginBottom: 12,
+    marginBottom: theme.spacing['3'],
   },
 });
 
@@ -122,22 +152,30 @@ interface SearchBarProps {
 
 export function SearchBar({ value, onChangeText, placeholder, testID }: Readonly<SearchBarProps>) {
   return (
-  <View style={searchStyles.container}>
-    <Text style={searchStyles.icon}>🔍</Text>
-    <TextInput
-      style={searchStyles.input}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder || 'Buscar palavras...'}
-      placeholderTextColor={COLORS.textLight}
-      testID={testID}
-    />
-    {value.length > 0 && (
-      <TouchableOpacity onPress={() => onChangeText('')}>
-        <Text style={searchStyles.clear}>✕</Text>
-      </TouchableOpacity>
-    )}
-  </View>
+    <View style={searchStyles.container}>
+      <Ionicons name="search" size={18} color={theme.colors.textMuted} style={searchStyles.icon} />
+      <TextInput
+        style={searchStyles.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder ?? 'Buscar palavras...'}
+        placeholderTextColor={theme.colors.textMuted}
+        testID={testID}
+        accessibilityRole="search"
+      />
+      {value.length > 0 && (
+        <TouchableOpacity
+          onPress={() => onChangeText('')}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={searchStyles.clearBtn}
+          testID={testID ? `${testID}-clear` : 'search-clear'}
+          accessibilityLabel="Clear search"
+          accessibilityRole="button"
+        >
+          <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
@@ -145,21 +183,27 @@ const searchStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.shape.lg,
+    paddingHorizontal: theme.spacing['4'],
     paddingVertical: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    marginBottom: 12,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing['3'],
   },
-  icon: { fontSize: 18, marginRight: 8 },
+  icon: { marginRight: theme.spacing['2'] },
   input: {
     flex: 1,
-    fontSize: 15,
-    color: COLORS.text,
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text,
   },
-  clear: { fontSize: 16, color: COLORS.textLight, padding: 4 },
+  clearBtn: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -12,
+  },
 });
 
 // ─── CategoryBadge ────────────────────────────────────────────────────────────
@@ -185,60 +229,67 @@ const badgeStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: theme.shape.xl,
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
   small: { paddingHorizontal: 6, paddingVertical: 2 },
   emoji: { fontSize: 12, marginRight: 4 },
   smallEmoji: { fontSize: 10 },
-  text: { fontSize: 12, fontWeight: '600' },
+  text: { fontSize: 12, fontWeight: theme.typography.fontWeight.semibold },
   smallText: { fontSize: 10 },
 });
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 interface EmptyStateProps {
-  emoji: string;
+  emoji?: string;
+  icon?: React.ReactNode;
   title: string;
   subtitle?: string;
   action?: { label: string; onPress: () => void };
 }
 
-export function EmptyState({ emoji, title, subtitle, action }: Readonly<EmptyStateProps>) {
+export function EmptyState({ emoji, icon, title, subtitle, action }: Readonly<EmptyStateProps>) {
   return (
     <View style={emptyStyles.container}>
-      <Text style={emptyStyles.emoji}>{emoji}</Text>
-      <Text style={emptyStyles.title}>{title}</Text>
-      {subtitle && <Text style={emptyStyles.subtitle}>{subtitle}</Text>}
-      {action && (
-        <Button title={action.label} onPress={action.onPress} style={emptyStyles.actionButton} />
+      {icon ? (
+        <View style={emptyStyles.iconWrapper}>{icon}</View>
+      ) : (
+        <Text style={emptyStyles.emoji}>{emoji}</Text>
       )}
+      <Text style={emptyStyles.title}>{title}</Text>
+      {subtitle ? <Text style={emptyStyles.subtitle}>{subtitle}</Text> : null}
+      {action ? (
+        <Button title={action.label} onPress={action.onPress} style={emptyStyles.actionButton} />
+      ) : null}
     </View>
   );
 }
 
 const emptyStyles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: LAYOUT.EMPTY_STATE_VERTICAL_PADDING, paddingHorizontal: 32 },
-  emoji: { fontSize: 64, marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
-  actionButton: { marginTop: 16 },
+  container: { alignItems: 'center', paddingVertical: theme.spacing['10'], paddingHorizontal: theme.spacing['8'] },
+  emoji: { fontSize: 64, marginBottom: theme.spacing['4'] },
+  iconWrapper: { marginBottom: theme.spacing['4'] },
+  title: { fontSize: theme.typography.fontSize['2xl'], fontWeight: theme.typography.fontWeight.bold, color: theme.colors.text, textAlign: 'center', marginBottom: theme.spacing['2'] },
+  subtitle: { fontSize: theme.typography.fontSize.md, color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  actionButton: { marginTop: theme.spacing['4'] },
 });
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 interface StatCardProps {
-  emoji: string;
+  emoji?: string;
+  icon?: React.ReactNode;
   value: number | string;
   label: string;
   color: string;
   testID?: string;
 }
 
-export function StatCard({ emoji, value, label, color, testID }: Readonly<StatCardProps>) {
+export function StatCard({ emoji, icon, value, label, color, testID }: Readonly<StatCardProps>) {
   return (
     <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
       <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
-        <Text style={statStyles.emoji}>{emoji}</Text>
+        {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
       </View>
       <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
       <Text style={statStyles.label}>{label}</Text>
@@ -249,20 +300,27 @@ export function StatCard({ emoji, value, label, color, testID }: Readonly<StatCa
 const statStyles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.shape.xl,
+    padding: theme.spacing['4'],
     alignItems: 'center',
     borderWidth: 1.5,
-    shadowColor: COLORS.text,
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
     margin: 4,
   },
-  iconBg: { width: LAYOUT.STAT_ICON_SIZE, height: LAYOUT.STAT_ICON_SIZE, borderRadius: LAYOUT.STAT_ICON_RADIUS, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  iconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.shape.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing['2'],
+  },
   emoji: { fontSize: 22 },
-  value: { fontSize: 28, fontWeight: '800', marginBottom: 2 },
-  label: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '500' },
+  value: { fontSize: 28, fontWeight: theme.typography.fontWeight.heavy, marginBottom: 2 },
+  label: { fontSize: theme.typography.fontSize.xs, color: theme.colors.textSecondary, textAlign: 'center', fontWeight: theme.typography.fontWeight.medium },
 });

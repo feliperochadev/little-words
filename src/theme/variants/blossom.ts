@@ -1,0 +1,28 @@
+import type { ColorTokens } from '../types';
+
+export const blossomColors: ColorTokens = {
+  primary:       '#C77DAB',
+  primaryLight:  '#E4A8CC',
+  primaryDark:   '#A85D8B',
+  secondary:     '#D4C5E2',
+  accent:        '#E4A8CC',
+  profileGirl:   '#E88CBB',
+  profileGirlBg: '#FFF0F7',
+  profileBoy:    '#7BAFD4',
+  profileBoyBg:  '#F0F5FA',
+  success:       '#8CC5A0',
+  error:         '#D47B7B',
+  warning:       '#E8C879',
+  info:          '#8B9FD4',
+  background:    '#FAF5F8',
+  surface:       '#FFFFFF',
+  surfaceHover:  '#F8EFF4',
+  border:        '#E8D8E2',
+  borderFocus:   '#C77DAB',
+  backdrop:      'rgba(60, 30, 50, 0.45)',
+  text:          '#3A2535',
+  textSecondary: '#6B4D60',
+  textMuted:     '#A88B9C',
+  textOnPrimary: '#FFFFFF',
+  textOnError:   '#FFFFFF',
+};

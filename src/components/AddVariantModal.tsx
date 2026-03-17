@@ -3,9 +3,11 @@ import {
   View, Text, TextInput, Modal, StyleSheet,
   Alert, TouchableOpacity, ScrollView, Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, LAYOUT } from '../utils/theme';
+import { layout } from '../theme/layout';
 import { withOpacity } from '../utils/colorHelpers';
+import { useTheme } from '../hooks/useTheme';
 import { findVariantByName } from '../services/variantService';
 import type { Variant, Word } from '../types/domain';
 import { useWords } from '../hooks/useWords';
@@ -31,6 +33,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const today = new Date().toISOString().split('T')[0];
 
   // Modal animation and gesture handling
@@ -118,16 +121,17 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
       </Animated.View>
       <View style={s.overlay} pointerEvents="box-none">
-        <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
+        <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
           <View style={s.handleWrap} {...panResponder.panHandlers}>
-            <View style={s.handle} />
+            <View style={[s.handle, { backgroundColor: colors.textMuted }]} />
           </View>
 
           <View style={s.header}>
-            <Text style={[s.title, editVariant && s.titleLeft]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            <Text style={[s.title, editVariant && s.titleLeft, { color: colors.text }]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
             {editVariant && (
-              <TouchableOpacity style={s.deleteBtn} onPress={handleDelete} testID="variant-delete-btn">
-                <Text style={s.deleteBtnText}>🗑️ {t('common.remove')}</Text>
+              <TouchableOpacity style={[s.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="variant-delete-btn">
+                <Ionicons name="trash-outline" size={14} color={colors.error} />
+                <Text style={[s.deleteBtnText, { color: colors.error }]}>{t('common.remove')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -137,42 +141,42 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
             {/* ── Word search ── */}
             {showSearch && (
               <View style={s.searchSection}>
-                <Text style={s.label}>{t('addVariant.wordLabel')}</Text>
+                <Text style={[s.label, { color: colors.textSecondary }]}>{t('addVariant.wordLabel')}</Text>
                 {chosenWord ? (
-                  <TouchableOpacity style={s.chosenChip} onPress={() => setChosenWord(null)}>
-                    <Text style={s.chosenText}>{chosenWord.word}</Text>
-                    <Text style={s.chosenClear}>{t('addVariant.changeWord')}</Text>
+                  <TouchableOpacity style={[s.chosenChip, { backgroundColor: withOpacity(colors.secondary, '15'), borderColor: colors.secondary }]} onPress={() => setChosenWord(null)}>
+                    <Text style={[s.chosenText, { color: colors.secondary }]}>{chosenWord.word}</Text>
+                    <Text style={[s.chosenClear, { color: colors.secondary }]}>{t('addVariant.changeWord')}</Text>
                   </TouchableOpacity>
                 ) : (
                   <>
-                    <View style={s.searchBox}>
-                      <Text style={s.searchIcon}>🔍</Text>
+                    <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <Ionicons name="search" size={16} color={colors.textMuted} style={s.searchIcon} />
                       <TextInput
-                        style={s.searchInput}
+                        style={[s.searchInput, { color: colors.text }]}
                         value={wordSearch}
                         onChangeText={setWordSearch}
                         placeholder={t('addVariant.wordSearchPlaceholder')}
-                        placeholderTextColor={COLORS.textLight}
+                        placeholderTextColor={colors.textMuted}
                         autoCapitalize="none"
                         testID="variant-word-search"
                       />
                       {wordSearch.length > 0 && (
-                        <TouchableOpacity onPress={() => setWordSearch('')}>
-                          <Text style={s.searchClear}>✕</Text>
+                        <TouchableOpacity onPress={() => setWordSearch('')} testID="variant-word-search-clear">
+                          <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                         </TouchableOpacity>
                       )}
                     </View>
-                    <View style={s.wordList}>
+                    <View style={[s.wordList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                       {filtered.length === 0
-                        ? <Text style={s.noWords}>{t('addVariant.noWordsFound')}</Text>
+                        ? <Text style={[s.noWords, { color: colors.textSecondary }]}>{t('addVariant.noWordsFound')}</Text>
                         : filtered.slice(0, 7).map(w => (
                           <TouchableOpacity
-                            key={w.id} style={s.wordItem}
+                            key={w.id} style={[s.wordItem, { borderBottomColor: colors.border }]}
                             onPress={() => { setChosenWord(w); setWordSearch(''); }}
                           >
-                            <Text style={s.wordItemText}>{w.word}</Text>
+                            <Text style={[s.wordItemText, { color: colors.text }]}>{w.word}</Text>
                             {w.category_name && (
-                              <Text style={s.wordItemCat}>{w.category_emoji} {categoryName(w.category_name)}</Text>
+                              <Text style={[s.wordItemCat, { color: colors.textSecondary }]}>{w.category_emoji} {categoryName(w.category_name)}</Text>
                             )}
                           </TouchableOpacity>
                         ))
@@ -184,50 +188,55 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
             )}
 
             {effectiveWord && !editVariant && (
-              <View style={s.contextRow}>
-                <Text style={s.contextLabel}>{t('addVariant.forWord')}</Text>
-                <Text style={s.contextWord}>&ldquo;{effectiveWord.word}&rdquo;</Text>
+              <View style={[s.contextRow, { backgroundColor: withOpacity(colors.secondary, '10') }]}>
+                <Text style={[s.contextLabel, { color: colors.textSecondary }]}>{t('addVariant.forWord')}</Text>
+                <Text style={[s.contextWord, { color: colors.text }]}>&ldquo;{effectiveWord.word}&rdquo;</Text>
               </View>
             )}
 
             {/* ── Variant text ── */}
-            <Text style={s.label}>{t('addVariant.variantLabel')}</Text>
+            <Text style={[s.label, { color: colors.textSecondary }]}>{t('addVariant.variantLabel')}</Text>
             <TextInput
               testID="variant-input"
-              style={[s.input, duplicate && s.inputDup]}
+              style={[
+                s.input,
+                { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border },
+                duplicate && { borderColor: colors.warning, backgroundColor: withOpacity(colors.warning, '22') },
+              ]}
               value={variant} onChangeText={setVariant}
               placeholder={effectiveWord
                 ? t('addVariant.variantPlaceholder', { word: effectiveWord.word })
                 : t('addVariant.variantPlaceholderGeneric')}
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
             />
 
             {duplicate && effectiveWord && (
-              <View style={s.dupCard} testID="modal-duplicate-variant">
-                <Text style={s.dupTitle}>{t('addVariant.duplicateTitle', { word: effectiveWord.word })}</Text>
-                <Text style={s.dupText}>{duplicate.variant}</Text>
+              <View style={[s.dupCard, { backgroundColor: withOpacity(colors.warning, '22'), borderColor: colors.warning }]} testID="modal-duplicate-variant">
+                <Text style={[s.dupTitle, { color: colors.warning }]}>{t('addVariant.duplicateTitle', { word: effectiveWord.word })}</Text>
+                <Text style={[s.dupText, { color: colors.warning }]}>{duplicate.variant}</Text>
               </View>
             )}
 
             {/* ── Date ── */}
-            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={COLORS.secondary} />
+            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={colors.secondary} />
 
             {/* ── Notes ── */}
-            <Text style={s.label}>{t('common.notes').toUpperCase()}</Text>
+            <Text style={[s.label, { color: colors.textSecondary }]}>{t('common.notes').toUpperCase()}</Text>
             <TextInput
-              style={[s.input, s.textArea]} value={notes} onChangeText={setNotes}
+              style={[s.input, s.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]} value={notes} onChangeText={setNotes}
               placeholder={t('addVariant.notesPlaceholder')}
-              placeholderTextColor={COLORS.textLight} multiline numberOfLines={3}
+              placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
               testID="variant-notes-input"
             />
 
             <View style={s.actions}>
-              <Button title={t('common.cancel')} onPress={onClose} variant="outline" style={s.actionBtn} />
+              <Button title={t('common.cancel')} onPress={onClose} variant="outline" style={s.actionBtn} testID="variant-cancel-btn" />
               <Button
                 title={editVariant ? t('addVariant.btnSave') : t('addVariant.btnAdd')}
                 onPress={handleSave} loading={loading}
                 style={[s.actionBtn, !!duplicate && s.btnDisabled]}
+                testID="variant-save-btn"
               />
             </View>
           </ScrollView>
@@ -240,38 +249,36 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
 const s = StyleSheet.create({
   backdrop:     { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' },
   overlay:      { flex: 1, justifyContent: 'flex-end' },
-  container:    { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
+  container:    { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '92%' },
   handleWrap:   { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
-  handle:       { width: 40, height: 4, backgroundColor: COLORS.textLight, borderRadius: 2 },
+  handle:       { width: 40, height: 4, borderRadius: 2 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title:        { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', flex: 1 },
+  title:        { fontSize: 22, fontWeight: '800', textAlign: 'center', flex: 1 },
   titleLeft:    { textAlign: 'left' },
-  deleteBtn:    { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: withOpacity(COLORS.error, '20'), borderRadius: 12 },
-  deleteBtnText:{ fontSize: 13, fontWeight: '700', color: COLORS.error },
-  label:        { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input:        { backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: COLORS.text, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 16 },
-  textArea:     { height: LAYOUT.TEXTAREA_HEIGHT, textAlignVertical: 'top' },
+  deleteBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+  deleteBtnText:{ fontSize: 13, fontWeight: '700' },
+  label:        { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input:        { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderWidth: 1.5, marginBottom: 16 },
+  textArea:     { height: layout.textAreaHeight, textAlignVertical: 'top' },
   actions:      { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:    { flex: 1 },
   btnDisabled:  { opacity: 0.5 },
-  inputDup:     { borderColor: COLORS.warning, backgroundColor: withOpacity(COLORS.warning, '22') },
-  dupCard:      { backgroundColor: withOpacity(COLORS.warning, '22'), borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.warning, padding: 14, marginTop: -8, marginBottom: 16 },
-  dupTitle:     { fontSize: 13, fontWeight: '700', color: COLORS.warning, marginBottom: 4 },
-  dupText:      { fontSize: 16, fontWeight: '800', color: COLORS.warning },
+  dupCard:      { borderRadius: 14, borderWidth: 1.5, padding: 14, marginTop: -8, marginBottom: 16 },
+  dupTitle:     { fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  dupText:      { fontSize: 16, fontWeight: '800' },
   searchSection:{ marginBottom: 16 },
-  searchBox:    { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 6 },
-  searchIcon:   { fontSize: 16, marginRight: 8 },
-  searchInput:  { flex: 1, fontSize: 15, color: COLORS.text },
-  searchClear:  { fontSize: 14, color: COLORS.textLight, padding: 4 },
-  wordList:     { backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, overflow: 'hidden' },
-  wordItem:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  wordItemText: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-  wordItemCat:  { fontSize: 12, color: COLORS.textSecondary },
-  noWords:      { textAlign: 'center', color: COLORS.textSecondary, padding: 16, fontSize: 14 },
-  chosenChip:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: withOpacity(COLORS.secondary, '15'), borderRadius: 14, borderWidth: 2, borderColor: COLORS.secondary, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 4 },
-  chosenText:   { fontSize: 17, fontWeight: '800', color: COLORS.secondary },
-  chosenClear:  { fontSize: 13, color: COLORS.secondary, fontWeight: '600' },
-  contextRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: withOpacity(COLORS.secondary, '10'), borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
-  contextLabel: { fontSize: 14, color: COLORS.textSecondary },
-  contextWord:  { fontSize: 14, fontWeight: '800', color: COLORS.text },
+  searchBox:    { flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, marginBottom: 6 },
+  searchIcon:   { marginRight: 8 },
+  searchInput:  { flex: 1, fontSize: 15 },
+  wordList:     { borderRadius: 14, borderWidth: 1.5, overflow: 'hidden' },
+  wordItem:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1 },
+  wordItemText: { fontSize: 16, fontWeight: '700' },
+  wordItemCat:  { fontSize: 12 },
+  noWords:      { textAlign: 'center', padding: 16, fontSize: 14 },
+  chosenChip:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 2, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 4 },
+  chosenText:   { fontSize: 17, fontWeight: '800' },
+  chosenClear:  { fontSize: 13, fontWeight: '600' },
+  contextRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  contextLabel: { fontSize: 14 },
+  contextWord:  { fontSize: 14, fontWeight: '800' },
 });
