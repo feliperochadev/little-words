@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_15
+
+[fix] Replace call-signature interface with function type in sort options helper.
+
+- `src/utils/sortOptions.ts`: replaced the `Translator` call-signature interface with a function type alias (`type Translator = (key: string) => string`) to satisfy Sonar/TypeScript style guidance.
+- Validation: `npm run typecheck` passed.
+
+---
+
 ### 2026-03-17_14
 
 [config] Remove deprecated `src/utils/theme.ts` bridge and migrate remaining consumers.

@@ -1,8 +1,6 @@
 import type { SortKey } from './sortHelpers';
 
-interface Translator {
-  (key: string): string;
-}
+type Translator = (key: string) => string;
 
 export interface SortOption {
   key: SortKey;
