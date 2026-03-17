@@ -7,10 +7,11 @@ import {
   StyleSheet, FlatList, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, LAYOUT } from '../utils/theme';
+import { LAYOUT } from '../utils/theme';
 import { useI18n } from '../i18n/i18n';
 import { daysInMonth, parseDate, toStorage, toDisplay } from '../utils/dateHelpers';
 import { TIMING } from '../utils/animationConstants';
+import { useTheme } from '../hooks/useTheme';
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const ITEM_H = 44;
@@ -29,6 +30,7 @@ interface WheelProps {
 }
 
 function WheelColumn({ data, selected, onChange, accent, width, testID }: Readonly<WheelProps>) {
+  const { colors } = useTheme();
   const ref = useRef<FlatList>(null);
   const idx = data.findIndex(i => i.value === selected);
   const momentumStarted = useRef(false);
@@ -82,7 +84,7 @@ function WheelColumn({ data, selected, onChange, accent, width, testID }: Readon
                 ref.current?.scrollToOffset({ offset: index * ITEM_H, animated: true });
               }}
             >
-              <Text style={[wh.text, sel && { color: accent, fontWeight: '800', fontSize: 17 }]}>
+              <Text style={[wh.text, { color: colors.textSecondary }, sel && { color: accent, fontWeight: '800', fontSize: 17 }]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -97,7 +99,7 @@ const wh = StyleSheet.create({
   col:       { height: WHEEL_H, overflow: 'hidden' },
   highlight: { position: 'absolute', left: 4, right: 4, height: ITEM_H, borderRadius: LAYOUT.HIGHLIGHT_BORDER_RADIUS, borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.03)', zIndex: 1 },
   item:      { height: ITEM_H, justifyContent: 'center', alignItems: 'center' },
-  text:      { fontSize: 15, color: COLORS.textSecondary, fontWeight: '500' },
+  text:      { fontSize: 15, fontWeight: '500' },
 });
 
 // ── DatePickerField ────────────────────────────────────────────────────────────
@@ -109,9 +111,11 @@ interface Props {
 }
 
 export function DatePickerField({
-  value, onChange, accentColor = COLORS.primary, label,
+  value, onChange, accentColor, label,
 }: Readonly<Props>) {
   const { t, ta } = useI18n();
+  const { colors } = useTheme();
+  const resolvedAccentColor = accentColor ?? colors.primary;
   // Pull locale-aware month names from catalogue
   const MONTHS: string[] = ta('datePicker.months');
 
@@ -143,34 +147,34 @@ export function DatePickerField({
 
   return (
     <>
-      {label && <Text style={f.label}>{label}</Text>}
+      {label && <Text style={[f.label, { color: colors.textSecondary }]}>{label}</Text>}
 
-      <TouchableOpacity style={[f.btn, { borderColor: accentColor }]} onPress={openPicker} testID="date-picker-btn">
-        <Ionicons name="calendar-outline" size={18} color={COLORS.textSecondary} style={f.icon} />
-        <Text style={f.val}>{toDisplay(value)}</Text>
-        <Ionicons name="chevron-down" size={14} color={accentColor} />
+      <TouchableOpacity style={[f.btn, { borderColor: resolvedAccentColor, backgroundColor: colors.surface }]} onPress={openPicker} testID="date-picker-btn">
+        <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} style={f.icon} />
+        <Text style={[f.val, { color: colors.text }]}>{toDisplay(value)}</Text>
+        <Ionicons name="chevron-down" size={14} color={resolvedAccentColor} />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="slide">
         <View style={f.overlay}>
-          <View style={f.sheet}>
-            <View style={f.header}>
+          <View style={[f.sheet, { backgroundColor: colors.surface }]}>
+            <View style={[f.header, { borderBottomColor: colors.border }]}>
               <TouchableOpacity onPress={() => setOpen(false)} testID="date-picker-cancel">
-                <Text style={[f.hBtn, { color: COLORS.textSecondary }]}>{t('datePicker.cancel')}</Text>
+                <Text style={[f.hBtn, { color: colors.textSecondary }]}>{t('datePicker.cancel')}</Text>
               </TouchableOpacity>
-              <Text style={f.hTitle}>{t('datePicker.title')}</Text>
+              <Text style={[f.hTitle, { color: colors.text }]}>{t('datePicker.title')}</Text>
               <TouchableOpacity onPress={confirm} testID="date-picker-confirm">
-                <Text style={[f.hBtn, { color: accentColor }]}>{t('datePicker.confirm')}</Text>
+                <Text style={[f.hBtn, { color: resolvedAccentColor }]}>{t('datePicker.confirm')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={f.wheels}>
-              <WheelColumn data={dayData}   selected={clampedD} onChange={setPd} accent={accentColor} width={64}  testID="date-picker-day-wheel" />
-              <WheelColumn data={monthData} selected={pm}       onChange={setPm} accent={accentColor}              testID="date-picker-month-wheel" />
-              <WheelColumn data={yearData}  selected={py}       onChange={setPy} accent={accentColor} width={76}  testID="date-picker-year-wheel" />
+              <WheelColumn data={dayData}   selected={clampedD} onChange={setPd} accent={resolvedAccentColor} width={64}  testID="date-picker-day-wheel" />
+              <WheelColumn data={monthData} selected={pm}       onChange={setPm} accent={resolvedAccentColor}              testID="date-picker-month-wheel" />
+              <WheelColumn data={yearData}  selected={py}       onChange={setPy} accent={resolvedAccentColor} width={76}  testID="date-picker-year-wheel" />
             </View>
 
-            <Text style={f.preview} testID="date-picker-preview">
+            <Text style={[f.preview, { color: colors.textSecondary }]} testID="date-picker-preview">
               {String(clampedD).padStart(2, '0')} {MONTHS[pm]} {py}
             </Text>
           </View>
@@ -181,15 +185,15 @@ export function DatePickerField({
 }
 
 const f = StyleSheet.create({
-  label:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  btn:     { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1.5, marginBottom: 16 },
+  label:   { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  btn:     { flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1.5, marginBottom: 16 },
   icon:    { marginRight: 10 },
-  val:     { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.text },
+  val:     { flex: 1, fontSize: 16, fontWeight: '600' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheet:   { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16 },
-  header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  hTitle:  { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  sheet:   { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingHorizontal: 16 },
+  header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
+  hTitle:  { fontSize: 16, fontWeight: '700' },
   hBtn:    { fontSize: 15, fontWeight: '600' },
   wheels:  { flexDirection: 'row', marginTop: 8 },
-  preview: { textAlign: 'center', fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, paddingVertical: 12 },
+  preview: { textAlign: 'center', fontSize: 14, fontWeight: '600', paddingVertical: 12 },
 });

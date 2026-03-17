@@ -4,7 +4,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../src/utils/theme';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
@@ -55,13 +54,13 @@ export default function DashboardScreen() {
                 <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
                 {ageText && (
                   <View style={styles.ageRow}>
-                    <Ionicons name="gift-outline" size={12} color={COLORS.textSecondary} />
-                    <Text style={styles.profileAge}>{ageText}</Text>
+                    <Ionicons name="gift-outline" size={12} color={colors.textSecondary} />
+                    <Text style={[styles.profileAge, { color: colors.textSecondary }]}>{ageText}</Text>
                   </View>
                 )}
               </View>
             </View>
-            <Text style={styles.profileGreeting}>{getGreeting(name, sex, t)}</Text>
+            <Text style={[styles.profileGreeting, { color: colors.textSecondary }]}>{getGreeting(name, sex, t)}</Text>
           </View>
         )}
 
@@ -81,7 +80,7 @@ export default function DashboardScreen() {
           <Card style={styles.chartCard}>
             <View style={styles.sectionTitleRow}>
               <Ionicons name="bar-chart-outline" size={16} color={colors.primary} testID="home-monthly-progress-icon" />
-              <Text style={styles.sectionTitle}>{t('dashboard.monthlyProgress')}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('dashboard.monthlyProgress')}</Text>
             </View>
             <View style={styles.barChart}>
               {(() => {
@@ -93,7 +92,7 @@ export default function DashboardScreen() {
                     <View style={styles.barWrapper}>
                       <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: colors.primary }]} />
                     </View>
-                    <Text style={styles.barLabel} testID={`bar-label-${m.month}`}>{formatMonth(m.month, showYear)}</Text>
+                    <Text style={[styles.barLabel, { color: colors.textSecondary }]} testID={`bar-label-${m.month}`}>{formatMonth(m.month, showYear)}</Text>
                     <Text style={[styles.barValue, { color: colors.primary }]} testID={`bar-value-${m.month}`}>{m.count}</Text>
                   </View>
                 ));
@@ -107,7 +106,7 @@ export default function DashboardScreen() {
           <Card>
             <View style={styles.sectionTitleRow}>
               <Ionicons name="pricetags-outline" size={16} color={colors.secondary} testID="home-category-icon" />
-              <Text style={styles.sectionTitle}>{t('dashboard.byCategory')}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('dashboard.byCategory')}</Text>
             </View>
             {visibleCategoryCounts.map(cat => {
               const max = visibleCategoryCounts[0]?.count || 1;
@@ -116,10 +115,10 @@ export default function DashboardScreen() {
                   <Text style={styles.catEmoji}>{cat.emoji}</Text>
                   <View style={styles.catInfo}>
                     <View style={styles.catHeader}>
-                      <Text style={styles.catName}>{categoryName(cat.name)}</Text>
+                      <Text style={[styles.catName, { color: colors.text }]}>{categoryName(cat.name)}</Text>
                       <Text style={[styles.catCount, { color: cat.color }]} testID={`cat-count-${cat.name}`}>{cat.count}</Text>
                     </View>
-                    <View style={styles.progressBg}>
+                    <View style={[styles.progressBg, { backgroundColor: colors.border }]}>
                       <View style={[styles.progressFill, { width: `${(cat.count / max) * 100}%`, backgroundColor: cat.color }]} />
                     </View>
                   </View>
@@ -134,7 +133,7 @@ export default function DashboardScreen() {
           <Card testID="recent-words-section">
             <View style={styles.sectionTitleRow}>
               <Ionicons name="sparkles-outline" size={16} color={colors.accent} testID="home-recent-words-icon" />
-              <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('dashboard.recentWords')}</Text>
             </View>
             <View style={styles.wordCloud}>
               {stats.recentWords.map((w, i) => (
@@ -155,8 +154,8 @@ export default function DashboardScreen() {
         {!stats?.totalWords && (
           <View style={styles.emptyHero}>
             <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>{t('dashboard.emptyTitle')}</Text>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               {name
                 ? t('dashboard.emptyTextWithName', { name })
                 : t('dashboard.emptyText')}
@@ -171,40 +170,40 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.background },
-  container: { flex: 1, backgroundColor: COLORS.background },
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   content: { padding: 20 },
   profileBlock: { alignItems: 'center', marginBottom: 20 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   profileEmoji: { fontSize: 40 },
-  profileName: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  profileName: { fontSize: 20, fontWeight: '900' },
   ageRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  profileAge: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
-  profileGreeting: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 18 },
+  profileAge: { fontSize: 12, fontWeight: '600' },
+  profileGreeting: { fontSize: 13, textAlign: 'center', lineHeight: 18 },
   statsGrid: { flexDirection: 'row', marginBottom: 8 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  sectionTitle: { fontSize: 16, fontWeight: '800' },
   chartCard: { marginBottom: 12 },
   barChart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 120 },
   barItem: { alignItems: 'center', flex: 1 },
   barWrapper: { height: 100, justifyContent: 'flex-end', width: '100%', paddingHorizontal: 4 },
   bar: { borderRadius: 6, width: '100%', minHeight: 4 },
-  barLabel: { fontSize: 10, color: COLORS.textSecondary, marginTop: 4 },
+  barLabel: { fontSize: 10, marginTop: 4 },
   barValue: { fontSize: 11, fontWeight: '700' },
   categoryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   catEmoji: { fontSize: 22, marginRight: 12 },
   catInfo: { flex: 1 },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  catName: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  catName: { fontSize: 14, fontWeight: '600' },
   catCount: { fontSize: 14, fontWeight: '800' },
-  progressBg: { height: 6, backgroundColor: COLORS.border, borderRadius: 3 },
+  progressBg: { height: 6, borderRadius: 3 },
   progressFill: { height: 6, borderRadius: 3 },
   wordCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   wordChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   wordChipText: { fontSize: 14, fontWeight: '600' },
   emptyHero: { alignItems: 'center', paddingVertical: 40 },
   emptyIcon: { marginBottom: 16 },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
-  emptyText: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
   bottomSpacer: { height: 20 },
 });

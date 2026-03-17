@@ -1,17 +1,18 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import { COLORS } from '../utils/theme';
 import { useI18n } from '../i18n/i18n';
+import { useTheme } from '../hooks/useTheme';
 
 export function BrandHeader() {
   const { t } = useI18n();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
       <Image source={require('@/assets/icon.png')} style={styles.icon} />
       <View>
-        <Text style={styles.title}>{t('brandHeader.appName')}</Text>
-        <Text style={styles.tagline}>{t('brandHeader.tagline')}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('brandHeader.appName')}</Text>
+        <Text style={[styles.tagline, { color: colors.textMuted }]}>{t('brandHeader.tagline')}</Text>
       </View>
     </View>
   );
@@ -33,12 +34,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '900',
-    color: COLORS.text,
     lineHeight: 29,
   },
   tagline: {
     fontSize: 12,
-    color: COLORS.textLight,
     fontStyle: 'italic',
     lineHeight: 15,
   },

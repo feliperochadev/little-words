@@ -3,7 +3,7 @@ import { View, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { initDatabase } from '../src/db/init';
 import { runMigrations } from '../src/db/migrator';
-import { COLORS } from '../src/utils/theme';
+import { colors } from '../src/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 
 export default function Index() {
@@ -31,6 +31,6 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
+  splash: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   icon: { width: 100, height: 100, borderRadius: 24 },
 });

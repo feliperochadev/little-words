@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_11
+
+[fix] Resolve deprecated `COLORS` bridge usage on Sonar-scoped runtime files.
+
+- Migrated deprecated bridge color references in:
+  - `app/loading.tsx`
+  - `app/index.tsx`
+  - `app/(tabs)/home.tsx`
+  - `app/onboarding.tsx`
+  - `src/components/BrandHeader.tsx`
+  - `src/components/DatePickerField.tsx`
+  - `src/components/ManageCategoryModal.tsx`
+- Migration strategy:
+  - startup/static surfaces now import canonical tokens from `src/theme`,
+  - runtime-reactive components now read colors via `useTheme()`.
+- Validation:
+  - targeted suites for touched files passed,
+  - `npm run ci` passed.
+
+---
+
 ### 2026-03-17_10
 
 [fix] Replace remaining UI-chrome emojis with semantic Ionicons across key screens and modals.
