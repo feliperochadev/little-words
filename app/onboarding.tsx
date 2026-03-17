@@ -7,12 +7,13 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors as THEME_COLORS } from '../src/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { getThemeForSex } from '../src/theme/getThemeForSex';
 import { BrandHeader } from '../src/components/BrandHeader';
+import { Button } from '../src/components/UIComponents';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate, daysInMonth } from '../src/utils/dateHelpers';
 
@@ -118,6 +119,11 @@ const wheelStyles = StyleSheet.create({
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t, ta, locale, setLocale } = useI18n();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const isEditMode = edit === 'true';
+
+  // Stored profile — used to pre-fill fields in edit mode
+  const { name: storedName, sex: storedSex, birth: storedBirth } = useSettingsStore();
 
   // Months come from the translation catalogue so they're locale-aware
   const MONTHS: string[] = ta('datePicker.months');
@@ -126,9 +132,13 @@ export default function OnboardingScreen() {
   const MIN_YEAR = currentYear - 8;
   const MAX_YEAR = currentYear;
 
-  const [name, setName] = useState('');
-  const [sex, setSex] = useState<'boy' | 'girl' | null>(null);
-  const [birthDate, setBirthDate] = useState<Date | null>(null);
+  const [name, setName] = useState(() => isEditMode ? (storedName ?? '') : '');
+  const [sex, setSex] = useState<'boy' | 'girl' | null>(() => isEditMode ? (storedSex ?? null) : null);
+  const [birthDate, setBirthDate] = useState<Date | null>(() => {
+    if (!isEditMode || !storedBirth) return null;
+    const [y, m, d] = storedBirth.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  });
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -211,17 +221,40 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)/home');
   };
 
+  const handleEditSave = async () => {
+    if (!name.trim()) { Alert.alert(t('common.attention'), t('onboarding.errorName')); return; }
+    if (!sex) { Alert.alert(t('common.attention'), t('onboarding.errorSex')); return; }
+    if (!birthDate) { Alert.alert(t('common.attention'), t('onboarding.errorBirth')); return; }
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (birthDate > today) { Alert.alert(t('common.attention'), t('onboarding.errorFutureDate')); return; }
+    setLoading(true);
+    await useSettingsStore.getState().setProfile({
+      name: name.trim(),
+      sex,
+      birth: toStorageDate(birthDate),
+    });
+    setLoading(false);
+    router.back();
+  };
+
   const birthArticle = isBoy ? t('onboarding.bornOnMale') : t('onboarding.bornOn');
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        <BrandHeader />
+        {!isEditMode && <BrandHeader />}
 
-        <Text style={styles.emoji}>{profileEmoji}</Text>
-        <Text style={styles.title}>{t('onboarding.welcome')}</Text>
-        <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
+        {isEditMode ? (
+          <Text style={styles.editTitle} testID="onboarding-edit-title">{t('settings.editProfile')}</Text>
+        ) : (
+          <>
+            <Text style={styles.emoji}>{profileEmoji}</Text>
+            <Text style={styles.title}>{t('onboarding.welcome')}</Text>
+            <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
+          </>
+        )}
 
         {/* ── Language selector ── */}
         <View style={styles.field}>
@@ -321,19 +354,38 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        {allFilled && (
-        <TouchableOpacity
-          style={[styles.continueBtn, { backgroundColor: accentColor }]}
-          onPress={handleContinue}
-          disabled={loading}
-          testID="onboarding-continue-btn"
-        >
-          <Text style={styles.continueBtnText}>
-            {loading
-              ? t('onboarding.saving')
-              : t('onboarding.continueBtn', { name: name || t('common.ok') })}
-          </Text>
-        </TouchableOpacity>
+        {isEditMode ? (
+          <View style={styles.editActions} testID="onboarding-edit-actions">
+            <Button
+              title={t('common.cancel')}
+              onPress={() => router.back()}
+              variant="outline"
+              style={styles.editActionBtn}
+              testID="onboarding-cancel-btn"
+            />
+            <Button
+              title={loading ? t('onboarding.saving') : t('common.save')}
+              onPress={handleEditSave}
+              loading={loading}
+              style={styles.editActionBtn}
+              testID="onboarding-save-btn"
+            />
+          </View>
+        ) : (
+          allFilled && (
+            <TouchableOpacity
+              style={[styles.continueBtn, { backgroundColor: accentColor }]}
+              onPress={handleContinue}
+              disabled={loading}
+              testID="onboarding-continue-btn"
+            >
+              <Text style={styles.continueBtnText}>
+                {loading
+                  ? t('onboarding.saving')
+                  : t('onboarding.continueBtn', { name: name || t('common.ok') })}
+              </Text>
+            </TouchableOpacity>
+          )
         )}
 
         <View style={styles.bottomSpacer} />
@@ -475,5 +527,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
   continueBtnText: { color: THEME_COLORS.textOnPrimary, fontSize: 17, fontWeight: '800' },
+  // Edit mode
+  editTitle: { fontSize: 26, fontWeight: '900', color: THEME_COLORS.text, marginBottom: 24, alignSelf: 'flex-start' },
+  editActions: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
+  editActionBtn: { flex: 1 },
   bottomSpacer: { height: 40 },
 });

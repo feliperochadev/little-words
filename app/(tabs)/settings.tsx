@@ -10,6 +10,7 @@ import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCatego
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
+import { formatDisplayDate } from '../../src/utils/dateHelpers';
 import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
 import { ImportModal } from '../../src/components/ImportModal';
@@ -32,7 +33,13 @@ export default function SettingsScreen() {
   const csvHeader = buildCSVHeader(t);
 
   const { data: categories = [] } = useCategories();
-  const { name: childName, sex: childSex } = useSettingsStore();
+  const { name: childName, sex: childSex, birth: childBirth } = useSettingsStore();
+
+  const emojiBySex = { girl: '👧', boy: '👦' } as const;
+  const profileEmoji = childSex === 'girl' || childSex === 'boy' ? emojiBySex[childSex] : '👶';
+  const childBirthDate: Date | null = childBirth
+    ? (() => { const [y, m, d] = childBirth.split('-').map(Number); return new Date(y, m - 1, d); })()
+    : null;
 
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -105,12 +112,21 @@ export default function SettingsScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 {t('settings.babyProfile')}
               </Text>
-            <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => router.push('/onboarding')} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
+            <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => router.push('/onboarding?edit=true')} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
               <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfile')}</Text>
             </TouchableOpacity>
           </View>
           {childName ? (
-            <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{childName} · {sexLabel}</Text>
+            <>
+              <Text style={[styles.sectionDesc, { color: colors.textSecondary }]} testID="settings-profile-name">
+                {profileEmoji} {childName} · {sexLabel}
+              </Text>
+              {childBirthDate ? (
+                <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
+                  {formatDisplayDate(childBirthDate)}
+                </Text>
+              ) : null}
+            </>
           ) : (
             <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.noProfile')}</Text>
           )}
@@ -296,6 +312,7 @@ const styles = StyleSheet.create({
   addCategoryBtnText: { fontWeight: '700', fontSize: 14 },
   editProfileBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700' },
+  profileBirth: { fontSize: 12, marginTop: 2 },
   // Language picker
   languageRow: { flexDirection: 'row', gap: 10 },
   langBtn: {

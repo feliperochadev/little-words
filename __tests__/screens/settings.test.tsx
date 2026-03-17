@@ -202,16 +202,46 @@ describe('SettingsScreen', () => {
     expect(await findByText('English')).toBeTruthy();
   });
 
-  it('renders boy emoji and label when sex is boy', async () => {
+  it('renders boy emoji in profile name row', async () => {
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/Leo · /)).toBeTruthy();
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const nameEl = await findByTestId('settings-profile-name');
+    const children = nameEl.props.children;
+    const text = Array.isArray(children) ? children.join('') : String(children);
+    expect(text).toContain('👦');
+    expect(text).toContain('Leo');
   });
 
-  it('renders neutral emoji when sex is undefined', async () => {
+  it('renders neutral emoji when sex is null', async () => {
     useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    expect(await findByText(/Baby · /)).toBeTruthy();
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const nameEl = await findByTestId('settings-profile-name');
+    const children = nameEl.props.children;
+    const text = Array.isArray(children) ? children.join('') : String(children);
+    expect(text).toContain('👶');
+    expect(text).toContain('Baby');
+  });
+
+  it('renders girl emoji when sex is girl', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const nameEl = await findByTestId('settings-profile-name');
+    const children = nameEl.props.children;
+    const text = Array.isArray(children) ? children.join('') : String(children);
+    expect(text).toContain('👧');
+  });
+
+  it('renders birth date when birth is set', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-profile-birth')).toBeTruthy();
+  });
+
+  it('does not render birth date element when birth is empty', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { queryByTestId, findByTestId } = renderWithProviders(<SettingsScreen />);
+    await findByTestId('settings-profile-name');
+    expect(queryByTestId('settings-profile-birth')).toBeNull();
   });
 
   it('renders no profile message when name is empty', async () => {
@@ -220,12 +250,12 @@ describe('SettingsScreen', () => {
     expect(await findByText(/no profile/i)).toBeTruthy();
   });
 
-  it('navigates to onboarding when edit profile is pressed', async () => {
+  it('navigates to onboarding with edit=true when edit profile is pressed', async () => {
     const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-edit-profile-btn'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding');
+    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding?edit=true');
   });
 
   it('handles clear data double confirmation', async () => {

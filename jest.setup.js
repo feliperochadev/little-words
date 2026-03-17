@@ -115,6 +115,7 @@ jest.mock('expo-router', () => {
       push: jest.fn(),
       back: jest.fn(),
     })),
+    useLocalSearchParams: jest.fn(() => ({})),
     useFocusEffect: jest.fn((cb) => {
       const React = require('react');
       React.useEffect(() => { const cleanup = cb(); return typeof cleanup === 'function' ? cleanup : undefined; }, []);

@@ -2,6 +2,28 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_16
+
+[feature] Baby Profile card: show sex emoji + birth date; Onboarding edit mode with Cancel/Save.
+
+- `app/(tabs)/settings.tsx`:
+  - Baby Profile card now shows sex emoji (👧/👦/👶) inline with child's name.
+  - Displays formatted birth date below name row when `birth` is set.
+  - Edit Profile button now navigates to `/onboarding?edit=true`.
+- `app/onboarding.tsx`:
+  - Detects `edit=true` query param via `useLocalSearchParams`.
+  - In edit mode: hides BrandHeader/emoji/title/subtitle; shows "Edit Profile" page title.
+  - Pre-fills name, sex, and birth date from `useSettingsStore` when in edit mode.
+  - Replaces the Continue button with Cancel (outline) + Save (primary) row in edit mode.
+  - Save validates fields, calls `setProfile()` only (not `setOnboardingDone()`), then `router.back()`.
+  - Cancel calls `router.back()` — discards local state changes.
+- `jest.setup.js`: added `useLocalSearchParams` mock to expo-router global mock.
+- `__tests__/screens/settings.test.tsx`: updated emoji tests to use `testID`-based assertions; added birth date display and null-birth tests; updated router push assertion to `/onboarding?edit=true`.
+- `__tests__/screens/onboarding.test.tsx`: added 10 edit mode tests covering pre-fill, button visibility, Cancel, Save (happy path + 3 validation paths).
+- Validation: `npm run ci` passed (57/57 suites).
+
+---
+
 ### 2026-03-17_14
 
 [config] Remove deprecated `src/utils/theme.ts` bridge and migrate remaining consumers.
