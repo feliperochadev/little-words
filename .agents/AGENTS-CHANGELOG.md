@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_1
+
+[config] Add `ui-changes` plan folder for UI, UX, and Design System planning artifacts.
+
+- `.agents/plan/ui-changes/README.md`: New folder with README documenting when to use it (design system updates, component library changes, layout redesigns, theme/branding updates, accessibility improvements), file naming convention (`YYYY-MM-DD_NN-<slug>.md`), and template guidance.
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: Added **UI/UX & Design System changes** bullet to the `/plan` section under Rule 10, pointing to `.agents/plan/ui-changes/YYYY-MM-DD_NN-<slug>.md` with a reference to the README.
+
+---
+
 ### 2026-03-16_1
 
 [config] Enhance `/implement` command with implementation tracking, status lifecycle, and concurrent-implementation isolation via git worktrees.
