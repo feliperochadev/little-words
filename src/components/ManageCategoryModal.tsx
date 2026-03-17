@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Alert, Animated,
 } from 'react-native';
 import { COLORS } from '../utils/theme';
-import { getWordCountByCategory } from '../database/database';
+import { getWordCountByCategory } from '../services/categoryService';
 import { useDeleteCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

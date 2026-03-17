@@ -1,13 +1,22 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import Index from '../../app/index';
-import * as db from '../../src/database/database';
 import { useRouter } from 'expo-router';
+import * as initModule from '../../src/db/init';
+import * as settingsService from '../../src/services/settingsService';
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/db/init', () => ({
   initDatabase: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/db/migrator', () => ({
+  runMigrations: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
+  setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('Index', () => {
@@ -21,8 +30,8 @@ describe('Index', () => {
   it('navigates to onboarding when not done', async () => {
     const replace = jest.fn();
     (useRouter as jest.Mock).mockReturnValue({ replace, push: jest.fn(), back: jest.fn() });
-    (db.initDatabase as jest.Mock).mockResolvedValue(undefined);
-    (db.getSetting as jest.Mock).mockResolvedValue(null);
+    (initModule.initDatabase as jest.Mock).mockResolvedValue(undefined);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
     render(<Index />);
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/onboarding');
@@ -32,8 +41,8 @@ describe('Index', () => {
   it('navigates to home when onboarding done', async () => {
     const replace = jest.fn();
     (useRouter as jest.Mock).mockReturnValue({ replace, push: jest.fn(), back: jest.fn() });
-    (db.initDatabase as jest.Mock).mockResolvedValue(undefined);
-    (db.getSetting as jest.Mock).mockResolvedValue('1');
+    (initModule.initDatabase as jest.Mock).mockResolvedValue(undefined);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue('1');
     render(<Index />);
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/(tabs)/home');

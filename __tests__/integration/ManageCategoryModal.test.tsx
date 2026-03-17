@@ -3,17 +3,22 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, PanResponder } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { ManageCategoryModal } from '../../src/components/ManageCategoryModal';
-import * as database from '../../src/database/database';
+import * as categoryService from '../../src/services/categoryService';
+import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
   getWordCountByCategory: jest.fn().mockResolvedValue(0),
   unlinkWordsFromCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategoryWithUnlink: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
@@ -163,7 +168,7 @@ describe('ManageCategoryModal', () => {
   });
 
   it('shows word count in delete message when words exist', async () => {
-    (database.getWordCountByCategory as jest.Mock).mockResolvedValue(3);
+    (categoryService.getWordCountByCategory as jest.Mock).mockResolvedValue(3);
     const { findByText } = renderModal();
     fireEvent.press(await findByText(/Delete category/));
     await waitFor(() => {

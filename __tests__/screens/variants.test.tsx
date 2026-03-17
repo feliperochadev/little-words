@@ -2,21 +2,26 @@ import React from 'react';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
-jest.mock('../../src/database/database', () => {
-  const actual = jest.requireActual('../../src/database/database');
-  return {
-    ...actual,
-    getAllVariants: jest.fn(),
-    getWords: jest.fn().mockResolvedValue([
-      { id: 1, word: 'mamãe', category_id: 1, date_added: '2024-01-15', notes: null, created_at: '2024-01-15' },
-    ]),
-    getSetting: jest.fn().mockResolvedValue(null),
-    setSetting: jest.fn().mockResolvedValue(undefined),
-  };
-});
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
+  getAllVariants: jest.fn(),
+}));
+
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
+  getWords: jest.fn().mockResolvedValue([
+    { id: 1, word: 'mamãe', category_id: 1, date_added: '2024-01-15', notes: null, created_at: '2024-01-15' },
+  ]),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
+  getSetting: jest.fn().mockResolvedValue(null),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+}));
 
 import VariantsScreen from '../../app/(tabs)/variants';
-import * as db from '../../src/database/database';
+import * as db from '../../src/services/variantService';
 
 const sampleVariants = [
   { id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-15', notes: 'close', created_at: '2024-01-15', main_word: 'mamãe' },

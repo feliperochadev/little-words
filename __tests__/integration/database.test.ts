@@ -1,5 +1,5 @@
+import { initDatabase } from '../../src/db/init';
 import {
-  initDatabase,
   getCategories,
   addCategory,
   updateCategory,
@@ -7,22 +7,28 @@ import {
   deleteCategoryWithUnlink,
   getWordCountByCategory,
   unlinkWordsFromCategory,
+} from '../../src/repositories/categoryRepository';
+import {
   getWords,
   addWord,
   updateWord,
   deleteWord,
   findWordByName,
   getVariantsByWord,
+} from '../../src/repositories/wordRepository';
+import {
   getAllVariants,
   addVariant,
   updateVariant,
   deleteVariant,
-  getDashboardStats,
+} from '../../src/repositories/variantRepository';
+import { getDashboardStats } from '../../src/services/dashboardService';
+import {
   getSetting,
   setSetting,
-  getAllDataForCSV,
   clearAllData,
-} from '../../src/database/database';
+} from '../../src/repositories/settingsRepository';
+import { getAllDataForCSV } from '../../src/utils/csvExport';
 
 const mockDb = (globalThis as any).__mockDb;
 
@@ -51,7 +57,7 @@ describe('database', () => {
 
   describe('getCategories', () => {
     it('returns categories from the database', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([
         { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
       ]);
       const result = await getCategories();
@@ -60,7 +66,7 @@ describe('database', () => {
     });
 
     it('returns empty array when no categories', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       const result = await getCategories();
       expect(result).toHaveLength(0);
     });
@@ -68,16 +74,16 @@ describe('database', () => {
 
   describe('addCategory', () => {
     it('inserts and returns the new id', async () => {
-      (mockDb.runSync as jest.Mock).mockReturnValueOnce({ lastInsertRowId: 5, changes: 1 });
+      (mockDb.runAsync as jest.Mock).mockResolvedValueOnce({ lastInsertRowId: 5, changes: 1 });
       const id = await addCategory('TestCat', '#000', '🎯');
       expect(id).toBe(5);
     });
   });
 
   describe('updateCategory', () => {
-    it('calls runSync with correct params', async () => {
+    it('calls runAsync with correct params', async () => {
       await updateCategory(1, 'Updated', '#FFF', '✨');
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE categories'),
         ['Updated', '#FFF', '✨', 1]
       );
@@ -85,9 +91,9 @@ describe('database', () => {
   });
 
   describe('deleteCategory', () => {
-    it('calls runSync with correct id', async () => {
+    it('calls runAsync with correct id', async () => {
       await deleteCategory(3);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM categories'),
         [3]
       );
@@ -97,34 +103,32 @@ describe('database', () => {
   describe('deleteCategoryWithUnlink', () => {
     it('runs both UPDATE and DELETE inside a transaction', async () => {
       await deleteCategoryWithUnlink(3);
-      expect(mockDb.withTransactionSync).toHaveBeenCalled();
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.withTransactionAsync).toHaveBeenCalled();
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE words SET category_id = NULL'),
         [3]
       );
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM categories'),
         [3]
       );
     });
 
     it('rejects when the transaction throws', async () => {
-      (mockDb.withTransactionSync as jest.Mock).mockImplementationOnce(() => {
-        throw new Error('DB locked');
-      });
+      (mockDb.withTransactionAsync as jest.Mock).mockRejectedValueOnce(new Error('DB locked'));
       await expect(deleteCategoryWithUnlink(3)).rejects.toThrow('DB locked');
     });
   });
 
   describe('getWordCountByCategory', () => {
     it('returns count from query', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([{ count: 5 }]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([{ count: 5 }]);
       const count = await getWordCountByCategory(1);
       expect(count).toBe(5);
     });
 
     it('returns 0 when no results', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([{}]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([{}]);
       const count = await getWordCountByCategory(1);
       expect(count).toBe(0);
     });
@@ -133,7 +137,7 @@ describe('database', () => {
   describe('unlinkWordsFromCategory', () => {
     it('sets category_id to NULL for words in the category', async () => {
       await unlinkWordsFromCategory(2);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE words SET category_id = NULL'),
         [2]
       );
@@ -142,7 +146,7 @@ describe('database', () => {
 
   describe('getWords', () => {
     it('returns words without search', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([
         { id: 1, word: 'mamãe', category_id: 1, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
       ]);
       const result = await getWords();
@@ -150,31 +154,31 @@ describe('database', () => {
     });
 
     it('filters by search term', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       await getWords('mama');
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
         expect.stringContaining('LIKE'),
         ['%mama%']
       );
     });
 
     it('handles empty search string', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       await getWords('   ');
       // Should not use LIKE clause for whitespace-only search
-      expect(mockDb.getAllSync).toHaveBeenCalled();
+      expect(mockDb.getAllAsync).toHaveBeenCalled();
     });
   });
 
   describe('addWord', () => {
     it('returns inserted id', async () => {
-      (mockDb.runSync as jest.Mock).mockReturnValueOnce({ lastInsertRowId: 10, changes: 1 });
+      (mockDb.runAsync as jest.Mock).mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 });
       const id = await addWord('hello', 1, '2024-01-01', 'note');
       expect(id).toBe(10);
     });
 
     it('handles null category and notes', async () => {
-      (mockDb.runSync as jest.Mock).mockReturnValueOnce({ lastInsertRowId: 11, changes: 1 });
+      (mockDb.runAsync as jest.Mock).mockResolvedValueOnce({ lastInsertRowId: 11, changes: 1 });
       const id = await addWord('hello', null, '2024-01-01');
       expect(id).toBe(11);
     });
@@ -183,7 +187,7 @@ describe('database', () => {
   describe('updateWord', () => {
     it('updates word record', async () => {
       await updateWord(1, 'updated', 2, '2024-02-01', 'new note');
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE words'),
         ['updated', 2, '2024-02-01', 'new note', 1]
       );
@@ -192,8 +196,9 @@ describe('database', () => {
 
   describe('deleteWord', () => {
     it('deletes word by id', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]); // getVariantsByWord
       await deleteWord(5);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM words'),
         [5]
       );
@@ -203,13 +208,13 @@ describe('database', () => {
   describe('findWordByName', () => {
     it('returns word when found', async () => {
       const word = { id: 1, word: 'mamãe', category_id: 1, date_added: '2024-01-01' };
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([word]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([word]);
       const result = await findWordByName('mamãe');
       expect(result).toEqual(word);
     });
 
     it('returns null when not found', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       const result = await findWordByName('nonexistent');
       expect(result).toBeNull();
     });
@@ -217,7 +222,7 @@ describe('database', () => {
 
   describe('variants', () => {
     it('getVariantsByWord returns variants', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([
         { id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-01' },
       ]);
       const result = await getVariantsByWord(1);
@@ -225,25 +230,25 @@ describe('database', () => {
     });
 
     it('getAllVariants returns all variants with main word', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       const result = await getAllVariants();
       expect(result).toEqual([]);
     });
 
     it('addVariant returns inserted id', async () => {
-      (mockDb.runSync as jest.Mock).mockReturnValueOnce({ lastInsertRowId: 7, changes: 1 });
+      (mockDb.runAsync as jest.Mock).mockResolvedValueOnce({ lastInsertRowId: 7, changes: 1 });
       const id = await addVariant(1, 'mamá', '2024-01-01', 'note');
       expect(id).toBe(7);
     });
 
     it('updateVariant updates record', async () => {
       await updateVariant(1, 'mamã', '2024-02-01', 'updated note');
-      expect(mockDb.runSync).toHaveBeenCalled();
+      expect(mockDb.runAsync).toHaveBeenCalled();
     });
 
     it('deleteVariant deletes record', async () => {
       await deleteVariant(3);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM variants'),
         [3]
       );
@@ -252,7 +257,7 @@ describe('database', () => {
 
   describe('getDashboardStats', () => {
     it('returns stats object with correct shape', async () => {
-      (mockDb.getAllSync as jest.Mock).mockImplementation(() => [{ count: 0 }]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValue([{ count: 0 }]);
       const stats = await getDashboardStats();
       expect(stats).toHaveProperty('totalWords');
       expect(stats).toHaveProperty('totalVariants');
@@ -267,20 +272,20 @@ describe('database', () => {
 
   describe('settings', () => {
     it('getSetting returns value when found', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([{ value: 'en-US' }]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([{ value: 'en-US' }]);
       const result = await getSetting('app_locale');
       expect(result).toBe('en-US');
     });
 
     it('getSetting returns null when not found', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       const result = await getSetting('nonexistent');
       expect(result).toBeNull();
     });
 
     it('setSetting inserts or replaces', async () => {
       await setSetting('key', 'value');
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT OR REPLACE'),
         ['key', 'value']
       );
@@ -289,7 +294,7 @@ describe('database', () => {
 
   describe('getAllDataForCSV', () => {
     it('returns CSV string with header', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([
         { word: 'mamãe', categoria: 'family', data: '2024-01-01', variante: '' },
       ]);
       const resolver = (name: string) => name;
@@ -299,7 +304,7 @@ describe('database', () => {
     });
 
     it('returns just header for empty data', async () => {
-      (mockDb.getAllSync as jest.Mock).mockReturnValueOnce([]);
+      (mockDb.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
       const resolver = (name: string) => name;
       const csv = await getAllDataForCSV(resolver);
       expect(csv).toContain('palavra,categoria,data,variante');
@@ -309,8 +314,8 @@ describe('database', () => {
   describe('clearAllData', () => {
     it('deletes all tables and re-seeds categories', async () => {
       await clearAllData();
-      expect(mockDb.withTransactionSync).toHaveBeenCalled();
-      expect(mockDb.execSync).toHaveBeenCalled();
+      expect(mockDb.withTransactionAsync).toHaveBeenCalled();
+      expect(mockDb.runAsync).toHaveBeenCalled();
     });
   });
 });

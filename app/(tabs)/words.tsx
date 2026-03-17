@@ -13,7 +13,7 @@ import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCatego
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { sortWords, SortKey } from '../../src/utils/sortHelpers';
 import { useWords } from '../../src/hooks/useWords';
-import type { Word, Variant } from '../../src/database/database';
+import type { Word, Variant } from '../../src/types/domain';
 
 export default function WordsScreen() {
   const { t, tc } = useI18n();
@@ -90,7 +90,7 @@ export default function WordsScreen() {
                 </TouchableOpacity>
                 );
               })()}
-              {item.variant_texts?.split('|||').map((v) => (
+              {item.variant_texts?.split('|||').map((v: string) => (
                 <View key={v} style={styles.variantChip} testID={`word-variant-chip-${v}`}>
                   <Text style={styles.variantChipText}>🗣️ {v}</Text>
                 </View>

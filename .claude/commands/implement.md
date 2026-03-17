@@ -6,6 +6,25 @@ Implement a specific part of an existing plan in a structured and safe way.
 
 ---
 
+## Step 0 — Check for Concurrent Implementations
+
+Before doing anything else, scan `.agents/implementation/` for any `.md` files (excluding `TEMPLATE.md`) that have `status: in progress`.
+
+**If one or more in-progress implementations are found:**
+
+1. Do **not** work directly on the current branch — another agent is already modifying files there.
+2. Create a new git worktree from the current branch:
+   ```
+   git worktree add .worktrees/[implementation-name] -b impl/[implementation-name]
+   ```
+3. All subsequent work in Steps 1–4 takes place inside that worktree.
+4. Record the worktree path in the tracking file (`worktree: .worktrees/[implementation-name]`).
+5. When done, merge the worktree branch back (or open a PR) and remove the worktree with `git worktree remove .worktrees/[implementation-name]`.
+
+**If no in-progress implementations are found:** proceed on the current branch normally.
+
+---
+
 ## Step 1 — Locate the Plan
 
 Search for files matching the given `[implementation-name]` slug across all plan subdirectories:
@@ -18,6 +37,13 @@ Search for files matching the given `[implementation-name]` slug across all plan
 | `.agents/plan/research-documents/` | `[implementation-name]/` (directory) |
 
 If no plan files are found, stop and inform the user. Do not proceed without a matching plan.
+
+**Create the implementation tracking file** at `.agents/implementation/[implementation-name].md` using the template from `.agents/implementation/TEMPLATE.md`. Set:
+- `status: in progress`
+- `started: <today's date>`
+- `agent: <your vendor name>`
+- `plan:` pointing to the plan file(s) found above
+- `worktree: false` (or the worktree path if Step 0 created one)
 
 ---
 
@@ -52,6 +78,21 @@ Follow these rules strictly:
 - **Follow all repository code standards** in `.agents/standards/` relevant to the files being changed.
 - **Write tests** for every change (unit, integration, or screen tests as appropriate). Coverage target: 99% lines, 95% functions/branches/statements.
 - **Run `npm run ci`** after implementation is complete. Do not consider the task done until CI passes.
+
+---
+
+## Step 5 — Mark Implementation as Done
+
+Once CI passes, update `.agents/implementation/[implementation-name].md`:
+
+1. Set `status: done`.
+2. Fill in the `## Changes` table with every file that was created, modified, or deleted.
+3. Add a one-sentence `## Summary` describing what was delivered.
+
+If a worktree was used, merge or open a PR for the worktree branch, then clean it up:
+```
+git worktree remove .worktrees/[implementation-name]
+```
 
 ---
 

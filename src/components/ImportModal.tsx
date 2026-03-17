@@ -8,9 +8,9 @@ import { File as FSFile } from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { COLORS } from '../utils/theme';
-import {
-  getCategories, addCategory, findWordByName, addWord, addVariant,
-} from '../database/database';
+import { getCategories, addCategory } from '../services/categoryService';
+import { findWordByName, addWord } from '../services/wordService';
+import { addVariant } from '../services/variantService';
 import { QUERY_KEYS } from '../hooks/queryKeys';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useI18n } from '../i18n/i18n';

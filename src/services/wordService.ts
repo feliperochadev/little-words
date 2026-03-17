@@ -1,7 +1,7 @@
 import {
   deleteWord as dbDeleteWord,
   getVariantsByWord,
-} from '../database/database';
+} from '../repositories/wordRepository';
 import {
   deleteAllAssetsForParent,
 } from '../utils/assetStorage';
@@ -11,7 +11,8 @@ export {
   findWordByName,
   addWord,
   updateWord,
-} from '../database/database';
+  getVariantsByWord,
+} from '../repositories/wordRepository';
 
 export async function deleteWord(id: number): Promise<void> {
   const variants = await getVariantsByWord(id);
@@ -24,4 +25,4 @@ export async function deleteWord(id: number): Promise<void> {
   }
 }
 
-export type { Word } from '../database/database';
+export type { Word } from '../types/domain';

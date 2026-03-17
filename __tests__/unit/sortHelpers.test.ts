@@ -1,5 +1,5 @@
 import { sortWords, sortVariants } from '../../src/utils/sortHelpers';
-import type { Word, Variant } from '../../src/database/database';
+import type { Word, Variant } from '../../src/types/domain';
 
 const makeWord = (overrides: Partial<Word>): Word => ({
   id: 1,

@@ -12,7 +12,7 @@ import React, {
   createContext, useContext, useState, useEffect, useCallback, useMemo,
   type ReactNode,
 } from 'react';
-import { getSetting, setSetting } from '../database/database';
+import { getSetting, setSetting } from '../services/settingsService';
 import { DEFAULT_CATEGORY_KEY_SET } from '../utils/categoryKeys';
 import ptBR from './pt-BR';
 import enUS from './en-US';

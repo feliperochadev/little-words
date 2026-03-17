@@ -3,17 +3,23 @@ import { waitFor } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 
-jest.mock('../../src/database/database', () => {
-  const actual = jest.requireActual('../../src/database/database');
+jest.mock('../../src/services/dashboardService', () => {
+  const actual = jest.requireActual('../../src/services/dashboardService');
   return {
     ...actual,
     getDashboardStats: jest.fn(),
-    getSetting: jest.fn(),
   };
 });
 
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
+  getSetting: jest.fn(),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+}));
+
 import DashboardScreen from '../../app/(tabs)/home';
-import * as db from '../../src/database/database';
+import * as db from '../../src/services/dashboardService';
+import * as settingsService from '../../src/services/settingsService';
 
 const emptyStats = {
   totalWords: 0, totalVariants: 0, wordsToday: 0,
@@ -32,7 +38,7 @@ const fullStats = {
 describe('DashboardScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (db.getSetting as jest.Mock).mockResolvedValue(null);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
     // Reset store to no-profile state
     useSettingsStore.setState({ name: '', sex: null, birth: '', isOnboardingDone: false, isHydrated: true });
   });

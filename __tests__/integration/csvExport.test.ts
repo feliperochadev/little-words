@@ -16,7 +16,7 @@ describe('csvExport', () => {
 
   describe('shareCSV', () => {
     it('returns success when sharing works', async () => {
-      mockDb.getAllSync.mockReturnValue([{ word: 'hello', categoria: 'test', data: '2024-01-01', variante: '' }]);
+      mockDb.getAllAsync.mockResolvedValue([{ word: 'hello', categoria: 'test', data: '2024-01-01', variante: '' }]);
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
       (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
       const result = await shareCSV(resolver, header, t);
@@ -24,7 +24,7 @@ describe('csvExport', () => {
     });
 
     it('uses locale-aware dialog title from t()', async () => {
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
       (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
       const ptT = (key: string) => ({
@@ -39,7 +39,7 @@ describe('csvExport', () => {
     });
 
     it('returns error when sharing not available', async () => {
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(false);
       const result = await shareCSV(resolver, header, t);
       expect(result.success).toBe(false);
@@ -47,23 +47,23 @@ describe('csvExport', () => {
     });
 
     it('returns error on exception', async () => {
-      mockDb.getAllSync.mockImplementation(() => { throw new Error('fail'); });
+      mockDb.getAllAsync.mockRejectedValue(new Error('fail'));
       const result = await shareCSV(resolver, header, t);
       expect(result.success).toBe(false);
       expect(result.error).toBe('fail');
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
     });
   });
 
   describe('saveCSVToDevice', () => {
     it('returns success when directory is picked', async () => {
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
       const result = await saveCSVToDevice(resolver, header, t);
       expect(result.success).toBe(true);
     });
 
     it('returns cancelled when picker is dismissed', async () => {
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
       (Directory.pickDirectoryAsync as jest.Mock).mockRejectedValueOnce(new Error('User cancelled'));
       const result = await saveCSVToDevice(resolver, header, t);
       expect(result.success).toBe(false);
@@ -71,11 +71,11 @@ describe('csvExport', () => {
     });
 
     it('returns error on exception', async () => {
-      mockDb.getAllSync.mockImplementation(() => { throw new Error('boom'); });
+      mockDb.getAllAsync.mockRejectedValue(new Error('boom'));
       const result = await saveCSVToDevice(resolver, header, t);
       expect(result.success).toBe(false);
       expect(result.error).toBe('boom');
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getAllAsync.mockResolvedValue([]);
     });
   });
 

@@ -21,8 +21,9 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
   - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
-- `src/database/`: SQLite schema and data access layer (`database.ts`). Tables: `categories`, `words`, `variants`, `settings`, `assets`.
-- `src/services/`: Thin service wrappers over `database.ts` providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
+- `src/db/`: DB client (`client.ts` — `query`/`run`/`withTransaction` async helpers), initialization (`init.ts` — DDL at startup), migrations (`migrator.ts` + `migrations/` — schema versioning via `schema_migrations` table). Only `init.ts` and `migrator.ts` call `getDb()` directly.
+- `src/repositories/`: Per-entity SQL modules — `categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`. No React, hooks, or Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `schema_migrations`.
+- `src/services/`: Thin service wrappers over repositories providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
 - `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`.
 - `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
 - `src/types/`: Shared TypeScript types (`asset.ts` — media asset types, MIME validation, file size limits).
@@ -122,6 +123,7 @@ The app supports audio, photo, and video attachments on words and variants:
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
    - **⛔ `/plan` must NEVER auto-implement.** Its only output is documents in `.agents/plan/`. Implementation requires an explicit user request via `/implement [plan-name]`. No agent may self-trigger implementation after planning, regardless of mode (fleet, autopilot, or interactive).
+   - **`/implement` tracking:** When `/implement` runs, it creates `.agents/implementation/[name].md` (from `TEMPLATE.md`) with `status: in progress` at start and `status: done` after CI passes. If another implementation file has `status: in progress`, a git worktree is created for isolation before any work begins.
 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
@@ -193,6 +195,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Code Quality | `.agents/standards/quality.md` |
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
+| Data Layer | `.agents/standards/data-layer.md` |
 
 ## Additional Documentation
 

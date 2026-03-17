@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { COLORS, LAYOUT } from '../utils/theme';
 import { withOpacity } from '../utils/colorHelpers';
-import { findWordByName, Word, Variant, Category } from '../database/database';
+import { findWordByName } from '../services/wordService';
+import type { Word, Variant, Category } from '../types/domain';
 import * as variantService from '../services/variantService';
 import { Button, CategoryBadge } from './UIComponents';
 import { AddCategoryModal, CategoryToEdit } from './AddCategoryModal';

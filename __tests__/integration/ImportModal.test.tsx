@@ -5,26 +5,41 @@ import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 const mockTextFn: jest.Mock = (FileSystem as any)._fileMock?.text;
-import * as database from '../../src/database/database';
+import * as categoryService from '../../src/services/categoryService';
+import * as wordService from '../../src/services/wordService';
+import * as variantService from '../../src/services/variantService';
+import * as settingsService from '../../src/services/settingsService';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
-// Mock database functions
-jest.mock('../../src/database/database', () => ({
-  ...jest.requireActual('../../src/database/database'),
+// Mock service functions
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
   getCategories: jest.fn(),
   addCategory: jest.fn(),
+}));
+
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
   findWordByName: jest.fn(),
   addWord: jest.fn(),
+}));
+
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
   addVariant: jest.fn(),
+}));
+
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
-const mockGetCategories = database.getCategories as jest.MockedFunction<typeof database.getCategories>;
-const mockAddCategory = database.addCategory as jest.MockedFunction<typeof database.addCategory>;
-const mockFindWordByName = database.findWordByName as jest.MockedFunction<typeof database.findWordByName>;
-const mockAddWord = database.addWord as jest.MockedFunction<typeof database.addWord>;
-const mockAddVariant = database.addVariant as jest.MockedFunction<typeof database.addVariant>;
+const mockGetCategories = categoryService.getCategories as jest.MockedFunction<typeof categoryService.getCategories>;
+const mockAddCategory = categoryService.addCategory as jest.MockedFunction<typeof categoryService.addCategory>;
+const mockFindWordByName = wordService.findWordByName as jest.MockedFunction<typeof wordService.findWordByName>;
+const mockAddWord = wordService.addWord as jest.MockedFunction<typeof wordService.addWord>;
+const mockAddVariant = variantService.addVariant as jest.MockedFunction<typeof variantService.addVariant>;
 const mockGetDocumentAsync = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof DocumentPicker.getDocumentAsync>;
 
 function renderWithProvider(ui: React.ReactElement) {

@@ -27,6 +27,7 @@ Before making changes in a given domain, read the relevant standard file. Before
 | Quality | [`quality.md`](quality.md) | Sonar gate thresholds, complexity, duplication, magic numbers |
 | Security | [`security.md`](security.md) | Secrets, SQL injection, secure storage, child processes |
 | SonarQube Rules | [`sonar.md`](sonar.md) | Full AI CodeFix rule reference for TypeScript/JavaScript |
+| Data Layer | [`data-layer.md`](data-layer.md) | Repository pattern, DB client, migrations, SQL conventions, test mocking |
 
 ---
 

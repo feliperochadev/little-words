@@ -13,7 +13,7 @@ import {
   deleteAssetsByParent,
   updateAssetFilename,
   getAssetById,
-} from '../../src/database/database';
+} from '../../src/repositories/assetRepository';
 import {
   saveAssetFile,
   deleteAssetFile,
@@ -106,19 +106,19 @@ describe('assetService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockDb.runSync.mockReturnValue({ lastInsertRowId: 1, changes: 1 });
+    mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 1, changes: 1 });
   });
 
   // ─── saveAsset ────────────────────────────────────────────────────────────────
 
   describe('saveAsset', () => {
     it('saves an audio asset and returns correct fields', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 99, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 99, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(99, AUDIO_PARAMS)];
+          return Promise.resolve([mockAssetRow(99, AUDIO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(AUDIO_PARAMS);
@@ -137,35 +137,35 @@ describe('assetService', () => {
     });
 
     it('calls addAsset with placeholder filename, then updates it', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 5, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 5, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(5, AUDIO_PARAMS)];
+          return Promise.resolve([mockAssetRow(5, AUDIO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       await saveAsset(AUDIO_PARAMS);
 
-      // First runSync call = addAsset with 'pending' filename
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      // First runAsync call = addAsset with 'pending' filename
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO assets'),
         expect.arrayContaining(['pending']),
       );
-      // Second runSync call = updateAssetFilename
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      // Second runAsync call = updateAssetFilename
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE assets SET filename'),
         ['asset_5.m4a', 5],
       );
     });
 
     it('calls saveAssetFile with correct arguments', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 8, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 8, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(8, AUDIO_PARAMS)];
+          return Promise.resolve([mockAssetRow(8, AUDIO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       await saveAsset(AUDIO_PARAMS);
@@ -181,12 +181,12 @@ describe('assetService', () => {
     });
 
     it('saves a photo asset with width and height', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 20, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 20, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(20, PHOTO_PARAMS)];
+          return Promise.resolve([mockAssetRow(20, PHOTO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(PHOTO_PARAMS);
@@ -201,12 +201,12 @@ describe('assetService', () => {
     });
 
     it('saves a video asset with all optional fields', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 33, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 33, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(33, VIDEO_PARAMS)];
+          return Promise.resolve([mockAssetRow(33, VIDEO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(VIDEO_PARAMS);
@@ -224,7 +224,7 @@ describe('assetService', () => {
     });
 
     it('defaults optional fields to null when omitted', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 2, changes: 1 });
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 2, changes: 1 });
 
       const params: SaveAssetParams = {
         sourceUri: 'file:///tmp/recording.m4a',
@@ -235,11 +235,11 @@ describe('assetService', () => {
         fileSize: 512,
       };
 
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(2, params)];
+          return Promise.resolve([mockAssetRow(2, params)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(params);
@@ -250,7 +250,7 @@ describe('assetService', () => {
     });
 
     it('defaults optional fields to null when explicitly undefined', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 3, changes: 1 });
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 3, changes: 1 });
 
       const params: SaveAssetParams = {
         sourceUri: 'file:///tmp/recording.m4a',
@@ -264,11 +264,11 @@ describe('assetService', () => {
         height: undefined,
       };
 
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(3, params)];
+          return Promise.resolve([mockAssetRow(3, params)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(params);
@@ -288,7 +288,7 @@ describe('assetService', () => {
         'Invalid MIME type "application/pdf" for asset type "audio"',
       );
 
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
       expect(saveAssetFile).not.toHaveBeenCalled();
     });
 
@@ -299,7 +299,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/Invalid MIME type/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
     });
 
     it('throws for video MIME on photo asset type', async () => {
@@ -309,7 +309,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/Invalid MIME type/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
     });
 
     it('throws when file size exceeds limit for audio', async () => {
@@ -319,7 +319,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/File size.*exceeds limit/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
       expect(saveAssetFile).not.toHaveBeenCalled();
     });
 
@@ -330,7 +330,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/File size.*exceeds limit/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
     });
 
     it('throws when file size exceeds limit for video', async () => {
@@ -340,7 +340,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/File size.*exceeds limit/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
     });
 
     it('throws when file size is zero', async () => {
@@ -350,7 +350,7 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/File size.*exceeds limit/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
       expect(saveAssetFile).not.toHaveBeenCalled();
     });
 
@@ -361,26 +361,26 @@ describe('assetService', () => {
       };
 
       await expect(saveAsset(params)).rejects.toThrow(/File size.*exceeds limit/);
-      expect(mockDb.runSync).not.toHaveBeenCalled();
+      expect(mockDb.runAsync).not.toHaveBeenCalled();
     });
 
     it('cleans up DB record when saveAssetFile throws', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 15, changes: 1 });
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 15, changes: 1 });
       (saveAssetFile as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Disk full');
       });
 
       await expect(saveAsset(AUDIO_PARAMS)).rejects.toThrow('Disk full');
 
-      // deleteAsset should have been called (third runSync call)
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      // deleteAsset should have been called (third runAsync call)
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM assets'),
         [15],
       );
     });
 
     it('re-throws original error after cleanup on file save failure', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 4, changes: 1 });
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 4, changes: 1 });
       (saveAssetFile as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Permission denied');
       });
@@ -389,8 +389,8 @@ describe('assetService', () => {
     });
 
     it('throws when getAssetById returns null after save', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 60, changes: 1 });
-      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 60, changes: 1 });
+      mockDb.getAllAsync.mockResolvedValue([]);
 
       await expect(saveAsset(AUDIO_PARAMS)).rejects.toThrow(
         'Asset 60 not found after save',
@@ -398,18 +398,18 @@ describe('assetService', () => {
     });
 
     it('accepts file at exact max size limit', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 50, changes: 1 });
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 50, changes: 1 });
 
       const params: SaveAssetParams = {
         ...AUDIO_PARAMS,
         fileSize: 50 * 1024 * 1024, // exactly 50MB
       };
 
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(50, params)];
+          return Promise.resolve([mockAssetRow(50, params)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       const result = await saveAsset(params);
@@ -417,12 +417,12 @@ describe('assetService', () => {
     });
 
     it('calls buildAssetFilename with correct id and mime', async () => {
-      mockDb.runSync.mockReturnValue({ lastInsertRowId: 77, changes: 1 });
-      mockDb.getAllSync.mockImplementation((sql: string) => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 77, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
         if (sql.includes('SELECT * FROM assets WHERE id')) {
-          return [mockAssetRow(77, AUDIO_PARAMS)];
+          return Promise.resolve([mockAssetRow(77, AUDIO_PARAMS)]);
         }
-        return [];
+        return Promise.resolve([]);
       });
 
       await saveAsset(AUDIO_PARAMS);
@@ -451,7 +451,7 @@ describe('assetService', () => {
     it('deletes DB record and then file', async () => {
       await removeAsset(mockAsset);
 
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM assets'),
         [10],
       );
@@ -462,9 +462,7 @@ describe('assetService', () => {
     });
 
     it('propagates DB error and does not delete file', async () => {
-      mockDb.runSync.mockImplementationOnce(() => {
-        throw new Error('DB locked');
-      });
+      mockDb.runAsync.mockRejectedValueOnce(new Error('DB locked'));
 
       await expect(removeAsset(mockAsset)).rejects.toThrow('DB locked');
       expect(deleteAssetFile).not.toHaveBeenCalled();
@@ -481,7 +479,7 @@ describe('assetService', () => {
 
       await removeAsset(photoAsset);
 
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM assets'),
         [25],
       );
@@ -515,7 +513,7 @@ describe('assetService', () => {
     it('deletes DB records and file directory for a word', async () => {
       await removeAllAssetsForParent('word', 42);
 
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM assets'),
         ['word', 42],
       );
@@ -525,7 +523,7 @@ describe('assetService', () => {
     it('deletes DB records and file directory for a variant', async () => {
       await removeAllAssetsForParent('variant', 7);
 
-      expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM assets'),
         ['variant', 7],
       );
@@ -533,9 +531,7 @@ describe('assetService', () => {
     });
 
     it('propagates DB error without touching filesystem', async () => {
-      mockDb.runSync.mockImplementationOnce(() => {
-        throw new Error('DB error');
-      });
+      mockDb.runAsync.mockRejectedValueOnce(new Error('DB error'));
 
       await expect(removeAllAssetsForParent('word', 1)).rejects.toThrow('DB error');
       expect(deleteAllAssetsForParentFS).not.toHaveBeenCalled();
@@ -555,12 +551,12 @@ describe('assetService', () => {
   // ─── re-exports ───────────────────────────────────────────────────────────────
 
   describe('re-exports', () => {
-    it('re-exports getAssetsByParent from database', () => {
+    it('re-exports getAssetsByParent from repository', () => {
       expect(getAssetsByParent).toBeDefined();
       expect(typeof getAssetsByParent).toBe('function');
     });
 
-    it('re-exports getAssetsByParentAndType from database', () => {
+    it('re-exports getAssetsByParentAndType from repository', () => {
       expect(getAssetsByParentAndType).toBeDefined();
       expect(typeof getAssetsByParentAndType).toBe('function');
     });

@@ -7,18 +7,19 @@ import { useRouter } from 'expo-router';
 
 jest.spyOn(Alert, 'alert');
 
-jest.mock('../../src/database/database', () => {
-  const actual = jest.requireActual('../../src/database/database');
-  return {
-    ...actual,
-    getSetting: jest.fn().mockResolvedValue(null),
-    setSetting: jest.fn().mockResolvedValue(undefined),
-    getCategories: jest.fn().mockResolvedValue([
-      { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
-    ]),
-    clearAllData: jest.fn().mockResolvedValue(undefined),
-  };
-});
+jest.mock('../../src/services/settingsService', () => ({
+  ...jest.requireActual('../../src/services/settingsService'),
+  getSetting: jest.fn().mockResolvedValue(null),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+  clearAllData: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
+  getCategories: jest.fn().mockResolvedValue([
+    { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
+  ]),
+}));
 
 jest.mock('../../src/utils/csvExport', () => ({
   buildCategoryResolver: jest.fn(() => (name: string) => name),
@@ -29,15 +30,16 @@ jest.mock('../../src/utils/csvExport', () => ({
 
 import SettingsScreen from '../../app/(tabs)/settings';
 import * as csvExport from '../../src/utils/csvExport';
+import * as settingsService from '../../src/services/settingsService';
+import * as categoryService from '../../src/services/categoryService';
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (csvExport.shareCSV as jest.Mock).mockResolvedValue({ success: true });
     (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: true });
-    const database = require('../../src/database/database');
-    (database.getSetting as jest.Mock).mockResolvedValue(null);
-    (database.getCategories as jest.Mock).mockResolvedValue([
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
+    (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
     ]);
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
@@ -179,7 +181,6 @@ describe('SettingsScreen', () => {
   });
 
   it('handles clear data double confirmation', async () => {
-    const database = require('../../src/database/database');
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-delete-all-btn'));
     await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(1));
@@ -194,7 +195,7 @@ describe('SettingsScreen', () => {
     await act(async () => { secondDestructive.onPress(); });
 
     await waitFor(() => {
-      expect(database.clearAllData).toHaveBeenCalled();
+      expect(settingsService.clearAllData).toHaveBeenCalled();
     });
   });
 });

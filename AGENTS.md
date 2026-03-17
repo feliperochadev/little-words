@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-`app/` holds Expo Router screens and layouts, including `app/(tabs)/` for the main navigation. Shared UI belongs in `src/components/`, SQLite data access in `src/database/`, translations in `src/i18n/`, and helpers in `src/utils/`. Tests are split into `__tests__/unit`, `__tests__/integration`, `__tests__/screens`, and Maestro flows in `__tests__/e2e`. Keep static assets in `assets/`.
+`app/` holds Expo Router screens and layouts, including `app/(tabs)/` for the main navigation. Shared UI belongs in `src/components/`, SQLite DB client in `src/db/`, per-entity SQL modules in `src/repositories/`, service wrappers in `src/services/`, translations in `src/i18n/`, and helpers in `src/utils/`. Tests are split into `__tests__/unit`, `__tests__/integration`, `__tests__/screens`, and Maestro flows in `__tests__/e2e`. Keep static assets in `assets/`.
 
 ## Build, Test, and Development Commands
 Use `npm start` for the Expo dev server and `npm run android` or `npm run ios` for native runs. Quality gates are mandatory:
@@ -26,6 +26,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
    - Required when the change touches ≥ 5 files, introduces a new dependency, replaces a core module, or requires ≥ 3 changelog categories.
    - Keep plans updated if implementation diverges. Superseded ADRs must reference their successor.
    - **⛔ `/plan` must NEVER auto-implement.** Its only output is documents in `.agents/plan/`. Implementation requires an explicit user request via `/implement [plan-name]`. No agent may self-trigger implementation after planning, regardless of mode (fleet, autopilot, or interactive).
+   - **`/implement` tracking:** When `/implement` runs, it creates `.agents/implementation/[name].md` (from `TEMPLATE.md`) with `status: in progress` at start and `status: done` after CI passes. If another implementation file has `status: in progress`, a git worktree is created for isolation before any work begins.
 
 11. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
@@ -108,7 +109,9 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 | Global client state | **Zustand v5** | child profile, onboarding |
 | Local UI state | **useState** | modals, form inputs, sort order |
 
-- `src/services/` — thin wrappers over `database.ts` (import boundary for hooks)
+- `src/db/` — DB client (`client.ts`), initialization (`init.ts`), migrations (`migrator.ts`, `migrations/`)
+- `src/repositories/` — per-entity SQL modules (`categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`); no React/hooks/Zustand
+- `src/services/` — thin wrappers over repositories (import boundary for hooks)
 - `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`
 - `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
 - `src/types/` — Shared TypeScript types (e.g. `asset.ts` for media asset types)
@@ -139,6 +142,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | Code Quality | `.agents/standards/quality.md` |
 | Security | `.agents/standards/security.md` |
 | SonarQube Rules | `.agents/standards/sonar.md` |
+| Data Layer | `.agents/standards/data-layer.md` |
 
 ## Permanently Allowed Commands
 
