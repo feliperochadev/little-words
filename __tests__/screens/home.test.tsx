@@ -66,6 +66,17 @@ describe('DashboardScreen', () => {
     expect(await findByText('mamãe')).toBeTruthy();
   });
 
+  it('renders semantic section icons for monthly/category/recent blocks', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const monthlyIcon = await findByTestId('home-monthly-progress-icon');
+    const categoryIcon = await findByTestId('home-category-icon');
+    const recentIcon = await findByTestId('home-recent-words-icon');
+    expect(monthlyIcon.props.name).toBe('bar-chart-outline');
+    expect(categoryIcon.props.name).toBe('pricetags-outline');
+    expect(recentIcon.props.name).toBe('sparkles-outline');
+  });
+
   it('renders boy profile', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
     useSettingsStore.setState({ name: 'Miguel', sex: 'boy', birth: '2024-01-01', isOnboardingDone: true, isHydrated: true });

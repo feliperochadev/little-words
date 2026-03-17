@@ -114,7 +114,10 @@ export default function WordsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('words.title')}</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="book-outline" size={22} color={colors.primary} testID="words-title-icon" />
+          <Text style={[styles.title, { color: colors.text }]}>{t('words.title')}</Text>
+        </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={[styles.addBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
@@ -132,7 +135,10 @@ export default function WordsScreen() {
 
       <View style={styles.sortBar}>
         <TouchableOpacity style={[styles.sortBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSortMenu(!showSortMenu)} testID="words-sort-btn">
-          <Text style={[styles.sortBtnText, { color: colors.text }]}>{currentSortLabel} ▾</Text>
+          <View style={styles.sortBtnContent}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} style={styles.sortBtnIcon} testID="words-sort-icon" />
+            <Text style={[styles.sortBtnText, { color: colors.text }]}>{currentSortLabel} ▾</Text>
+          </View>
         </TouchableOpacity>
         <Text style={[styles.countText, { color: colors.textSecondary }]}>{tc('words.count', words.length)}</Text>
       </View>
@@ -204,6 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 26, fontWeight: '900' },
   headerButtons: { flexDirection: 'row', gap: 8 },
   addBtn: {
@@ -221,6 +228,8 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5,
     paddingHorizontal: 12, paddingVertical: 6,
   },
+  sortBtnContent: { flexDirection: 'row', alignItems: 'center' },
+  sortBtnIcon: { marginRight: 6 },
   sortBtnText: { fontSize: 13, fontWeight: '600' },
   countText: { fontSize: 12 },
   sortMenu: {

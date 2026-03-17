@@ -66,10 +66,12 @@ beforeEach(() => {
 describe('ImportModal', () => {
   // ── Initial render ──────────────────────────────────────────────────────
   it('renders title', async () => {
-    const { findByText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
     expect(await findByText(/Import words/)).toBeTruthy();
+    const icon = await findByTestId('import-title-icon');
+    expect(icon.props.name).toBe('download-outline');
   });
 
   it('uses breeze primary on enabled import button when sex is boy', async () => {
@@ -154,10 +156,10 @@ describe('ImportModal', () => {
   // ── Close/cancel behavior ──────────────────────────────────────────────
   it('calls onClose when close button pressed', async () => {
     const onClose = jest.fn();
-    const { findByText } = renderWithProvider(
+    const { findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={jest.fn()} />
     );
-    fireEvent.press(await findByText('✕'));
+    fireEvent.press(await findByTestId('import-close-btn'));
     expect(onClose).toHaveBeenCalled();
   });
 

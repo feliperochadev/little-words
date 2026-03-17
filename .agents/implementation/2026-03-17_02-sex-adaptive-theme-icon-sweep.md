@@ -94,6 +94,29 @@ Final readability tweak on words variant chips to invert icon/text color assignm
   - `npm test -- __tests__/screens/words.test.tsx --runInBand` passed.
   - `npm run ci` passed.
 
+## Resume patch 6 (emoji-to-ionicon UI chrome cleanup)
+
+Replaced remaining generic emoji UI chrome in home/words/variants/settings/import/category-modal surfaces with semantic Ionicons, while keeping content emojis (category/user data) unchanged.
+
+- Screen/icon updates:
+  - `app/(tabs)/home.tsx`: added section header icons for monthly progress (`bar-chart-outline`), by category (`pricetags-outline`), and recent words (`sparkles-outline`).
+  - `app/(tabs)/words.tsx`: replaced title emoji with `book-outline`; added explicit sort icon `calendar-outline`.
+  - `app/(tabs)/variants.tsx`: replaced title emoji with `chatbubbles-outline`; added sort icon `calendar-outline`; replaced hint emoji with `bulb-outline`.
+  - `app/(tabs)/settings.tsx`: replaced title gear emoji with `settings-outline`; added import/export header icons and semantic action button icons (`download-outline`, `save-outline`, `share-social-outline`).
+  - `src/components/ImportModal.tsx`: replaced text-symbol close/title treatment with Ionicons (`download-outline` in title and `close` in dismiss button).
+  - `src/components/AddCategoryModal.tsx`: added semantic title icon (`pricetag-outline`) for category modal header.
+- i18n cleanup:
+  - `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`: removed emoji prefixes from affected UI-chrome labels (home section titles, words/variants titles + sort labels, settings title/import/export/edit/share labels, category modal titles, import modal title/tab text).
+- Tests updated:
+  - `__tests__/screens/home.test.tsx`
+  - `__tests__/screens/words.test.tsx`
+  - `__tests__/screens/variants.test.tsx`
+  - `__tests__/screens/settings.test.tsx`
+  - `__tests__/integration/ImportModal.test.tsx`
+- Validation:
+  - Focused suites for touched screens/modals passed.
+  - `npm run ci` passed.
+
 ## Changes
 
 | File | Action | Notes |

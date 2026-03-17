@@ -79,7 +79,10 @@ export default function DashboardScreen() {
         {/* Monthly progress */}
         {stats && stats.monthlyProgress.length > 0 && (
           <Card style={styles.chartCard}>
-            <Text style={styles.sectionTitle}>{t('dashboard.monthlyProgress')}</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="bar-chart-outline" size={16} color={colors.primary} testID="home-monthly-progress-icon" />
+              <Text style={styles.sectionTitle}>{t('dashboard.monthlyProgress')}</Text>
+            </View>
             <View style={styles.barChart}>
               {(() => {
                 const last6 = stats.monthlyProgress.slice(-6);
@@ -102,7 +105,10 @@ export default function DashboardScreen() {
         {/* Categories breakdown */}
         {visibleCategoryCounts.length > 0 && (
           <Card>
-            <Text style={styles.sectionTitle}>{t('dashboard.byCategory')}</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="pricetags-outline" size={16} color={colors.secondary} testID="home-category-icon" />
+              <Text style={styles.sectionTitle}>{t('dashboard.byCategory')}</Text>
+            </View>
             {visibleCategoryCounts.map(cat => {
               const max = visibleCategoryCounts[0]?.count || 1;
               return (
@@ -126,7 +132,10 @@ export default function DashboardScreen() {
         {/* Recent words */}
         {stats && stats.recentWords.length > 0 && (
           <Card testID="recent-words-section">
-            <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="sparkles-outline" size={16} color={colors.accent} testID="home-recent-words-icon" />
+              <Text style={styles.sectionTitle}>{t('dashboard.recentWords')}</Text>
+            </View>
             <View style={styles.wordCloud}>
               {stats.recentWords.map((w, i) => (
                 <View
@@ -173,7 +182,8 @@ const styles = StyleSheet.create({
   profileAge: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
   profileGreeting: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 18 },
   statsGrid: { flexDirection: 'row', marginBottom: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 16 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
   chartCard: { marginBottom: 12 },
   barChart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 120 },
   barItem: { alignItems: 'center', flex: 1 },

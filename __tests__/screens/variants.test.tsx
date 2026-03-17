@@ -50,6 +50,14 @@ describe('VariantsScreen', () => {
     expect(await findByText('+ New')).toBeTruthy();
   });
 
+  it('renders semantic title and sort icons', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    const titleIcon = await findByTestId('variants-title-icon');
+    const sortIcon = await findByTestId('variants-sort-icon');
+    expect(titleIcon.props.name).toBe('chatbubbles-outline');
+    expect(sortIcon.props.name).toBe('calendar-outline');
+  });
+
   it('renders variant count', async () => {
     const { findByText } = renderWithProviders(<VariantsScreen />);
     expect(await findByText(/2 variants/)).toBeTruthy();

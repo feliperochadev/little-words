@@ -17,10 +17,10 @@ import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
 
-function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): { emoji: string; label: string } {
-  if (sex === 'girl') return { emoji: '👧', label: t('settings.girl') };
-  if (sex === 'boy') return { emoji: '👦', label: t('settings.boy') };
-  return { emoji: '👶', label: '—' };
+function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): string {
+  if (sex === 'girl') return t('settings.girl');
+  if (sex === 'boy') return t('settings.boy');
+  return '—';
 }
 
 export default function SettingsScreen() {
@@ -89,19 +89,22 @@ export default function SettingsScreen() {
     );
   };
 
-  const { emoji: sexEmoji, label: sexLabel } = getSexDisplay(childSex, t);
+  const sexLabel = getSexDisplay(childSex, t);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('settings.title')}</Text>
+        <View style={styles.pageTitleRow}>
+          <Ionicons name="settings-outline" size={22} color={colors.primary} testID="settings-title-icon" />
+          <Text style={[styles.pageTitle, { color: colors.text }]}>{t('settings.title')}</Text>
+        </View>
 
         {/* Baby Profile */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {sexEmoji} {t('settings.babyProfile')}
-            </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {t('settings.babyProfile')}
+              </Text>
             <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => router.push('/onboarding')} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
               <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfile')}</Text>
             </TouchableOpacity>
@@ -178,20 +181,33 @@ export default function SettingsScreen() {
 
         {/* Import */}
         <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-import-title">{t('settings.importWords')}</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="cloud-download-outline" size={17} color={colors.textSecondary} testID="settings-import-icon" />
+            <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-import-title">{t('settings.importWords')}</Text>
+          </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.importDesc')}</Text>
-          <Button title={t('settings.importBtn')} onPress={() => setShowImport(true)} style={styles.actionButton} testID="settings-import-btn" />
+          <Button
+            title={t('settings.importBtn')}
+            onPress={() => setShowImport(true)}
+            style={styles.actionButton}
+            icon={<Ionicons name="download-outline" size={16} color={colors.textOnPrimary} testID="settings-import-btn-icon" />}
+            testID="settings-import-btn"
+          />
         </Card>
 
         {/* Export */}
         <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-export-title">{t('settings.exportData')}</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="cloud-upload-outline" size={17} color={colors.textSecondary} testID="settings-export-icon" />
+            <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-export-title">{t('settings.exportData')}</Text>
+          </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.exportDesc')}</Text>
           <View style={styles.buttonRow}>
             <Button
               title={saving ? t('settings.saving') : t('settings.saveToDrive')}
               onPress={handleSaveToDevice}
               loading={saving}
+              icon={<Ionicons name="save-outline" size={16} color={colors.textOnPrimary} testID="settings-save-btn-icon" />}
               style={[styles.flexBtn, styles.exportBtn]}
               textStyle={styles.exportButtonText}
               testID="settings-save-btn"
@@ -201,6 +217,7 @@ export default function SettingsScreen() {
               onPress={handleShare}
               loading={exporting}
               variant="outline"
+              icon={<Ionicons name="share-social-outline" size={16} color={colors.primary} testID="settings-share-btn-icon" />}
               style={[styles.flexBtn, styles.exportBtn]}
               textStyle={styles.exportButtonText}
               testID="settings-share-btn"
@@ -254,7 +271,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 20 },
-  pageTitle: { fontSize: 26, fontWeight: '900', marginBottom: 20 },
+  pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
+  pageTitle: { fontSize: 26, fontWeight: '900' },
   section: { marginBottom: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },

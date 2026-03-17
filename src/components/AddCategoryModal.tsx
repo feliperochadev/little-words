@@ -136,9 +136,12 @@ export function AddCategoryModal({
 
           {/* Header row */}
           <View style={styles.header}>
-            <Text style={[styles.title, isEditing && styles.titleLeft, { color: colors.text }]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
-              {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
-            </Text>
+            <View style={styles.titleWrap}>
+              <Ionicons name="pricetag-outline" size={20} color={colors.primary} testID="category-title-icon" />
+              <Text style={[styles.title, isEditing && styles.titleLeft, { color: colors.text }]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
+                {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
+              </Text>
+            </View>
             {isEditing && (
               <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="category-delete-btn">
                 <Ionicons name="trash-outline" size={14} color={colors.error} />
@@ -222,6 +225,7 @@ const styles = StyleSheet.create({
   handleWrap:       { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
   handle:           { width: 40, height: 4, borderRadius: 2 },
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  titleWrap:        { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   title:            { fontSize: 22, fontWeight: '800', textAlign: 'center', flex: 1 },
   titleLeft:      { textAlign: 'left' },
   deleteBtn:        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },

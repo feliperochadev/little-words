@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_10
+
+[fix] Replace remaining UI-chrome emojis with semantic Ionicons across key screens and modals.
+
+- `app/(tabs)/home.tsx`: added semantic section icons for monthly progress, category breakdown, and recent words headers.
+- `app/(tabs)/words.tsx`: replaced title emoji styling with `book-outline` icon and added explicit `calendar-outline` icon to sort control.
+- `app/(tabs)/variants.tsx`: replaced title/sort/hint emojis with `chatbubbles-outline`, `calendar-outline`, and `bulb-outline`.
+- `app/(tabs)/settings.tsx`: replaced settings title emoji with `settings-outline`; added import/export header icons and semantic icons on import/save/share action buttons.
+- `src/components/ImportModal.tsx`: introduced `download-outline` title icon and Ionicon close button.
+- `src/components/AddCategoryModal.tsx`: added `pricetag-outline` icon in category modal header.
+- `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`: removed emoji prefixes from affected UI labels (home sections, words/variants titles and sort labels, settings/import/export labels, category modal and import modal titles).
+- Tests updated:
+  - `__tests__/screens/home.test.tsx`
+  - `__tests__/screens/words.test.tsx`
+  - `__tests__/screens/variants.test.tsx`
+  - `__tests__/screens/settings.test.tsx`
+  - `__tests__/integration/ImportModal.test.tsx`
+- Validation: focused suites passed and `npm run ci` passed.
+
+---
+
 ### 2026-03-17_9
 
 [config] Update automatic ship feature flag.

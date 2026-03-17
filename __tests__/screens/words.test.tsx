@@ -88,6 +88,14 @@ describe('WordsScreen', () => {
     expect(await findByText('+ New')).toBeTruthy();
   });
 
+  it('renders semantic title and sort icons', async () => {
+    const { findByTestId } = renderWithProviders(<WordsScreen />);
+    const titleIcon = await findByTestId('words-title-icon');
+    const sortIcon = await findByTestId('words-sort-icon');
+    expect(titleIcon.props.name).toBe('book-outline');
+    expect(sortIcon.props.name).toBe('calendar-outline');
+  });
+
   it('uses breeze primary on + add word button for boy profile', async () => {
     const { findByTestId } = renderWithProviders(<WordsScreen />);
     const addBtn = await findByTestId('words-add-btn');

@@ -60,6 +60,16 @@ describe('SettingsScreen', () => {
     expect(await findByText(/Danger/)).toBeTruthy();
   });
 
+  it('renders semantic settings/import/export icons', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const titleIcon = await findByTestId('settings-title-icon');
+    const importIcon = await findByTestId('settings-import-icon');
+    const exportIcon = await findByTestId('settings-export-icon');
+    expect(titleIcon.props.name).toBe('settings-outline');
+    expect(importIcon.props.name).toBe('cloud-download-outline');
+    expect(exportIcon.props.name).toBe('cloud-upload-outline');
+  });
+
   it('uses breeze primary-tinted edit profile button background for boy profile', async () => {
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
@@ -83,6 +93,13 @@ describe('SettingsScreen', () => {
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     const shareStyle = flattenStyle((await findByTestId('settings-share-btn')).props.style);
     expect(shareStyle.borderColor).toBe(getThemeForSex('boy').colors.primary);
+  });
+
+  it('renders semantic import/save/share button icons', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    expect((await findByTestId('settings-import-btn-icon')).props.name).toBe('download-outline');
+    expect((await findByTestId('settings-save-btn-icon')).props.name).toBe('save-outline');
+    expect((await findByTestId('settings-share-btn-icon')).props.name).toBe('share-social-outline');
   });
 
   it('does not render the removed Google Drive section', async () => {
@@ -206,8 +223,8 @@ describe('SettingsScreen', () => {
   it('navigates to onboarding when edit profile is pressed', async () => {
     const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/✏️ Edit/));
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-edit-profile-btn'));
     expect(mockRouter.push).toHaveBeenCalledWith('/onboarding');
   });
 

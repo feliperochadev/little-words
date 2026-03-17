@@ -91,7 +91,10 @@ export default function VariantsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('variants.title')}</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} testID="variants-title-icon" />
+          <Text style={[styles.title, { color: colors.text }]}>{t('variants.title')}</Text>
+        </View>
         <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]} onPress={() => { setSelectedWord(null); setEditVariant(null); setShowAddVariant(true); }}>
           <Text style={[styles.addBtnText, { color: colors.textOnPrimary }]}>{t('variants.addNew')}</Text>
         </TouchableOpacity>
@@ -103,7 +106,10 @@ export default function VariantsScreen() {
 
       <View style={styles.sortBar}>
         <TouchableOpacity style={[styles.sortBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSortMenu(!showSortMenu)} testID="variants-sort-btn">
-          <Text style={[styles.sortBtnText, { color: colors.text }]}>{currentSortLabel} ▾</Text>
+          <View style={styles.sortBtnContent}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} style={styles.sortBtnIcon} testID="variants-sort-icon" />
+            <Text style={[styles.sortBtnText, { color: colors.text }]}>{currentSortLabel} ▾</Text>
+          </View>
         </TouchableOpacity>
         <Text style={[styles.countText, { color: colors.textSecondary }]}>{tc('variants.count', filtered.length)}</Text>
       </View>
@@ -132,7 +138,10 @@ export default function VariantsScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.secondary} />}
         ListHeaderComponent={
-          <Text style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15'), color: colors.textSecondary }]}>{t('variants.hint')}</Text>
+          <View style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15') }]}>
+            <Ionicons name="bulb-outline" size={14} color={colors.secondary} style={styles.hintIcon} testID="variants-hint-icon" />
+            <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t('variants.hint')}</Text>
+          </View>
         }
         ListEmptyComponent={
           <EmptyState
@@ -161,6 +170,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 26, fontWeight: '900' },
   addBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   addBtnText: { fontWeight: '700', fontSize: 15 },
@@ -173,6 +183,8 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5,
     paddingHorizontal: 12, paddingVertical: 6,
   },
+  sortBtnContent: { flexDirection: 'row', alignItems: 'center' },
+  sortBtnIcon: { marginRight: 6 },
   sortBtnText: { fontSize: 13, fontWeight: '600' },
   countText: { fontSize: 12 },
   sortMenu: {
@@ -184,9 +196,9 @@ const styles = StyleSheet.create({
   sortMenuItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   sortMenuText: { fontSize: 14 },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
-  hint: {
-    fontSize: 13, padding: 12, borderRadius: 12, marginBottom: 12, lineHeight: 18,
-  },
+  hint: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 12 },
+  hintIcon: { marginRight: 6 },
+  hintText: { fontSize: 13, lineHeight: 18, flex: 1 },
   variantCard: { marginBottom: 10 },
   variantRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   variantBubble: {

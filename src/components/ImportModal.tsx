@@ -205,9 +205,12 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
           </View>
 
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: colors.text }]} testID="modal-title-import">{t('importModal.title')}</Text>
+            <View style={styles.titleWrap}>
+              <Ionicons name="download-outline" size={20} color={colors.primary} testID="import-title-icon" />
+              <Text style={[styles.title, { color: colors.text }]} testID="modal-title-import">{t('importModal.title')}</Text>
+            </View>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn} testID="import-close-btn">
-              <Text style={[styles.closeText, { color: colors.textMuted }]}>✕</Text>
+              <Ionicons name="close" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -314,9 +317,9 @@ const styles = StyleSheet.create({
   handleWrap:        { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 6 },
   handle:            { width: 40, height: 4, borderRadius: 2 },
   titleRow:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  titleWrap:         { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title:             { fontSize: 20, fontWeight: '800' },
   closeBtn:          { padding: 4 },
-  closeText:         { fontSize: 18 },
   tabs:              { flexDirection: 'row', borderRadius: 12, padding: 3, marginBottom: 18 },
   tab:               { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   tabActive:         { shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
