@@ -2,6 +2,7 @@
 
 Entries are added after every approved change. Most recent first.
 
+<<<<<<< HEAD
 ### 2026-03-17_16
 
 [feature] Baby Profile card: show sex emoji + birth date; Onboarding edit mode with Cancel/Save.
@@ -21,6 +22,14 @@ Entries are added after every approved change. Most recent first.
 - `__tests__/screens/settings.test.tsx`: updated emoji tests to use `testID`-based assertions; added birth date display and null-birth tests; updated router push assertion to `/onboarding?edit=true`.
 - `__tests__/screens/onboarding.test.tsx`: added 10 edit mode tests covering pre-fill, button visibility, Cancel, Save (happy path + 3 validation paths).
 - Validation: `npm run ci` passed (57/57 suites).
+=======
+### 2026-03-17_15
+
+[fix] Replace call-signature interface with function type in sort options helper.
+
+- `src/utils/sortOptions.ts`: replaced the `Translator` call-signature interface with a function type alias (`type Translator = (key: string) => string`) to satisfy Sonar/TypeScript style guidance.
+- Validation: `npm run typecheck` passed.
+>>>>>>> main
 
 ---
 
