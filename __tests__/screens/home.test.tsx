@@ -1,5 +1,5 @@
 import React from 'react';
-import { waitFor } from '@testing-library/react-native';
+import { waitFor, fireEvent } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 
@@ -15,6 +15,20 @@ jest.mock('../../src/services/settingsService', () => ({
   ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn(),
   setSetting: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/services/categoryService', () => ({
+  ...jest.requireActual('../../src/services/categoryService'),
+  getCategories: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('../../src/services/wordService', () => ({
+  ...jest.requireActual('../../src/services/wordService'),
+  addWord: jest.fn().mockResolvedValue(1),
+  updateWord: jest.fn().mockResolvedValue(undefined),
+  deleteWord: jest.fn().mockResolvedValue(undefined),
+  findWordByName: jest.fn().mockResolvedValue(null),
+  getWords: jest.fn().mockResolvedValue([]),
 }));
 
 import DashboardScreen from '../../app/(tabs)/home';
@@ -183,6 +197,29 @@ describe('DashboardScreen', () => {
     });
   });
 
+
+  it('does not show add-word button when totalWords is 0', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    const { queryByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(queryByTestId('home-add-word-btn')).toBeNull();
+    });
+  });
+
+  it('shows add-word button when totalWords > 0', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('home-add-word-btn')).toBeTruthy();
+  });
+
+  it('shows add-first-word button in empty state and pressing it opens AddWordModal', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const btn = await findByTestId('home-add-first-word-btn');
+    expect(btn).toBeTruthy();
+    fireEvent.press(btn);
+    expect(await findByTestId('modal-title-new-word')).toBeTruthy();
+  });
 
   it('does not show year suffix for single-year 6-month window', async () => {
     const singleYearStats = {

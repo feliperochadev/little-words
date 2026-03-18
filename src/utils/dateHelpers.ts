@@ -43,3 +43,42 @@ export function formatDateDMY(date: string): string {
   const [year, month, day] = date.split('-');
   return `${day}/${month}/${year}`;
 }
+
+export function computeAge(
+  birthDate: Date,
+  now: Date = new Date(),
+): { years: number; months: number; days: number } {
+  let years = now.getFullYear() - birthDate.getFullYear();
+  let months = now.getMonth() - birthDate.getMonth();
+  let days = now.getDate() - birthDate.getDate();
+
+  if (days < 0) {
+    months--;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  return { years, months, days };
+}
+
+export function formatAgeText(
+  birthDate: Date,
+  t: (key: string) => string,
+  separator: string = ' · ',
+  now?: Date,
+): string {
+  const { years, months, days } = computeAge(birthDate, now);
+  const yearStr = years === 1 ? t('dashboard.age.year') : t('dashboard.age.years');
+  const monthStr = months === 1 ? t('dashboard.age.month') : t('dashboard.age.months');
+  if (years === 0 && months === 0) {
+    const displayDays = Math.max(days, 1);
+    const displayDayStr = displayDays === 1 ? t('dashboard.age.day') : t('dashboard.age.days');
+    return `${displayDays} ${displayDayStr}`;
+  }
+  if (years === 0) return `${months} ${monthStr}`;
+  if (months === 0) return `${years} ${yearStr}`;
+  return `${years} ${yearStr}${separator}${months} ${monthStr}`;
+}

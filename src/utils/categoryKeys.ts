@@ -23,8 +23,8 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { key: 'actions',  color: '#6C5CE7', emoji: '🏃' },
   { key: 'nature',   color: '#55EFC4', emoji: '🌿' },
   { key: 'body',     color: '#FD79A8', emoji: '👶' },
+  { key: 'places',   color: '#74B9FF', emoji: '📍' },  
   { key: 'others',   color: '#B2BEC3', emoji: '✨' },
-  { key: 'places',   color: '#74B9FF', emoji: '📍' },
 ];
 
 /** Set of all built-in keys for quick lookup at render time. */

@@ -68,6 +68,25 @@ describe('i18n', () => {
         expect(getByTestId('locale').props.children).toBe('pt-BR');
       });
     });
+
+    it('renders children immediately and stays on en-US when getSetting rejects', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      (db.getSetting as jest.Mock).mockRejectedValue(new Error('DB error'));
+      const { getByTestId } = render(
+        <I18nProvider>
+          <TestConsumer />
+        </I18nProvider>
+      );
+      // Children render immediately without waiting for getSetting
+      expect(getByTestId('locale').props.children).toBe('en-US');
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          '[I18n] Failed to load saved locale:',
+          expect.any(Error)
+        );
+      });
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('t() function', () => {

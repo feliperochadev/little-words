@@ -193,8 +193,10 @@ describe('AddCategoryModal', () => {
   it('handleDelete shows word count message when category has words', async () => {
     (categoryService.getWordCountByCategory as jest.Mock).mockResolvedValue(5);
     const { findByText } = renderModal({ editCategory: editCat });
-    // Wait for the word count query to resolve before pressing delete
+    // Wait for the word count query to be called
     await waitFor(() => expect(categoryService.getWordCountByCategory).toHaveBeenCalledWith(1));
+    // Flush TanStack Query's setTimeout-based notification so wordCount state settles
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
     fireEvent.press(await findByText(/Remove/));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalled();

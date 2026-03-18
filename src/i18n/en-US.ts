@@ -109,6 +109,8 @@ export default {
       year: 'year',
       years: 'years',
       and: 'and',
+      day: 'day',
+      days: 'days',
     },
     months: {
       Jan: 'Jan', Feb: 'Feb', Mar: 'Mar', Apr: 'Apr',
@@ -120,8 +122,8 @@ export default {
   // ── Words screen ────────────────────────────────────────────────────────────
   words: {
     title: 'Words',
-    addWord: '+ New',
-    addCategory: '+ Category',
+    addWord: 'New',
+    addCategory: 'Category',
     searchPlaceholder: 'Search words...',
     sortRecent: 'Most recent',
     sortOldest: 'Oldest first',
@@ -131,7 +133,8 @@ export default {
     emptySubtitle: "Add your baby's first little word!",
     emptySearchTitle: 'No words found',
     emptySearchSubtitle: 'We couldn\'t find "{{search}}"',
-    addFirstWord: '+ Add Word',
+    addFirstWord: 'Add Word',
+    newWord: 'New Word',
     deleteTitle: 'Remove Word',
     deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Are you sure you want to remove "{{word}}"? All variants will also be removed.',
@@ -145,7 +148,7 @@ export default {
   // ── Variants screen ─────────────────────────────────────────────────────────
   variants: {
     title: 'Variants',
-    addNew: '+ New',
+    addNew: 'New',
     searchPlaceholder: 'Search variants...',
     hint: "Variants are how the child pronounces each word before learning it correctly",
     emptyTitle: 'No variants yet',
@@ -174,7 +177,7 @@ export default {
     title: 'Settings',
     babyProfile: 'Baby Profile',
     noProfile: 'No profile configured.',
-    editProfile: 'Edit',
+    editProfile: 'Edit Baby Profile',
     girl: 'Girl',
     boy: 'Boy',
     importWords: 'Import Words',
@@ -205,6 +208,7 @@ export default {
     errorShare: 'Could not share the file.',
     language: 'Language',
     languageDesc: 'Choose the app language.',
+    profileBirthLabel: 'Date of birth',
   },
 
   // ── Add Word Modal ───────────────────────────────────────────────────────────

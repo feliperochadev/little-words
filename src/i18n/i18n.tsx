@@ -81,9 +81,8 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) => {
   const [locale, setLocale] = useState<Locale>('en-US');
-  const [ready, setReady] = useState(false);
 
-  // Load persisted locale on mount
+  // Load persisted locale on mount — update async but do not block initial render
   useEffect(() => {
     getSetting('app_locale')
       .then(saved => {
@@ -92,8 +91,7 @@ export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) =>
       .catch((error) => {
         // Fallback to default locale on error
         console.error('[I18n] Failed to load saved locale:', error);
-      })
-      .finally(() => setReady(true));
+      });
   }, []);
 
   const handleSetLocale = useCallback(async (next: Locale) => {
@@ -133,8 +131,6 @@ export const I18nProvider = ({ children }: Readonly<{ children: ReactNode }>) =>
     () => ({ locale, setLocale: handleSetLocale, t, ta, tc }),
     [locale, handleSetLocale, t, ta, tc],
   );
-
-  if (!ready) return null; // Don't render until locale is loaded
 
   return (
     <I18nContext.Provider value={contextValue}>

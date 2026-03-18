@@ -8,6 +8,8 @@ describe('dashboardHelpers', () => {
       'dashboard.age.month': 'month',
       'dashboard.age.months': 'months',
       'dashboard.age.and': 'and',
+      'dashboard.age.day': 'day',
+      'dashboard.age.days': 'days',
       'dashboard.greeting.morning': 'Good morning',
       'dashboard.greeting.afternoon': 'Good afternoon',
       'dashboard.greeting.evening': 'Good evening',
@@ -60,6 +62,17 @@ describe('dashboardHelpers', () => {
       const birth = `${oneMonthAgo.getFullYear()}-${String(oneMonthAgo.getMonth() + 1).padStart(2, '0')}-${String(oneMonthAgo.getDate()).padStart(2, '0')}`;
       const result = getAgeText(birth, mockT);
       expect(result).toBe('1 month');
+    });
+
+    it('returns days when less than 1 month old', () => {
+      // 5 days ago via timestamp arithmetic to avoid month-boundary issues
+      const now = new Date();
+      const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+      const birth = `${fiveDaysAgo.getFullYear()}-${String(fiveDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(fiveDaysAgo.getDate()).padStart(2, '0')}`;
+      const result = getAgeText(birth, mockT);
+      expect(result).toMatch(/\d+ day/);
+      expect(result).not.toContain('month');
+      expect(result).not.toContain('year');
     });
   });
 

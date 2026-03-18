@@ -2,6 +2,159 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_26
+
+**[fix] I18nProvider — remove async null gate to prevent CI test timeout in ImportModal**
+
+- `src/i18n/i18n.tsx`: Removed `ready` state and `if (!ready) return null` guard. `I18nProvider` now renders children immediately with the default `en-US` locale and updates asynchronously when `getSetting('app_locale')` resolves. This eliminates the async rendering window that caused `findByText` in RNTL/React 19 + Jest 30 to hang indefinitely (5 s Jest timeout) on the first test in `ImportModal.test.tsx` on CI.
+- `__tests__/integration/i18n.test.tsx`: Added test `renders children immediately and stays on en-US when getSetting rejects` to cover the `.catch()` branch now that the `.finally()` / `ready` state is gone.
+- `__tests__/integration/AddCategoryModal.test.tsx`: Fixed timing regression in `handleDelete shows word count message when category has words` — added `await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); })` after the `waitFor` call to flush TanStack Query's `setTimeout`-based notification before pressing the delete button. Regression was introduced because the immediate `I18nProvider` render removed the extra async cycle that previously gave TQ time to settle.
+- Validation: `npm run ci` passed (58/58 suites, 1028 tests, 0 warnings).
+
+---
+
+### 2026-03-17_25
+
+**[fix] Profile card layout — separate emoji from name/sex and name/age rows**
+
+- `app/(tabs)/home.tsx`: removed `profileRow` (horizontal flex wrapper). Emoji, name, age row, and greeting are now stacked vertically in `profileBlock` (centered column). `profileEmoji` gains `marginBottom: 6`; `profileGreeting` gains `marginTop: 8`. Removed `profileRow` style.
+- `app/(tabs)/settings.tsx`: split `{profileEmoji} {childName} · {sexLabel}` — emoji is now a separate `<Text testID="settings-profile-emoji">` element above the name/sex text. Added `profileEmoji` style (`fontSize: 32, marginBottom: 2`).
+- `__tests__/screens/settings.test.tsx`: updated 3 tests ("boy emoji", "neutral emoji", "girl emoji") to assert emoji via `settings-profile-emoji` testID instead of `settings-profile-name`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_24
+
+**[feature] Words screen — hide "+ New" button until first word exists**
+**[fix] Home screen — button sizing, spacing, and "New Word" label polish**
+
+- `src/components/ListScreenControls.tsx`: added optional `showAddButton?: boolean` prop (default `true`); button is only rendered when `true`.
+- `app/(tabs)/words.tsx`: passes `showAddButton={words.length > 0 || search.length > 0}` so the "+ New" button is hidden on empty state and visible once words exist or a search is active.
+- `app/(tabs)/home.tsx`: split button styles — `addWordHeaderBtn` (top-right, matches `ListScreenControls.addBtn`: `paddingHorizontal:18`, `paddingVertical:10`, `borderRadius:20`, `fontSize:15`, shadow) and `addWordBtn` (empty-state, matches `Button` md: `paddingHorizontal:24`, `paddingVertical:14`, `borderRadius:16`, `fontSize:16`, `minHeight:48`); reduced `emptyHero.paddingVertical` from 40 → 20; header button now uses `t('words.newWord')`.
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: added `words.newWord` = `'New Word'` / `'Nova Palavra'`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_23
+
+**[fix] Home screen buttons — icon replaces + in text; unify style; navigate to Words on save**
+**[feature] Global — remove + prefix from all button labels; use Ionicons "add" icon throughout**
+
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: removed `+` prefix from `words.addWord`, `words.addFirstWord`, `words.addCategory`, `variants.addNew`.
+- `src/components/ListScreenControls.tsx`: added optional `addButtonIcon?: React.ReactNode` prop rendered before the label; added `flexDirection: 'row'`, `alignItems: 'center'`, `gap: 4` to `addBtn` style.
+- `src/components/UIComponents.tsx`: extended `EmptyState.action` to accept optional `icon?: React.ReactNode`, passed through to `Button`.
+- `app/(tabs)/words.tsx`: passes `addButtonIcon={<Ionicons name="add" …/>}` to `ListScreenControls`; passes `icon` to `EmptyState` action.
+- `app/(tabs)/variants.tsx`: passes `addButtonIcon={<Ionicons name="add" …/>}` to `ListScreenControls`.
+- `app/(tabs)/settings.tsx`: added `<Ionicons name="add">` + `flexDirection: 'row'` to the "Add Category" dashed button; added `testID="settings-add-category-btn"`.
+- `src/components/AddWordModal.tsx`: added `<Ionicons name="add">` to the inline "+ Category" chip.
+- `app/(tabs)/home.tsx`: both add-word buttons now use icon + clean label (no `.replace()`); added `useRouter` + `onSave={() => router.push('/(tabs)/words')}` so saving a word navigates to the Words tab.
+- Tests updated across `variants.test.tsx`, `words.test.tsx`, `settings.test.tsx`, `AddWordModal.test.tsx` to use `testID` selectors instead of `+ …` text matching.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_22
+
+**[feature] Home screen — "+ New" button in header and "+ Add First Word" button in empty state**
+
+- `app/(tabs)/home.tsx`: added `AddWordModal` (with `visible/showAddWord` state). Header area now shows a `+ New` button (testID `home-add-word-btn`) to the right of the brand logo — only visible when `totalWords > 0`. Empty state replaces the "Go to Words" subtitle text with a `+ Add First Word` button (testID `home-add-first-word-btn`) that opens the modal.
+- `src/components/BrandHeader.tsx`: added optional `style?: ViewStyle` prop forwarded to the container so the `marginBottom` can be overridden when placed inside a row.
+- `__tests__/screens/home.test.tsx`: added mocks for `categoryService` and `wordService`; added 3 new tests: add-word button hidden when `totalWords = 0`, visible when `totalWords > 0`, and pressing add-first-word button opens `AddWordModal`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_21
+
+**[fix] Lint cleanup — remove unused variable and fix useEffect deps**
+
+- `src/utils/dateHelpers.ts`: removed unused `dayStr` variable in `formatAgeText` (shadowed by `displayDayStr` introduced in the born-today fix).
+- `src/components/WheelDatePickerModal.tsx`: memoized `defaultDate` with `useMemo` for a stable reference; added `initialDate` and `defaultDate` to `useEffect` deps array; removed now-unnecessary `eslint-disable-next-line` directive.
+- Validation: `npm run ci` passed (0 errors, 0 warnings).
+
+---
+
+### 2026-03-17_20
+
+**[fix] Age display: born-today shows "1 day" instead of "0 days"**
+
+- `src/utils/dateHelpers.ts`: in `formatAgeText`, when `years === 0 && months === 0`, use `Math.max(days, 1)` so a baby born today always displays "1 day" rather than "0 days". Applies to both settings profile card and home dashboard.
+- `__tests__/unit/dateHelpers.test.ts`: added test case "returns '1 day' when born today (0 days)".
+- Validation: `npm run ci` passed (58/58 suites, 1024 tests).
+
+---
+
+### 2026-03-17_19
+
+**[feature] EditProfileModal — dedicated bottom-sheet modal for editing baby profile**
+**[refactor] Onboarding — strip edit mode; extract WheelDatePickerModal**
+
+- `src/components/WheelDatePickerModal.tsx` (new): self-contained wheel date picker modal extracted from `app/onboarding.tsx`. Manages its own picker state; syncs from `initialDate` on open via `columnKey` remount; validates future dates; exposes `onConfirm(date)` / `onClose()`. TestIDs: `wheel-date-cancel-btn`, `wheel-date-title`, `wheel-date-confirm-btn`.
+- `src/components/EditProfileModal.tsx` (new): bottom-sheet modal (pan-gesture dismiss, same pattern as `AddWordModal`) with name, sex, birth date fields. `accentColor` derived from local `sex` state — Cancel/Save buttons update live when sex is toggled. Uses `WheelDatePickerModal` internally. TestIDs: `edit-profile-title`, `edit-profile-name-input`, `edit-profile-sex-girl-btn`, `edit-profile-sex-boy-btn`, `edit-profile-birthdate-btn`, `edit-profile-cancel-btn`, `edit-profile-save-btn`.
+- `app/onboarding.tsx`: stripped to pure onboarding flow — removed `useLocalSearchParams`, `isEditMode`, all picker state, `openPicker`/`confirmPicker`/`handleEditSave`, edit-mode JSX, inline modal, wheel styles. Now uses `<WheelDatePickerModal>`. Also hides language selector and preview card in edit mode (replaced by modal).
+- `app/(tabs)/settings.tsx`: "Edit Baby Profile" button now opens `EditProfileModal` instead of navigating to `/onboarding?edit=true`.
+- `__tests__/integration/editProfileModal.test.tsx` (new): 13 integration tests — render, pre-fill, Cancel/Save, alert validations (name/sex/birth), accentColor live updates, `visible=false` guard.
+- `__tests__/screens/onboarding.test.tsx`: removed all edit-mode tests (moved to `editProfileModal.test.tsx`).
+- `__tests__/screens/settings.test.tsx`: updated edit profile test — asserts modal opens (`edit-profile-title` visible) instead of router navigation.
+- Validation: `npm run ci` passed (58/58 suites, 1023 tests).
+
+---
+
+### 2026-03-17_18
+
+**[feature] Onboarding UX — edit mode title, preview layout, language/preview hidden in edit**
+
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: `settings.editProfile` updated to "Edit Baby Profile" / "Editar Perfil do Bebê".
+- `app/onboarding.tsx` (edit mode, now removed — see 2026-03-17_19):
+  - Edit title changed from "Edit" to "Edit Baby Profile".
+  - Language selector hidden in edit mode.
+  - Preview card hidden in edit mode.
+  - Preview card (normal mode): single full-width row with emoji + name + born-on date inline; centered; fonts bumped (emoji 30, name 18, date 13).
+- Validation: `npm run ci` passed (57/57 suites, 1022 tests).
+
+---
+
+### 2026-03-17_17
+
+**[fix] Onboarding edit mode: Cancel/Save buttons now reflect live sex selection accent color**
+
+- `app/onboarding.tsx`: Cancel (outline) receives `style={{ borderColor: accentColor }}` + `textStyle={{ color: accentColor }}`; Save (primary) receives `style={{ backgroundColor: accentColor, shadowColor: accentColor }}`. Both now react to the local `sex` state instead of the Zustand-stored value.
+
+**[feature] Settings profile card: combined birth date + age line; unified age formatter**
+
+- `src/utils/dateHelpers.ts`: added `computeAge(birthDate, now?)` and `formatAgeText(birthDate, t, separator?, now?)` — the single shared age-formatting utility used by both settings and home (via dashboardHelpers wrapper).
+- `src/utils/dashboardHelpers.ts`: `getAgeText` is now a thin wrapper that parses the date string and delegates to `formatAgeText` with the translated "and" separator; now correctly handles babies < 1 month (days).
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: added `dashboard.age.day`/`days` and `settings.profileBirthLabel`.
+- `app/(tabs)/settings.tsx`: collapsed birth date and age into one `settings-profile-birth` line — `Date of birth: {date} · {age}`; removed local `formatBabyAge` duplicate; imports `formatAgeText` from `dateHelpers`.
+- Tests: `computeAge` (8 cases) + `formatAgeText` (8 cases) unit tests with fixed dates; `getAgeText` days edge case; settings combined-line test; onboarding button-color tests via `StyleSheet.flatten`.
+- Validation: `npm run ci` passed (57/57 suites, 1022 tests).
+
+---
+
+### 2026-03-17_16
+
+[feature] Baby Profile card: show sex emoji + birth date; Onboarding edit mode with Cancel/Save.
+
+- `app/(tabs)/settings.tsx`:
+  - Baby Profile card now shows sex emoji (👧/👦/👶) inline with child's name.
+  - Displays formatted birth date below name row when `birth` is set.
+  - Edit Profile button now navigates to `/onboarding?edit=true`.
+- `app/onboarding.tsx`:
+  - Detects `edit=true` query param via `useLocalSearchParams`.
+  - In edit mode: hides BrandHeader/emoji/title/subtitle; shows "Edit Profile" page title.
+  - Pre-fills name, sex, and birth date from `useSettingsStore` when in edit mode.
+  - Replaces the Continue button with Cancel (outline) + Save (primary) row in edit mode.
+  - Save validates fields, calls `setProfile()` only (not `setOnboardingDone()`), then `router.back()`.
+  - Cancel calls `router.back()` — discards local state changes.
+- `jest.setup.js`: added `useLocalSearchParams` mock to expo-router global mock.
+- `__tests__/screens/settings.test.tsx`: updated emoji tests to use `testID`-based assertions; added birth date display and null-birth tests; updated router push assertion to `/onboarding?edit=true`.
+- `__tests__/screens/onboarding.test.tsx`: added 10 edit mode tests covering pre-fill, button visibility, Cancel, Save (happy path + 3 validation paths).
+- Validation: `npm run ci` passed (57/57 suites).
+
+---
+
 ### 2026-03-17_15
 
 [fix] Replace call-signature interface with function type in sort options helper.

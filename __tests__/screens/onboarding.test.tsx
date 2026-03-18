@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import OnboardingScreen from '../../app/onboarding';
 import * as db from '../../src/services/settingsService';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 jest.spyOn(Alert, 'alert');
 
@@ -15,57 +16,52 @@ jest.mock('../../src/services/settingsService', () => ({
   getChildProfile: jest.fn().mockResolvedValue({ name: '', sex: null, birth: '' }),
 }));
 
+function renderOnboarding() {
+  return render(<I18nProvider><OnboardingScreen /></I18nProvider>);
+}
+
 describe('OnboardingScreen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useSettingsStore.setState({ name: '', sex: null, birth: '', isOnboardingDone: false, isHydrated: true });
+  });
+
+  // ─── Normal (create) mode ───────────────────────────────────────────────
 
   it('renders welcome text', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     expect(await findByText(/Welcome/)).toBeTruthy();
   });
 
   it('renders language selector', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     expect(await findByText('English')).toBeTruthy();
     expect(await findByText('Português')).toBeTruthy();
   });
 
   it('renders name input with placeholder', async () => {
-    const { findByPlaceholderText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByPlaceholderText } = renderOnboarding();
     expect(await findByPlaceholderText(/Sofia/)).toBeTruthy();
   });
 
   it('renders sex selection buttons', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     expect(await findByText('Girl')).toBeTruthy();
     expect(await findByText('Boy')).toBeTruthy();
   });
 
   it('renders date selection button', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     expect(await findByText(/Select date/)).toBeTruthy();
   });
 
   it('renders baby emoji based on no selection', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     expect(await findByText('👶')).toBeTruthy();
   });
 
   it('changes emoji when girl is selected', async () => {
-    const { findByText, findAllByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText, findAllByText } = renderOnboarding();
     fireEvent.press(await findByText('Girl'));
     await waitFor(async () => {
       const emojis = await findAllByText('👧');
@@ -74,9 +70,7 @@ describe('OnboardingScreen', () => {
   });
 
   it('changes emoji when boy is selected', async () => {
-    const { findByText, findAllByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText, findAllByText } = renderOnboarding();
     fireEvent.press(await findByText('Boy'));
     await waitFor(async () => {
       const emojis = await findAllByText('👦');
@@ -85,50 +79,32 @@ describe('OnboardingScreen', () => {
   });
 
   it('opens date picker modal', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     fireEvent.press(await findByText(/Select date/));
     expect(await findByText(/Cancel/)).toBeTruthy();
   });
 
   it('confirms date from picker', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
-    // Open date picker
+    const { findByText } = renderOnboarding();
     fireEvent.press(await findByText(/Select date/));
-    // Press Confirm
     fireEvent.press(await findByText(/Confirm/));
-    // Date should now be displayed (not "Select date")
-    // The date picker modal should close
   });
 
   it('cancels date picker', async () => {
-    const { findByText, findAllByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText, findAllByText } = renderOnboarding();
     fireEvent.press(await findByText(/Select date/));
-    // Press Cancel in the picker
     const cancelBtns = await findAllByText(/Cancel/);
     fireEvent.press(cancelBtns[0]);
-    // Should still show "Select date"
     expect(await findByText(/Select date/)).toBeTruthy();
   });
 
   it('completes full onboarding flow', async () => {
-    const { findByText, findByPlaceholderText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
-    // Fill name
+    const { findByText, findByPlaceholderText } = renderOnboarding();
     const input = await findByPlaceholderText(/Sofia/);
     fireEvent.changeText(input, 'Luna');
-    // Select sex
     fireEvent.press(await findByText('Girl'));
-    // Open and confirm date
     fireEvent.press(await findByText(/Select date/));
     fireEvent.press(await findByText(/Confirm/));
-    // Press continue - allFilled should now be true
     const continueBtn = await findByText(/Start with Luna/);
     await act(async () => { fireEvent.press(continueBtn); });
     await waitFor(() => {
@@ -140,31 +116,20 @@ describe('OnboardingScreen', () => {
   });
 
   it('switches language to Português', async () => {
-    const { findByText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
+    const { findByText } = renderOnboarding();
     fireEvent.press(await findByText('Português'));
-    // Should now show Portuguese text
     expect(await findByText(/Bem-vindo/)).toBeTruthy();
   });
 
   it('alerts when continue pressed without name', async () => {
     jest.useFakeTimers();
-    const { findByText, findByPlaceholderText } = render(
-      <I18nProvider><OnboardingScreen /></I18nProvider>
-    );
-    // Fill sex
+    const { findByText, findByPlaceholderText } = renderOnboarding();
     fireEvent.press(await findByText('Girl'));
-    // Select date
     fireEvent.press(await findByText(/Select date/));
     fireEvent.press(await findByText(/Confirm/));
     act(() => { jest.advanceTimersByTime(200); });
-    // Clear name (leave empty)
     const input = await findByPlaceholderText(/Sofia/);
     fireEvent.changeText(input, '  ');
-    // Need all three for continue button to show - name is trimmed and empty so allFilled is false
-    // Actually allFilled checks name.trim() so with '  ' it's false, no continue button
-    // Let's just verify the form state
     expect(await findByText('Girl')).toBeTruthy();
     jest.useRealTimers();
   });

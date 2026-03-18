@@ -246,7 +246,7 @@ interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   subtitle?: string;
-  action?: { label: string; onPress: () => void };
+  action?: { label: string; onPress: () => void; icon?: React.ReactNode };
 }
 
 export function EmptyState({ emoji, icon, title, subtitle, action }: Readonly<EmptyStateProps>) {
@@ -260,7 +260,7 @@ export function EmptyState({ emoji, icon, title, subtitle, action }: Readonly<Em
       <Text style={emptyStyles.title}>{title}</Text>
       {subtitle ? <Text style={emptyStyles.subtitle}>{subtitle}</Text> : null}
       {action ? (
-        <Button title={action.label} onPress={action.onPress} style={emptyStyles.actionButton} />
+        <Button title={action.label} onPress={action.onPress} icon={action.icon} style={emptyStyles.actionButton} />
       ) : null}
     </View>
   );

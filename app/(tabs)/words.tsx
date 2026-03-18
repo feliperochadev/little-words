@@ -114,7 +114,9 @@ export default function WordsScreen() {
         titleIconColor={colors.primary}
         titleIconTestID="words-title-icon"
         addButtonLabel={t('words.addWord')}
+        addButtonIcon={<Ionicons name="add" size={16} color={colors.textOnPrimary} />}
         addButtonTestID="words-add-btn"
+        showAddButton={words.length > 0 || search.length > 0}
         onPressAdd={() => { setEditWord(null); setShowAddWord(true); }}
         searchValue={search}
         onChangeSearch={handleSearch}
@@ -147,7 +149,7 @@ export default function WordsScreen() {
             icon={<Ionicons name={search ? 'search-outline' : 'create-outline'} size={56} color={colors.textMuted} />}
             title={search ? t('words.emptySearchTitle') : t('words.emptyTitle')}
             subtitle={search ? t('words.emptySearchSubtitle', { search }) : t('words.emptySubtitle')}
-            action={search ? undefined : { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true) }}
+            action={search ? undefined : { label: t('words.addFirstWord'), onPress: () => setShowAddWord(true), icon: <Ionicons name="add" size={16} color="#fff" /> }}
           />
         }
       />
