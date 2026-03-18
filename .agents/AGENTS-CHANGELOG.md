@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_26
+
+**[fix] I18nProvider — remove async null gate to prevent CI test timeout in ImportModal**
+
+- `src/i18n/i18n.tsx`: Removed `ready` state and `if (!ready) return null` guard. `I18nProvider` now renders children immediately with the default `en-US` locale and updates asynchronously when `getSetting('app_locale')` resolves. This eliminates the async rendering window that caused `findByText` in RNTL/React 19 + Jest 30 to hang indefinitely (5 s Jest timeout) on the first test in `ImportModal.test.tsx` on CI.
+- `__tests__/integration/i18n.test.tsx`: Added test `renders children immediately and stays on en-US when getSetting rejects` to cover the `.catch()` branch now that the `.finally()` / `ready` state is gone.
+- `__tests__/integration/AddCategoryModal.test.tsx`: Fixed timing regression in `handleDelete shows word count message when category has words` — added `await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); })` after the `waitFor` call to flush TanStack Query's `setTimeout`-based notification before pressing the delete button. Regression was introduced because the immediate `I18nProvider` render removed the extra async cycle that previously gave TQ time to settle.
+- Validation: `npm run ci` passed (58/58 suites, 1028 tests, 0 warnings).
+
+---
+
 ### 2026-03-17_25
 
 **[fix] Profile card layout — separate emoji from name/sex and name/age rows**
