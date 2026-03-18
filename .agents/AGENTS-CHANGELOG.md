@@ -2,6 +2,16 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_21
+
+**[fix] Lint cleanup — remove unused variable and fix useEffect deps**
+
+- `src/utils/dateHelpers.ts`: removed unused `dayStr` variable in `formatAgeText` (shadowed by `displayDayStr` introduced in the born-today fix).
+- `src/components/WheelDatePickerModal.tsx`: memoized `defaultDate` with `useMemo` for a stable reference; added `initialDate` and `defaultDate` to `useEffect` deps array; removed now-unnecessary `eslint-disable-next-line` directive.
+- Validation: `npm run ci` passed (0 errors, 0 warnings).
+
+---
+
 ### 2026-03-17_20
 
 **[fix] Age display: born-today shows "1 day" instead of "0 days"**

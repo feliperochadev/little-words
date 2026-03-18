@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, Modal, FlatList, Platform, StyleSheet, Alert,
   type NativeScrollEvent, type NativeSyntheticEvent,
@@ -101,8 +101,11 @@ export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor,
   const MIN_YEAR = currentYear - 8;
   const MAX_YEAR = currentYear;
 
-  const defaultDate = new Date();
-  defaultDate.setFullYear(defaultDate.getFullYear() - 1);
+  const defaultDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d;
+  }, []);
 
   const [pickerDay, setPickerDay] = useState(defaultDate.getDate());
   const [pickerMonth, setPickerMonth] = useState(defaultDate.getMonth());
@@ -110,7 +113,6 @@ export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor,
   const [columnKey, setColumnKey] = useState(0);
 
   // Sync from initialDate whenever the modal opens
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!visible) return;
     const ref = initialDate ?? defaultDate;
@@ -118,7 +120,7 @@ export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor,
     setPickerMonth(ref.getMonth());
     setPickerYear(ref.getFullYear());
     setColumnKey(k => k + 1);
-  }, [visible]);
+  }, [visible, initialDate, defaultDate]);
 
   const maxDay = daysInMonth(pickerMonth, pickerYear);
   const clampedDay = Math.min(pickerDay, maxDay);

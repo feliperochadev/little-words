@@ -73,7 +73,6 @@ export function formatAgeText(
   const { years, months, days } = computeAge(birthDate, now);
   const yearStr = years === 1 ? t('dashboard.age.year') : t('dashboard.age.years');
   const monthStr = months === 1 ? t('dashboard.age.month') : t('dashboard.age.months');
-  const dayStr = days === 1 ? t('dashboard.age.day') : t('dashboard.age.days');
   if (years === 0 && months === 0) {
     const displayDays = Math.max(days, 1);
     const displayDayStr = displayDays === 1 ? t('dashboard.age.day') : t('dashboard.age.days');
