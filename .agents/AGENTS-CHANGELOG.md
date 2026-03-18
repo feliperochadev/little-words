@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_25
+
+**[fix] Profile card layout — separate emoji from name/sex and name/age rows**
+
+- `app/(tabs)/home.tsx`: removed `profileRow` (horizontal flex wrapper). Emoji, name, age row, and greeting are now stacked vertically in `profileBlock` (centered column). `profileEmoji` gains `marginBottom: 6`; `profileGreeting` gains `marginTop: 8`. Removed `profileRow` style.
+- `app/(tabs)/settings.tsx`: split `{profileEmoji} {childName} · {sexLabel}` — emoji is now a separate `<Text testID="settings-profile-emoji">` element above the name/sex text. Added `profileEmoji` style (`fontSize: 32, marginBottom: 2`).
+- `__tests__/screens/settings.test.tsx`: updated 3 tests ("boy emoji", "neutral emoji", "girl emoji") to assert emoji via `settings-profile-emoji` testID instead of `settings-profile-name`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
 ### 2026-03-17_24
 
 **[feature] Words screen — hide "+ New" button until first word exists**

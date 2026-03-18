@@ -64,18 +64,14 @@ export default function DashboardScreen() {
 
         {!!name && (
           <View style={styles.profileBlock}>
-            <View style={styles.profileRow}>
-              <Text style={styles.profileEmoji}>{emoji}</Text>
-              <View>
-                <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
-                {ageText && (
-                  <View style={styles.ageRow}>
-                    <Ionicons name="gift-outline" size={12} color={colors.textSecondary} />
-                    <Text style={[styles.profileAge, { color: colors.textSecondary }]}>{ageText}</Text>
-                  </View>
-                )}
+            <Text style={styles.profileEmoji}>{emoji}</Text>
+            <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
+            {ageText && (
+              <View style={styles.ageRow}>
+                <Ionicons name="gift-outline" size={12} color={colors.textSecondary} />
+                <Text style={[styles.profileAge, { color: colors.textSecondary }]}>{ageText}</Text>
               </View>
-            </View>
+            )}
             <Text style={[styles.profileGreeting, { color: colors.textSecondary }]}>{getGreeting(name, sex, t)}</Text>
           </View>
         )}
@@ -201,12 +197,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
   profileBlock: { alignItems: 'center', marginBottom: 20 },
-  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  profileEmoji: { fontSize: 40 },
+  profileEmoji: { fontSize: 40, marginBottom: 6 },
   profileName: { fontSize: 20, fontWeight: '900' },
   ageRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   profileAge: { fontSize: 12, fontWeight: '600' },
-  profileGreeting: { fontSize: 13, textAlign: 'center', lineHeight: 18 },
+  profileGreeting: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginTop: 8 },
   statsGrid: { flexDirection: 'row', marginBottom: 8 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '800' },

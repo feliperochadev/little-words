@@ -204,30 +204,28 @@ describe('SettingsScreen', () => {
   it('renders boy emoji in profile name row', async () => {
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const emojiEl = await findByTestId('settings-profile-emoji');
+    expect(String(emojiEl.props.children)).toContain('👦');
     const nameEl = await findByTestId('settings-profile-name');
-    const children = nameEl.props.children;
-    const text = Array.isArray(children) ? children.join('') : String(children);
-    expect(text).toContain('👦');
-    expect(text).toContain('Leo');
+    const nameText = Array.isArray(nameEl.props.children) ? nameEl.props.children.join('') : String(nameEl.props.children);
+    expect(nameText).toContain('Leo');
   });
 
   it('renders neutral emoji when sex is null', async () => {
     useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const emojiEl = await findByTestId('settings-profile-emoji');
+    expect(String(emojiEl.props.children)).toContain('👶');
     const nameEl = await findByTestId('settings-profile-name');
-    const children = nameEl.props.children;
-    const text = Array.isArray(children) ? children.join('') : String(children);
-    expect(text).toContain('👶');
-    expect(text).toContain('Baby');
+    const nameText = Array.isArray(nameEl.props.children) ? nameEl.props.children.join('') : String(nameEl.props.children);
+    expect(nameText).toContain('Baby');
   });
 
   it('renders girl emoji when sex is girl', async () => {
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
-    const nameEl = await findByTestId('settings-profile-name');
-    const children = nameEl.props.children;
-    const text = Array.isArray(children) ? children.join('') : String(children);
-    expect(text).toContain('👧');
+    const emojiEl = await findByTestId('settings-profile-emoji');
+    expect(String(emojiEl.props.children)).toContain('👧');
   });
 
   it('renders birth date when birth is set', async () => {

@@ -120,8 +120,9 @@ export default function SettingsScreen() {
           </View>
           {childName ? (
             <>
+              <Text style={styles.profileEmoji} testID="settings-profile-emoji">{profileEmoji}</Text>
               <Text style={[styles.sectionDesc, { color: colors.textSecondary }]} testID="settings-profile-name">
-                {profileEmoji} {childName} · {sexLabel}
+                {childName} · {sexLabel}
               </Text>
               {childBirthDate ? (
                 <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
@@ -320,6 +321,7 @@ const styles = StyleSheet.create({
   addCategoryBtnText: { fontWeight: '700', fontSize: 14 },
   editProfileBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700' },
+  profileEmoji: { fontSize: 32, marginBottom: 2 },
   profileBirth: { fontSize: 12, marginTop: 2 },
   // Language picker
   languageRow: { flexDirection: 'row', gap: 10 },
