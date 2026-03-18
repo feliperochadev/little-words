@@ -2,6 +2,19 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_8
+
+**[feature] Baby profile photo — Phase 3: UI/UX polish, photo viewer, theme fix**
+
+- `src/components/ProfileAvatar.tsx`: Increased sizes 50% (`md` 72→108dp, `lg` 96→144dp, emoji sizes scaled). Fixed theme reactivity bug — avatar now derives border/background colors from `getThemeForSex(sex prop)` instead of `useTheme()` (which reads stored sex, not the in-form sex). Badge sizes scaled to `42/36dp`; icons `30/24`; positions `-6/-3`.
+- `app/onboarding.tsx`: Moved `ProfileAvatar lg` to top of screen (above title), replacing the emoji `Text`. Removed the bottom photo section (buttons + preview block). Photo picking now triggered by tapping the avatar at any time. `allowsEditing: true` restored for camera.
+- `app/(tabs)/home.tsx`: `emptyHero` block moved before stats grid (renders when `totalWords === 0`). `EditProfileModal` removed — tapping avatar now opens a fullscreen photo viewer Modal (`testID="home-photo-viewer"`) if a photo exists, or opens source picker Alert if no photo. Viewer shows full-size image with Change + Remove action buttons. Added `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`. Added `viewerBackdrop`, `viewerClose`, `viewerImage`, `viewerActions`, `viewerBtn`, `viewerBtnDanger`, `viewerBtnText` styles.
+- `src/components/EditProfileModal.tsx`: `allowsEditing: true, aspect: [1, 1]` restored for camera launch.
+- `app/(tabs)/settings.tsx`: Birth date and age moved to separate `<Text>` lines (removed dot separator between them).
+- `__tests__/screens/home.test.tsx`: Replaced "opens EditProfileModal" test with two tests: "tapping avatar without photo opens source picker alert" and "tapping avatar with photo opens photo viewer" (waits for emoji to disappear, confirming photo data loaded before press).
+
+---
+
 ### 2026-03-18_7
 
 **[feature] Baby profile photo — Phase 2: camera support, tappable onboarding avatar, settings card layout**

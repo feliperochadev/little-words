@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { getThemeForSex } from '../theme/getThemeForSex';
 import { useI18n } from '../i18n/i18n';
 
-const AVATAR_SIZES = { sm: 44, md: 72, lg: 96 } as const;
-const EMOJI_SIZES = { sm: 20, md: 32, lg: 44 } as const;
+const AVATAR_SIZES = { sm: 44, md: 108, lg: 144 } as const;
+const EMOJI_SIZES = { sm: 20, md: 48, lg: 66 } as const;
 
 export interface ProfileAvatarProps {
   size: 'sm' | 'md' | 'lg';
@@ -13,6 +14,7 @@ export interface ProfileAvatarProps {
   sex?: 'boy' | 'girl' | null;
   onPress?: () => void;
   showDecorations?: boolean;
+  tapHint?: string;
   testID?: string;
 }
 
@@ -22,9 +24,11 @@ export function ProfileAvatar({
   sex,
   onPress,
   showDecorations,
+  tapHint,
   testID,
 }: Readonly<ProfileAvatarProps>) {
-  const { colors, shape } = useTheme();
+  const { shape } = useTheme();
+  const { colors } = getThemeForSex(sex ?? null);
   const { t } = useI18n();
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -57,6 +61,11 @@ export function ProfileAvatar({
             resizeMode="cover"
             onError={() => setImageFailed(true)}
           />
+        ) : tapHint && size !== 'sm' ? (
+          <View style={styles.hintContent}>
+            <Text style={{ fontSize: Math.round(emojiSize * 0.8) }}>{fallbackEmoji}</Text>
+            <Text style={[styles.tapHintText, { color: colors.textSecondary }]}>{tapHint}</Text>
+          </View>
         ) : (
           <Text style={{ fontSize: emojiSize }}>{fallbackEmoji}</Text>
         )}
@@ -73,7 +82,7 @@ export function ProfileAvatar({
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Ionicons name="book-outline" size={20} color={colors.primary} />
+            <Ionicons name="book-outline" size={30} color={colors.primary} />
           </View>
 
           {/* Top-right: speech bubble badge */}
@@ -85,7 +94,7 @@ export function ProfileAvatar({
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.secondary} />
+            <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.secondary} />
           </View>
         </>
       )}
@@ -120,8 +129,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeLg: { width: 28, height: 28 },
-  badgeMd: { width: 24, height: 24 },
-  badgeBottomLeft: { bottom: -4, left: -4 },
-  badgeTopRight: { top: -2, right: -2 },
+  hintContent: { alignItems: 'center', paddingHorizontal: 8 },
+  tapHintText: { fontSize: 10, textAlign: 'center', marginTop: 4, fontWeight: '600', opacity: 0.8 },
+  badgeLg: { width: 42, height: 42 },
+  badgeMd: { width: 36, height: 36 },
+  badgeBottomLeft: { bottom: -6, left: -6 },
+  badgeTopRight: { top: -3, right: -3 },
 });

@@ -148,24 +148,11 @@ describe('OnboardingScreen', () => {
     jest.useRealTimers();
   });
 
-  // ─── Photo section ──────────────────────────────────────────────────────
+  // ─── Photo picker (avatar at top) ───────────────────────────────────────
 
-  it('shows photo section when all fields are filled', async () => {
-    const { findByText, findByPlaceholderText, findByTestId } = renderOnboarding();
-    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
-    fireEvent.press(await findByText('Girl'));
-    fireEvent.press(await findByText(/Select date/));
-    fireEvent.press(await findByText(/Confirm/));
-    expect(await findByTestId('onboarding-photo-section')).toBeTruthy();
-  });
-
-  it('shows add photo button in photo section', async () => {
-    const { findByText, findByPlaceholderText, findByTestId } = renderOnboarding();
-    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
-    fireEvent.press(await findByText('Girl'));
-    fireEvent.press(await findByText(/Select date/));
-    fireEvent.press(await findByText(/Confirm/));
-    expect(await findByTestId('onboarding-add-photo-btn')).toBeTruthy();
+  it('shows profile avatar at top', async () => {
+    const { findByTestId } = renderOnboarding();
+    expect(await findByTestId('onboarding-profile-avatar')).toBeTruthy();
   });
 
   // Helper: invoke a button from the last Alert.alert call by matching text
@@ -185,52 +172,35 @@ describe('OnboardingScreen', () => {
     fireEvent.press(await findByText(/Confirm/));
   }
 
-  it('tapping add photo shows source picker alert', async () => {
+  it('tapping avatar shows source picker alert', async () => {
     const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
     expect(Alert.alert).toHaveBeenCalled();
   });
 
-  it('tapping add photo then choosing gallery opens image library', async () => {
+  it('tapping avatar then choosing gallery opens image library', async () => {
     const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
     launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
     const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
     await act(async () => { pressLastAlertButton('Choose from Library'); });
     expect(launchMock).toHaveBeenCalled();
   });
 
-  it('tapping add photo then choosing camera opens camera', async () => {
+  it('tapping avatar then choosing camera opens camera', async () => {
     const launchMock = ImagePicker.launchCameraAsync as jest.Mock;
     launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
     const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
     await act(async () => { pressLastAlertButton('Take Photo'); });
     expect(launchMock).toHaveBeenCalled();
-  });
-
-  it('shows change photo button after photo is selected from gallery', async () => {
-    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
-    launchMock.mockResolvedValueOnce({
-      canceled: false,
-      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
-    });
-    const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
-    await act(async () => { pressLastAlertButton('Choose from Library'); });
-    expect(await helpers.findByText(/Change photo/)).toBeTruthy();
   });
 
   it('shows permission denied alert when media library permission denied', async () => {
     const permMock = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
     permMock.mockResolvedValueOnce({ granted: false, status: 'denied' });
     const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
     await act(async () => { pressLastAlertButton('Choose from Library'); });
     expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + permission denied
   });
@@ -243,9 +213,9 @@ describe('OnboardingScreen', () => {
     });
     const assetService = require('../../src/services/assetService');
     const helpers = renderOnboarding();
-    await fillAllFields(helpers);
-    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
     await act(async () => { pressLastAlertButton('Choose from Library'); });
+    await fillAllFields(helpers);
     const continueBtn = await helpers.findByText(/Start with Luna/);
     await act(async () => { fireEvent.press(continueBtn); });
     await waitFor(() => {

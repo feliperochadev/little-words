@@ -82,9 +82,7 @@ export default function OnboardingScreen() {
         setPickingPhoto(false);
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true, aspect: [1, 1], quality: 0.8,
-      });
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
@@ -127,7 +125,16 @@ export default function OnboardingScreen() {
 
         <BrandHeader />
 
-        <Text style={styles.emoji}>{profileEmoji}</Text>
+        <View style={styles.topAvatarWrap}>
+          <ProfileAvatar
+            size="lg"
+            photoUri={selectedPhoto?.uri ?? null}
+            sex={sex}
+            onPress={handlePickPhoto}
+            tapHint={t('onboarding.tapToAddPhoto')}
+            testID="onboarding-profile-avatar"
+          />
+        </View>
         <Text style={styles.title}>{t('onboarding.welcome')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
 
@@ -213,31 +220,6 @@ export default function OnboardingScreen() {
         )}
 
         {allFilled && (
-          <View style={styles.photoSection} testID="onboarding-photo-section">
-            <ProfileAvatar
-              size="lg"
-              photoUri={selectedPhoto?.uri ?? null}
-              sex={sex}
-              onPress={handlePickPhoto}
-              testID="onboarding-profile-avatar"
-            />
-            <Text style={[styles.photoOptionalLabel, { color: THEME_COLORS.textSecondary }]}>
-              {t('onboarding.photoOptional')}
-            </Text>
-            <TouchableOpacity
-              style={[styles.photoBtn, styles.photoBtnOutline, { borderColor: accentColor }]}
-              onPress={handlePickPhoto}
-              disabled={pickingPhoto}
-              testID="onboarding-add-photo-btn"
-            >
-              <Text style={[styles.photoBtnText, { color: accentColor }]}>
-                {selectedPhoto ? t('onboarding.changePhoto') : t('onboarding.addPhoto')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {allFilled && (
           <TouchableOpacity
             style={[styles.continueBtn, { backgroundColor: accentColor }]}
             onPress={handleContinue}
@@ -267,7 +249,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.background },
   content: { padding: 28, alignItems: 'center' },
-  emoji: { fontSize: 72, marginBottom: 16, marginTop: 8 },
+  topAvatarWrap: { marginBottom: 16, marginTop: 8 },
   title: { fontSize: 30, fontWeight: '900', color: THEME_COLORS.text, textAlign: 'center', lineHeight: 36, marginBottom: 8 },
   subtitle: { fontSize: 15, color: THEME_COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
   field: { width: '100%', marginBottom: 24 },
@@ -288,7 +270,7 @@ const styles = StyleSheet.create({
   },
   sexRow: { flexDirection: 'row', gap: 12 },
   sexBtn: {
-    flex: 1, alignItems: 'center', paddingVertical: 18,
+    flex: 1, alignItems: 'center', paddingVertical: 9,
     backgroundColor: THEME_COLORS.surface, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
   },
   sexBtnGirl: { borderColor: THEME_COLORS.profileGirl, backgroundColor: THEME_COLORS.profileGirlBg },
@@ -320,10 +302,4 @@ const styles = StyleSheet.create({
   },
   continueBtnText: { color: THEME_COLORS.textOnPrimary, fontSize: 17, fontWeight: '800' },
   bottomSpacer: { height: 40 },
-  photoSection: { alignItems: 'center', marginBottom: 20, gap: 10 },
-  photoOptionalLabel: { fontSize: 13, textAlign: 'center' },
-  photoActions: { flexDirection: 'row', gap: 10 },
-  photoBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, minHeight: 44, justifyContent: 'center' },
-  photoBtnOutline: { borderWidth: 2 },
-  photoBtnText: { fontSize: 15, fontWeight: '700' },
 });

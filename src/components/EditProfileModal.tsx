@@ -70,9 +70,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
         setPickingPhoto(false);
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true, aspect: [1, 1], quality: 0.8,
-      });
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         setPhotoUri(asset.uri);
@@ -160,16 +158,19 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
               {/* Photo */}
               <View style={s.photoSection}>
                 <ProfileAvatar
-                  size="md"
+                  size="lg"
                   photoUri={photoUri}
                   sex={sex}
                   onPress={handlePickPhoto}
                   showDecorations={false}
+                  tapHint={photoUri ? undefined : t('onboarding.tapToAddPhoto')}
                   testID="edit-profile-avatar"
                 />
-                <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
-                  {t('settings.tapToChangePhoto')}
-                </Text>
+                {photoUri ? (
+                  <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
+                    {t('settings.tapToChangePhoto')}
+                  </Text>
+                ) : null}
                 {photoUri ? (
                   <TouchableOpacity onPress={handleRemovePhoto} testID="edit-profile-remove-photo-btn">
                     <Text style={[s.removePhotoText, { color: THEME_COLORS.error }]}>

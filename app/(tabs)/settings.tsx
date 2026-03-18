@@ -129,9 +129,14 @@ export default function SettingsScreen() {
                   {childName} · {sexLabel}
                 </Text>
                 {childBirthDate ? (
-                  <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
-                    {t('settings.profileBirthLabel')}: {formatDisplayDate(childBirthDate)} · {formatAgeText(childBirthDate, t)}
-                  </Text>
+                  <>
+                    <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
+                      {t('settings.profileBirthLabel')}: {formatDisplayDate(childBirthDate)}
+                    </Text>
+                    <Text style={[styles.profileBirth, { color: colors.textMuted }]}>
+                      {formatAgeText(childBirthDate, t)}
+                    </Text>
+                  </>
                 ) : null}
               </View>
             </View>

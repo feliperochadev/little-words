@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { waitFor, fireEvent } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
@@ -256,11 +257,33 @@ describe('DashboardScreen', () => {
     expect(await findByTestId('home-profile-avatar')).toBeTruthy();
   });
 
-  it('tapping profile avatar opens EditProfileModal', async () => {
+  it('tapping profile avatar without photo opens source picker alert', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
     const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    jest.spyOn(Alert, 'alert');
     fireEvent.press(await findByTestId('home-profile-avatar'));
-    expect(await findByTestId('edit-profile-title')).toBeTruthy();
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        expect.any(String),
+        undefined,
+        expect.arrayContaining([expect.objectContaining({ style: 'cancel' })])
+      );
+    });
+  });
+
+  it('tapping profile avatar with photo opens photo viewer', async () => {
+    const assetService = require('../../src/services/assetService') as typeof import('../../src/services/assetService');
+    (assetService.getProfilePhoto as jest.Mock).mockResolvedValue({ id: 1, uri: 'file:///test.jpg', parent_type: 'profile', parent_id: 1, asset_type: 'photo', file_path: '/test.jpg', mime_type: 'image/jpeg', file_size: 100, created_at: '' });
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId, getByTestId, queryByText } = renderWithProviders(<DashboardScreen />);
+    await findByTestId('home-profile-avatar');
+    // Wait for photo to load — avatar switches from emoji to Image when photo is ready
+    await waitFor(() => { expect(queryByText('👧')).toBeNull(); });
+    fireEvent.press(getByTestId('home-profile-avatar'));
+    expect(await findByTestId('home-photo-viewer-close')).toBeTruthy();
+    expect(await findByTestId('home-photo-viewer-change')).toBeTruthy();
+    expect(await findByTestId('home-photo-viewer-remove')).toBeTruthy();
   });
 });

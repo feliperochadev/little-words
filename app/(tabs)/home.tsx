@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
+  Modal, Image, Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { AddWordModal } from '../../src/components/AddWordModal';
-import { EditProfileModal } from '../../src/components/EditProfileModal';
 import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { useRouter } from 'expo-router';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
@@ -15,7 +16,7 @@ import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useProfilePhoto } from '../../src/hooks/useAssets';
+import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../../src/hooks/useAssets';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -25,11 +26,67 @@ export default function DashboardScreen() {
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const [pickingPhoto, setPickingPhoto] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;
+  const saveProfilePhoto = useSaveProfilePhoto();
+  const removeProfilePhoto = useRemoveProfilePhoto();
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
+
+  const launchPicker = async (source: 'camera' | 'library') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') { Alert.alert(t('common.error'), t('settings.photoPermissionDenied')); setPickingPhoto(false); return; }
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') { Alert.alert(t('common.error'), t('settings.photoPermissionDenied')); setPickingPhoto(false); return; }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    }
+    setPickingPhoto(false);
+  };
+
+  const handlePickPhoto = () => {
+    if (pickingPhoto) return;
+    setPickingPhoto(true);
+    Alert.alert(
+      t('settings.photoSourceTitle'),
+      undefined,
+      [
+        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
+        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
+        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
+      ]
+    );
+  };
+
+  const handleRemovePhoto = () => {
+    Alert.alert(
+      t('settings.removePhoto'),
+      t('settings.removePhotoConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.removePhoto'),
+          style: 'destructive',
+          onPress: async () => {
+            await removeProfilePhoto.mutateAsync();
+            setShowPhotoViewer(false);
+          },
+        },
+      ]
+    );
+  };
 
   // Map numeric month index (1-based) to the short label key
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -72,7 +129,7 @@ export default function DashboardScreen() {
               size="lg"
               photoUri={profilePhotoUri}
               sex={sex}
-              onPress={() => setShowEditProfile(true)}
+              onPress={() => profilePhotoUri ? setShowPhotoViewer(true) : handlePickPhoto()}
               testID="home-profile-avatar"
             />
             <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
@@ -83,6 +140,21 @@ export default function DashboardScreen() {
               </View>
             )}
             <Text style={[styles.profileGreeting, { color: colors.textSecondary }]}>{getGreeting(name, sex, t)}</Text>
+          </View>
+        )}
+
+        {!stats?.totalWords && (
+          <View style={styles.emptyHero}>
+            <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
+            <TouchableOpacity
+              style={[styles.addWordBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+              onPress={() => setShowAddWord(true)}
+              testID="home-add-first-word-btn"
+            >
+              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+              <Text style={[styles.addWordBtnText, { color: colors.textOnPrimary }]}>{t('words.addFirstWord')}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -173,21 +245,6 @@ export default function DashboardScreen() {
           </Card>
         )}
 
-        {!stats?.totalWords && (
-          <View style={styles.emptyHero}>
-            <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
-            <TouchableOpacity
-              style={[styles.addWordBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
-              onPress={() => setShowAddWord(true)}
-              testID="home-add-first-word-btn"
-            >
-              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
-              <Text style={[styles.addWordBtnText, { color: colors.textOnPrimary }]}>{t('words.addFirstWord')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -199,10 +256,38 @@ export default function DashboardScreen() {
         editWord={null}
       />
 
-      <EditProfileModal
-        visible={showEditProfile}
-        onClose={() => setShowEditProfile(false)}
-      />
+      <Modal
+        visible={showPhotoViewer}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoViewer(false)}
+        testID="home-photo-viewer"
+      >
+        <View style={styles.viewerBackdrop}>
+          <TouchableOpacity style={styles.viewerClose} onPress={() => setShowPhotoViewer(false)} testID="home-photo-viewer-close">
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {profilePhotoUri ? (
+            <Image source={{ uri: profilePhotoUri }} style={styles.viewerImage} resizeMode="contain" />
+          ) : null}
+          <View style={styles.viewerActions}>
+            <TouchableOpacity
+              style={[styles.viewerBtn, { backgroundColor: colors.primary }]}
+              onPress={() => { setShowPhotoViewer(false); handlePickPhoto(); }}
+              testID="home-photo-viewer-change"
+            >
+              <Text style={[styles.viewerBtnText, { color: colors.textOnPrimary }]}>{t('settings.changePhoto')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewerBtn, styles.viewerBtnDanger]}
+              onPress={handleRemovePhoto}
+              testID="home-photo-viewer-remove"
+            >
+              <Text style={[styles.viewerBtnText, { color: colors.error }]}>{t('settings.removePhoto')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -241,6 +326,13 @@ const styles = StyleSheet.create({
   emptyIcon: { marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
   bottomSpacer: { height: 20 },
+  viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  viewerClose: { position: 'absolute', top: 56, right: 20, padding: 8, zIndex: 10 },
+  viewerImage: { width: '90%', height: '60%' },
+  viewerActions: { position: 'absolute', bottom: 60, flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+  viewerBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  viewerBtnDanger: { backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,100,100,0.6)' },
+  viewerBtnText: { fontSize: 15, fontWeight: '700' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   addWordHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },

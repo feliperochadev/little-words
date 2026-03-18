@@ -9,7 +9,7 @@ worktree: false
 
 ## Summary
 
-Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2 additions: camera + gallery source picker via `Alert.alert`, tappable avatar in onboarding, settings profile card upgraded to `md` (72dp) in a horizontal layout — all tests pass with CI green.
+Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2: camera + gallery source picker via Alert, tappable onboarding avatar. Phase 3 (UI/UX polish): avatar sizes increased 50% (md=108dp, lg=144dp), avatar moved to onboarding top, emptyHero moved before stats grid, EditProfileModal theme reactivity fixed, home screen photo viewer modal added, settings birth/age split to two lines.
 
 ## Changes
 
@@ -49,3 +49,11 @@ Added optional baby profile photo feature: singleton asset storage, reusable `Pr
 | `src/i18n/pt-BR.ts` | modified | Added matching Portuguese keys for source picker |
 | `__tests__/integration/editProfileModal.test.tsx` | modified | Updated photo picker tests for Alert-gated camera+gallery flow |
 | `__tests__/screens/onboarding.test.tsx` | modified | Updated photo picker tests for Alert-gated camera+gallery flow |
+| **Phase 3 (UI/UX polish)** | | |
+| `src/components/ProfileAvatar.tsx` | modified | Size increase 50% (md=108, lg=144); theme reactivity fix (getThemeForSex from prop); badge scale |
+| `app/onboarding.tsx` | modified | Avatar moved to top; bottom photo section removed; allowsEditing restored |
+| `app/(tabs)/home.tsx` | modified | emptyHero moved before stats; EditProfileModal replaced with inline photo viewer Modal; launchPicker/handlePickPhoto/handleRemovePhoto added |
+| `app/(tabs)/settings.tsx` | modified | Birth date and age split to two separate text lines |
+| `src/components/EditProfileModal.tsx` | modified | allowsEditing restored for camera |
+| `__tests__/screens/home.test.tsx` | modified | Updated avatar tests for photo viewer flow |
+| `__tests__/screens/onboarding.test.tsx` | modified | Updated for top-avatar structure |

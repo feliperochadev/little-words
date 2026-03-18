@@ -57,7 +57,8 @@ export default {
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
   onboarding: {
-    welcome: 'Welcome to\nLittle Words! 💕',
+    welcome: 'Welcome! 💕',
+    tapToAddPhoto: 'tap to add photo',
     subtitle: "Let's personalize the app for your baby",
     babyName: "Baby's name",
     babyNamePlaceholder: 'E.g.: Sofia, Miguel...',
