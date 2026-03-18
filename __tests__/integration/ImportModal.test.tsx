@@ -65,14 +65,20 @@ beforeEach(() => {
 
 describe('ImportModal', () => {
   // ── Initial render ──────────────────────────────────────────────────────
-  it('renders title', async () => {
-    const { findByText, findByTestId } = renderWithProvider(
+  it(
+    'renders title',
+    async () => {
+      const { findByTestId, getByText } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
-    );
-    expect(await findByText(/Import words/)).toBeTruthy();
-    const icon = await findByTestId('import-title-icon');
-    expect(icon.props.name).toBe('download-outline');
-  });
+      );
+      await waitFor(() => {
+        expect(getByText(/Import words/)).toBeTruthy();
+      });
+      const icon = await findByTestId('import-title-icon');
+      expect(icon.props.name).toBe('download-outline');
+    },
+    10000
+  );
 
   it('uses breeze primary on enabled import button when sex is boy', async () => {
     const { findByPlaceholderText, findByTestId } = renderWithProvider(

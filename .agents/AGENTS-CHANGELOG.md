@@ -2,6 +2,16 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_5
+
+**[fix] Stabilize CI flake in `ImportModal` integration test**
+
+- `__tests__/integration/ImportModal.test.tsx`: hardened `renders title` to wait for a synchronous `getByText(/Import words/)` assertion via `waitFor`, reducing timing sensitivity on slower GitHub Actions workers.
+- `__tests__/integration/ImportModal.test.tsx`: increased timeout for this specific test to `10000` ms to avoid recurrent CI failures when initialization runs slower than Jest's default `5000` ms.
+- Validation: `npm run test -- __tests__/integration/ImportModal.test.tsx --runInBand` and `npm run ci` both passed.
+
+---
+
 ### 2026-03-18_4
 
 **[fix] Sonar cleanup and npm high vulnerability remediation**
