@@ -203,6 +203,7 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
+- `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)
 - `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
 - `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
 
@@ -235,7 +236,7 @@ components/hooks → services → repositories → db/client
 
 **Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `schema_migrations`.
 
-**Assets table:** Stores metadata for audio/photo/video files attached to words or variants. Uses `parent_type` (`word`|`variant`) + `parent_id` as a polymorphic foreign key. Files live in `Documents/media/{words|variants}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
+**Assets table:** Stores metadata for audio/photo/video files. Uses `parent_type` (`word`|`variant`|`profile`) + `parent_id` as a polymorphic foreign key. Profile photos use `parent_type='profile'`, `parent_id=1` as a singleton. Files live in `Documents/media/{words|variants|profile}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
 
 **Category i18n pattern:** Built-in categories are stored in the DB using locale-neutral English keys (e.g. `'animals'`, `'food'`). At render time, `useCategoryName()` resolves them to translated strings. User-created categories are stored as literal names and are never translated.
 
@@ -245,7 +246,11 @@ components/hooks → services → repositories → db/client
 
 **Storage** (`src/utils/assetStorage.ts`): File-system operations using expo-file-system's class-based API (`File`, `Directory`, `Paths.document`). Handles path resolution, directory creation, file copy/delete, and bulk cleanup.
 
-**Service** (`src/services/assetService.ts`): Atomic orchestration — `saveAsset` inserts a DB record, builds the filename from the DB ID, copies the file, then updates the DB. On failure, rolls back the DB record. `removeAsset`, `removeAllAssetsForParent`, `removeAllMedia` for cleanup.
+**Service** (`src/services/assetService.ts`): Atomic orchestration — `saveAsset` inserts a DB record, builds the filename from the DB ID, copies the file, then updates the DB. On failure, rolls back the DB record. `removeAsset`, `removeAllAssetsForParent`, `removeAllMedia` for cleanup. `saveProfilePhoto` / `deleteProfilePhoto` / `getProfilePhoto` manage the singleton profile photo (delete-then-insert pattern ensures only one photo at a time).
+
+**`ProfileAvatar` component** (`src/components/ProfileAvatar.tsx`): Reusable avatar with `sm`/`md`/`lg` sizes (44/72/96dp), photo display or emoji fallback (👧/👦/👶 by `sex`), optional decorations (book + speech bubble badges, default on `lg` only), `onPress` wraps in `TouchableOpacity` with `hitSlop`. All colors from `useTheme()`. Used at `lg` on home (tappable, opens `EditProfileModal`), `md` on settings (horizontal card layout, no decorations), `md` on `EditProfileModal` (tappable for photo pick), `lg` on onboarding (tappable for photo pick).
+
+**Photo picker pattern:** Camera + gallery are both supported via an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard). `launchPicker(source)` is async: requests the appropriate permission (`requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`), then launches the picker. Used consistently in `EditProfileModal` and `app/onboarding.tsx`.
 
 **Dependencies:** `expo-av` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 

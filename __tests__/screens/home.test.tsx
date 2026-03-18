@@ -22,6 +22,13 @@ jest.mock('../../src/services/categoryService', () => ({
   getCategories: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('../../src/services/assetService', () => ({
+  ...jest.requireActual('../../src/services/assetService'),
+  getProfilePhoto: jest.fn().mockResolvedValue(null),
+  getAssetsByParent: jest.fn().mockResolvedValue([]),
+  getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../src/services/wordService', () => ({
   ...jest.requireActual('../../src/services/wordService'),
   addWord: jest.fn().mockResolvedValue(1),
@@ -240,5 +247,20 @@ describe('DashboardScreen', () => {
       expect(getByText('Jun')).toBeTruthy();
       expect(queryByText(/'25/)).toBeNull();
     });
+  });
+
+  it('renders ProfileAvatar with testID when name is set', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('home-profile-avatar')).toBeTruthy();
+  });
+
+  it('tapping profile avatar opens EditProfileModal', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    fireEvent.press(await findByTestId('home-profile-avatar'));
+    expect(await findByTestId('edit-profile-title')).toBeTruthy();
   });
 });

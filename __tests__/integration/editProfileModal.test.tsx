@@ -6,6 +6,8 @@ import { EditProfileModal } from '../../src/components/EditProfileModal';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import * as settingsService from '../../src/services/settingsService';
 import { getThemeForSex } from '../../src/theme/getThemeForSex';
+import { renderWithProviders } from '../helpers/renderWithProviders';
+import * as ImagePicker from 'expo-image-picker';
 
 jest.spyOn(Alert, 'alert');
 
@@ -16,12 +18,23 @@ jest.mock('../../src/services/settingsService', () => ({
   getSetting: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('../../src/services/assetService', () => ({
+  ...jest.requireActual('../../src/services/assetService'),
+  getProfilePhoto: jest.fn().mockResolvedValue(null),
+  saveProfilePhoto: jest.fn().mockResolvedValue({
+    id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
+    filename: 'asset_1.jpg', mime_type: 'image/jpeg', file_size: 1024,
+    duration_ms: null, width: null, height: null, created_at: '2024-01-01T00:00:00.000Z',
+  }),
+  deleteProfilePhoto: jest.fn().mockResolvedValue(undefined),
+  getAssetsByParent: jest.fn().mockResolvedValue([]),
+  getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
+}));
+
 function renderModal(props: { visible?: boolean; onClose?: () => void; onSaved?: () => void } = {}) {
   const onClose = props.onClose ?? jest.fn();
-  const result = render(
-    <I18nProvider>
-      <EditProfileModal visible={props.visible ?? true} onClose={onClose} onSaved={props.onSaved} />
-    </I18nProvider>
+  const result = renderWithProviders(
+    <EditProfileModal visible={props.visible ?? true} onClose={onClose} onSaved={props.onSaved} />
   );
   return { ...result, onClose };
 }
@@ -129,5 +142,94 @@ describe('EditProfileModal', () => {
   it('does not render when visible is false', () => {
     const { queryByTestId } = renderModal({ visible: false });
     expect(queryByTestId('edit-profile-title')).toBeNull();
+  });
+
+  it('renders ProfileAvatar with testID', async () => {
+    const { findByTestId } = renderModal();
+    expect(await findByTestId('edit-profile-avatar')).toBeTruthy();
+  });
+
+  it('does not show remove photo button when no photo exists', async () => {
+    const { findByTestId, queryByTestId } = renderModal();
+    await findByTestId('edit-profile-avatar');
+    expect(queryByTestId('edit-profile-remove-photo-btn')).toBeNull();
+  });
+
+  // Helper: invoke a button from the last Alert.alert call by matching text
+  function pressLastAlertButton(text: string) {
+    const calls = (Alert.alert as jest.Mock).mock.calls;
+    const lastCall = calls[calls.length - 1];
+    const buttons = lastCall[2] as Array<{ text: string; onPress?: () => void }>;
+    const btn = buttons.find((b) => b.text === text);
+    btn?.onPress?.();
+  }
+
+  it('tapping avatar shows source picker alert', async () => {
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    expect(Alert.alert).toHaveBeenCalled();
+  });
+
+  it('tapping avatar then choosing gallery opens image library', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('tapping avatar then choosing camera opens camera', async () => {
+    const launchMock = ImagePicker.launchCameraAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Take Photo'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('shows permission denied alert when media permission is denied', async () => {
+    const permMock = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
+    permMock.mockResolvedValueOnce({ granted: false, status: 'denied' });
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + permission denied
+  });
+
+  it('shows remove photo button when photo URI is set via gallery picker', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
+    });
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    await waitFor(() => expect(findByTestId('edit-profile-remove-photo-btn')).resolves.toBeTruthy());
+  });
+
+  it('remove photo button triggers confirmation alert', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
+    });
+    const { findByTestId } = renderModal();
+    await act(async () => { fireEvent.press(await findByTestId('edit-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    const removeBtn = await findByTestId('edit-profile-remove-photo-btn');
+    await act(async () => { fireEvent.press(removeBtn); });
+    expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + remove confirm
+  });
+
+  it('guards against double tap on picker', async () => {
+    const { findByTestId } = renderModal();
+    const avatar = await findByTestId('edit-profile-avatar');
+    // First press shows source picker alert (setPickingPhoto(true))
+    await act(async () => { fireEvent.press(avatar); });
+    // Second press should be blocked by pickingPhoto guard (Alert not called again)
+    await act(async () => { fireEvent.press(avatar); });
+    expect(Alert.alert).toHaveBeenCalledTimes(1);
   });
 });

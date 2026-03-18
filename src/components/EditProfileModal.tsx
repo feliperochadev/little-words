@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors as THEME_COLORS } from '../theme';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -12,6 +13,8 @@ import { Button } from './UIComponents';
 import { WheelDatePickerModal } from './WheelDatePickerModal';
 import { useI18n } from '../i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../utils/dateHelpers';
+import { ProfileAvatar } from './ProfileAvatar';
+import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../hooks/useAssets';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -30,6 +33,12 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [pickingPhoto, setPickingPhoto] = useState(false);
+
+  const { data: profilePhoto } = useProfilePhoto();
+  const saveProfilePhoto = useSaveProfilePhoto();
+  const removeProfilePhoto = useRemoveProfilePhoto();
 
   const accentColor = getThemeForSex(sex).colors.primary;
   const isBoy = sex === 'boy';
@@ -46,6 +55,79 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
       return new Date(y, m - 1, d);
     });
   }, [visible, storedName, storedSex, storedBirth]);
+
+  // Pre-fill photo URI from query when modal opens
+  useEffect(() => {
+    if (!visible) return;
+    setPhotoUri(profilePhoto?.uri ?? null);
+  }, [visible, profilePhoto]);
+
+  const launchPicker = async (source: 'camera' | 'library') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+        setPickingPhoto(false);
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true, aspect: [1, 1], quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setPhotoUri(asset.uri);
+        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+        setPickingPhoto(false);
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setPhotoUri(asset.uri);
+        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    }
+    setPickingPhoto(false);
+  };
+
+  const handlePickPhoto = () => {
+    if (pickingPhoto) return;
+    setPickingPhoto(true);
+    Alert.alert(
+      t('settings.photoSourceTitle'),
+      undefined,
+      [
+        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
+        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
+        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
+      ]
+    );
+  };
+
+  const handleRemovePhoto = () => {
+    Alert.alert(
+      t('settings.removePhoto'),
+      t('settings.removePhotoConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.removePhoto'),
+          style: 'destructive',
+          onPress: async () => {
+            await removeProfilePhoto.mutateAsync();
+            setPhotoUri(null);
+          },
+        },
+      ]
+    );
+  };
 
   const handleSave = async () => {
     if (!name.trim()) { Alert.alert(t('common.attention'), t('onboarding.errorName')); return; }
@@ -75,6 +157,28 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* Photo */}
+              <View style={s.photoSection}>
+                <ProfileAvatar
+                  size="md"
+                  photoUri={photoUri}
+                  sex={sex}
+                  onPress={handlePickPhoto}
+                  showDecorations={false}
+                  testID="edit-profile-avatar"
+                />
+                <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
+                  {t('settings.tapToChangePhoto')}
+                </Text>
+                {photoUri ? (
+                  <TouchableOpacity onPress={handleRemovePhoto} testID="edit-profile-remove-photo-btn">
+                    <Text style={[s.removePhotoText, { color: THEME_COLORS.error }]}>
+                      {t('settings.removePhoto')}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
               {/* Name */}
               <Text style={[s.label, { color: THEME_COLORS.textSecondary }]}>{t('onboarding.babyName').toUpperCase()}</Text>
               <TextInput
@@ -161,6 +265,9 @@ const s = StyleSheet.create({
   handleWrap: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 4 },
   handle: { width: 40, height: 4, borderRadius: 2 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 20 },
+  photoSection: { alignItems: 'center', gap: 8, marginBottom: 20 },
+  photoHint: { fontSize: 12 },
+  removePhotoText: { fontSize: 13, fontWeight: '600' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
     backgroundColor: THEME_COLORS.surface, borderRadius: 14,

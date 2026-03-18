@@ -5,6 +5,7 @@ import type { ParentType, AssetType } from '../types/asset';
 const PARENT_DIRS: Record<ParentType, string> = {
   word: 'words',
   variant: 'variants',
+  profile: 'profile',
 };
 
 const ASSET_TYPE_DIRS: Record<AssetType, string> = {

@@ -7,12 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { AddWordModal } from '../../src/components/AddWordModal';
+import { EditProfileModal } from '../../src/components/EditProfileModal';
+import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { useRouter } from 'expo-router';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useProfilePhoto } from '../../src/hooks/useAssets';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -22,6 +25,9 @@ export default function DashboardScreen() {
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const { data: profilePhoto } = useProfilePhoto();
+  const profilePhotoUri = profilePhoto?.uri ?? null;
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
@@ -35,8 +41,6 @@ export default function DashboardScreen() {
   };
 
   const { colors } = useTheme();
-  const emojiBySex = { girl: '👧', boy: '👦' } as const;
-  const emoji = sex ? emojiBySex[sex] : '👶';
   const ageText = birth ? getAgeText(birth, t) : null;
   const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
@@ -64,7 +68,13 @@ export default function DashboardScreen() {
 
         {!!name && (
           <View style={styles.profileBlock}>
-            <Text style={styles.profileEmoji}>{emoji}</Text>
+            <ProfileAvatar
+              size="lg"
+              photoUri={profilePhotoUri}
+              sex={sex}
+              onPress={() => setShowEditProfile(true)}
+              testID="home-profile-avatar"
+            />
             <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
             {ageText && (
               <View style={styles.ageRow}>
@@ -188,6 +198,11 @@ export default function DashboardScreen() {
         onSave={() => router.push('/(tabs)/words')}
         editWord={null}
       />
+
+      <EditProfileModal
+        visible={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -197,8 +212,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
   profileBlock: { alignItems: 'center', marginBottom: 20 },
-  profileEmoji: { fontSize: 40, marginBottom: 6 },
-  profileName: { fontSize: 20, fontWeight: '900' },
+  profileName: { fontSize: 20, fontWeight: '900', marginTop: 8 },
   ageRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   profileAge: { fontSize: 12, fontWeight: '600' },
   profileGreeting: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginTop: 8 },

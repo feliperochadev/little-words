@@ -1,0 +1,51 @@
+---
+name: 2026-03-18_01-baby-profile-photo
+plan: .agents/plan/design/2026-03-18_01-baby-profile-photo.md
+status: done
+started: 2026-03-18
+agent: claude
+worktree: false
+---
+
+## Summary
+
+Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2 additions: camera + gallery source picker via `Alert.alert`, tappable avatar in onboarding, settings profile card upgraded to `md` (72dp) in a horizontal layout — all tests pass with CI green.
+
+## Changes
+
+| File | Action | Notes |
+|------|--------|-------|
+| `src/types/asset.ts` | modified | Extended `ParentType` union to include `'profile'` |
+| `src/db/init.ts` | modified | Updated assets table DDL CHECK constraint for fresh installs |
+| `src/db/migrations/0002_add-profile-parent-type.ts` | created | Migration v2 to recreate assets table with expanded constraint |
+| `src/db/migrations/index.ts` | modified | Registered migration v2 |
+| `src/utils/assetStorage.ts` | modified | Added `profile` entry to `PARENT_DIRS` record |
+| `src/repositories/assetRepository.ts` | modified | Added `getProfilePhoto()` and `deleteProfilePhotoAsset()` |
+| `src/services/assetService.ts` | modified | Added `getProfilePhoto()`, `saveProfilePhoto()`, `deleteProfilePhoto()` |
+| `src/hooks/useAssets.ts` | modified | Added `useProfilePhoto`, `useSaveProfilePhoto`, `useRemoveProfilePhoto` |
+| `src/components/ProfileAvatar.tsx` | created | Reusable avatar component (sm/md/lg, photo/emoji, decorations) |
+| `app/onboarding.tsx` | modified | Added optional photo step with picker integration |
+| `app/(tabs)/home.tsx` | modified | Replaced emoji Text with ProfileAvatar lg, tap opens EditProfileModal |
+| `app/(tabs)/settings.tsx` | modified | Replaced emoji Text with ProfileAvatar sm (no decorations) |
+| `src/components/EditProfileModal.tsx` | modified | Added photo picker, avatar, remove photo, pre-fill from hook |
+| `src/i18n/en-US.ts` | modified | Added 9 new i18n keys for photo flows |
+| `src/i18n/pt-BR.ts` | modified | Added matching 9 Portuguese i18n keys |
+| `__tests__/unit/profilePhotoService.test.ts` | created | Unit tests for getProfilePhoto, saveProfilePhoto, deleteProfilePhoto |
+| `__tests__/integration/ProfileAvatar.test.tsx` | created | Integration tests for all avatar variants, photo/emoji, decorations, press |
+| `__tests__/integration/useAssets.test.tsx` | modified | Added describe blocks for useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto |
+| `__tests__/integration/editProfileModal.test.tsx` | modified | Migrated to renderWithProviders; added 8 photo-related tests |
+| `__tests__/screens/onboarding.test.tsx` | modified | Added assetService mock; added 7 photo section tests |
+| `__tests__/screens/home.test.tsx` | modified | Added assetService mock; added 2 avatar tests |
+| `__tests__/screens/settings.test.tsx` | modified | Added assetService mock; updated 3 emoji assertions for ProfileAvatar |
+| `__tests__/unit/assetDatabase.test.ts` | modified | Updated CHECK constraint assertion for new 'profile' value |
+| `__tests__/unit/migrator.test.ts` | modified | Updated "skips applied migrations" to include v2 in mock |
+| `CLAUDE.md` | modified | Updated hooks, assets table, service, and added ProfileAvatar docs |
+| `.agents/AGENTS-CHANGELOG.md` | modified | Added 2026-03-18_6 entry |
+| **Phase 2 additions** | | |
+| `app/onboarding.tsx` | modified | Tappable `ProfileAvatar` avatar; camera + gallery source picker via Alert |
+| `src/components/EditProfileModal.tsx` | modified | Camera + gallery source picker via Alert (replaced gallery-only) |
+| `app/(tabs)/settings.tsx` | modified | Avatar upgraded to `md` size; horizontal profile card layout |
+| `src/i18n/en-US.ts` | modified | Added `photoSourceTitle`, `photoSourceCamera`, `photoSourceGallery` |
+| `src/i18n/pt-BR.ts` | modified | Added matching Portuguese keys for source picker |
+| `__tests__/integration/editProfileModal.test.tsx` | modified | Updated photo picker tests for Alert-gated camera+gallery flow |
+| `__tests__/screens/onboarding.test.tsx` | modified | Updated photo picker tests for Alert-gated camera+gallery flow |

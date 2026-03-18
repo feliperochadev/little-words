@@ -40,9 +40,9 @@ describe('migrator', () => {
     });
 
     it('skips migrations that are already applied', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }]); // already applied
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }, { version: 2 }]); // all applied
       await runMigrations();
-      // withTransactionSync should NOT have been called since migration 1 is already applied
+      // withTransactionSync should NOT have been called since all migrations are already applied
       expect(mockDb.withTransactionSync).not.toHaveBeenCalled();
     });
 

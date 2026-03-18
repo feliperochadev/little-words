@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,9 +11,11 @@ import { colors as THEME_COLORS } from '../src/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { getThemeForSex } from '../src/theme/getThemeForSex';
 import { BrandHeader } from '../src/components/BrandHeader';
+import { ProfileAvatar } from '../src/components/ProfileAvatar';
 import { WheelDatePickerModal } from '../src/components/WheelDatePickerModal';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../src/utils/dateHelpers';
+import { useSaveProfilePhoto } from '../src/hooks/useAssets';
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -23,7 +26,10 @@ export default function OnboardingScreen() {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; mimeType: string; fileSize: number } | null>(null);
+  const [pickingPhoto, setPickingPhoto] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const saveProfilePhoto = useSaveProfilePhoto();
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
@@ -56,9 +62,63 @@ export default function OnboardingScreen() {
       sex: selectedSex,
       birth: toStorageDate(selectedBirthDate),
     });
+    if (selectedPhoto) {
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: selectedPhoto.uri,
+        mimeType: selectedPhoto.mimeType,
+        fileSize: selectedPhoto.fileSize,
+      });
+    }
     await useSettingsStore.getState().setOnboardingDone();
     setLoading(false);
     router.replace('/(tabs)/home');
+  };
+
+  const launchPicker = async (source: 'camera' | 'library') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+        setPickingPhoto(false);
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true, aspect: [1, 1], quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+        setPickingPhoto(false);
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+      }
+    }
+    setPickingPhoto(false);
+  };
+
+  const handlePickPhoto = () => {
+    if (pickingPhoto) return;
+    setPickingPhoto(true);
+    Alert.alert(
+      t('settings.photoSourceTitle'),
+      undefined,
+      [
+        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
+        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
+        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
+      ]
+    );
   };
 
   return (
@@ -153,6 +213,31 @@ export default function OnboardingScreen() {
         )}
 
         {allFilled && (
+          <View style={styles.photoSection} testID="onboarding-photo-section">
+            <ProfileAvatar
+              size="lg"
+              photoUri={selectedPhoto?.uri ?? null}
+              sex={sex}
+              onPress={handlePickPhoto}
+              testID="onboarding-profile-avatar"
+            />
+            <Text style={[styles.photoOptionalLabel, { color: THEME_COLORS.textSecondary }]}>
+              {t('onboarding.photoOptional')}
+            </Text>
+            <TouchableOpacity
+              style={[styles.photoBtn, styles.photoBtnOutline, { borderColor: accentColor }]}
+              onPress={handlePickPhoto}
+              disabled={pickingPhoto}
+              testID="onboarding-add-photo-btn"
+            >
+              <Text style={[styles.photoBtnText, { color: accentColor }]}>
+                {selectedPhoto ? t('onboarding.changePhoto') : t('onboarding.addPhoto')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {allFilled && (
           <TouchableOpacity
             style={[styles.continueBtn, { backgroundColor: accentColor }]}
             onPress={handleContinue}
@@ -235,4 +320,10 @@ const styles = StyleSheet.create({
   },
   continueBtnText: { color: THEME_COLORS.textOnPrimary, fontSize: 17, fontWeight: '800' },
   bottomSpacer: { height: 40 },
+  photoSection: { alignItems: 'center', marginBottom: 20, gap: 10 },
+  photoOptionalLabel: { fontSize: 13, textAlign: 'center' },
+  photoActions: { flexDirection: 'row', gap: 10 },
+  photoBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, minHeight: 44, justifyContent: 'center' },
+  photoBtnOutline: { borderWidth: 2 },
+  photoBtnText: { fontSize: 15, fontWeight: '700' },
 });

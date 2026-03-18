@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
 import OnboardingScreen from '../../app/onboarding';
 import * as db from '../../src/services/settingsService';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { renderWithProviders } from '../helpers/renderWithProviders';
+import * as ImagePicker from 'expo-image-picker';
 
 jest.spyOn(Alert, 'alert');
 
@@ -16,8 +17,21 @@ jest.mock('../../src/services/settingsService', () => ({
   getChildProfile: jest.fn().mockResolvedValue({ name: '', sex: null, birth: '' }),
 }));
 
+jest.mock('../../src/services/assetService', () => ({
+  ...jest.requireActual('../../src/services/assetService'),
+  getProfilePhoto: jest.fn().mockResolvedValue(null),
+  saveProfilePhoto: jest.fn().mockResolvedValue({
+    id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
+    filename: 'asset_1.jpg', mime_type: 'image/jpeg', file_size: 1024,
+    duration_ms: null, width: null, height: null, created_at: '2024-01-01T00:00:00.000Z',
+  }),
+  deleteProfilePhoto: jest.fn().mockResolvedValue(undefined),
+  getAssetsByParent: jest.fn().mockResolvedValue([]),
+  getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
+}));
+
 function renderOnboarding() {
-  return render(<I18nProvider><OnboardingScreen /></I18nProvider>);
+  return renderWithProviders(<OnboardingScreen />);
 }
 
 describe('OnboardingScreen', () => {
@@ -132,5 +146,132 @@ describe('OnboardingScreen', () => {
     fireEvent.changeText(input, '  ');
     expect(await findByText('Girl')).toBeTruthy();
     jest.useRealTimers();
+  });
+
+  // ─── Photo section ──────────────────────────────────────────────────────
+
+  it('shows photo section when all fields are filled', async () => {
+    const { findByText, findByPlaceholderText, findByTestId } = renderOnboarding();
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+    expect(await findByTestId('onboarding-photo-section')).toBeTruthy();
+  });
+
+  it('shows add photo button in photo section', async () => {
+    const { findByText, findByPlaceholderText, findByTestId } = renderOnboarding();
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+    expect(await findByTestId('onboarding-add-photo-btn')).toBeTruthy();
+  });
+
+  // Helper: invoke a button from the last Alert.alert call by matching text
+  function pressLastAlertButton(text: string) {
+    const calls = (Alert.alert as jest.Mock).mock.calls;
+    const lastCall = calls[calls.length - 1];
+    const buttons = lastCall[2] as Array<{ text: string; onPress?: () => void }>;
+    const btn = buttons.find((b) => b.text === text);
+    btn?.onPress?.();
+  }
+
+  async function fillAllFields(helpers: ReturnType<typeof renderOnboarding>) {
+    const { findByText, findByPlaceholderText } = helpers;
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+  }
+
+  it('tapping add photo shows source picker alert', async () => {
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    expect(Alert.alert).toHaveBeenCalled();
+  });
+
+  it('tapping add photo then choosing gallery opens image library', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('tapping add photo then choosing camera opens camera', async () => {
+    const launchMock = ImagePicker.launchCameraAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { pressLastAlertButton('Take Photo'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('shows change photo button after photo is selected from gallery', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
+    });
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(await helpers.findByText(/Change photo/)).toBeTruthy();
+  });
+
+  it('shows permission denied alert when media library permission denied', async () => {
+    const permMock = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
+    permMock.mockResolvedValueOnce({ granted: false, status: 'denied' });
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + permission denied
+  });
+
+  it('saves profile photo on continue when photo is selected', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
+    });
+    const assetService = require('../../src/services/assetService');
+    const helpers = renderOnboarding();
+    await fillAllFields(helpers);
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-add-photo-btn')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    const continueBtn = await helpers.findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(assetService.saveProfilePhoto).toHaveBeenCalledWith(
+        'file:///tmp/photo.jpg',
+        'image/jpeg',
+        1024,
+        undefined,
+        undefined,
+      );
+    });
+  });
+
+  it('does not save photo on continue when no photo selected (skip)', async () => {
+    const assetService = require('../../src/services/assetService');
+    const { findByText, findByPlaceholderText } = renderOnboarding();
+    const input = await findByPlaceholderText(/Sofia/);
+    fireEvent.changeText(input, 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+    const continueBtn = await findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(db.setChildProfile).toHaveBeenCalled();
+      expect(assetService.saveProfilePhoto).not.toHaveBeenCalled();
+    });
   });
 });

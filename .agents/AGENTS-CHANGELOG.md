@@ -2,6 +2,41 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_7
+
+**[feature] Baby profile photo — Phase 2: camera support, tappable onboarding avatar, settings card layout**
+
+- `app/onboarding.tsx`: `ProfileAvatar` now tappable (`onPress={handlePickPhoto}`). Photo picker replaced with an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `launchPicker('camera'|'library')` handles permission request + launch for each source. Selected photo state extended to `{ uri, mimeType?, fileSize? }`.
+- `src/components/EditProfileModal.tsx`: Replaced gallery-only picker with camera + gallery source picker via `Alert.alert`. `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard); `launchPicker(source)` is async (requests permission, launches appropriate picker). Cancel button resets guard.
+- `app/(tabs)/settings.tsx`: Avatar upgraded from `sm` (44dp) to `md` (72dp). Profile card refactored to horizontal layout — avatar on left, text column (`flex:1`) on right, `gap: 14`. Added `profileRow`, `profileTextCol`, `profileNameInline`, `profileBirth` styles.
+- i18n: Added `settings.photoSourceTitle`, `settings.photoSourceCamera`, `settings.photoSourceGallery` to both `en-US.ts` and `pt-BR.ts`.
+- Tests: Updated `editProfileModal.test.tsx` — all photo picker tests now go through `pressLastAlertButton` helper to simulate Alert → button → picker flow; removed incorrect "permission ok" Alert count. Updated `onboarding.test.tsx` — added `pressLastAlertButton` / `fillAllFields` helpers; all picker tests now go through Alert source picker; camera path tested explicitly.
+
+---
+
+### 2026-03-18_6
+
+**[feature] Baby profile photo — storage, avatar component, and full screen integration**
+
+- `src/types/asset.ts`: Extended `ParentType` union to include `'profile'` for singleton profile photo storage.
+- `src/db/init.ts`: Updated `assets` table DDL to include `'profile'` in `parent_type` CHECK constraint for fresh installs.
+- `src/db/migrations/0002_add-profile-parent-type.ts`: New migration (v2) that recreates the `assets` table with the expanded CHECK constraint via the table-rename pattern (SQLite limitation workaround). Includes `down` for rollback.
+- `src/db/migrations/index.ts`: Registered migration v2.
+- `src/utils/assetStorage.ts`: Added `profile: 'profile'` to `PARENT_DIRS` record to satisfy TypeScript exhaustiveness on the updated `ParentType` union.
+- `src/repositories/assetRepository.ts`: Added `getProfilePhoto()` and `deleteProfilePhotoAsset()` repository functions querying `parent_type='profile'`, `parent_id=1`, `asset_type='photo'`.
+- `src/services/assetService.ts`: Added `getProfilePhoto()`, `saveProfilePhoto()` (delete-then-insert singleton pattern, guards `fileSize=0` from expo-image-picker), `deleteProfilePhoto()` functions.
+- `src/hooks/useAssets.ts`: Added `useProfilePhoto()`, `useSaveProfilePhoto()`, `useRemoveProfilePhoto()` TanStack Query hooks. `useProfilePhoto` returns `ProfilePhotoAsset | null` with computed `uri` via `select`.
+- `src/components/ProfileAvatar.tsx`: New reusable avatar component with `sm`/`md`/`lg` sizes, photo/emoji fallback, optional decorations (book + speech bubble badges on `lg`), `onPress` touch target, full theme token usage.
+- `app/onboarding.tsx`: Added optional photo selection step (after all fields filled), `handlePickPhoto` with permission guard, saves photo via `useSaveProfilePhoto` on continue.
+- `app/(tabs)/home.tsx`: Replaced emoji `Text` with `ProfileAvatar lg`; tapping opens `EditProfileModal`; `useProfilePhoto` query provides photo URI.
+- `app/(tabs)/settings.tsx`: Replaced emoji `Text` with `ProfileAvatar sm` (no decorations, `testID="settings-profile-emoji"` preserved); `useProfilePhoto` query provides photo URI.
+- `src/components/EditProfileModal.tsx`: Added `ProfileAvatar md` at top of form; `handlePickPhoto` opens expo-image-picker; `handleRemovePhoto` with confirmation Alert; photo pre-fill from `useProfilePhoto` on modal open; uses `useSaveProfilePhoto` / `useRemoveProfilePhoto`.
+- i18n: Added `onboarding.addPhoto`, `onboarding.photoOptional`, `onboarding.skipPhoto`, `onboarding.changePhoto`, `settings.tapToChangePhoto`, `settings.removePhoto`, `settings.removePhotoConfirm`, `settings.editPhoto`, `settings.photoPermissionDenied` to both `en-US.ts` and `pt-BR.ts`.
+- Tests: Added `__tests__/unit/profilePhotoService.test.ts`, `__tests__/integration/ProfileAvatar.test.tsx`; updated `useAssets.test.tsx` (+3 hook describe blocks), `editProfileModal.test.tsx` (migrated to `renderWithProviders`, +8 photo tests), `onboarding.test.tsx` (+7 photo section tests), `home.test.tsx` (+2 avatar tests), `settings.test.tsx` (updated 3 emoji assertions to work with `ProfileAvatar` wrapper `View`); fixed `assetDatabase.test.ts` and `migrator.test.ts` for new constraint/migration count.
+- `CLAUDE.md`: Updated hooks list, assets table description, service description; added `ProfileAvatar` component entry.
+
+---
+
 ### 2026-03-18_5
 
 **[fix] Stabilize CI flake in `ImportModal` integration test**

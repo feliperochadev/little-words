@@ -75,6 +75,10 @@ export default {
     errorBirth: 'Selecione a data de nascimento.',
     errorFutureDate: 'A data não pode ser no futuro.',
     language: 'Idioma',
+    addPhoto: 'Adicionar foto',
+    photoOptional: 'Adicione uma foto (opcional)',
+    skipPhoto: 'Pular',
+    changePhoto: 'Trocar foto',
     datePicker: {
       title: 'Data de Nascimento',
       cancel: 'Cancelar',
@@ -209,6 +213,14 @@ export default {
     language: 'Idioma',
     languageDesc: 'Escolha o idioma do aplicativo.',
     profileBirthLabel: 'Data de nascimento',
+    tapToChangePhoto: 'Toque para trocar a foto',
+    removePhoto: 'Remover foto',
+    removePhotoConfirm: 'Tem certeza que deseja remover a foto do perfil?',
+    editPhoto: 'Editar foto',
+    photoPermissionDenied: 'O acesso à galeria de fotos é necessário para selecionar uma foto. Por favor, habilite nas Configurações.',
+    photoSourceTitle: 'Adicionar foto',
+    photoSourceCamera: 'Tirar foto',
+    photoSourceGallery: 'Escolher da galeria',
   },
 
   // ── Add Word Modal ───────────────────────────────────────────────────────────

@@ -75,6 +75,10 @@ export default {
     errorBirth: 'Please select a birth date.',
     errorFutureDate: 'Date cannot be in the future.',
     language: 'Language',
+    addPhoto: 'Add photo',
+    photoOptional: 'Add a photo (optional)',
+    skipPhoto: 'Skip',
+    changePhoto: 'Change photo',
     datePicker: {
       title: 'Date of Birth',
       cancel: 'Cancel',
@@ -209,6 +213,14 @@ export default {
     language: 'Language',
     languageDesc: 'Choose the app language.',
     profileBirthLabel: 'Date of birth',
+    tapToChangePhoto: 'Tap to change photo',
+    removePhoto: 'Remove photo',
+    removePhotoConfirm: 'Are you sure you want to remove the profile photo?',
+    editPhoto: 'Edit photo',
+    photoPermissionDenied: 'Photo library access is required to select a photo. Please enable it in Settings.',
+    photoSourceTitle: 'Add Photo',
+    photoSourceCamera: 'Take Photo',
+    photoSourceGallery: 'Choose from Library',
   },
 
   // ── Add Word Modal ───────────────────────────────────────────────────────────

@@ -20,6 +20,13 @@ jest.mock('../../src/services/categoryService', () => ({
   ]),
 }));
 
+jest.mock('../../src/services/assetService', () => ({
+  ...jest.requireActual('../../src/services/assetService'),
+  getProfilePhoto: jest.fn().mockResolvedValue(null),
+  getAssetsByParent: jest.fn().mockResolvedValue([]),
+  getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../src/utils/csvExport', () => ({
   buildCategoryResolver: jest.fn(() => (name: string) => name),
   buildCSVHeader: jest.fn(() => 'word,category,date,variant'),
@@ -201,11 +208,13 @@ describe('SettingsScreen', () => {
     expect(await findByText('English')).toBeTruthy();
   });
 
-  it('renders boy emoji in profile name row', async () => {
+  it('renders boy avatar in profile card', async () => {
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByTestId } = renderWithProviders(<SettingsScreen />);
-    const emojiEl = await findByTestId('settings-profile-emoji');
-    expect(String(emojiEl.props.children)).toContain('👦');
+    const { findByTestId, getByText } = renderWithProviders(<SettingsScreen />);
+    // testID is on the ProfileAvatar wrapper View — just verify it renders
+    expect(await findByTestId('settings-profile-emoji')).toBeTruthy();
+    // Emoji fallback text should be present in the tree
+    expect(getByText('👦')).toBeTruthy();
     const nameEl = await findByTestId('settings-profile-name');
     const nameText = Array.isArray(nameEl.props.children) ? nameEl.props.children.join('') : String(nameEl.props.children);
     expect(nameText).toContain('Leo');
@@ -213,19 +222,19 @@ describe('SettingsScreen', () => {
 
   it('renders neutral emoji when sex is null', async () => {
     useSettingsStore.setState({ name: 'Baby', sex: null, birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByTestId } = renderWithProviders(<SettingsScreen />);
-    const emojiEl = await findByTestId('settings-profile-emoji');
-    expect(String(emojiEl.props.children)).toContain('👶');
+    const { findByTestId, getByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-profile-emoji')).toBeTruthy();
+    expect(getByText('👶')).toBeTruthy();
     const nameEl = await findByTestId('settings-profile-name');
     const nameText = Array.isArray(nameEl.props.children) ? nameEl.props.children.join('') : String(nameEl.props.children);
     expect(nameText).toContain('Baby');
   });
 
-  it('renders girl emoji when sex is girl', async () => {
+  it('renders girl avatar when sex is girl', async () => {
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
-    const { findByTestId } = renderWithProviders(<SettingsScreen />);
-    const emojiEl = await findByTestId('settings-profile-emoji');
-    expect(String(emojiEl.props.children)).toContain('👧');
+    const { findByTestId, getByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-profile-emoji')).toBeTruthy();
+    expect(getByText('👧')).toBeTruthy();
   });
 
   it('renders birth date when birth is set', async () => {
