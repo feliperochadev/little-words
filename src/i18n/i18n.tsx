@@ -52,7 +52,7 @@ export function deepGet(obj: Record<string, unknown>, path: string): unknown {
 export function interpolate(str: string, params?: Record<string, string | number>): string {
   if (params) {
     return str.replaceAll(/\{\{(\w+)\}\}/g, (_, k) =>
-      params[k] !== undefined ? String(params[k]) : `{{${k}}}`
+      params[k] === undefined ? `{{${k}}}` : String(params[k])
     );
   }
   return str;

@@ -2,6 +2,21 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_4
+
+**[fix] Sonar cleanup and npm high vulnerability remediation**
+
+- `src/db/client.ts`: rewrote ternary guards to avoid negated-condition readability smells (`args === undefined ? ... : ...`) in `query` and `run`.
+- `src/i18n/i18n.tsx`: inverted interpolation conditional to remove negated-condition readability smell while preserving placeholder fallback behavior.
+- `src/components/AddCategoryModal.tsx`: replaced deprecated `StyleSheet.absoluteFillObject` usage with explicit absolute positioning in `backdrop` style.
+- `package.json`: added `overrides.undici: "^7.24.0"` to force patched transitive version.
+- `package-lock.json`: updated after `npm install` to apply the `undici` security override.
+- Validation:
+  - `npm audit --json` now reports `0` vulnerabilities (`high: 0`, `total: 0`).
+  - `npm run ci` passed (58/58 suites, 1039 tests, semgrep 0 findings).
+
+---
+
 ### 2026-03-18_3
 
 **[fix] Category ordering: keep Others/Outros as the last category**
