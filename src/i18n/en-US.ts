@@ -109,6 +109,8 @@ export default {
       year: 'year',
       years: 'years',
       and: 'and',
+      day: 'day',
+      days: 'days',
     },
     months: {
       Jan: 'Jan', Feb: 'Feb', Mar: 'Mar', Apr: 'Apr',
@@ -174,7 +176,7 @@ export default {
     title: 'Settings',
     babyProfile: 'Baby Profile',
     noProfile: 'No profile configured.',
-    editProfile: 'Edit',
+    editProfile: 'Edit Baby Profile',
     girl: 'Girl',
     boy: 'Boy',
     importWords: 'Import Words',
@@ -205,6 +207,7 @@ export default {
     errorShare: 'Could not share the file.',
     language: 'Language',
     languageDesc: 'Choose the app language.',
+    profileBirthLabel: 'Date of birth',
   },
 
   // ── Add Word Modal ───────────────────────────────────────────────────────────

@@ -6,14 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
+import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
-import { formatDisplayDate } from '../../src/utils/dateHelpers';
 import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
 import { ImportModal } from '../../src/components/ImportModal';
+import { EditProfileModal } from '../../src/components/EditProfileModal';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -43,6 +44,7 @@ export default function SettingsScreen() {
 
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -112,7 +114,7 @@ export default function SettingsScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 {t('settings.babyProfile')}
               </Text>
-            <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => router.push('/onboarding?edit=true')} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
+            <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => setShowEditProfile(true)} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
               <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfile')}</Text>
             </TouchableOpacity>
           </View>
@@ -123,7 +125,7 @@ export default function SettingsScreen() {
               </Text>
               {childBirthDate ? (
                 <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
-                  {formatDisplayDate(childBirthDate)}
+                  {t('settings.profileBirthLabel')}: {formatDisplayDate(childBirthDate)} · {formatAgeText(childBirthDate, t)}
                 </Text>
               ) : null}
             </>
@@ -277,6 +279,11 @@ export default function SettingsScreen() {
           onSave={() => setEditCategory(null)}
           onDeleted={() => setEditCategory(null)}
           editCategory={editCategory}
+        />
+
+        <EditProfileModal
+          visible={showEditProfile}
+          onClose={() => setShowEditProfile(false)}
         />
       </ScrollView>
     </SafeAreaView>

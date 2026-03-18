@@ -2,7 +2,63 @@
 
 Entries are added after every approved change. Most recent first.
 
-<<<<<<< HEAD
+### 2026-03-17_20
+
+**[fix] Age display: born-today shows "1 day" instead of "0 days"**
+
+- `src/utils/dateHelpers.ts`: in `formatAgeText`, when `years === 0 && months === 0`, use `Math.max(days, 1)` so a baby born today always displays "1 day" rather than "0 days". Applies to both settings profile card and home dashboard.
+- `__tests__/unit/dateHelpers.test.ts`: added test case "returns '1 day' when born today (0 days)".
+- Validation: `npm run ci` passed (58/58 suites, 1024 tests).
+
+---
+
+### 2026-03-17_19
+
+**[feature] EditProfileModal — dedicated bottom-sheet modal for editing baby profile**
+**[refactor] Onboarding — strip edit mode; extract WheelDatePickerModal**
+
+- `src/components/WheelDatePickerModal.tsx` (new): self-contained wheel date picker modal extracted from `app/onboarding.tsx`. Manages its own picker state; syncs from `initialDate` on open via `columnKey` remount; validates future dates; exposes `onConfirm(date)` / `onClose()`. TestIDs: `wheel-date-cancel-btn`, `wheel-date-title`, `wheel-date-confirm-btn`.
+- `src/components/EditProfileModal.tsx` (new): bottom-sheet modal (pan-gesture dismiss, same pattern as `AddWordModal`) with name, sex, birth date fields. `accentColor` derived from local `sex` state — Cancel/Save buttons update live when sex is toggled. Uses `WheelDatePickerModal` internally. TestIDs: `edit-profile-title`, `edit-profile-name-input`, `edit-profile-sex-girl-btn`, `edit-profile-sex-boy-btn`, `edit-profile-birthdate-btn`, `edit-profile-cancel-btn`, `edit-profile-save-btn`.
+- `app/onboarding.tsx`: stripped to pure onboarding flow — removed `useLocalSearchParams`, `isEditMode`, all picker state, `openPicker`/`confirmPicker`/`handleEditSave`, edit-mode JSX, inline modal, wheel styles. Now uses `<WheelDatePickerModal>`. Also hides language selector and preview card in edit mode (replaced by modal).
+- `app/(tabs)/settings.tsx`: "Edit Baby Profile" button now opens `EditProfileModal` instead of navigating to `/onboarding?edit=true`.
+- `__tests__/integration/editProfileModal.test.tsx` (new): 13 integration tests — render, pre-fill, Cancel/Save, alert validations (name/sex/birth), accentColor live updates, `visible=false` guard.
+- `__tests__/screens/onboarding.test.tsx`: removed all edit-mode tests (moved to `editProfileModal.test.tsx`).
+- `__tests__/screens/settings.test.tsx`: updated edit profile test — asserts modal opens (`edit-profile-title` visible) instead of router navigation.
+- Validation: `npm run ci` passed (58/58 suites, 1023 tests).
+
+---
+
+### 2026-03-17_18
+
+**[feature] Onboarding UX — edit mode title, preview layout, language/preview hidden in edit**
+
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: `settings.editProfile` updated to "Edit Baby Profile" / "Editar Perfil do Bebê".
+- `app/onboarding.tsx` (edit mode, now removed — see 2026-03-17_19):
+  - Edit title changed from "Edit" to "Edit Baby Profile".
+  - Language selector hidden in edit mode.
+  - Preview card hidden in edit mode.
+  - Preview card (normal mode): single full-width row with emoji + name + born-on date inline; centered; fonts bumped (emoji 30, name 18, date 13).
+- Validation: `npm run ci` passed (57/57 suites, 1022 tests).
+
+---
+
+### 2026-03-17_17
+
+**[fix] Onboarding edit mode: Cancel/Save buttons now reflect live sex selection accent color**
+
+- `app/onboarding.tsx`: Cancel (outline) receives `style={{ borderColor: accentColor }}` + `textStyle={{ color: accentColor }}`; Save (primary) receives `style={{ backgroundColor: accentColor, shadowColor: accentColor }}`. Both now react to the local `sex` state instead of the Zustand-stored value.
+
+**[feature] Settings profile card: combined birth date + age line; unified age formatter**
+
+- `src/utils/dateHelpers.ts`: added `computeAge(birthDate, now?)` and `formatAgeText(birthDate, t, separator?, now?)` — the single shared age-formatting utility used by both settings and home (via dashboardHelpers wrapper).
+- `src/utils/dashboardHelpers.ts`: `getAgeText` is now a thin wrapper that parses the date string and delegates to `formatAgeText` with the translated "and" separator; now correctly handles babies < 1 month (days).
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: added `dashboard.age.day`/`days` and `settings.profileBirthLabel`.
+- `app/(tabs)/settings.tsx`: collapsed birth date and age into one `settings-profile-birth` line — `Date of birth: {date} · {age}`; removed local `formatBabyAge` duplicate; imports `formatAgeText` from `dateHelpers`.
+- Tests: `computeAge` (8 cases) + `formatAgeText` (8 cases) unit tests with fixed dates; `getAgeText` days edge case; settings combined-line test; onboarding button-color tests via `StyleSheet.flatten`.
+- Validation: `npm run ci` passed (57/57 suites, 1022 tests).
+
+---
+
 ### 2026-03-17_16
 
 [feature] Baby Profile card: show sex emoji + birth date; Onboarding edit mode with Cancel/Save.
@@ -22,14 +78,15 @@ Entries are added after every approved change. Most recent first.
 - `__tests__/screens/settings.test.tsx`: updated emoji tests to use `testID`-based assertions; added birth date display and null-birth tests; updated router push assertion to `/onboarding?edit=true`.
 - `__tests__/screens/onboarding.test.tsx`: added 10 edit mode tests covering pre-fill, button visibility, Cancel, Save (happy path + 3 validation paths).
 - Validation: `npm run ci` passed (57/57 suites).
-=======
+
+---
+
 ### 2026-03-17_15
 
 [fix] Replace call-signature interface with function type in sort options helper.
 
 - `src/utils/sortOptions.ts`: replaced the `Translator` call-signature interface with a function type alias (`type Translator = (key: string) => string`) to satisfy Sonar/TypeScript style guidance.
 - Validation: `npm run typecheck` passed.
->>>>>>> main
 
 ---
 

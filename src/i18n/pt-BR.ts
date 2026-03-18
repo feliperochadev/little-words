@@ -109,6 +109,8 @@ export default {
       year: 'ano',
       years: 'anos',
       and: 'e',
+      day: 'dia',
+      days: 'dias',
     },
     months: {
       Jan: 'Jan', Feb: 'Fev', Mar: 'Mar', Apr: 'Abr',
@@ -174,7 +176,7 @@ export default {
     title: 'Configurações',
     babyProfile: 'Perfil do Bebê',
     noProfile: 'Nenhum perfil configurado.',
-    editProfile: 'Editar',
+    editProfile: 'Editar Perfil do Bebê',
     girl: 'Menina',
     boy: 'Menino',
     importWords: 'Importar Palavras',
@@ -205,6 +207,7 @@ export default {
     errorShare: 'Não foi possível compartilhar.',
     language: 'Idioma',
     languageDesc: 'Escolha o idioma do aplicativo.',
+    profileBirthLabel: 'Data de nascimento',
   },
 
   // ── Add Word Modal ───────────────────────────────────────────────────────────

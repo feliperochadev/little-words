@@ -3,7 +3,6 @@ import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
-import { useRouter } from 'expo-router';
 
 jest.spyOn(Alert, 'alert');
 
@@ -244,18 +243,24 @@ describe('SettingsScreen', () => {
     expect(queryByTestId('settings-profile-birth')).toBeNull();
   });
 
+  it('renders combined birth date and age line when birth is set', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const birthEl = await findByTestId('settings-profile-birth');
+    const text = String(birthEl.props.children ?? '');
+    expect(text).toMatch(/15\/06\/2023/);
+  });
+
   it('renders no profile message when name is empty', async () => {
     useSettingsStore.setState({ name: '', sex: undefined, birth: '', isOnboardingDone: true, isHydrated: true });
     const { findByText } = renderWithProviders(<SettingsScreen />);
     expect(await findByText(/no profile/i)).toBeTruthy();
   });
 
-  it('navigates to onboarding with edit=true when edit profile is pressed', async () => {
-    const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+  it('opens edit profile modal when edit profile button is pressed', async () => {
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-edit-profile-btn'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding?edit=true');
+    expect(await findByTestId('edit-profile-title')).toBeTruthy();
   });
 
   it('handles clear data double confirmation', async () => {
