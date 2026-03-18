@@ -2,6 +2,59 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_4
+
+**[fix] Sonar cleanup and npm high vulnerability remediation**
+
+- `src/db/client.ts`: rewrote ternary guards to avoid negated-condition readability smells (`args === undefined ? ... : ...`) in `query` and `run`.
+- `src/i18n/i18n.tsx`: inverted interpolation conditional to remove negated-condition readability smell while preserving placeholder fallback behavior.
+- `src/components/AddCategoryModal.tsx`: replaced deprecated `StyleSheet.absoluteFillObject` usage with explicit absolute positioning in `backdrop` style.
+- `package.json`: added `overrides.undici: "^7.24.0"` to force patched transitive version.
+- `package-lock.json`: updated after `npm install` to apply the `undici` security override.
+- Validation:
+  - `npm audit --json` now reports `0` vulnerabilities (`high: 0`, `total: 0`).
+  - `npm run ci` passed (58/58 suites, 1039 tests, semgrep 0 findings).
+
+---
+
+### 2026-03-18_3
+
+**[fix] Category ordering: keep Others/Outros as the last category**
+
+- `src/repositories/categoryRepository.ts`: updated `getCategories()` ordering to force `others/outros` to the end using SQL `CASE` and then sort remaining categories by name.
+- `__tests__/unit/categoryRepository.test.ts`: updated `getCategories` assertion to cover the new ordering rule (`LOWER(name) IN ('others', 'outros')`) plus name sorting.
+- Validation: `npm run ci` passed (58/58 suites, 1039 tests, semgrep 0 findings).
+
+---
+
+### 2026-03-18_2
+
+**[fix] PT-BR category duplicate check now resolves default labels to canonical English DB keys**
+
+- `src/utils/categoryKeys.ts`: added shared normalization helpers:
+  - `canonicalizeCategoryName(name)` maps built-in category labels/keys from PT-BR and EN-US (e.g., `Animais`, `Animals`) to canonical DB keys (e.g., `animals`).
+  - `categoryLookupKey(name)` applies canonicalization plus accent/case normalization for stable comparisons.
+- `src/components/AddCategoryModal.tsx`: duplicate-check and create flow now use canonicalized names before querying/saving, so localized default labels are correctly treated as duplicates of seeded DB keys.
+- `src/components/ImportModal.tsx`: switched import category normalization to the same shared helpers, removing local label-map logic and keeping behavior consistent with modal/UI checks.
+- `__tests__/integration/AddCategoryModal.test.tsx`: added regression test asserting `Animais` normalizes to `animals` in duplicate lookup.
+- `__tests__/unit/categoryKeys.test.ts`: added tests for PT/EN canonicalization and lookup-key normalization behavior.
+- Validation: `npm run ci` passed (58/58 suites, 1039 tests, semgrep 0 findings).
+
+---
+
+### 2026-03-18_1
+
+**[fix] Category duplicate prevention parity with words (repository + UI)**
+
+- `src/repositories/categoryRepository.ts`: added `findCategoryByName(name)` using trimmed, case-insensitive lookup (`LOWER(name) = LOWER(?)`, `LIMIT 1`) to support proactive duplicate checks before insert.
+- `src/services/categoryService.ts`: exported `findCategoryByName` from the service layer.
+- `src/components/AddCategoryModal.tsx`: added debounced duplicate lookup (`TIMING.DUPLICATE_CHECK_DEBOUNCE`) while typing category names in create mode; shows inline duplicate warning (`testID="category-duplicate-warning"`), blocks save when duplicate exists, and keeps existing fallback UNIQUE-error handling.
+- `__tests__/unit/categoryRepository.test.ts`: added coverage for `findCategoryByName` (found, not found, trim/case-insensitive SQL, `LIMIT 1`).
+- `__tests__/integration/AddCategoryModal.test.tsx`: added UI behavior test ensuring duplicate warning is displayed and create action is blocked when a matching category already exists.
+- Validation: `npm run ci` passed (58/58 suites, 1033 tests, semgrep 0 findings).
+
+---
+
 ### 2026-03-17_26
 
 **[fix] I18nProvider — remove async null gate to prevent CI test timeout in ImportModal**

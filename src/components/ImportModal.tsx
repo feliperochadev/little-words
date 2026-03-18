@@ -15,20 +15,8 @@ import { addVariant } from '../services/variantService';
 import { QUERY_KEYS } from '../hooks/queryKeys';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useI18n } from '../i18n/i18n';
-import { DEFAULT_CATEGORIES } from '../utils/categoryKeys';
-import { deaccent, parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
-import enUS from '../i18n/en-US';
-import ptBR from '../i18n/pt-BR';
-
-// Build a reverse map: any translated category label (any locale) → canonical key
-const labelToKey = new Map<string, string>();
-for (const { key } of DEFAULT_CATEGORIES) {
-  for (const catalogue of [enUS, ptBR]) {
-    const label = (catalogue.categories as Record<string, string>)[key];
-    if (label) labelToKey.set(deaccent(label), key);
-  }
-  labelToKey.set(key, key);
-}
+import { DEFAULT_CATEGORIES, canonicalizeCategoryName, categoryLookupKey } from '../utils/categoryKeys';
+import { parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
 
 interface ImportModalProps {
   visible: boolean;
@@ -77,12 +65,11 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   const result: ImportResult = { wordsAdded: 0, variantsAdded: 0, skipped: [], errors: [] };
   const existingCats = await getCategories();
   const catMap = new Map<string, number>();
-  for (const c of existingCats) catMap.set(deaccent(c.name), c.id);
+  for (const c of existingCats) catMap.set(categoryLookupKey(c.name), c.id);
 
   const getOrCreateCat = async (name: string): Promise<number> => {
-    // Normalize accents + case, then resolve to canonical key if it's a known label
-    const normalized = labelToKey.get(deaccent(name)) ?? name;
-    const key = deaccent(normalized);
+    const normalized = canonicalizeCategoryName(name);
+    const key = categoryLookupKey(normalized);
     if (catMap.has(key)) return catMap.get(key)!;
     const id = await addCategory(normalized, DEFAULT_IMPORT_CATEGORY_COLOR, '🏷️');
     catMap.set(key, id);

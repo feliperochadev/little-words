@@ -2,7 +2,24 @@ import { query, run, withTransaction } from '../db/client';
 import type { Category } from '../types/domain';
 
 export const getCategories = (): Promise<Category[]> =>
-  query<Category>('SELECT * FROM categories ORDER BY name ASC');
+  query<Category>(`
+    SELECT *
+    FROM categories
+    ORDER BY
+      CASE
+        WHEN LOWER(name) IN ('others', 'outros') THEN 1
+        ELSE 0
+      END ASC,
+      name ASC
+  `);
+
+export const findCategoryByName = (name: string): Promise<Category | null> =>
+  query<Category>(`
+    SELECT *
+    FROM categories
+    WHERE LOWER(name) = LOWER(?)
+    LIMIT 1
+  `, [name.trim()]).then(rows => rows[0] ?? null);
 
 export const addCategory = async (name: string, color: string, emoji: string): Promise<number> => {
   const result = await run(

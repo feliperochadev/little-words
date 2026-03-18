@@ -12,6 +12,7 @@ jest.spyOn(Alert, 'alert');
 
 jest.mock('../../src/services/categoryService', () => ({
   ...jest.requireActual('../../src/services/categoryService'),
+  findCategoryByName: jest.fn().mockResolvedValue(null),
   addCategory: jest.fn().mockResolvedValue(1),
   updateCategory: jest.fn().mockResolvedValue(undefined),
   deleteCategory: jest.fn().mockResolvedValue(undefined),
@@ -108,6 +109,35 @@ describe('AddCategoryModal', () => {
     await waitFor(() => {
       expect(categoryService.addCategory).toHaveBeenCalledWith('NewCat', expect.any(String), expect.any(String));
       expect(onSave).toHaveBeenCalledWith(1);
+    });
+  });
+
+  it('shows duplicate warning and blocks save when category already exists', async () => {
+    (categoryService.findCategoryByName as jest.Mock).mockResolvedValue({
+      id: 999, name: 'Duplicate', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01',
+    });
+    const { findByPlaceholderText, findByTestId, findByText } = renderModal();
+    fireEvent.changeText(await findByPlaceholderText(/Toys/), 'Duplicate');
+
+    await waitFor(() => {
+      expect(categoryService.findCategoryByName).toHaveBeenCalledWith('Duplicate');
+    });
+    expect(await findByTestId('category-duplicate-warning')).toBeTruthy();
+
+    fireEvent.press(await findByText('Create Category'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+      expect(categoryService.addCategory).not.toHaveBeenCalled();
+    });
+  });
+
+  it('normalizes portuguese default category label to english key for duplicate check', async () => {
+    const { findByPlaceholderText } = renderModal();
+    fireEvent.changeText(await findByPlaceholderText(/Toys/), 'Animais');
+
+    await waitFor(() => {
+      expect(categoryService.findCategoryByName).toHaveBeenCalledWith('animals');
     });
   });
 

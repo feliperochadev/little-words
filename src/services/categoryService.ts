@@ -1,5 +1,6 @@
 export {
   getCategories,
+  findCategoryByName,
   addCategory,
   updateCategory,
   deleteCategory,

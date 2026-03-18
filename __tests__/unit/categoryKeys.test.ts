@@ -1,4 +1,9 @@
-import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_KEY_SET } from '../../src/utils/categoryKeys';
+import {
+  DEFAULT_CATEGORIES,
+  DEFAULT_CATEGORY_KEY_SET,
+  canonicalizeCategoryName,
+  categoryLookupKey,
+} from '../../src/utils/categoryKeys';
 
 describe('categoryKeys', () => {
   describe('DEFAULT_CATEGORIES', () => {
@@ -50,6 +55,35 @@ describe('categoryKeys', () => {
     it('does not contain arbitrary strings', () => {
       expect(DEFAULT_CATEGORY_KEY_SET.has('nonexistent')).toBe(false);
       expect(DEFAULT_CATEGORY_KEY_SET.has('')).toBe(false);
+    });
+  });
+
+  describe('canonicalizeCategoryName', () => {
+    it('maps portuguese default labels to canonical english keys', () => {
+      expect(canonicalizeCategoryName('Animais')).toBe('animals');
+      expect(canonicalizeCategoryName('Família')).toBe('family');
+      expect(canonicalizeCategoryName('Ações')).toBe('actions');
+    });
+
+    it('maps english labels and keys to canonical english keys', () => {
+      expect(canonicalizeCategoryName('Animals')).toBe('animals');
+      expect(canonicalizeCategoryName('animals')).toBe('animals');
+    });
+
+    it('keeps custom categories unchanged', () => {
+      expect(canonicalizeCategoryName('My Custom Category')).toBe('My Custom Category');
+    });
+  });
+
+  describe('categoryLookupKey', () => {
+    it('normalizes locale variants of default categories to the same key', () => {
+      expect(categoryLookupKey('Animais')).toBe('animals');
+      expect(categoryLookupKey('Animals')).toBe('animals');
+      expect(categoryLookupKey('animals')).toBe('animals');
+    });
+
+    it('normalizes custom categories by accent/case', () => {
+      expect(categoryLookupKey('  Coração  ')).toBe('coracao');
     });
   });
 });

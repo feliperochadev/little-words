@@ -31,3 +31,54 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
 export const DEFAULT_CATEGORY_KEY_SET = new Set(
   DEFAULT_CATEGORIES.map(c => c.key)
 );
+
+const deaccentLower = (s: string): string =>
+  s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase().trim(); // NOSONAR - bounded normalization regex
+
+const EN_CATEGORY_LABELS: Record<string, string> = {
+  animals: 'Animals',
+  food: 'Food',
+  family: 'Family',
+  objects: 'Objects',
+  actions: 'Actions',
+  nature: 'Nature',
+  body: 'Body',
+  others: 'Others',
+  places: 'Places',
+};
+
+const PT_CATEGORY_LABELS: Record<string, string> = {
+  animals: 'Animais',
+  food: 'Comida',
+  family: 'Família',
+  objects: 'Objetos',
+  actions: 'Ações',
+  nature: 'Natureza',
+  body: 'Corpo',
+  others: 'Outros',
+  places: 'Lugares',
+};
+
+const defaultLabelToKey = new Map<string, string>();
+for (const { key } of DEFAULT_CATEGORIES) {
+  defaultLabelToKey.set(deaccentLower(key), key);
+  defaultLabelToKey.set(deaccentLower(EN_CATEGORY_LABELS[key] ?? key), key);
+  defaultLabelToKey.set(deaccentLower(PT_CATEGORY_LABELS[key] ?? key), key);
+}
+
+/**
+ * Converts default category labels from any supported locale to their canonical
+ * English key used in the database. Custom names are returned unchanged.
+ */
+export const canonicalizeCategoryName = (name: string): string => {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  return defaultLabelToKey.get(deaccentLower(trimmed)) ?? trimmed;
+};
+
+/**
+ * Comparison key for category lookups: canonical default key + accent/case
+ * normalization.
+ */
+export const categoryLookupKey = (name: string): string =>
+  deaccentLower(canonicalizeCategoryName(name));
