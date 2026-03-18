@@ -2,6 +2,29 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_11
+
+**[fix] PR 40 Sonar nested ternaries in ProfileAvatar + new-code coverage uplift**
+
+- `src/components/ProfileAvatar.tsx`:
+  - Replaced nested ternary used to compute fallback emoji with explicit `if/else`.
+  - Replaced nested render ternary (`photo` vs `hint` vs `emoji`) with explicit conditional blocks to satisfy Sonar rule `typescript:S3358`.
+- `__tests__/screens/home.test.tsx`:
+  - Added branch coverage for profile-photo flows introduced in PR 40:
+    - source picker cancel path
+    - camera and gallery save paths
+    - camera/media permission denied paths
+    - photo viewer change/remove actions
+    - viewer close button and `onRequestClose`
+    - `AddWordModal` callback paths (`onClose`, `onDeleted`, `onSave`) through the Home screen
+- Validation:
+  - `npm test -- __tests__/screens/home.test.tsx __tests__/integration/ProfileAvatar.test.tsx` passed.
+  - `npm run test:coverage` passed.
+  - `npm run ci` passed.
+  - Coverage highlights: `app/(tabs)/home.tsx` now `100%` lines and `93.97%` statements; `src/components/ProfileAvatar.tsx` remains `100%` lines/statements/branches/functions.
+
+---
+
 ### 2026-03-18_10
 
 **[fix] Photo viewer "Change photo" button showed raw i18n key**

@@ -37,7 +37,9 @@ export function ProfileAvatar({
   const decorationsVisible = showDecorations ?? size === 'lg';
   const showPhoto = !!photoUri && !imageFailed;
 
-  const fallbackEmoji = sex === 'girl' ? '👧' : sex === 'boy' ? '👦' : '👶';
+  let fallbackEmoji = '👶';
+  if (sex === 'girl') fallbackEmoji = '👧';
+  else if (sex === 'boy') fallbackEmoji = '👦';
 
   const circleStyle = {
     width: diameter,
@@ -54,19 +56,21 @@ export function ProfileAvatar({
   const inner = (
     <View style={styles.wrapper} testID={testID}>
       <View style={circleStyle}>
-        {showPhoto ? (
+        {showPhoto && (
           <Image
             source={{ uri: photoUri }}
             style={{ width: diameter, height: diameter }}
             resizeMode="cover"
             onError={() => setImageFailed(true)}
           />
-        ) : tapHint && size !== 'sm' ? (
+        )}
+        {!showPhoto && tapHint && size !== 'sm' && (
           <View style={[styles.hintContent, { width: diameter * 0.78 }]}>
             <Text style={{ fontSize: Math.round(emojiSize * 0.65) }}>{fallbackEmoji}</Text>
             <Text style={[styles.tapHintText, { color: colors.textSecondary }]}>{tapHint}</Text>
           </View>
-        ) : (
+        )}
+        {!showPhoto && (!tapHint || size === 'sm') && (
           <Text style={{ fontSize: emojiSize }}>{fallbackEmoji}</Text>
         )}
       </View>
