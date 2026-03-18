@@ -1,14 +1,18 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, type ViewStyle } from 'react-native';
 import { useI18n } from '../i18n/i18n';
 import { useTheme } from '../hooks/useTheme';
 
-export function BrandHeader() {
+interface BrandHeaderProps {
+  style?: ViewStyle;
+}
+
+export function BrandHeader({ style }: Readonly<BrandHeaderProps> = {}) {
   const { t } = useI18n();
   const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <Image source={require('@/assets/icon.png')} style={styles.icon} />
       <View>
         <Text style={[styles.title, { color: colors.text }]}>{t('brandHeader.appName')}</Text>

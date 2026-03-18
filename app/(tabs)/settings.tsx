@@ -192,7 +192,8 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)}>
+          <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)} testID="settings-add-category-btn">
+            <Ionicons name="add" size={16} color={colors.primary} />
             <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
           </TouchableOpacity>
         </Card>
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
   categoryDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   categoryEmoji: { fontSize: 18 },
   categoryRowName: { flex: 1, fontSize: 15, fontWeight: '500' },
-  addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  addCategoryBtn: { marginTop: 8, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   addCategoryBtnText: { fontWeight: '700', fontSize: 14 },
   editProfileBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700' },

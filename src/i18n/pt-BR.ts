@@ -122,8 +122,8 @@ export default {
   // ── Words screen ────────────────────────────────────────────────────────────
   words: {
     title: 'Palavras',
-    addWord: '+ Nova',
-    addCategory: '+ Categoria',
+    addWord: 'Nova',
+    addCategory: 'Categoria',
     searchPlaceholder: 'Buscar palavras...',
     sortRecent: 'Mais recente',
     sortOldest: 'Mais antigo',
@@ -133,7 +133,8 @@ export default {
     emptySubtitle: 'Adicione a primeira palavrinha do seu bebê!',
     emptySearchTitle: 'Nenhuma palavra encontrada',
     emptySearchSubtitle: 'Não encontramos "{{search}}"',
-    addFirstWord: '+ Adicionar Palavra',
+    addFirstWord: 'Adicionar Palavra',
+    newWord: 'Nova Palavra',
     deleteTitle: 'Remover Palavra',
     deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
     deleteMessage: 'Tem certeza que quer remover "{{word}}"? Todas as variantes também serão removidas.',
@@ -147,7 +148,7 @@ export default {
   // ── Variants screen ─────────────────────────────────────────────────────────
   variants: {
     title: 'Variantes',
-    addNew: '+ Nova',
+    addNew: 'Nova',
     searchPlaceholder: 'Buscar variantes...',
     hint: 'Variantes são como a criança pronuncia cada palavra antes de aprender o correto',
     emptyTitle: 'Nenhuma variante ainda',

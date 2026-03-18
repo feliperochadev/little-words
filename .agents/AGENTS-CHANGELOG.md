@@ -2,6 +2,48 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-17_24
+
+**[feature] Words screen — hide "+ New" button until first word exists**
+**[fix] Home screen — button sizing, spacing, and "New Word" label polish**
+
+- `src/components/ListScreenControls.tsx`: added optional `showAddButton?: boolean` prop (default `true`); button is only rendered when `true`.
+- `app/(tabs)/words.tsx`: passes `showAddButton={words.length > 0 || search.length > 0}` so the "+ New" button is hidden on empty state and visible once words exist or a search is active.
+- `app/(tabs)/home.tsx`: split button styles — `addWordHeaderBtn` (top-right, matches `ListScreenControls.addBtn`: `paddingHorizontal:18`, `paddingVertical:10`, `borderRadius:20`, `fontSize:15`, shadow) and `addWordBtn` (empty-state, matches `Button` md: `paddingHorizontal:24`, `paddingVertical:14`, `borderRadius:16`, `fontSize:16`, `minHeight:48`); reduced `emptyHero.paddingVertical` from 40 → 20; header button now uses `t('words.newWord')`.
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: added `words.newWord` = `'New Word'` / `'Nova Palavra'`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_23
+
+**[fix] Home screen buttons — icon replaces + in text; unify style; navigate to Words on save**
+**[feature] Global — remove + prefix from all button labels; use Ionicons "add" icon throughout**
+
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: removed `+` prefix from `words.addWord`, `words.addFirstWord`, `words.addCategory`, `variants.addNew`.
+- `src/components/ListScreenControls.tsx`: added optional `addButtonIcon?: React.ReactNode` prop rendered before the label; added `flexDirection: 'row'`, `alignItems: 'center'`, `gap: 4` to `addBtn` style.
+- `src/components/UIComponents.tsx`: extended `EmptyState.action` to accept optional `icon?: React.ReactNode`, passed through to `Button`.
+- `app/(tabs)/words.tsx`: passes `addButtonIcon={<Ionicons name="add" …/>}` to `ListScreenControls`; passes `icon` to `EmptyState` action.
+- `app/(tabs)/variants.tsx`: passes `addButtonIcon={<Ionicons name="add" …/>}` to `ListScreenControls`.
+- `app/(tabs)/settings.tsx`: added `<Ionicons name="add">` + `flexDirection: 'row'` to the "Add Category" dashed button; added `testID="settings-add-category-btn"`.
+- `src/components/AddWordModal.tsx`: added `<Ionicons name="add">` to the inline "+ Category" chip.
+- `app/(tabs)/home.tsx`: both add-word buttons now use icon + clean label (no `.replace()`); added `useRouter` + `onSave={() => router.push('/(tabs)/words')}` so saving a word navigates to the Words tab.
+- Tests updated across `variants.test.tsx`, `words.test.tsx`, `settings.test.tsx`, `AddWordModal.test.tsx` to use `testID` selectors instead of `+ …` text matching.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
+### 2026-03-17_22
+
+**[feature] Home screen — "+ New" button in header and "+ Add First Word" button in empty state**
+
+- `app/(tabs)/home.tsx`: added `AddWordModal` (with `visible/showAddWord` state). Header area now shows a `+ New` button (testID `home-add-word-btn`) to the right of the brand logo — only visible when `totalWords > 0`. Empty state replaces the "Go to Words" subtitle text with a `+ Add First Word` button (testID `home-add-first-word-btn`) that opens the modal.
+- `src/components/BrandHeader.tsx`: added optional `style?: ViewStyle` prop forwarded to the container so the `marginBottom` can be overridden when placed inside a row.
+- `__tests__/screens/home.test.tsx`: added mocks for `categoryService` and `wordService`; added 3 new tests: add-word button hidden when `totalWords = 0`, visible when `totalWords > 0`, and pressing add-first-word button opens `AddWordModal`.
+- Validation: `npm run ci` passed (58/58 suites, 1027 tests, 0 warnings).
+
+---
+
 ### 2026-03-17_21
 
 **[fix] Lint cleanup — remove unused variable and fix useEffect deps**

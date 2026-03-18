@@ -287,8 +287,8 @@ describe('AddWordModal', () => {
   });
 
   it('opens add category modal', async () => {
-    const { findByText } = renderModal();
-    fireEvent.press(await findByText(/\+ Category/));
+    const { findByText, findByTestId } = renderModal();
+    fireEvent.press(await findByTestId('category-add-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
@@ -351,9 +351,9 @@ describe('AddWordModal', () => {
   });
 
   it('closes AddCategoryModal from within AddWordModal (covers onClose callback)', async () => {
-    const { findByText, findAllByText } = renderModal();
+    const { findByText, findAllByText, findByTestId } = renderModal();
     // Open the new category modal
-    fireEvent.press(await findByText(/\+ Category/));
+    fireEvent.press(await findByTestId('category-add-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
     // Both AddWordModal and AddCategoryModal have Cancel buttons — press the last one (AddCategoryModal's)
     const cancelBtns = await findAllByText('Cancel');
@@ -455,12 +455,12 @@ describe('AddWordModal', () => {
         { id: 2, name: 'NewCat', color: '#00B894', emoji: '🎨', created_at: '' },
       ]);
 
-    const { findByText, findByPlaceholderText } = renderModal();
+    const { findByText, findByPlaceholderText, findByTestId } = renderModal();
 
     // Wait for initial load
     await findByText('Animals');
 
-    fireEvent.press(await findByText(/\+ Category/));
+    fireEvent.press(await findByTestId('category-add-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
     fireEvent.changeText(await findByPlaceholderText(/Toys/), 'NewCat');
 

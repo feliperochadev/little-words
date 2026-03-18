@@ -14,7 +14,9 @@ interface ListScreenControlsProps {
   titleIconColor: string;
   titleIconTestID: string;
   addButtonLabel: string;
+  addButtonIcon?: React.ReactNode;
   addButtonTestID?: string;
+  showAddButton?: boolean;
   onPressAdd: () => void;
   searchValue: string;
   onChangeSearch: (value: string) => void;
@@ -40,7 +42,9 @@ export function ListScreenControls({
   titleIconColor,
   titleIconTestID,
   addButtonLabel,
+  addButtonIcon,
   addButtonTestID,
+  showAddButton = true,
   onPressAdd,
   searchValue,
   onChangeSearch,
@@ -65,13 +69,16 @@ export function ListScreenControls({
           <Ionicons name={titleIconName} size={22} color={titleIconColor} testID={titleIconTestID} />
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
-          onPress={onPressAdd}
-          testID={addButtonTestID}
-        >
-          <Text style={[styles.addBtnText, { color: colors.textOnPrimary }]}>{addButtonLabel}</Text>
-        </TouchableOpacity>
+        {showAddButton && (
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+            onPress={onPressAdd}
+            testID={addButtonTestID}
+          >
+            {addButtonIcon}
+            <Text style={[styles.addBtnText, { color: colors.textOnPrimary }]}>{addButtonLabel}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.searchContainer}>
@@ -140,6 +147,9 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 26, fontWeight: '900' },
   addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,

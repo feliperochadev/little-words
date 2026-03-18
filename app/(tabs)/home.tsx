@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, RefreshControl,
+  View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
+import { AddWordModal } from '../../src/components/AddWordModal';
+import { useRouter } from 'expo-router';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
@@ -13,11 +15,13 @@ import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const { t } = useI18n();
   const categoryName = useCategoryName();
   const { data: stats, refetch } = useDashboardStats();
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [showAddWord, setShowAddWord] = useState(false);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
@@ -44,7 +48,19 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         testID="home-scroll"
       >
-        <BrandHeader />
+        <View style={styles.headerRow}>
+          <BrandHeader style={{ marginBottom: 0 }} />
+          {(stats?.totalWords ?? 0) > 0 && (
+            <TouchableOpacity
+              style={[styles.addWordHeaderBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+              onPress={() => setShowAddWord(true)}
+              testID="home-add-word-btn"
+            >
+              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+              <Text style={[styles.addWordHeaderBtnText, { color: colors.textOnPrimary }]}>{t('words.newWord')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {!!name && (
           <View style={styles.profileBlock}>
@@ -155,16 +171,27 @@ export default function DashboardScreen() {
           <View style={styles.emptyHero}>
             <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              {name
-                ? t('dashboard.emptyTextWithName', { name })
-                : t('dashboard.emptyText')}
-            </Text>
+            <TouchableOpacity
+              style={[styles.addWordBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+              onPress={() => setShowAddWord(true)}
+              testID="home-add-first-word-btn"
+            >
+              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+              <Text style={[styles.addWordBtnText, { color: colors.textOnPrimary }]}>{t('words.addFirstWord')}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <AddWordModal
+        visible={showAddWord}
+        onClose={() => setShowAddWord(false)}
+        onDeleted={() => setShowAddWord(false)}
+        onSave={() => router.push('/(tabs)/words')}
+        editWord={null}
+      />
     </SafeAreaView>
   );
 }
@@ -201,9 +228,13 @@ const styles = StyleSheet.create({
   wordCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   wordChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   wordChipText: { fontSize: 14, fontWeight: '600' },
-  emptyHero: { alignItems: 'center', paddingVertical: 40 },
+  emptyHero: { alignItems: 'center', paddingVertical: 20 },
   emptyIcon: { marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
-  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
   bottomSpacer: { height: 20 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  addWordHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },
+  addWordBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minHeight: 48 },
+  addWordBtnText: { fontSize: 16, fontWeight: '700' },
 });

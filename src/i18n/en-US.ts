@@ -122,8 +122,8 @@ export default {
   // ── Words screen ────────────────────────────────────────────────────────────
   words: {
     title: 'Words',
-    addWord: '+ New',
-    addCategory: '+ Category',
+    addWord: 'New',
+    addCategory: 'Category',
     searchPlaceholder: 'Search words...',
     sortRecent: 'Most recent',
     sortOldest: 'Oldest first',
@@ -133,7 +133,8 @@ export default {
     emptySubtitle: "Add your baby's first little word!",
     emptySearchTitle: 'No words found',
     emptySearchSubtitle: 'We couldn\'t find "{{search}}"',
-    addFirstWord: '+ Add Word',
+    addFirstWord: 'Add Word',
+    newWord: 'New Word',
     deleteTitle: 'Remove Word',
     deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Are you sure you want to remove "{{word}}"? All variants will also be removed.',
@@ -147,7 +148,7 @@ export default {
   // ── Variants screen ─────────────────────────────────────────────────────────
   variants: {
     title: 'Variants',
-    addNew: '+ New',
+    addNew: 'New',
     searchPlaceholder: 'Search variants...',
     hint: "Variants are how the child pronounces each word before learning it correctly",
     emptyTitle: 'No variants yet',

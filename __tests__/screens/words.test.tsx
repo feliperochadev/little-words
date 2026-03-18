@@ -84,8 +84,8 @@ describe('WordsScreen', () => {
   });
 
   it('renders add word button', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    expect(await findByText('+ New')).toBeTruthy();
+    const { findByTestId } = renderWithProviders(<WordsScreen />);
+    expect(await findByTestId('words-add-btn')).toBeTruthy();
   });
 
   it('renders semantic title and sort icons', async () => {
@@ -148,8 +148,8 @@ describe('WordsScreen', () => {
   });
 
   it('opens add word modal', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('+ New'));
+    const { findByText, findByTestId } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('words-add-btn'));
     expect(await findByText(/New Word/)).toBeTruthy();
   });
 
@@ -230,8 +230,8 @@ describe('WordsScreen', () => {
       id: 99, word: 'hello', date_added: '2024-06-01', category_name: 'food',
       category_color: '#00B894', category_emoji: '🍎', variant_count: 0, notes: '',
     });
-    const { findByText, findByPlaceholderText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('+ New'));
+    const { findByText, findByPlaceholderText, findByTestId } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('words-add-btn'));
     const input = await findByPlaceholderText(/E\.g\./);
     fireEvent.changeText(input, 'hello');
     await act(async () => { jest.advanceTimersByTime(500); });
@@ -242,8 +242,8 @@ describe('WordsScreen', () => {
   });
 
   it('closes add word modal on cancel', async () => {
-    const { findByText, queryByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('+ New'));
+    const { findByText, queryByText, findByTestId } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('words-add-btn'));
     expect(await findByText(/New Word/)).toBeTruthy();
     fireEvent.press(await findByText('Cancel'));
     await waitFor(() => {

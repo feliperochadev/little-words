@@ -171,8 +171,8 @@ describe('SettingsScreen', () => {
   });
 
   it('opens add category modal', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/\+ Category/));
+    const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-add-category-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
@@ -185,8 +185,8 @@ describe('SettingsScreen', () => {
   });
 
   it('closes add category modal via onClose', async () => {
-    const { findByText, queryByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/\+ Category/));
+    const { findByText, queryByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-add-category-btn'));
     await findByText(/New Category/);
     const cancelBtn = await findByText(/Cancel/);
     fireEvent.press(cancelBtn);

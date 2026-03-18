@@ -46,8 +46,8 @@ describe('VariantsScreen', () => {
   });
 
   it('renders add new button', async () => {
-    const { findByText } = renderWithProviders(<VariantsScreen />);
-    expect(await findByText('+ New')).toBeTruthy();
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variants-add-btn')).toBeTruthy();
   });
 
   it('renders semantic title and sort icons', async () => {
@@ -112,8 +112,8 @@ describe('VariantsScreen', () => {
   });
 
   it('opens add variant modal', async () => {
-    const { findByText } = renderWithProviders(<VariantsScreen />);
-    fireEvent.press(await findByText('+ New'));
+    const { findByText, findByTestId } = renderWithProviders(<VariantsScreen />);
+    fireEvent.press(await findByTestId('variants-add-btn'));
     expect(await findByText(/New Variant/)).toBeTruthy();
   });
 
@@ -125,9 +125,9 @@ describe('VariantsScreen', () => {
   });
 
   it('closes AddVariantModal via onClose callback (covers variants.tsx line 153)', async () => {
-    const { findByText, queryByText } = renderWithProviders(<VariantsScreen />);
+    const { findByText, queryByText, findByTestId } = renderWithProviders(<VariantsScreen />);
     // Open modal
-    fireEvent.press(await findByText('+ New'));
+    fireEvent.press(await findByTestId('variants-add-btn'));
     expect(await findByText(/New Variant/)).toBeTruthy();
     // Close via Cancel button — this calls the onClose prop from variants.tsx
     fireEvent.press(await findByText('Cancel'));

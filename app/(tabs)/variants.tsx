@@ -89,6 +89,7 @@ export default function VariantsScreen() {
         titleIconColor={colors.secondary}
         titleIconTestID="variants-title-icon"
         addButtonLabel={t('variants.addNew')}
+        addButtonIcon={<Ionicons name="add" size={16} color={colors.textOnPrimary} />}
         addButtonTestID="variants-add-btn"
         onPressAdd={() => {
           setSelectedWord(null);

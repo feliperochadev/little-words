@@ -344,6 +344,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
                   onPress={() => setShowNewCategory(true)}
                   testID="category-add-btn"
                 >
+                  <Ionicons name="add" size={14} color={colors.primary} />
                   <Text style={[s.catChipAddText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
                 </TouchableOpacity>
               </ScrollView>
