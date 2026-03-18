@@ -1,5 +1,6 @@
 import {
   getCategories,
+  findCategoryByName,
   addCategory,
   updateCategory,
   deleteCategory,
@@ -16,16 +17,16 @@ describe('categoryRepository', () => {
   });
 
   describe('getCategories', () => {
-    it('returns categories ordered by name', async () => {
+    it('returns categories ordered by name with others/outros forced last', async () => {
       const cats = [
         { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '2024-01-01' },
       ];
       mockDb.getAllAsync.mockResolvedValueOnce(cats);
       const result = await getCategories();
       expect(result).toEqual(cats);
-      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY name ASC'),
-      );
+      const sql = mockDb.getAllAsync.mock.calls[0][0];
+      expect(sql).toContain("LOWER(name) IN ('others', 'outros')");
+      expect(sql).toContain('name ASC');
     });
 
     it('returns empty array when no categories exist', async () => {
@@ -55,6 +56,37 @@ describe('categoryRepository', () => {
       mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: undefined, changes: 1 });
       const id = await addCategory('Sports', '#123456', '⚽');
       expect(id).toBe(0);
+    });
+  });
+
+  describe('findCategoryByName', () => {
+    it('returns category when found', async () => {
+      const category = { id: 2, name: 'Animals', color: '#123456', emoji: '🐾' };
+      mockDb.getAllAsync.mockResolvedValueOnce([category]);
+      const result = await findCategoryByName('Animals');
+      expect(result).toEqual(category);
+    });
+
+    it('returns null when no category found', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      const result = await findCategoryByName('Unknown');
+      expect(result).toBeNull();
+    });
+
+    it('trims whitespace and uses case-insensitive match', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      await findCategoryByName('  Animals  ');
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+        expect.stringContaining('LOWER(name) = LOWER(?)'),
+        ['Animals'],
+      );
+    });
+
+    it('uses LIMIT 1', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      await findCategoryByName('Animals');
+      const sql = mockDb.getAllAsync.mock.calls[0][0];
+      expect(sql).toContain('LIMIT 1');
     });
   });
 

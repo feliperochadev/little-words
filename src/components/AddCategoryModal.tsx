@@ -12,6 +12,10 @@ import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useAddCategory, useUpdateCategory, useDeleteCategory, useWordCountByCategory } from '../hooks/useCategories';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useTheme } from '../hooks/useTheme';
+import { findCategoryByName } from '../services/categoryService';
+import type { Category } from '../types/domain';
+import { TIMING } from '../utils/animationConstants';
+import { canonicalizeCategoryName } from '../utils/categoryKeys';
 
 const DEFAULT_CATEGORY_COLOR = CATEGORY_COLORS[0];
 const DEFAULT_CATEGORY_EMOJI = CATEGORY_EMOJIS[0];
@@ -49,6 +53,7 @@ export function AddCategoryModal({
   const [selectedColor, setSelectedColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_CATEGORY_EMOJI);
   const [loading, setLoading] = useState(false);
+  const [duplicate, setDuplicate] = useState<Category | null>(null);
 
   const resetForm = useCallback(() => {
     setName('');
@@ -73,6 +78,20 @@ export function AddCategoryModal({
       resetForm();
     }
   }, [editCategory, visible, resetForm]);
+
+  useEffect(() => {
+    if (editCategory || !name.trim()) {
+      setDuplicate(null);
+      return;
+    }
+    const normalizedName = canonicalizeCategoryName(name.trim());
+    const timer = setTimeout(async () => {
+      const existing = await findCategoryByName(normalizedName);
+      setDuplicate(existing);
+    }, TIMING.DUPLICATE_CHECK_DEBOUNCE);
+
+    return () => clearTimeout(timer);
+  }, [name, editCategory]);
 
   const handleDelete = () => {
     if (!editCategory) return;
@@ -105,14 +124,19 @@ export function AddCategoryModal({
       Alert.alert(t('common.attention'), t('addCategory.errorName'));
       return;
     }
+    if (duplicate) {
+      Alert.alert(t('common.attention'), t('addCategory.errorDuplicate'));
+      return;
+    }
     setLoading(true);
     try {
+      const normalizedName = canonicalizeCategoryName(name.trim());
       let id: number | undefined;
       if (isEditing && editCategory) {
         await updateCategoryMutation.mutateAsync({ id: editCategory.id, name: name.trim(), color: selectedColor, emoji: selectedEmoji });
         id = editCategory.id;
       } else {
-        id = await addCategoryMutation.mutateAsync({ name: name.trim(), color: selectedColor, emoji: selectedEmoji });
+        id = await addCategoryMutation.mutateAsync({ name: normalizedName, color: selectedColor, emoji: selectedEmoji });
       }
       onSave(id);
       handleClose();
@@ -175,6 +199,13 @@ export function AddCategoryModal({
               autoCapitalize="words"
               testID="category-name-input"
             />
+            {duplicate && (
+              <View style={styles.duplicateWrap} testID="category-duplicate-warning">
+                <Text style={[styles.duplicateText, { color: colors.error }]}>
+                  {t('addCategory.errorDuplicate')}
+                </Text>
+              </View>
+            )}
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.emojiLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
@@ -212,7 +243,7 @@ export function AddCategoryModal({
                 title={isEditing ? t('addCategory.btnSave') : t('addCategory.btnCreate')}
                 onPress={handleSave}
                 loading={loading}
-                style={styles.actionBtn}
+                style={[styles.actionBtn, !!duplicate && styles.btnDisabled]}
                 testID="category-save-btn"
               />
             </View>
@@ -240,6 +271,8 @@ const styles = StyleSheet.create({
   previewName:      { fontSize: 18, fontWeight: '700' },
   label:            { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input:            { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderWidth: 1.5, marginBottom: 16 },
+  duplicateWrap:    { marginTop: -10, marginBottom: 16 },
+  duplicateText:    { fontSize: 13, fontWeight: '700' },
   emojiScroll:      { marginBottom: 16 },
   emojiBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
   emojiText:        { fontSize: 24 },
@@ -249,4 +282,5 @@ const styles = StyleSheet.create({
   colorCheck:       { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
   actions:          { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn:        { flex: 1 },
+  btnDisabled:      { opacity: 0.5 },
 });
