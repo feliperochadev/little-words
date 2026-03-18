@@ -62,8 +62,8 @@ export function ProfileAvatar({
             onError={() => setImageFailed(true)}
           />
         ) : tapHint && size !== 'sm' ? (
-          <View style={styles.hintContent}>
-            <Text style={{ fontSize: Math.round(emojiSize * 0.8) }}>{fallbackEmoji}</Text>
+          <View style={[styles.hintContent, { width: diameter * 0.78 }]}>
+            <Text style={{ fontSize: Math.round(emojiSize * 0.65) }}>{fallbackEmoji}</Text>
             <Text style={[styles.tapHintText, { color: colors.textSecondary }]}>{tapHint}</Text>
           </View>
         ) : (
@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hintContent: { alignItems: 'center', paddingHorizontal: 8 },
-  tapHintText: { fontSize: 10, textAlign: 'center', marginTop: 4, fontWeight: '600', opacity: 0.8 },
+  hintContent: { alignItems: 'center' },
+  tapHintText: { fontSize: 9, textAlign: 'center', marginTop: 2, fontWeight: '600', opacity: 0.8 },
   badgeLg: { width: 42, height: 42 },
   badgeMd: { width: 36, height: 36 },
   badgeBottomLeft: { bottom: -6, left: -6 },

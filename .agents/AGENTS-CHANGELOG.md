@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_10
+
+**[fix] Photo viewer "Change photo" button showed raw i18n key**
+
+- `app/(tabs)/home.tsx`: Fixed `t('settings.changePhoto')` → `t('onboarding.changePhoto')`. The key lives under the `onboarding` namespace, not `settings`, causing the raw key string to render as the button label.
+
+---
+
+### 2026-03-18_9
+
+**[feature] Onboarding + EditProfileModal UI polish — title, hint text, sex buttons, home avatar hint**
+
+- `src/i18n/en-US.ts` / `pt-BR.ts`: Updated `onboarding.welcome` to `'Welcome! 💕'` / `'Bem-vindo(a)! 💕'` (removed "to Little Words", added gender-neutral Portuguese). Added `onboarding.tapToAddPhoto` key (`'tap to add photo'` / `'toque para adicionar foto'`).
+- `src/components/ProfileAvatar.tsx`: Added `tapHint?: string` prop. When provided and no photo and `size !== 'sm'`: renders emoji at `0.65×` scale + hint text (`9px`, `fontWeight: '600'`) below inside the circle frame, constrained to `diameter × 0.78` width to prevent clipping of longer Portuguese text.
+- `app/onboarding.tsx`: Passes `tapHint={t('onboarding.tapToAddPhoto')}` to avatar. Sex buttons changed to row layout matching language buttons (`flexDirection: 'row'`, `gap: 8`, `paddingVertical: 14`, emoji `fontSize: 22`).
+- `src/components/EditProfileModal.tsx`: Same sex button row layout. `tapHint` passed when no photo; `tapToChangePhoto` hint shown only when photo exists.
+- `app/(tabs)/home.tsx`: Avatar passes `tapHint={profilePhotoUri ? undefined : t('onboarding.tapToAddPhoto')}` — hint visible when no photo.
+- `__tests__/screens/home.test.tsx`: Added `jest.mock` for `useAssets` hooks (synchronous mock) so photo viewer test is deterministic without relying on TanStack Query async timing.
+
+---
+
 ### 2026-03-18_8
 
 **[feature] Baby profile photo — Phase 3: UI/UX polish, photo viewer, theme fix**

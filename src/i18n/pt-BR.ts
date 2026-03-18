@@ -57,7 +57,7 @@ export default {
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
   onboarding: {
-    welcome: 'Bem-vindo! 💕',
+    welcome: 'Bem-vindo(a)! 💕',
     tapToAddPhoto: 'toque para adicionar foto',
     subtitle: 'Vamos personalizar o app para o seu bebê',
     babyName: 'Nome do bebê',

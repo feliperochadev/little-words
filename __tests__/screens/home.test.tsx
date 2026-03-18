@@ -30,6 +30,12 @@ jest.mock('../../src/services/assetService', () => ({
   getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('../../src/hooks/useAssets', () => ({
+  useProfilePhoto: jest.fn().mockReturnValue({ data: null }),
+  useSaveProfilePhoto: jest.fn().mockReturnValue({ mutateAsync: jest.fn() }),
+  useRemoveProfilePhoto: jest.fn().mockReturnValue({ mutateAsync: jest.fn() }),
+}));
+
 jest.mock('../../src/services/wordService', () => ({
   ...jest.requireActual('../../src/services/wordService'),
   addWord: jest.fn().mockResolvedValue(1),
@@ -273,15 +279,14 @@ describe('DashboardScreen', () => {
   });
 
   it('tapping profile avatar with photo opens photo viewer', async () => {
-    const assetService = require('../../src/services/assetService') as typeof import('../../src/services/assetService');
-    (assetService.getProfilePhoto as jest.Mock).mockResolvedValue({ id: 1, uri: 'file:///test.jpg', parent_type: 'profile', parent_id: 1, asset_type: 'photo', file_path: '/test.jpg', mime_type: 'image/jpeg', file_size: 100, created_at: '' });
+    const useAssets = require('../../src/hooks/useAssets');
+    (useAssets.useProfilePhoto as jest.Mock).mockReturnValue({
+      data: { id: 1, uri: 'file:///test.jpg', parent_type: 'profile', parent_id: 1, asset_type: 'photo', file_path: '/test.jpg', mime_type: 'image/jpeg', file_size: 100, created_at: '' },
+    });
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
     useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
-    const { findByTestId, getByTestId, queryByText } = renderWithProviders(<DashboardScreen />);
-    await findByTestId('home-profile-avatar');
-    // Wait for photo to load — avatar switches from emoji to Image when photo is ready
-    await waitFor(() => { expect(queryByText('👧')).toBeNull(); });
-    fireEvent.press(getByTestId('home-profile-avatar'));
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    fireEvent.press(await findByTestId('home-profile-avatar'));
     expect(await findByTestId('home-photo-viewer-close')).toBeTruthy();
     expect(await findByTestId('home-photo-viewer-change')).toBeTruthy();
     expect(await findByTestId('home-photo-viewer-remove')).toBeTruthy();

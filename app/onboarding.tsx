@@ -270,14 +270,15 @@ const styles = StyleSheet.create({
   },
   sexRow: { flexDirection: 'row', gap: 12 },
   sexBtn: {
-    flex: 1, alignItems: 'center', paddingVertical: 9,
-    backgroundColor: THEME_COLORS.surface, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    backgroundColor: THEME_COLORS.surface,
   },
   sexBtnGirl: { borderColor: THEME_COLORS.profileGirl, backgroundColor: THEME_COLORS.profileGirlBg },
   sexBtnBoy: { borderColor: THEME_COLORS.profileBoy, backgroundColor: THEME_COLORS.profileBoyBg },
   sexLabelActiveGirl: { color: THEME_COLORS.profileGirl, fontWeight: '800' },
   sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },
-  sexEmoji: { fontSize: 36, marginBottom: 6 },
+  sexEmoji: { fontSize: 22 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',

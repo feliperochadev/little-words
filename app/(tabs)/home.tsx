@@ -130,6 +130,7 @@ export default function DashboardScreen() {
               photoUri={profilePhotoUri}
               sex={sex}
               onPress={() => profilePhotoUri ? setShowPhotoViewer(true) : handlePickPhoto()}
+              tapHint={profilePhotoUri ? undefined : t('onboarding.tapToAddPhoto')}
               testID="home-profile-avatar"
             />
             <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
@@ -276,7 +277,7 @@ export default function DashboardScreen() {
               onPress={() => { setShowPhotoViewer(false); handlePickPhoto(); }}
               testID="home-photo-viewer-change"
             >
-              <Text style={[styles.viewerBtnText, { color: colors.textOnPrimary }]}>{t('settings.changePhoto')}</Text>
+              <Text style={[styles.viewerBtnText, { color: colors.textOnPrimary }]}>{t('onboarding.changePhoto')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.viewerBtn, styles.viewerBtnDanger]}
