@@ -3,6 +3,13 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-19_10
+
+**[feature] MediaFAB overlay polish: icon spacing, equal buttons, solid red FAB**
+
+- `src/components/MediaFAB.tsx`: lock icon `marginLeft` changed from -2 to 3 (fixes overlap with film icon); photo button uses `overlayBtnColumn` (column layout with `minHeight: 64`) matching video button height; overlay uses `alignItems: 'stretch'` + `minWidth: 120` so both buttons expand to equal width; `cameraContainer` keeps `alignItems: 'flex-end'` so camera button position is stable; overlay `marginBottom` increased to 14 (shifts popup higher away from FAB); FAB is a solid red circle (`#FF3B30`) with no inner icon when active (recording or paused) — mic icon shown only when idle.
+
+
 ### 2026-03-19_9
 
 **[feature] MediaFAB overlay positioning + video button layout + stop indicator**

@@ -291,7 +291,7 @@ export function MediaFAB() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[s.overlayBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={[s.overlayBtn, s.overlayBtnColumn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={handlePhotoPress}
                   testID="media-photo-btn"
                 >
@@ -313,19 +313,17 @@ export function MediaFAB() {
           </View>
         )}
 
-        {/* FAB button — mic / pause / resume */}
+        {/* FAB button — mic / stop */}
         <View
           {...fabPanResponder.panHandlers}
           style={[
             s.fab,
-            { backgroundColor: colors.primary },
-            isRecording && s.fabRecording,
+            { backgroundColor: isActive ? '#FF3B30' : colors.primary },
+            isActive && s.fabRecording,
           ]}
           testID="media-fab-mic"
         >
-          {isActive ? (
-            <View style={s.stopDot} />
-          ) : (
+          {!isActive && (
             <Ionicons name={fabIcon} size={26} color={colors.textOnPrimary} />
           )}
         </View>
@@ -390,8 +388,9 @@ const s = StyleSheet.create({
   },
   overlay: {
     gap: 6,
-    alignItems: 'flex-end',
-    marginBottom: 6,
+    alignItems: 'stretch',
+    marginBottom: 14,
+    minWidth: 120,
   },
   overlayBtn: {
     flexDirection: 'row',
@@ -405,7 +404,9 @@ const s = StyleSheet.create({
   overlayBtnColumn: {
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
+    minHeight: 64,
+    justifyContent: 'center',
   },
   overlayBtnLocked: {
     opacity: 0.5,
@@ -415,7 +416,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
   lockIcon: {
-    marginLeft: -2,
+    marginLeft: 3,
   },
   videoIconRow: {
     flexDirection: 'row',
@@ -425,7 +426,7 @@ const s = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#FFFFFF',
   },
   waveformPill: {
     flexDirection: 'row',
