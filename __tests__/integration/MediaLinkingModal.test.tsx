@@ -159,12 +159,13 @@ describe('MediaLinkingModal', () => {
       expect(getByTestId('media-preview-play')).toBeTruthy();
     });
 
+    it('renders waveform bars in audio preview', () => {
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-waveform')).toBeTruthy();
+    });
+
     it('displays formatted duration (1:05 for 65000ms)', () => {
       const { getByTestId } = renderModal();
-      const preview = getByTestId('media-preview');
-      // Duration text should show 1:05
-      const texts = preview.findAllByType?.('Text') ?? [];
-      // Use a broader check via the rendered tree
       expect(getByTestId('media-preview-play')).toBeTruthy();
     });
 
@@ -212,6 +213,47 @@ describe('MediaLinkingModal', () => {
     it('does not render audio play button', () => {
       const { queryByTestId } = renderModal();
       expect(queryByTestId('media-preview-play')).toBeNull();
+    });
+
+    it('renders tap target for expanding photo', () => {
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-photo-tap')).toBeTruthy();
+    });
+
+    it('pressing photo thumbnail opens full-screen modal', async () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      expect(queryByTestId('media-photo-fullscreen')).toBeNull();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('media-preview-photo-tap'));
+      });
+
+      expect(getByTestId('media-photo-fullscreen')).toBeTruthy();
+    });
+
+    it('full-screen photo has correct uri', async () => {
+      const { getByTestId } = renderModal();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('media-preview-photo-tap'));
+      });
+
+      const fullscreen = getByTestId('media-photo-fullscreen');
+      expect(fullscreen.props.source).toEqual({ uri: PHOTO_MEDIA.uri });
+    });
+
+    it('pressing dismiss button closes full-screen modal', async () => {
+      const { getByTestId, queryByTestId } = renderModal();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('media-preview-photo-tap'));
+      });
+      expect(getByTestId('media-photo-fullscreen')).toBeTruthy();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('media-photo-fullscreen-dismiss'));
+      });
+      expect(queryByTestId('media-photo-fullscreen')).toBeNull();
     });
   });
 

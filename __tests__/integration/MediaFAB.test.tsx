@@ -47,6 +47,8 @@ function buildAudioRecordingMock(overrides: Partial<ReturnType<typeof useAudioRe
     startRecording: jest.fn().mockResolvedValue(true),
     stopRecording: jest.fn().mockResolvedValue(null),
     discardRecording: jest.fn().mockResolvedValue(undefined),
+    pauseRecording: jest.fn().mockResolvedValue(undefined),
+    resumeRecording: jest.fn().mockResolvedValue(undefined),
     reset: jest.fn(),
     ...overrides,
   };
@@ -252,7 +254,7 @@ describe('MediaFAB', () => {
       expect(audioMock.startRecording).toHaveBeenCalledTimes(1);
     });
 
-    it('stops recording on tap when already recording', () => {
+    it('pauses recording on tap when already recording', () => {
       const { audioMock } = setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
       const fab = getByTestId('media-fab-mic');
@@ -260,24 +262,37 @@ describe('MediaFAB', () => {
       fireEvent(fab, 'responderGrant', grantEvent());
       fireEvent(fab, 'responderRelease', releaseEvent());
 
-      expect(audioMock.stopRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.pauseRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.stopRecording).not.toHaveBeenCalled();
       expect(audioMock.startRecording).not.toHaveBeenCalled();
     });
 
-    it('expands overlay when starting recording via tap', () => {
+    it('resumes recording on tap when paused', () => {
+      const { audioMock } = setupMocks({}, { state: 'paused' });
+      const { getByTestId } = renderFAB();
+      const fab = getByTestId('media-fab-mic');
+
+      fireEvent(fab, 'responderGrant', grantEvent());
+      fireEvent(fab, 'responderRelease', releaseEvent());
+
+      expect(audioMock.resumeRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.pauseRecording).not.toHaveBeenCalled();
+      expect(audioMock.startRecording).not.toHaveBeenCalled();
+    });
+
+    it('does not expand overlay popup when starting recording via tap', () => {
       setupMocks();
       const { getByTestId, queryByTestId } = renderFAB();
 
-      // Overlay not shown initially
+      // Photo/video popup not shown initially
       expect(queryByTestId('media-photo-btn')).toBeNull();
 
       const fab = getByTestId('media-fab-mic');
       fireEvent(fab, 'responderGrant', grantEvent());
       fireEvent(fab, 'responderRelease', releaseEvent());
 
-      // After tap, overlay should be visible (expanded = true)
-      expect(queryByTestId('media-photo-btn')).toBeTruthy();
-      expect(queryByTestId('media-video-btn-locked')).toBeTruthy();
+      // After tap starts recording, popup still not shown (camera hidden during recording)
+      expect(queryByTestId('media-photo-btn')).toBeNull();
     });
   });
 
@@ -329,16 +344,16 @@ describe('MediaFAB', () => {
       const { getByTestId, queryByTestId } = renderFAB();
       const fab = getByTestId('media-fab-mic');
 
-      // Overlay is visible because isRecording=true (showOverlay = expanded || isRecording)
-      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+      // Camera button is hidden during recording, overlay popup not shown
+      expect(queryByTestId('media-photo-btn')).toBeNull();
 
       // Long press while recording: the timer fires but skips setExpanded
       fireEvent(fab, 'responderGrant', grantEvent());
       act(() => { jest.advanceTimersByTime(400); });
       fireEvent(fab, 'responderRelease', releaseEvent());
 
-      // Overlay still visible via isRecording
-      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+      // Still no overlay popup (recording active, camera hidden)
+      expect(queryByTestId('media-photo-btn')).toBeNull();
     });
   });
 
@@ -390,16 +405,33 @@ describe('MediaFAB', () => {
     it('renders waveform bars during recording', () => {
       setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
-      const waveform = getByTestId('media-waveform');
-      const barsContainer = waveform.props.children[0];
+      const barsContainer = getByTestId('media-waveform-bars');
       expect(barsContainer.props.children).toHaveLength(20);
     });
 
-    it('shows overlay with Photo and Video buttons during recording', () => {
+    it('does not show photo/video overlay buttons during recording', () => {
+      setupMocks({}, { state: 'recording' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-photo-btn')).toBeNull();
+      expect(queryByTestId('media-video-btn-locked')).toBeNull();
+    });
+
+    it('hides camera button during recording', () => {
+      setupMocks({}, { state: 'recording' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-camera-btn')).toBeNull();
+    });
+
+    it('shows trash (discard) button in waveform during recording', () => {
       setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
-      expect(getByTestId('media-photo-btn')).toBeTruthy();
-      expect(getByTestId('media-video-btn-locked')).toBeTruthy();
+      expect(getByTestId('media-waveform-discard')).toBeTruthy();
+    });
+
+    it('shows stop button in waveform during recording', () => {
+      setupMocks({}, { state: 'recording' });
+      const { getByTestId } = renderFAB();
+      expect(getByTestId('media-waveform-stop')).toBeTruthy();
     });
 
     it('renders FAB with record icon during recording', () => {
@@ -409,61 +441,142 @@ describe('MediaFAB', () => {
     });
   });
 
+  // ── Camera button ─────────────────────────────────────────────────────
+
+  describe('camera button', () => {
+    it('renders camera button when idle', () => {
+      setupMocks();
+      const { getByTestId } = renderFAB();
+      expect(getByTestId('media-camera-btn')).toBeTruthy();
+    });
+
+    it('hides camera button when recording', () => {
+      setupMocks({}, { state: 'recording' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-camera-btn')).toBeNull();
+    });
+
+    it('hides camera button when paused', () => {
+      setupMocks({}, { state: 'paused' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-camera-btn')).toBeNull();
+    });
+
+    it('pressing camera button opens overlay popup', () => {
+      setupMocks();
+      const { getByTestId, queryByTestId } = renderFAB();
+      expect(queryByTestId('media-photo-btn')).toBeNull();
+
+      fireEvent.press(getByTestId('media-camera-btn'));
+
+      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+      expect(queryByTestId('media-video-btn-locked')).toBeTruthy();
+    });
+
+    it('pressing camera button again closes overlay popup', () => {
+      setupMocks();
+      const { getByTestId, queryByTestId } = renderFAB();
+
+      fireEvent.press(getByTestId('media-camera-btn'));
+      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+
+      fireEvent.press(getByTestId('media-camera-btn'));
+      expect(queryByTestId('media-photo-btn')).toBeNull();
+    });
+  });
+
+  // ── Backdrop dismiss ──────────────────────────────────────────────────
+
+  describe('backdrop dismiss', () => {
+    it('renders backdrop when expanded and not recording', () => {
+      setupMocks();
+      const { getByTestId, queryByTestId } = renderFAB();
+      expect(queryByTestId('media-fab-backdrop')).toBeNull();
+
+      fireEvent.press(getByTestId('media-camera-btn'));
+      expect(queryByTestId('media-fab-backdrop')).toBeTruthy();
+    });
+
+    it('pressing backdrop closes overlay', () => {
+      setupMocks();
+      const { getByTestId, queryByTestId } = renderFAB();
+
+      fireEvent.press(getByTestId('media-camera-btn'));
+      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+
+      fireEvent.press(getByTestId('media-fab-backdrop'));
+      expect(queryByTestId('media-photo-btn')).toBeNull();
+      expect(queryByTestId('media-fab-backdrop')).toBeNull();
+    });
+
+    it('does not render backdrop during recording', () => {
+      setupMocks({}, { state: 'recording' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-fab-backdrop')).toBeNull();
+    });
+
+    it('does not render backdrop during paused', () => {
+      setupMocks({}, { state: 'paused' });
+      const { queryByTestId } = renderFAB();
+      expect(queryByTestId('media-fab-backdrop')).toBeNull();
+    });
+  });
+
   // ── Overlay button interactions ───────────────────────────────────────
 
   describe('overlay button interactions', () => {
-    it('Photo button discards recording and launches photo picker', () => {
-      const { mediaMock, audioMock } = setupMocks({}, { state: 'recording' });
-      const { getByTestId } = renderFAB();
-
-      fireEvent.press(getByTestId('media-photo-btn'));
-
-      expect(audioMock.discardRecording).toHaveBeenCalledTimes(1);
-      expect(mediaMock.launchPhotoPicker).toHaveBeenCalledTimes(1);
-    });
-
-    it('Photo button launches picker without discarding when not recording', () => {
-      const { mediaMock, audioMock } = setupMocks();
-      const { getByTestId } = renderFAB();
-      const fab = getByTestId('media-fab-mic');
-
-      // Long press to expand overlay
-      fireEvent(fab, 'responderGrant', grantEvent());
-      act(() => { jest.advanceTimersByTime(400); });
-      fireEvent(fab, 'responderRelease', releaseEvent());
-
-      fireEvent.press(getByTestId('media-photo-btn'));
-
-      expect(audioMock.discardRecording).not.toHaveBeenCalled();
-      expect(mediaMock.launchPhotoPicker).toHaveBeenCalledTimes(1);
-    });
-
-    it('Video button shows alert', () => {
-      jest.spyOn(Alert, 'alert');
-      setupMocks({}, { state: 'recording' });
-      const { getByTestId } = renderFAB();
-
-      fireEvent.press(getByTestId('media-video-btn-locked'));
-
-      expect(Alert.alert).toHaveBeenCalledTimes(1);
-    });
-
-    it('Photo button collapses overlay', () => {
+    it('Photo button launches picker and collapses overlay', () => {
       const { mediaMock } = setupMocks();
       const { getByTestId, queryByTestId } = renderFAB();
-      const fab = getByTestId('media-fab-mic');
 
-      // Long press to expand
-      fireEvent(fab, 'responderGrant', grantEvent());
-      act(() => { jest.advanceTimersByTime(400); });
-      fireEvent(fab, 'responderRelease', releaseEvent());
+      fireEvent.press(getByTestId('media-camera-btn'));
       expect(queryByTestId('media-photo-btn')).toBeTruthy();
 
       fireEvent.press(getByTestId('media-photo-btn'));
 
-      // Overlay should collapse after pressing photo (expanded set to false)
-      expect(queryByTestId('media-photo-btn')).toBeNull();
       expect(mediaMock.launchPhotoPicker).toHaveBeenCalledTimes(1);
+      expect(queryByTestId('media-photo-btn')).toBeNull();
+    });
+
+    it('long press FAB still opens overlay', () => {
+      setupMocks();
+      const { getByTestId, queryByTestId } = renderFAB();
+      const fab = getByTestId('media-fab-mic');
+
+      fireEvent(fab, 'responderGrant', grantEvent());
+      act(() => { jest.advanceTimersByTime(400); });
+      fireEvent(fab, 'responderRelease', releaseEvent());
+
+      expect(queryByTestId('media-photo-btn')).toBeTruthy();
+    });
+  });
+
+  // ── Waveform discard and stop ─────────────────────────────────────────
+
+  describe('waveform discard and stop buttons', () => {
+    it('pressing trash button calls discardRecording', () => {
+      const { audioMock } = setupMocks({}, { state: 'recording' });
+      const { getByTestId } = renderFAB();
+
+      fireEvent.press(getByTestId('media-waveform-discard'));
+
+      expect(audioMock.discardRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it('pressing stop button calls stopRecording', () => {
+      const { audioMock } = setupMocks({}, { state: 'recording' });
+      const { getByTestId } = renderFAB();
+
+      fireEvent.press(getByTestId('media-waveform-stop'));
+
+      expect(audioMock.stopRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows trash and stop buttons when paused', () => {
+      setupMocks({}, { state: 'paused' });
+      const { getByTestId } = renderFAB();
+      expect(getByTestId('media-waveform-discard')).toBeTruthy();
+      expect(getByTestId('media-waveform-stop')).toBeTruthy();
     });
   });
 

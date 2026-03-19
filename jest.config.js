@@ -21,5 +21,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   setupFiles: ['./jest.setup.js'],
-  maxWorkers: 2,
+  maxWorkers: 1,
 };

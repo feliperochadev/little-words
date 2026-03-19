@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Animated, Image,
+  StyleSheet, ScrollView, Animated, Image, PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,12 @@ import { withOpacity } from '../utils/colorHelpers';
 import type { Word } from '../types/domain';
 
 const EMPTY_WORDS: Word[] = [];
+
+const WAVEFORM_BAR_COUNT = 20;
+const WAVEFORM_BAR_WIDTH = 3;
+const WAVEFORM_BAR_GAP = 2;
+const WAVEFORM_MAX_HEIGHT = 24;
+const WAVEFORM_MIN_HEIGHT = 3;
 
 export function MediaLinkingModal() {
   const { t } = useI18n();
@@ -46,9 +52,43 @@ export function MediaLinkingModal() {
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [dateAdded, setDateAdded] = useState(today);
   const [loading, setLoading] = useState(false);
+  const [photoExpanded, setPhotoExpanded] = useState(false);
 
-  // Reset form state when modal opens
+  // Waveform animation for audio playback preview
+  const linkingBarHeights = useRef(
+    Array.from({ length: WAVEFORM_BAR_COUNT }, () => new Animated.Value(WAVEFORM_MIN_HEIGHT))
+  ).current;
+  const animTickRef = useRef(0);
+
   useEffect(() => {
+    if (!audioPlayer.isPlaying) {
+      linkingBarHeights.forEach(bar =>
+        Animated.timing(bar, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
+      );
+      return () => {
+        linkingBarHeights.forEach(bar => bar.stopAnimation());
+      };
+    }
+
+    const intervalId = setInterval(() => {
+      animTickRef.current += 1;
+      const tick = animTickRef.current;
+      linkingBarHeights.forEach((bar, i) => {
+        const variation = 0.4 + (Math.sin(i * 1.5 + tick * 0.4 + Date.now() / 300) + 1) / 2 * 0.6;
+        const height = WAVEFORM_MIN_HEIGHT + variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
+        Animated.timing(bar, { toValue: height, duration: 120, useNativeDriver: false }).start();
+      });
+    }, 150);
+
+    return () => {
+      clearInterval(intervalId);
+      linkingBarHeights.forEach(bar => bar.stopAnimation());
+    };
+  }, [audioPlayer.isPlaying, linkingBarHeights]);
+
+  // Reset form state when modal opens; close photo expanded when modal closes
+  useEffect(() => {
+    setPhotoExpanded(false);
     if (visible) {
       setMediaName('');
       setWordSearch('');
@@ -64,6 +104,16 @@ export function MediaLinkingModal() {
       audioPlayer.stop().catch(() => {});
     }
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // PanResponder for swipe-down to dismiss full-screen photo
+  const photoDismissPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 10,
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 80) setPhotoExpanded(false);
+      },
+    })
+  ).current;
 
   const filtered = wordSearch.trim()
     ? words.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
@@ -100,169 +150,211 @@ export function MediaLinkingModal() {
   const showResults = wordSearch.trim().length > 0;
 
   return (
-    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
-      <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
-      </Animated.View>
-      <View style={s.overlay} pointerEvents="box-none">
-        <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
-          <View style={s.handleWrap} {...panResponder.panHandlers}>
-            <View style={[s.handle, { backgroundColor: colors.textMuted }]} />
-          </View>
+    <>
+      <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+        <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+        </Animated.View>
+        <View style={s.overlay} pointerEvents="box-none">
+          <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
+            <View style={s.handleWrap} {...panResponder.panHandlers}>
+              <View style={[s.handle, { backgroundColor: colors.textMuted }]} />
+            </View>
 
-          <Text style={[s.title, { color: colors.text }]} testID="media-linking-title">
-            {t('mediaCapture.linkTitle')}
-          </Text>
+            <Text style={[s.title, { color: colors.text }]} testID="media-linking-title">
+              {t('mediaCapture.linkTitle')}
+            </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            {/* ── Preview ── */}
-            <View style={[s.previewSection, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]} testID="media-preview">
-              {isAudio ? (
-                <TouchableOpacity style={s.audioPreview} onPress={handlePlayPreview} testID="media-preview-play">
-                  <Ionicons
-                    name={audioPlayer.isPlaying ? 'stop-circle' : 'play-circle'}
-                    size={40}
-                    color={colors.primary}
-                  />
-                  <View style={s.audioInfo}>
-                    <Text style={[s.audioLabel, { color: colors.text }]}>
-                      {t('mediaCapture.recording')}
-                    </Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* ── Preview ── */}
+              <View style={[s.previewSection, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]} testID="media-preview">
+                {isAudio ? (
+                  <TouchableOpacity style={s.audioPreview} onPress={handlePlayPreview} testID="media-preview-play">
+                    <Ionicons
+                      name={audioPlayer.isPlaying ? 'stop-circle' : 'play-circle'}
+                      size={40}
+                      color={colors.primary}
+                    />
+                    {/* Waveform bars — animate when playing */}
+                    <View style={s.audioWaveformContainer} testID="media-preview-waveform">
+                      {linkingBarHeights.map((height, i) => (
+                        <Animated.View
+                          key={`lbar-${i}`}
+                          style={[
+                            s.audioWaveformBar,
+                            {
+                              height,
+                              backgroundColor: colors.primary,
+                              opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
                     <Text style={[s.audioDuration, { color: colors.textSecondary }]}>
                       {formatDuration(pendingMedia.durationMs ?? 0)}
                     </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => setPhotoExpanded(true)}
+                    testID="media-preview-photo-tap"
+                  >
+                    <Image
+                      source={{ uri: pendingMedia.uri }}
+                      style={s.photoPreview}
+                      resizeMode="cover"
+                      testID="media-preview-photo"
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* ── Name ── */}
+              <Text style={[s.label, { color: colors.textSecondary }]}>
+                {t('mediaCapture.nameLabel')}
+              </Text>
+              <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
+                <TextInput
+                  style={[s.searchInput, { color: colors.text }]}
+                  value={mediaName}
+                  onChangeText={setMediaName}
+                  placeholder={t('mediaCapture.namePlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  testID="media-name-input"
+                />
+              </View>
+
+              {/* ── Date ── */}
+              <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={colors.primary} />
+
+              {/* ── Word search ── */}
+              <Text style={[s.label, { color: colors.textSecondary }]}>
+                {t('mediaCapture.targetWord')}
+              </Text>
+
+              {selectedWord ? (
+                <TouchableOpacity
+                  style={[s.chosenChip, { backgroundColor: withOpacity(colors.primary, '15'), borderColor: colors.primary }]}
+                  onPress={() => setSelectedWord(null)}
+                  testID="media-selected-word"
+                >
+                  <View style={s.chosenInfo}>
+                    <Text style={[s.chosenText, { color: colors.primary }]}>{selectedWord.word}</Text>
+                    {selectedWord.category_name && (
+                      <Text style={[s.chosenMeta, { color: colors.textSecondary }]}>
+                        {selectedWord.category_emoji} {categoryName(selectedWord.category_name)}
+                      </Text>
+                    )}
                   </View>
+                  <Text style={[s.chosenClear, { color: colors.primary }]}>✕</Text>
                 </TouchableOpacity>
               ) : (
-                <Image
-                  source={{ uri: pendingMedia.uri }}
-                  style={s.photoPreview}
-                  resizeMode="cover"
-                  testID="media-preview-photo"
-                />
-              )}
-            </View>
-
-            {/* ── Name ── */}
-            <Text style={[s.label, { color: colors.textSecondary }]}>
-              {t('mediaCapture.nameLabel')}
-            </Text>
-            <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
-              <TextInput
-                style={[s.searchInput, { color: colors.text }]}
-                value={mediaName}
-                onChangeText={setMediaName}
-                placeholder={t('mediaCapture.namePlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                testID="media-name-input"
-              />
-            </View>
-
-            {/* ── Date ── */}
-            <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={colors.primary} />
-
-            {/* ── Word search ── */}
-            <Text style={[s.label, { color: colors.textSecondary }]}>
-              {t('mediaCapture.targetWord')}
-            </Text>
-
-            {selectedWord ? (
-              <TouchableOpacity
-                style={[s.chosenChip, { backgroundColor: withOpacity(colors.primary, '15'), borderColor: colors.primary }]}
-                onPress={() => setSelectedWord(null)}
-                testID="media-selected-word"
-              >
-                <View style={s.chosenInfo}>
-                  <Text style={[s.chosenText, { color: colors.primary }]}>{selectedWord.word}</Text>
-                  {selectedWord.category_name && (
-                    <Text style={[s.chosenMeta, { color: colors.textSecondary }]}>
-                      {selectedWord.category_emoji} {categoryName(selectedWord.category_name)}
-                    </Text>
-                  )}
-                </View>
-                <Text style={[s.chosenClear, { color: colors.primary }]}>✕</Text>
-              </TouchableOpacity>
-            ) : (
-              <>
-                <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Ionicons name="search" size={16} color={colors.textMuted} style={s.searchIcon} />
-                  <TextInput
-                    style={[s.searchInput, { color: colors.text }]}
-                    value={wordSearch}
-                    onChangeText={setWordSearch}
-                    placeholder={t('mediaCapture.searchPlaceholder')}
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="none"
-                    testID="media-word-search"
-                  />
-                  {wordSearch.length > 0 && (
-                    <TouchableOpacity onPress={() => setWordSearch('')} testID="media-word-search-clear">
-                      <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {showResults && (
-                  <View style={[s.resultsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    {filtered.length === 0 ? (
-                      <Text style={[s.noResults, { color: colors.textSecondary }]}>
-                        {t('mediaCapture.noResults')}
-                      </Text>
-                    ) : (
-                      filtered.slice(0, 7).map(w => (
-                        <TouchableOpacity
-                          key={w.id}
-                          style={[s.resultItem, { borderBottomColor: colors.border }]}
-                          onPress={() => { setSelectedWord(w); setWordSearch(''); }}
-                          testID={`media-word-result-${w.word}`}
-                        >
-                          <Text style={[s.resultText, { color: colors.text }]}>{w.word}</Text>
-                          {w.category_name && (
-                            <Text style={[s.resultMeta, { color: colors.textSecondary }]}>
-                              {w.category_emoji} {categoryName(w.category_name)}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      ))
-                    )}
-                    {wordSearch.trim().length > 0 && (
-                      <TouchableOpacity
-                        style={[s.createBtn, { borderTopColor: colors.border }]}
-                        onPress={handleCreateWord}
-                        testID="media-create-word-btn"
-                      >
-                        <Ionicons name="add-circle" size={18} color={colors.primary} />
-                        <Text style={[s.createBtnText, { color: colors.primary }]}>
-                          {t('mediaCapture.createNew')} &ldquo;{wordSearch.trim()}&rdquo;
-                        </Text>
+                <>
+                  <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <Ionicons name="search" size={16} color={colors.textMuted} style={s.searchIcon} />
+                    <TextInput
+                      style={[s.searchInput, { color: colors.text }]}
+                      value={wordSearch}
+                      onChangeText={setWordSearch}
+                      placeholder={t('mediaCapture.searchPlaceholder')}
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      testID="media-word-search"
+                    />
+                    {wordSearch.length > 0 && (
+                      <TouchableOpacity onPress={() => setWordSearch('')} testID="media-word-search-clear">
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                       </TouchableOpacity>
                     )}
                   </View>
-                )}
-              </>
-            )}
 
-            {/* ── Actions ── */}
-            <View style={s.actions}>
-              <Button
-                title={t('common.cancel')}
-                onPress={dismissModal}
-                variant="outline"
-                style={s.actionBtn}
-                testID="media-cancel-btn"
-              />
-              <Button
-                title={t('mediaCapture.linkButton')}
-                onPress={handleLink}
-                loading={loading}
-                style={[s.actionBtn, !selectedWord && s.btnDisabled]}
-                testID="media-link-btn"
-              />
-            </View>
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
+                  {showResults && (
+                    <View style={[s.resultsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      {filtered.length === 0 ? (
+                        <Text style={[s.noResults, { color: colors.textSecondary }]}>
+                          {t('mediaCapture.noResults')}
+                        </Text>
+                      ) : (
+                        filtered.slice(0, 7).map(w => (
+                          <TouchableOpacity
+                            key={w.id}
+                            style={[s.resultItem, { borderBottomColor: colors.border }]}
+                            onPress={() => { setSelectedWord(w); setWordSearch(''); }}
+                            testID={`media-word-result-${w.word}`}
+                          >
+                            <Text style={[s.resultText, { color: colors.text }]}>{w.word}</Text>
+                            {w.category_name && (
+                              <Text style={[s.resultMeta, { color: colors.textSecondary }]}>
+                                {w.category_emoji} {categoryName(w.category_name)}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        ))
+                      )}
+                      {wordSearch.trim().length > 0 && (
+                        <TouchableOpacity
+                          style={[s.createBtn, { borderTopColor: colors.border }]}
+                          onPress={handleCreateWord}
+                          testID="media-create-word-btn"
+                        >
+                          <Ionicons name="add-circle" size={18} color={colors.primary} />
+                          <Text style={[s.createBtnText, { color: colors.primary }]}>
+                            {t('mediaCapture.createNew')} &ldquo;{wordSearch.trim()}&rdquo;
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* ── Actions ── */}
+              <View style={s.actions}>
+                <Button
+                  title={t('common.cancel')}
+                  onPress={dismissModal}
+                  variant="outline"
+                  style={s.actionBtn}
+                  testID="media-cancel-btn"
+                />
+                <Button
+                  title={t('mediaCapture.linkButton')}
+                  onPress={handleLink}
+                  loading={loading}
+                  style={[s.actionBtn, !selectedWord && s.btnDisabled]}
+                  testID="media-link-btn"
+                />
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Full-screen photo preview */}
+      <Modal
+        visible={photoExpanded}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setPhotoExpanded(false)}
+        testID="media-photo-fullscreen-modal"
+      >
+        <View style={s.photoFullscreenContainer} {...photoDismissPan.panHandlers}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setPhotoExpanded(false)}
+            testID="media-photo-fullscreen-dismiss"
+          />
+          <Image
+            source={{ uri: pendingMedia.uri }}
+            style={s.photoFullscreenImage}
+            resizeMode="contain"
+            testID="media-photo-fullscreen"
+          />
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -282,10 +374,20 @@ const s = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 20 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   previewSection: { borderRadius: 14, borderWidth: 1.5, padding: 16, marginBottom: 16, alignItems: 'center' },
-  audioPreview: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  audioInfo: { flex: 1 },
-  audioLabel: { fontSize: 16, fontWeight: '700' },
-  audioDuration: { fontSize: 13, marginTop: 2 },
+  audioPreview: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%' },
+  audioWaveformContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: WAVEFORM_BAR_GAP,
+    height: WAVEFORM_MAX_HEIGHT,
+  },
+  audioWaveformBar: {
+    width: WAVEFORM_BAR_WIDTH,
+    borderRadius: 2,
+  },
+  audioDuration: { fontSize: 13, minWidth: 36, textAlign: 'right' },
   photoPreview: { width: 120, height: 120, borderRadius: 12 },
   searchBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, marginBottom: 6 },
   searchIcon: { marginRight: 8 },
@@ -305,4 +407,15 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn: { flex: 1 },
   btnDisabled: { opacity: 0.5 },
+  // Full-screen photo
+  photoFullscreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoFullscreenImage: {
+    width: '100%',
+    height: '100%',
+  },
 });

@@ -3,6 +3,20 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-19_7
+
+**[feature] MediaFAB & MediaLinkingModal UX fixes (6 improvements)**
+
+- `src/hooks/useAudioRecording.ts`: added `'paused'` state, `pauseRecording()`, `resumeRecording()`, and paused-time exclusion from elapsed duration using `isPausedRef`/`pauseStartTimeRef`/`totalPausedMsRef`.
+- `src/components/MediaFAB.tsx`: camera button (42dp, 75% of FAB) repositioned left of mic; FAB icon cycles mic→pause→play during recording/paused; waveform pill now contains trash icon (left, discard) + stop icon (right, finalize); backdrop Pressable dismisses expanded overlay on outside tap; returned as Fragment with backdrop at zIndex 99.
+- `src/components/MediaLinkingModal.tsx`: animated waveform (20 bars, 150ms interval) shown during audio playback preview; photo thumbnail tap opens full-screen transparent Modal with swipe-down-80dp dismiss; animation cleanup on unmount via `stopAnimation()`.
+- `jest.setup.js`: added `pauseAsync` mock to `mockRecording`; added TQ `notifyManager.setScheduler` to synchronous mode to prevent post-teardown timer errors.
+- `jest.config.js`: reduced `maxWorkers` from 2 to 1 to prevent OOM worker crashes in full CI run.
+- `__tests__/unit/useAudioRecording.test.ts`: added tests for `pauseRecording`, `resumeRecording`, and paused-time duration exclusion.
+- `__tests__/integration/MediaFAB.test.tsx`: updated for new layout (camera button, backdrop dismiss, `media-waveform-bars` testID, pause/resume flows, waveform discard/stop controls).
+- `__tests__/integration/MediaLinkingModal.test.tsx`: added tests for waveform bars in audio preview and full-screen photo expand/dismiss.
+
+
 ### 2026-03-19_6
 
 **[feature] Resume `/implement 2026-03-18_02-media-capture-and-linking` and complete media capture integration**

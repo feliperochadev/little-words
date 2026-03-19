@@ -203,7 +203,7 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
-- `useAudioRecording()` — recording lifecycle hook (`expo-av`), amplitude polling, 60s auto-stop, discard/reset flows
+- `useAudioRecording()` — recording lifecycle hook (`expo-av`), amplitude polling, 60s auto-stop, pause/resume (paused-time exclusion from elapsed duration), discard/reset flows; states: `idle | recording | paused | stopped`
 - `useAudioPlayer()` — lightweight playback hook for media preview and inline audio controls
 - `useMediaCapture()` — context access hook for global media capture/linking state
 - `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)

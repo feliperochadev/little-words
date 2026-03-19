@@ -18,6 +18,7 @@ const mockRecording = (globalThis as Record<string, unknown>).__mockRecording as
   prepareToRecordAsync: jest.Mock;
   startAsync: jest.Mock;
   stopAndUnloadAsync: jest.Mock;
+  pauseAsync: jest.Mock;
   getStatusAsync: jest.Mock;
   getURI: jest.Mock;
 };
@@ -97,6 +98,7 @@ describe('useAudioRecording', () => {
     mockRecording.prepareToRecordAsync.mockResolvedValue(undefined);
     mockRecording.startAsync.mockResolvedValue(undefined);
     mockRecording.stopAndUnloadAsync.mockResolvedValue(undefined);
+    mockRecording.pauseAsync.mockResolvedValue(undefined);
     mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -30 });
     mockRecording.getURI.mockReturnValue('file:///mock/recording.m4a');
     (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, status: 'granted' });
@@ -725,6 +727,280 @@ describe('useAudioRecording', () => {
       expect(recordingResult!.fileSize).toBe(1);
 
       FSModule.File = originalFile;
+    });
+  });
+
+  // ── pauseRecording ─────────────────────────────────────────────────────────
+
+  describe('pauseRecording', () => {
+    it('pauses recording and transitions state to paused', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      expect(result.current.state).toBe('recording');
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(mockRecording.pauseAsync).toHaveBeenCalledTimes(1);
+      expect(result.current.state).toBe('paused');
+      expect(result.current.amplitude).toBe(0);
+    });
+
+    it('clears amplitude polling interval when pausing', async () => {
+      jest.useFakeTimers();
+      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      clearIntervalSpy.mockClear();
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(clearIntervalSpy).toHaveBeenCalled();
+      clearIntervalSpy.mockRestore();
+    });
+
+    it('is a no-op when no recording is active', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(mockRecording.pauseAsync).not.toHaveBeenCalled();
+      expect(result.current.state).toBe('idle');
+    });
+
+    it('is a no-op when already paused', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+      expect(result.current.state).toBe('paused');
+
+      mockRecording.pauseAsync.mockClear();
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(mockRecording.pauseAsync).not.toHaveBeenCalled();
+    });
+
+    it('restarts polling without pausing when pauseAsync throws', async () => {
+      jest.useFakeTimers();
+      mockRecording.pauseAsync.mockRejectedValueOnce(new Error('Not supported'));
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      // State remains recording (graceful degradation)
+      expect(result.current.state).toBe('recording');
+    });
+  });
+
+  // ── resumeRecording ────────────────────────────────────────────────────────
+
+  describe('resumeRecording', () => {
+    it('resumes recording and transitions state back to recording', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+      expect(result.current.state).toBe('paused');
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      expect(mockRecording.startAsync).toHaveBeenCalledTimes(2); // once start, once resume
+      expect(result.current.state).toBe('recording');
+    });
+
+    it('restarts amplitude polling after resuming', async () => {
+      jest.useFakeTimers();
+      const now = 1000;
+      jest.spyOn(Date, 'now').mockReturnValue(now);
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      (Date.now as jest.Mock).mockReturnValue(now + 300);
+      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -30 });
+
+      await act(async () => {
+        jest.advanceTimersByTime(150);
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      await waitFor(() => {
+        expect(result.current.amplitude).toBe(0.5);
+      });
+    });
+
+    it('is a no-op when not paused', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      expect(result.current.state).toBe('recording');
+
+      mockRecording.startAsync.mockClear();
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      // startAsync should NOT be called again (we're already recording, not paused)
+      expect(mockRecording.startAsync).not.toHaveBeenCalled();
+      expect(result.current.state).toBe('recording');
+    });
+
+    it('transitions to idle when startAsync throws during resume', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      mockRecording.startAsync.mockRejectedValueOnce(new Error('Resume failed'));
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      expect(result.current.state).toBe('idle');
+    });
+  });
+
+  // ── Paused time excluded from elapsed ──────────────────────────────────────
+
+  describe('paused time exclusion', () => {
+    it('elapsed time does not include time spent paused', async () => {
+      jest.useFakeTimers();
+      const startTime = 1000;
+      jest.spyOn(Date, 'now').mockReturnValue(startTime);
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      // Advance 5 seconds of recording
+      (Date.now as jest.Mock).mockReturnValue(startTime + 5000);
+
+      // Pause at 5s
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      // Advance 10 more seconds while paused
+      (Date.now as jest.Mock).mockReturnValue(startTime + 15000);
+
+      // Resume
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      // Advance 3 more seconds of recording
+      (Date.now as jest.Mock).mockReturnValue(startTime + 18000);
+
+      // Stop and check result duration: should be 5s + 3s = 8s (10s pause excluded)
+      let recordingResult: AudioRecordingResult | null = null;
+      await act(async () => {
+        recordingResult = await result.current.stopRecording();
+      });
+
+      expect(recordingResult).not.toBeNull();
+      // durationMs = 8000 (5s + 3s, excluding 10s pause)
+      expect(recordingResult!.durationMs).toBe(8000);
+    });
+
+    it('auto-stop counts only active recording time', async () => {
+      jest.useFakeTimers();
+      const startTime = 1000;
+      jest.spyOn(Date, 'now').mockReturnValue(startTime);
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      // Pause after 30s
+      (Date.now as jest.Mock).mockReturnValue(startTime + 30000);
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      // Wait 120s while paused (way beyond 60s limit)
+      (Date.now as jest.Mock).mockReturnValue(startTime + 150000);
+
+      // Resume: now elapsed = 30s (pause time excluded), so should NOT auto-stop immediately
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+      expect(result.current.state).toBe('recording');
+
+      // Advance another 25s of recording (30 + 25 = 55s total active, under limit)
+      (Date.now as jest.Mock).mockReturnValue(startTime + 175000);
+      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -20 });
+
+      await act(async () => {
+        jest.advanceTimersByTime(150);
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Should still be recording (55s < 60s)
+      expect(result.current.state).toBe('recording');
     });
   });
 

@@ -13,7 +13,7 @@ export function normalizeAmplitude(db: number): number {
   return Math.max(0, Math.min(1, (db - MIN_DB) / (0 - MIN_DB)));
 }
 
-export type RecordingState = 'idle' | 'recording' | 'stopped';
+export type RecordingState = 'idle' | 'recording' | 'paused' | 'stopped';
 
 export interface AudioRecordingResult {
   uri: string;
@@ -28,6 +28,9 @@ export function useAudioRecording() {
   const amplitudeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(0);
   const isStoppingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const pauseStartTimeRef = useRef(0);
+  const totalPausedMsRef = useRef(0);
 
   const [state, setState] = useState<RecordingState>('idle');
   const [amplitude, setAmplitude] = useState(0);
@@ -39,6 +42,14 @@ export function useAudioRecording() {
       clearInterval(amplitudeTimerRef.current);
       amplitudeTimerRef.current = null;
     }
+  }, []);
+
+  /** Returns active recording duration excluding all paused time */
+  const getActiveDuration = useCallback((): number => {
+    const currentPausedSoFar = isPausedRef.current
+      ? Date.now() - pauseStartTimeRef.current
+      : 0;
+    return Date.now() - startTimeRef.current - totalPausedMsRef.current - currentPausedSoFar;
   }, []);
 
   const stopAndFinalize = useCallback(async (): Promise<AudioRecordingResult | null> => {
@@ -59,11 +70,12 @@ export function useAudioRecording() {
 
       if (!uri) {
         setState('idle');
+        isPausedRef.current = false;
         isStoppingRef.current = false;
         return null;
       }
 
-      const elapsed = Date.now() - startTimeRef.current;
+      const elapsed = getActiveDuration();
       let fileSize = 1;
       try {
         const file = new FSFile(uri);
@@ -81,15 +93,41 @@ export function useAudioRecording() {
 
       setState('stopped');
       setResult(recordingResult);
+      isPausedRef.current = false;
       isStoppingRef.current = false;
       return recordingResult;
     } catch {
       recordingRef.current = null;
       setState('idle');
+      isPausedRef.current = false;
       isStoppingRef.current = false;
       return null;
     }
-  }, [clearTimers]);
+  }, [clearTimers, getActiveDuration]);
+
+  const startPollInterval = useCallback(() => {
+    if (amplitudeTimerRef.current) {
+      clearInterval(amplitudeTimerRef.current);
+      amplitudeTimerRef.current = null;
+    }
+    amplitudeTimerRef.current = setInterval(async () => {
+      if (!recordingRef.current || isStoppingRef.current) return;
+      try {
+        const status = await recordingRef.current.getStatusAsync();
+        if (status.isRecording) {
+          setAmplitude(normalizeAmplitude(status.metering ?? -160));
+          const elapsed = getActiveDuration();
+          setDurationMs(elapsed);
+
+          if (elapsed >= MAX_DURATION_MS) {
+            await stopAndFinalize();
+          }
+        }
+      } catch {
+        // Recording may have been stopped externally
+      }
+    }, AMPLITUDE_POLL_INTERVAL);
+  }, [stopAndFinalize, getActiveDuration]);
 
   const startRecording = useCallback(async (): Promise<boolean> => {
     try {
@@ -114,43 +152,65 @@ export function useAudioRecording() {
       recordingRef.current = recording;
       startTimeRef.current = Date.now();
       isStoppingRef.current = false;
+      isPausedRef.current = false;
+      totalPausedMsRef.current = 0;
+      pauseStartTimeRef.current = 0;
       setState('recording');
       setAmplitude(0);
       setDurationMs(0);
       setResult(null);
 
-      amplitudeTimerRef.current = setInterval(async () => {
-        if (!recordingRef.current || isStoppingRef.current) return;
-        try {
-          const status = await recordingRef.current.getStatusAsync();
-          if (status.isRecording) {
-            setAmplitude(normalizeAmplitude(status.metering ?? -160));
-            const elapsed = Date.now() - startTimeRef.current;
-            setDurationMs(elapsed);
-
-            if (elapsed >= MAX_DURATION_MS) {
-              await stopAndFinalize();
-            }
-          }
-        } catch {
-          // Recording may have been stopped externally
-        }
-      }, AMPLITUDE_POLL_INTERVAL);
+      startPollInterval();
 
       return true;
     } catch {
       setState('idle');
       return false;
     }
-  }, [t, stopAndFinalize]);
+  }, [t, startPollInterval]);
 
   const stopRecording = useCallback(async (): Promise<AudioRecordingResult | null> => {
     return stopAndFinalize();
   }, [stopAndFinalize]);
 
+  const pauseRecording = useCallback(async () => {
+    if (!recordingRef.current || isStoppingRef.current || isPausedRef.current) return;
+    clearTimers();
+    pauseStartTimeRef.current = Date.now();
+    try {
+      await recordingRef.current.pauseAsync();
+      isPausedRef.current = true;
+      setState('paused');
+      setAmplitude(0);
+    } catch {
+      // pauseAsync not supported (e.g., older iOS) — restart interval without pausing
+      isPausedRef.current = false;
+      startPollInterval();
+    }
+  }, [clearTimers, startPollInterval]);
+
+  const resumeRecording = useCallback(async () => {
+    if (!recordingRef.current || !isPausedRef.current) return;
+    totalPausedMsRef.current += Date.now() - pauseStartTimeRef.current;
+    isPausedRef.current = false;
+    try {
+      await recordingRef.current.startAsync();
+      setState('recording');
+      startPollInterval();
+    } catch {
+      // Failed to resume — transition to idle
+      recordingRef.current = null;
+      isPausedRef.current = false;
+      setState('idle');
+    }
+  }, [startPollInterval]);
+
   const discardRecording = useCallback(async () => {
     clearTimers();
     isStoppingRef.current = true;
+    isPausedRef.current = false;
+    totalPausedMsRef.current = 0;
+    pauseStartTimeRef.current = 0;
     const recording = recordingRef.current;
     if (recording) {
       try {
@@ -172,6 +232,9 @@ export function useAudioRecording() {
     setAmplitude(0);
     setDurationMs(0);
     setResult(null);
+    isPausedRef.current = false;
+    totalPausedMsRef.current = 0;
+    pauseStartTimeRef.current = 0;
   }, []);
 
   // Cleanup on unmount
@@ -192,6 +255,8 @@ export function useAudioRecording() {
     result,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     discardRecording,
     reset,
   };
