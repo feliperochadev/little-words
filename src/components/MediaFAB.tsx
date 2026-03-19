@@ -319,7 +319,7 @@ export function MediaFAB() {
           style={[
             s.fab,
             { backgroundColor: isActive ? '#FF3B30' : colors.primary },
-            isActive && s.fabRecording,
+            isActive && [s.fabRecording, { borderWidth: 3, borderColor: colors.primary }],
           ]}
           testID="media-fab-mic"
         >

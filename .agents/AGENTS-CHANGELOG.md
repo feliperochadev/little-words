@@ -3,6 +3,13 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-19_11
+
+**[feature] MediaFAB active state: themed border on record button**
+
+- `src/components/MediaFAB.tsx`: when active (recording or paused), FAB gains a 3dp border using `colors.primary` (theme color), matching the profile photo frame style.
+
+
 ### 2026-03-19_10
 
 **[feature] MediaFAB overlay polish: icon spacing, equal buttons, solid red FAB**
