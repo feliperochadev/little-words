@@ -1,0 +1,7 @@
+<resources>
+  <color name="expoCropToolbarColor">#0B1F33</color>
+  <color name="expoCropToolbarIconColor">#FFFFFF</color>
+  <color name="expoCropToolbarActionTextColor">#FFFFFF</color>
+  <color name="expoCropBackButtonIconColor">#FFFFFF</color>
+  <color name="expoCropBackgroundColor">#000000</color>
+</resources>

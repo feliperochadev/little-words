@@ -15,9 +15,11 @@ import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
 import { ImportModal } from '../../src/components/ImportModal';
 import { EditProfileModal } from '../../src/components/EditProfileModal';
+import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useProfilePhoto } from '../../src/hooks/useAssets';
 
 function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): string {
   if (sex === 'girl') return t('settings.girl');
@@ -36,8 +38,9 @@ export default function SettingsScreen() {
   const { data: categories = [] } = useCategories();
   const { name: childName, sex: childSex, birth: childBirth } = useSettingsStore();
 
-  const emojiBySex = { girl: '👧', boy: '👦' } as const;
-  const profileEmoji = childSex === 'girl' || childSex === 'boy' ? emojiBySex[childSex] : '👶';
+  const { data: profilePhoto } = useProfilePhoto();
+  const profilePhotoUri = profilePhoto?.uri ?? null;
+
   const childBirthDate: Date | null = childBirth
     ? (() => { const [y, m, d] = childBirth.split('-').map(Number); return new Date(y, m - 1, d); })()
     : null;
@@ -119,17 +122,24 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           {childName ? (
-            <>
-              <Text style={styles.profileEmoji} testID="settings-profile-emoji">{profileEmoji}</Text>
-              <Text style={[styles.sectionDesc, { color: colors.textSecondary }]} testID="settings-profile-name">
-                {childName} · {sexLabel}
-              </Text>
-              {childBirthDate ? (
-                <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
-                  {t('settings.profileBirthLabel')}: {formatDisplayDate(childBirthDate)} · {formatAgeText(childBirthDate, t)}
+            <View style={styles.profileRow}>
+              <ProfileAvatar size="md" photoUri={profilePhotoUri} sex={childSex} showDecorations={false} testID="settings-profile-emoji" />
+              <View style={styles.profileTextCol}>
+                <Text style={[styles.sectionDesc, styles.profileNameInline, { color: colors.textSecondary }]} testID="settings-profile-name">
+                  {childName} · {sexLabel}
                 </Text>
-              ) : null}
-            </>
+                {childBirthDate ? (
+                  <>
+                    <Text style={[styles.profileBirth, { color: colors.textMuted }]} testID="settings-profile-birth">
+                      {t('settings.profileBirthLabel')}: {formatDisplayDate(childBirthDate)}
+                    </Text>
+                    <Text style={[styles.profileBirth, { color: colors.textMuted }]}>
+                      {formatAgeText(childBirthDate, t)}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            </View>
           ) : (
             <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.noProfile')}</Text>
           )}
@@ -321,7 +331,9 @@ const styles = StyleSheet.create({
   addCategoryBtnText: { fontWeight: '700', fontSize: 14 },
   editProfileBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   editProfileText: { fontSize: 13, fontWeight: '700' },
-  profileEmoji: { fontSize: 32, marginBottom: 2 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 4 },
+  profileTextCol: { flex: 1 },
+  profileNameInline: { marginBottom: 0 },
   profileBirth: { fontSize: 12, marginTop: 2 },
   // Language picker
   languageRow: { flexDirection: 'row', gap: 10 },

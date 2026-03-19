@@ -35,6 +35,27 @@
       "expo-router",
       "expo-sqlite",
       [
+        "expo-image-picker",
+        {
+          "colors": {
+            "cropToolbarColor": "#FFFFFF",
+            "cropToolbarIconColor": "#0B1F33",
+            "cropToolbarActionTextColor": "#0B1F33",
+            "cropBackButtonIconColor": "#0B1F33",
+            "cropBackgroundColor": "#FFFFFF"
+          },
+          "dark": {
+            "colors": {
+              "cropToolbarColor": "#0B1F33",
+              "cropToolbarIconColor": "#FFFFFF",
+              "cropToolbarActionTextColor": "#FFFFFF",
+              "cropBackButtonIconColor": "#FFFFFF",
+              "cropBackgroundColor": "#000000"
+            }
+          }
+        }
+      ],
+      [
         "expo-file-system",
         {
           "appleUsageDescription": "Usado para exportar CSV"

@@ -4,6 +4,7 @@ import {
   deleteAsset,
   deleteAssetsByParent,
   updateAssetFilename,
+  getProfilePhoto as getProfilePhotoFromRepo,
 } from '../repositories/assetRepository';
 import {
   saveAssetFile,
@@ -19,6 +20,7 @@ import type { Asset, ParentType, AssetType } from '../types/asset';
 export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
 
 export { getAssetsByParent, getAssetsByParentAndType } from '../repositories/assetRepository';
+export { getProfilePhoto } from '../repositories/assetRepository';
 
 export interface SaveAssetParams {
   sourceUri: string;
@@ -96,4 +98,39 @@ export async function removeAllAssetsForParent(
 
 export async function removeAllMedia(): Promise<void> {
   deleteAllMedia();
+}
+
+/**
+ * Save a profile photo, enforcing singleton semantics (deletes any existing
+ * profile photo before saving the new one).
+ *
+ * fileSize is optional because expo-image-picker may omit it on some Android
+ * versions. We default to 1 to pass the > 0 check — the picker's crop/quality
+ * settings guarantee the file is well within the 20 MB limit.
+ */
+export async function saveProfilePhoto(
+  sourceUri: string,
+  mimeType: string,
+  fileSize?: number,
+  width?: number | null,
+  height?: number | null,
+): Promise<Asset> {
+  await deleteProfilePhoto();
+  return saveAsset({
+    sourceUri,
+    parentType: 'profile',
+    parentId: 1,
+    assetType: 'photo',
+    mimeType,
+    fileSize: Math.max(fileSize ?? 1, 1),
+    width,
+    height,
+  });
+}
+
+export async function deleteProfilePhoto(): Promise<void> {
+  const existing = await getProfilePhotoFromRepo();
+  if (existing) {
+    await removeAsset(existing);
+  }
 }

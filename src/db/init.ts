@@ -51,7 +51,7 @@ export const initDatabase = (): Promise<void> => {
         db.execSync(`
           CREATE TABLE IF NOT EXISTS assets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_type TEXT NOT NULL CHECK(parent_type IN ('word', 'variant')),
+            parent_type TEXT NOT NULL CHECK(parent_type IN ('word', 'variant', 'profile')),
             parent_id INTEGER NOT NULL,
             asset_type TEXT NOT NULL CHECK(asset_type IN ('audio', 'photo', 'video')),
             filename TEXT NOT NULL,

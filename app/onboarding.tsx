@@ -10,9 +10,12 @@ import { colors as THEME_COLORS } from '../src/theme';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { getThemeForSex } from '../src/theme/getThemeForSex';
 import { BrandHeader } from '../src/components/BrandHeader';
+import { ProfileAvatar } from '../src/components/ProfileAvatar';
 import { WheelDatePickerModal } from '../src/components/WheelDatePickerModal';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../src/utils/dateHelpers';
+import { useSaveProfilePhoto } from '../src/hooks/useAssets';
+import { useProfilePhotoPicker } from '../src/hooks/useProfilePhotoPicker';
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -23,7 +26,14 @@ export default function OnboardingScreen() {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; mimeType: string; fileSize: number } | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const saveProfilePhoto = useSaveProfilePhoto();
+  const { handlePickPhoto } = useProfilePhotoPicker({
+    onPhotoSelected: (asset) => {
+      setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+    },
+  });
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
@@ -56,6 +66,13 @@ export default function OnboardingScreen() {
       sex: selectedSex,
       birth: toStorageDate(selectedBirthDate),
     });
+    if (selectedPhoto) {
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: selectedPhoto.uri,
+        mimeType: selectedPhoto.mimeType,
+        fileSize: selectedPhoto.fileSize,
+      });
+    }
     await useSettingsStore.getState().setOnboardingDone();
     setLoading(false);
     router.replace('/(tabs)/home');
@@ -67,7 +84,16 @@ export default function OnboardingScreen() {
 
         <BrandHeader />
 
-        <Text style={styles.emoji}>{profileEmoji}</Text>
+        <View style={styles.topAvatarWrap}>
+          <ProfileAvatar
+            size="lg"
+            photoUri={selectedPhoto?.uri ?? null}
+            sex={sex}
+            onPress={handlePickPhoto}
+            tapHint={t('onboarding.tapToAddPhoto')}
+            testID="onboarding-profile-avatar"
+          />
+        </View>
         <Text style={styles.title}>{t('onboarding.welcome')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
 
@@ -182,7 +208,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.background },
   content: { padding: 28, alignItems: 'center' },
-  emoji: { fontSize: 72, marginBottom: 16, marginTop: 8 },
+  topAvatarWrap: { marginBottom: 16, marginTop: 8 },
   title: { fontSize: 30, fontWeight: '900', color: THEME_COLORS.text, textAlign: 'center', lineHeight: 36, marginBottom: 8 },
   subtitle: { fontSize: 15, color: THEME_COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
   field: { width: '100%', marginBottom: 24 },
@@ -203,14 +229,15 @@ const styles = StyleSheet.create({
   },
   sexRow: { flexDirection: 'row', gap: 12 },
   sexBtn: {
-    flex: 1, alignItems: 'center', paddingVertical: 18,
-    backgroundColor: THEME_COLORS.surface, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    backgroundColor: THEME_COLORS.surface,
   },
   sexBtnGirl: { borderColor: THEME_COLORS.profileGirl, backgroundColor: THEME_COLORS.profileGirlBg },
   sexBtnBoy: { borderColor: THEME_COLORS.profileBoy, backgroundColor: THEME_COLORS.profileBoyBg },
   sexLabelActiveGirl: { color: THEME_COLORS.profileGirl, fontWeight: '800' },
   sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },
-  sexEmoji: { fontSize: 36, marginBottom: 6 },
+  sexEmoji: { fontSize: 22 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',

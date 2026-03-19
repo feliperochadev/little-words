@@ -54,3 +54,15 @@ export const deleteAssetsByParent = (
 
 export const updateAssetFilename = (id: number, filename: string) =>
   run('UPDATE assets SET filename = ? WHERE id = ?', [filename, id]);
+
+export const getProfilePhoto = (): Promise<Asset | null> =>
+  query<Asset>(
+    "SELECT * FROM assets WHERE parent_type = 'profile' AND parent_id = 1 AND asset_type = 'photo' LIMIT 1",
+    []
+  ).then(rows => rows[0] ?? null);
+
+export const deleteProfilePhotoAsset = (): Promise<void> =>
+  run(
+    "DELETE FROM assets WHERE parent_type = 'profile' AND parent_id = 1 AND asset_type = 'photo'",
+    []
+  ).then(() => undefined);

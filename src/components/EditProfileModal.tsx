@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
+import { useProfilePhotoPicker } from '../hooks/useProfilePhotoPicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors as THEME_COLORS } from '../theme';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -12,6 +13,8 @@ import { Button } from './UIComponents';
 import { WheelDatePickerModal } from './WheelDatePickerModal';
 import { useI18n } from '../i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../utils/dateHelpers';
+import { ProfileAvatar } from './ProfileAvatar';
+import { useProfilePhoto, useSaveProfilePhoto } from '../hooks/useAssets';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -30,6 +33,21 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+
+  const { data: profilePhoto } = useProfilePhoto();
+  const saveProfilePhoto = useSaveProfilePhoto();
+  const { handlePickPhoto, handleRemovePhoto } = useProfilePhotoPicker({
+    onPhotoSelected: async (asset) => {
+      setPhotoUri(asset.uri);
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: asset.uri,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+        fileSize: asset.fileSize ?? 0,
+      });
+    },
+    onPhotoRemoved: () => setPhotoUri(null),
+  });
 
   const accentColor = getThemeForSex(sex).colors.primary;
   const isBoy = sex === 'boy';
@@ -46,6 +64,12 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
       return new Date(y, m - 1, d);
     });
   }, [visible, storedName, storedSex, storedBirth]);
+
+  // Pre-fill photo URI from query when modal opens
+  useEffect(() => {
+    if (!visible) return;
+    setPhotoUri(profilePhoto?.uri ?? null);
+  }, [visible, profilePhoto]);
 
   const handleSave = async () => {
     if (!name.trim()) { Alert.alert(t('common.attention'), t('onboarding.errorName')); return; }
@@ -75,6 +99,31 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* Photo */}
+              <View style={s.photoSection}>
+                <ProfileAvatar
+                  size="lg"
+                  photoUri={photoUri}
+                  sex={sex}
+                  onPress={handlePickPhoto}
+                  showDecorations={false}
+                  tapHint={photoUri ? undefined : t('onboarding.tapToAddPhoto')}
+                  testID="edit-profile-avatar"
+                />
+                {photoUri ? (
+                  <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
+                    {t('settings.tapToChangePhoto')}
+                  </Text>
+                ) : null}
+                {photoUri ? (
+                  <TouchableOpacity onPress={handleRemovePhoto} testID="edit-profile-remove-photo-btn">
+                    <Text style={[s.removePhotoText, { color: THEME_COLORS.error }]}>
+                      {t('settings.removePhoto')}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
               {/* Name */}
               <Text style={[s.label, { color: THEME_COLORS.textSecondary }]}>{t('onboarding.babyName').toUpperCase()}</Text>
               <TextInput
@@ -161,6 +210,9 @@ const s = StyleSheet.create({
   handleWrap: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 4 },
   handle: { width: 40, height: 4, borderRadius: 2 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 20 },
+  photoSection: { alignItems: 'center', gap: 8, marginBottom: 20 },
+  photoHint: { fontSize: 12 },
+  removePhotoText: { fontSize: 13, fontWeight: '600' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
     backgroundColor: THEME_COLORS.surface, borderRadius: 14,
@@ -169,12 +221,13 @@ const s = StyleSheet.create({
   },
   sexRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   sexBtn: {
-    flex: 1, alignItems: 'center', paddingVertical: 18,
-    backgroundColor: THEME_COLORS.surface, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: THEME_COLORS.border,
+    backgroundColor: THEME_COLORS.surface,
   },
   sexBtnGirl: { borderColor: THEME_COLORS.profileGirl, backgroundColor: THEME_COLORS.profileGirlBg },
   sexBtnBoy: { borderColor: THEME_COLORS.profileBoy, backgroundColor: THEME_COLORS.profileBoyBg },
-  sexEmoji: { fontSize: 36, marginBottom: 6 },
+  sexEmoji: { fontSize: 22 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
   sexLabelActiveGirl: { color: THEME_COLORS.profileGirl, fontWeight: '800' },
   sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },

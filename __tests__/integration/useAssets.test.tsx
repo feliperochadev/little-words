@@ -7,9 +7,26 @@ import {
   useAssetsByType,
   useSaveAsset,
   useRemoveAsset,
+  useProfilePhoto,
+  useSaveProfilePhoto,
+  useRemoveProfilePhoto,
 } from '../../src/hooks/useAssets';
 import * as assetService from '../../src/services/assetService';
 import type { Asset, SaveAssetParams } from '../../src/services/assetService';
+
+const MOCK_PROFILE_ASSET: Asset = {
+  id: 99,
+  parent_type: 'profile',
+  parent_id: 1,
+  asset_type: 'photo',
+  filename: 'asset_99.jpg',
+  mime_type: 'image/jpeg',
+  file_size: 2048,
+  duration_ms: null,
+  width: null,
+  height: null,
+  created_at: '2024-06-01T00:00:00.000Z',
+};
 
 jest.mock('../../src/services/assetService', () => ({
   getAssetsByParent: jest.fn(() => Promise.resolve([])),
@@ -30,6 +47,21 @@ jest.mock('../../src/services/assetService', () => ({
     }),
   ),
   removeAsset: jest.fn(() => Promise.resolve()),
+  getProfilePhoto: jest.fn(() => Promise.resolve(null)),
+  saveProfilePhoto: jest.fn(() => Promise.resolve({
+    id: 99,
+    parent_type: 'profile',
+    parent_id: 1,
+    asset_type: 'photo',
+    filename: 'asset_99.jpg',
+    mime_type: 'image/jpeg',
+    file_size: 2048,
+    duration_ms: null,
+    width: null,
+    height: null,
+    created_at: '2024-06-01T00:00:00.000Z',
+  })),
+  deleteProfilePhoto: jest.fn(() => Promise.resolve()),
 }));
 
 const mockedService = assetService as jest.Mocked<typeof assetService>;
@@ -448,6 +480,122 @@ describe('useAssets hooks', () => {
 
       await waitFor(() => expect(result.current.isError).toBe(true));
       expect(invalidateSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── useProfilePhoto ────────────────────────────────────────────────────────
+
+  describe('useProfilePhoto', () => {
+    it('returns null when no profile photo exists', async () => {
+      mockedService.getProfilePhoto.mockResolvedValueOnce(null);
+      const { Wrapper } = createWrapper();
+
+      const { result } = renderHook(() => useProfilePhoto(), { wrapper: Wrapper });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toBeNull();
+    });
+
+    it('returns ProfilePhotoAsset with uri when photo exists', async () => {
+      mockedService.getProfilePhoto.mockResolvedValueOnce(MOCK_PROFILE_ASSET);
+      const { Wrapper } = createWrapper();
+
+      const { result } = renderHook(() => useProfilePhoto(), { wrapper: Wrapper });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).not.toBeNull();
+      expect(result.current.data?.id).toBe(99);
+      expect(typeof result.current.data?.uri).toBe('string');
+    });
+
+    it('calls getProfilePhoto service', async () => {
+      const { Wrapper } = createWrapper();
+      renderHook(() => useProfilePhoto(), { wrapper: Wrapper });
+      await waitFor(() => expect(mockedService.getProfilePhoto).toHaveBeenCalled());
+    });
+  });
+
+  // ─── useSaveProfilePhoto ────────────────────────────────────────────────────
+
+  describe('useSaveProfilePhoto', () => {
+    it('calls saveProfilePhoto service with params', async () => {
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useSaveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ sourceUri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 2048 });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedService.saveProfilePhoto).toHaveBeenCalledWith(
+        'file:///tmp/photo.jpg', 'image/jpeg', 2048, undefined, undefined,
+      );
+    });
+
+    it('invalidates asset query keys on success', async () => {
+      const { Wrapper, queryClient } = createWrapper();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useSaveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ sourceUri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['assets'] }),
+      );
+    });
+
+    it('reports error when service rejects', async () => {
+      mockedService.saveProfilePhoto.mockRejectedValueOnce(new Error('Save failed'));
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useSaveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ sourceUri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg' });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(result.current.error?.message).toBe('Save failed');
+    });
+  });
+
+  // ─── useRemoveProfilePhoto ──────────────────────────────────────────────────
+
+  describe('useRemoveProfilePhoto', () => {
+    it('calls deleteProfilePhoto service', async () => {
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useRemoveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => { result.current.mutate(); });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedService.deleteProfilePhoto).toHaveBeenCalled();
+    });
+
+    it('invalidates asset query keys on success', async () => {
+      const { Wrapper, queryClient } = createWrapper();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useRemoveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => { result.current.mutate(); });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['assets'] }),
+      );
+    });
+
+    it('reports error when service rejects', async () => {
+      mockedService.deleteProfilePhoto.mockRejectedValueOnce(new Error('Delete failed'));
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useRemoveProfilePhoto(), { wrapper: Wrapper });
+
+      await act(async () => { result.current.mutate(); });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(result.current.error?.message).toBe('Delete failed');
     });
   });
 });

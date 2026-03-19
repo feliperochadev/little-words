@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { I18nProvider } from '../../src/i18n/i18n';
 import OnboardingScreen from '../../app/onboarding';
 import * as db from '../../src/services/settingsService';
 import { useSettingsStore } from '../../src/stores/settingsStore';
+import { renderWithProviders } from '../helpers/renderWithProviders';
+import * as ImagePicker from 'expo-image-picker';
 
 jest.spyOn(Alert, 'alert');
 
@@ -16,8 +17,21 @@ jest.mock('../../src/services/settingsService', () => ({
   getChildProfile: jest.fn().mockResolvedValue({ name: '', sex: null, birth: '' }),
 }));
 
+jest.mock('../../src/services/assetService', () => ({
+  ...jest.requireActual('../../src/services/assetService'),
+  getProfilePhoto: jest.fn().mockResolvedValue(null),
+  saveProfilePhoto: jest.fn().mockResolvedValue({
+    id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
+    filename: 'asset_1.jpg', mime_type: 'image/jpeg', file_size: 1024,
+    duration_ms: null, width: null, height: null, created_at: '2024-01-01T00:00:00.000Z',
+  }),
+  deleteProfilePhoto: jest.fn().mockResolvedValue(undefined),
+  getAssetsByParent: jest.fn().mockResolvedValue([]),
+  getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
+}));
+
 function renderOnboarding() {
-  return render(<I18nProvider><OnboardingScreen /></I18nProvider>);
+  return renderWithProviders(<OnboardingScreen />);
 }
 
 describe('OnboardingScreen', () => {
@@ -132,5 +146,153 @@ describe('OnboardingScreen', () => {
     fireEvent.changeText(input, '  ');
     expect(await findByText('Girl')).toBeTruthy();
     jest.useRealTimers();
+  });
+
+  // ─── Photo picker (avatar at top) ───────────────────────────────────────
+
+  it('shows profile avatar at top', async () => {
+    const { findByTestId } = renderOnboarding();
+    expect(await findByTestId('onboarding-profile-avatar')).toBeTruthy();
+  });
+
+  // Helper: invoke a button from the last Alert.alert call by matching text
+  function pressLastAlertButton(text: string) {
+    const calls = (Alert.alert as jest.Mock).mock.calls;
+    const lastCall = calls[calls.length - 1];
+    const buttons = lastCall[2] as Array<{ text: string; onPress?: () => void }>;
+    const btn = buttons.find((b) => b.text === text);
+    btn?.onPress?.();
+  }
+
+  async function fillAllFields(helpers: ReturnType<typeof renderOnboarding>) {
+    const { findByText, findByPlaceholderText } = helpers;
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+  }
+
+  it('tapping avatar shows source picker alert', async () => {
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    expect(Alert.alert).toHaveBeenCalled();
+  });
+
+  it('tapping avatar then choosing gallery opens image library', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('tapping avatar then choosing camera opens camera', async () => {
+    const launchMock = ImagePicker.launchCameraAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({ canceled: true, assets: [] });
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Take Photo'); });
+    expect(launchMock).toHaveBeenCalled();
+  });
+
+  it('shows permission denied alert when media library permission denied', async () => {
+    const permMock = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
+    permMock.mockResolvedValueOnce({ granted: false, status: 'denied' });
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + permission denied
+  });
+
+  it('saves profile photo on continue when photo is selected', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/photo.jpg', mimeType: 'image/jpeg', fileSize: 1024 }],
+    });
+    const assetService = require('../../src/services/assetService');
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => { pressLastAlertButton('Choose from Library'); });
+    await fillAllFields(helpers);
+    const continueBtn = await helpers.findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(assetService.saveProfilePhoto).toHaveBeenCalledWith(
+        'file:///tmp/photo.jpg',
+        'image/jpeg',
+        1024,
+        undefined,
+        undefined,
+      );
+    });
+  });
+
+  it('shows saving text while form is submitting', async () => {
+    let resolveSubmit!: () => void;
+    const submitBlocker = new Promise<void>((res) => { resolveSubmit = res; });
+    (db.setChildProfile as jest.Mock).mockReturnValueOnce(submitBlocker);
+
+    const { findByText, findByPlaceholderText } = renderOnboarding();
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+
+    const continueBtn = await findByText(/Start with Luna/);
+    act(() => { fireEvent.press(continueBtn); });
+
+    expect(await findByText(/Saving/i)).toBeTruthy();
+    await act(async () => { resolveSubmit(); });
+  });
+
+  it('photo selection updates avatar state (onPhotoSelected callback)', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/avatar.jpg', mimeType: 'image/jpeg', fileSize: 2048 }],
+    });
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => {
+      const calls = (Alert.alert as jest.Mock).mock.calls;
+      const buttons = calls[calls.length - 1][2] as Array<{ text: string; onPress?: () => void }>;
+      const galleryBtn = buttons.find((b) => b.text === 'Choose from Library');
+      galleryBtn?.onPress?.();
+    });
+    // Verify photo was received: if selectedPhoto is set, saveProfilePhoto is called on continue
+    const assetService = require('../../src/services/assetService');
+    await helpers.findByPlaceholderText(/Sofia/).then(input => fireEvent.changeText(input, 'Luna'));
+    fireEvent.press(await helpers.findByText('Girl'));
+    fireEvent.press(await helpers.findByText(/Select date/));
+    fireEvent.press(await helpers.findByText(/Confirm/));
+    const continueBtn = await helpers.findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(assetService.saveProfilePhoto).toHaveBeenCalledWith(
+        'file:///tmp/avatar.jpg',
+        'image/jpeg',
+        2048,
+        undefined,
+        undefined,
+      );
+    });
+  });
+
+  it('does not save photo on continue when no photo selected (skip)', async () => {
+    const assetService = require('../../src/services/assetService');
+    const { findByText, findByPlaceholderText } = renderOnboarding();
+    const input = await findByPlaceholderText(/Sofia/);
+    fireEvent.changeText(input, 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+    const continueBtn = await findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(db.setChildProfile).toHaveBeenCalled();
+      expect(assetService.saveProfilePhoto).not.toHaveBeenCalled();
+    });
   });
 });

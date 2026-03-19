@@ -1,4 +1,4 @@
-export type ParentType = 'word' | 'variant';
+export type ParentType = 'word' | 'variant' | 'profile';
 export type AssetType = 'audio' | 'photo' | 'video';
 
 export interface Asset {

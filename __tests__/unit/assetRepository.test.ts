@@ -6,6 +6,8 @@ import {
   deleteAsset,
   deleteAssetsByParent,
   updateAssetFilename,
+  getProfilePhoto,
+  deleteProfilePhotoAsset,
 } from '../../src/repositories/assetRepository';
 import type { NewAsset } from '../../src/types/asset';
 
@@ -184,6 +186,45 @@ describe('assetRepository', () => {
       mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 0, changes: 2 });
       const result = await updateAssetFilename(1, 'new.jpg');
       expect(result.rowsAffected).toBe(2);
+    });
+  });
+
+  describe('getProfilePhoto', () => {
+    it('returns the profile photo when found', async () => {
+      const asset = { id: 99, parent_type: 'profile', parent_id: 1, asset_type: 'photo', filename: 'a.jpg', mime_type: 'image/jpeg', file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01' };
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      const result = await getProfilePhoto();
+      expect(result).toEqual(asset);
+    });
+
+    it('returns null when no profile photo exists', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      const result = await getProfilePhoto();
+      expect(result).toBeNull();
+    });
+
+    it('queries with correct profile singleton SQL', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      await getProfilePhoto();
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+        expect.stringContaining("parent_type = 'profile'"),
+        [],
+      );
+    });
+  });
+
+  describe('deleteProfilePhotoAsset', () => {
+    it('deletes the profile singleton photo row', async () => {
+      await deleteProfilePhotoAsset();
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM assets WHERE parent_type = 'profile'"),
+        [],
+      );
+    });
+
+    it('resolves to undefined', async () => {
+      const result = await deleteProfilePhotoAsset();
+      expect(result).toBeUndefined();
     });
   });
 });

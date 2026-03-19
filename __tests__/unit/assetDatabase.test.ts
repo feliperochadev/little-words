@@ -50,7 +50,7 @@ describe('asset database operations', () => {
         (c: string[]) => c[0].includes('CREATE TABLE IF NOT EXISTS assets'),
       );
       expect(call).toBeDefined();
-      expect(call[0]).toContain("parent_type IN ('word', 'variant')");
+      expect(call[0]).toContain("parent_type IN ('word', 'variant', 'profile')");
     });
 
     it('creates assets table with asset_type CHECK constraint', async () => {

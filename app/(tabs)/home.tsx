@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
+  Modal, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { AddWordModal } from '../../src/components/AddWordModal';
+import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { useRouter } from 'expo-router';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useProfilePhoto, useSaveProfilePhoto } from '../../src/hooks/useAssets';
+import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -22,6 +26,20 @@ export default function DashboardScreen() {
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const { data: profilePhoto } = useProfilePhoto();
+  const profilePhotoUri = profilePhoto?.uri ?? null;
+  const saveProfilePhoto = useSaveProfilePhoto();
+  const { handlePickPhoto, handleRemovePhoto } = useProfilePhotoPicker({
+    onPhotoSelected: async (asset) => {
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: asset.uri,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+        fileSize: asset.fileSize ?? 0,
+      });
+    },
+    onPhotoRemoved: () => setShowPhotoViewer(false),
+  });
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
@@ -35,8 +53,6 @@ export default function DashboardScreen() {
   };
 
   const { colors } = useTheme();
-  const emojiBySex = { girl: '👧', boy: '👦' } as const;
-  const emoji = sex ? emojiBySex[sex] : '👶';
   const ageText = birth ? getAgeText(birth, t) : null;
   const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
@@ -64,7 +80,14 @@ export default function DashboardScreen() {
 
         {!!name && (
           <View style={styles.profileBlock}>
-            <Text style={styles.profileEmoji}>{emoji}</Text>
+            <ProfileAvatar
+              size="lg"
+              photoUri={profilePhotoUri}
+              sex={sex}
+              onPress={() => profilePhotoUri ? setShowPhotoViewer(true) : handlePickPhoto()}
+              tapHint={profilePhotoUri ? undefined : t('onboarding.tapToAddPhoto')}
+              testID="home-profile-avatar"
+            />
             <Text style={[styles.profileName, { color: colors.primary }]}>{name}</Text>
             {ageText && (
               <View style={styles.ageRow}>
@@ -73,6 +96,21 @@ export default function DashboardScreen() {
               </View>
             )}
             <Text style={[styles.profileGreeting, { color: colors.textSecondary }]}>{getGreeting(name, sex, t)}</Text>
+          </View>
+        )}
+
+        {!stats?.totalWords && (
+          <View style={styles.emptyHero}>
+            <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
+            <TouchableOpacity
+              style={[styles.addWordBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+              onPress={() => setShowAddWord(true)}
+              testID="home-add-first-word-btn"
+            >
+              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+              <Text style={[styles.addWordBtnText, { color: colors.textOnPrimary }]}>{t('words.addFirstWord')}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -163,21 +201,6 @@ export default function DashboardScreen() {
           </Card>
         )}
 
-        {!stats?.totalWords && (
-          <View style={styles.emptyHero}>
-            <Ionicons name="star-outline" size={64} color={colors.textMuted} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('dashboard.emptyTitle')}</Text>
-            <TouchableOpacity
-              style={[styles.addWordBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
-              onPress={() => setShowAddWord(true)}
-              testID="home-add-first-word-btn"
-            >
-              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
-              <Text style={[styles.addWordBtnText, { color: colors.textOnPrimary }]}>{t('words.addFirstWord')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -188,6 +211,39 @@ export default function DashboardScreen() {
         onSave={() => router.push('/(tabs)/words')}
         editWord={null}
       />
+
+      <Modal
+        visible={showPhotoViewer}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoViewer(false)}
+        testID="home-photo-viewer"
+      >
+        <View style={styles.viewerBackdrop}>
+          <TouchableOpacity style={styles.viewerClose} onPress={() => setShowPhotoViewer(false)} testID="home-photo-viewer-close">
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {profilePhotoUri ? (
+            <Image source={{ uri: profilePhotoUri }} style={styles.viewerImage} resizeMode="contain" />
+          ) : null}
+          <View style={styles.viewerActions}>
+            <TouchableOpacity
+              style={[styles.viewerBtn, { backgroundColor: colors.primary }]}
+              onPress={() => { setShowPhotoViewer(false); handlePickPhoto(); }}
+              testID="home-photo-viewer-change"
+            >
+              <Text style={[styles.viewerBtnText, { color: colors.textOnPrimary }]}>{t('onboarding.changePhoto')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewerBtn, styles.viewerBtnDanger]}
+              onPress={handleRemovePhoto}
+              testID="home-photo-viewer-remove"
+            >
+              <Text style={[styles.viewerBtnText, { color: colors.error }]}>{t('settings.removePhoto')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -197,8 +253,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
   profileBlock: { alignItems: 'center', marginBottom: 20 },
-  profileEmoji: { fontSize: 40, marginBottom: 6 },
-  profileName: { fontSize: 20, fontWeight: '900' },
+  profileName: { fontSize: 20, fontWeight: '900', marginTop: 8 },
   ageRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   profileAge: { fontSize: 12, fontWeight: '600' },
   profileGreeting: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginTop: 8 },
@@ -227,6 +282,13 @@ const styles = StyleSheet.create({
   emptyIcon: { marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
   bottomSpacer: { height: 20 },
+  viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  viewerClose: { position: 'absolute', top: 56, right: 20, padding: 8, zIndex: 10 },
+  viewerImage: { width: '90%', height: '60%' },
+  viewerActions: { position: 'absolute', bottom: 60, flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+  viewerBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  viewerBtnDanger: { backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,100,100,0.6)' },
+  viewerBtnText: { fontSize: 15, fontWeight: '700' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   addWordHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },

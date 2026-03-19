@@ -40,9 +40,9 @@ describe('migrator', () => {
     });
 
     it('skips migrations that are already applied', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }]); // already applied
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }, { version: 2 }]); // all applied
       await runMigrations();
-      // withTransactionSync should NOT have been called since migration 1 is already applied
+      // withTransactionSync should NOT have been called since all migrations are already applied
       expect(mockDb.withTransactionSync).not.toHaveBeenCalled();
     });
 
@@ -80,6 +80,22 @@ describe('migrator', () => {
       // Attempting to roll back below version 1
       mockDb.withTransactionSync.mockImplementationOnce((fn: () => void) => fn());
       await expect(rollbackMigration(0)).rejects.toThrow('Cannot rollback initial schema');
+    });
+
+    it('rolls back migration v2 (add-profile-parent-type) to target version 1', async () => {
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 2 }]);
+      mockDb.withTransactionSync.mockImplementationOnce((fn: () => void) => fn());
+      await rollbackMigration(1);
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM assets WHERE parent_type = 'profile'"),
+      );
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS assets_old'),
+      );
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM schema_migrations WHERE version = ?'),
+        expect.arrayContaining([2]),
+      );
     });
 
     it('rejects when getAllSync throws', async () => {

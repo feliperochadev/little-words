@@ -2,6 +2,185 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-19_5
+
+**[fix] Restore Android build and track cropper-native files with selective unignore**
+
+- `android/app/src/main/res/values/styles.xml`: removed unsupported private attribute `android:panelMenuListTheme` from `ExpoCropImageThemeOverride` to fix `aapt2` resource-linking failure during `npm run android` / `app:assembleDebug`.
+- `.gitignore`: switched from fully ignored `android/` to a selective whitelist for only the cropper-related native files (`AndroidManifest.xml` + targeted `res/values*/*.xml`) so these fixes can be versioned without tracking the entire native tree.
+- Native resource files now tracked for this fix set:
+  - `android/app/src/main/AndroidManifest.xml`
+  - `android/app/src/main/res/values/colors.xml`
+  - `android/app/src/main/res/values/styles.xml`
+  - `android/app/src/main/res/values/strings.xml`
+  - `android/app/src/main/res/values-night/colors.xml`
+  - `android/app/src/main/res/values-pt/strings.xml`
+  - `android/app/src/main/res/values-pt-rBR/strings.xml`
+- Validation:
+  - `./android/gradlew app:assembleDebug -x lint -x test ...` passed.
+  - `npm run ci` passed.
+
+---
+
+### 2026-03-19_4
+
+**[fix] Strengthen flip submenu contrast and broaden Portuguese crop-label fallback**
+
+- `android/app/src/main/res/values/styles.xml`: strengthened cropper popup theming with explicit light palette values and additional menu theming hooks (`android:actionOverflowMenuStyle`, `actionOverflowMenuStyle`, `android:panelMenuListTheme`) to improve readability in flip submenu surfaces that were still rendering dark.
+- `android/app/src/main/res/values-pt/strings.xml` (new): added generic Portuguese override `crop_image_menu_crop = "Salvar"` in addition to `values-pt-rBR` to cover locale resolution paths that do not map to region-specific resources.
+- `__tests__/unit/appConfig.test.ts`: updated assertions to cover the stronger popup/menu theme wiring and verify both `values-pt` and `values-pt-rBR` crop-label overrides.
+
+---
+
+### 2026-03-19_3
+
+**[fix] Improve flip submenu readability and localize crop action label in Android photo editor**
+
+- `android/app/src/main/res/values/styles.xml`: added `ExpoCropImageThemeOverride` plus popup-menu styles to force readable flip submenu contrast in Expo ImagePicker crop activity (`ExpoCropPopupMenuStyle`, `ExpoCropPopupMenuItemText`).
+- `android/app/src/main/AndroidManifest.xml`: explicitly overrides `expo.modules.imagepicker.ExpoCropImageActivity` theme to `@style/ExpoCropImageThemeOverride` with `tools:replace="android:theme"`.
+- `android/app/src/main/res/values/strings.xml`: overrides `crop_image_menu_crop` from "Crop" to "Save".
+- `android/app/src/main/res/values-pt-rBR/strings.xml` (new): adds Portuguese override `crop_image_menu_crop` = "Salvar".
+- `__tests__/unit/appConfig.test.ts`: added regression coverage for activity theme override, popup style wiring, and crop action label overrides in default + pt-BR resources.
+
+---
+
+### 2026-03-19_2
+
+**[fix] Force Android crop editor toolbar contrast via native resource overrides**
+
+- `android/app/src/main/res/values/colors.xml`: added explicit Expo ImagePicker crop color resources (`expoCropToolbarColor`, `expoCropToolbarIconColor`, `expoCropToolbarActionTextColor`, `expoCropBackButtonIconColor`, `expoCropBackgroundColor`) for light mode to ensure dark controls on bright toolbar/editing surfaces.
+- `android/app/src/main/res/values-night/colors.xml`: added matching dark-mode Expo ImagePicker crop color resources to ensure light controls on dark toolbar/editing surfaces.
+- `__tests__/unit/appConfig.test.ts`: expanded with a second regression test that validates both Android resource XML files include the expected high-contrast `expoCrop*` color definitions.
+
+---
+
+### 2026-03-19_1
+
+**[fix] Improve Android profile photo editor control contrast in crop toolbar**
+
+- `app.json`: added `expo-image-picker` config plugin entry with explicit Android crop UI colors to increase top-right control contrast in the native editor:
+  - light mode: white toolbar/background with dark icon/action/back colors (`#0B1F33`)
+  - dark mode: dark toolbar (`#0B1F33`) with white icon/action/back colors and black crop background
+- `__tests__/unit/appConfig.test.ts` (new): regression test that parses `app.json` and asserts the `expo-image-picker` plugin contains the expected high-contrast light/dark crop color configuration.
+
+---
+
+### 2026-03-18_13
+
+**[test] Coverage uplift — asset repository, migrator rollback v2, onboarding photo callback**
+
+- `__tests__/unit/assetRepository.test.ts`: Added `describe` blocks for `getProfilePhoto` (returns asset, returns null, correct SQL) and `deleteProfilePhotoAsset` (correct DELETE SQL, resolves undefined).
+- `__tests__/unit/migrator.test.ts`: Added test for `rollbackMigration(1)` — verifies v2 down migration deletes profile rows, creates `assets_old`, and removes migration record.
+- `__tests__/screens/onboarding.test.tsx`: Added "shows saving text while form is submitting" (tests loading state during async submit) and "photo selection updates avatar state" (verifies `onPhotoSelected` callback wires through to `saveProfilePhoto` on continue).
+
+---
+
+### 2026-03-18_12
+
+**[refactor] Extract `useProfilePhotoPicker` hook to eliminate photo picker duplication**
+
+- `src/hooks/useProfilePhotoPicker.ts` (created): New shared hook that encapsulates the full profile photo picker UX — `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Accepts `onPhotoSelected` and optional `onPhotoRemoved` callbacks so callers control asset handling.
+- `app/(tabs)/home.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto` state, `useRemoveProfilePhoto`, `ImagePicker`, and `Alert` imports; replaced with `useProfilePhotoPicker`.
+- `app/onboarding.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `pickingPhoto` state, and `ImagePicker` import; replaced with `useProfilePhotoPicker`.
+- `src/components/EditProfileModal.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto` state, `useRemoveProfilePhoto`, and `ImagePicker` import; replaced with `useProfilePhotoPicker`.
+- `__tests__/integration/useProfilePhotoPicker.test.tsx` (created): 13 tests covering `handlePickPhoto` guard, Alert structure, camera/library success/cancel/permission-denied paths, `handleRemovePhoto` confirm/cancel, and optional `onPhotoRemoved` callback.
+- `CLAUDE.md`: Added `useProfilePhotoPicker` to hooks documentation.
+- Validation: `npm run ci` passed — 1119 tests, 0 semgrep findings.
+
+---
+
+### 2026-03-18_11
+
+**[fix] PR 40 Sonar nested ternaries in ProfileAvatar + new-code coverage uplift**
+
+- `src/components/ProfileAvatar.tsx`:
+  - Replaced nested ternary used to compute fallback emoji with explicit `if/else`.
+  - Replaced nested render ternary (`photo` vs `hint` vs `emoji`) with explicit conditional blocks to satisfy Sonar rule `typescript:S3358`.
+- `__tests__/screens/home.test.tsx`:
+  - Added branch coverage for profile-photo flows introduced in PR 40:
+    - source picker cancel path
+    - camera and gallery save paths
+    - camera/media permission denied paths
+    - photo viewer change/remove actions
+    - viewer close button and `onRequestClose`
+    - `AddWordModal` callback paths (`onClose`, `onDeleted`, `onSave`) through the Home screen
+- Validation:
+  - `npm test -- __tests__/screens/home.test.tsx __tests__/integration/ProfileAvatar.test.tsx` passed.
+  - `npm run test:coverage` passed.
+  - `npm run ci` passed.
+  - Coverage highlights: `app/(tabs)/home.tsx` now `100%` lines and `93.97%` statements; `src/components/ProfileAvatar.tsx` remains `100%` lines/statements/branches/functions.
+
+---
+
+### 2026-03-18_10
+
+**[fix] Photo viewer "Change photo" button showed raw i18n key**
+
+- `app/(tabs)/home.tsx`: Fixed `t('settings.changePhoto')` → `t('onboarding.changePhoto')`. The key lives under the `onboarding` namespace, not `settings`, causing the raw key string to render as the button label.
+
+---
+
+### 2026-03-18_9
+
+**[feature] Onboarding + EditProfileModal UI polish — title, hint text, sex buttons, home avatar hint**
+
+- `src/i18n/en-US.ts` / `pt-BR.ts`: Updated `onboarding.welcome` to `'Welcome! 💕'` / `'Bem-vindo(a)! 💕'` (removed "to Little Words", added gender-neutral Portuguese). Added `onboarding.tapToAddPhoto` key (`'tap to add photo'` / `'toque para adicionar foto'`).
+- `src/components/ProfileAvatar.tsx`: Added `tapHint?: string` prop. When provided and no photo and `size !== 'sm'`: renders emoji at `0.65×` scale + hint text (`9px`, `fontWeight: '600'`) below inside the circle frame, constrained to `diameter × 0.78` width to prevent clipping of longer Portuguese text.
+- `app/onboarding.tsx`: Passes `tapHint={t('onboarding.tapToAddPhoto')}` to avatar. Sex buttons changed to row layout matching language buttons (`flexDirection: 'row'`, `gap: 8`, `paddingVertical: 14`, emoji `fontSize: 22`).
+- `src/components/EditProfileModal.tsx`: Same sex button row layout. `tapHint` passed when no photo; `tapToChangePhoto` hint shown only when photo exists.
+- `app/(tabs)/home.tsx`: Avatar passes `tapHint={profilePhotoUri ? undefined : t('onboarding.tapToAddPhoto')}` — hint visible when no photo.
+- `__tests__/screens/home.test.tsx`: Added `jest.mock` for `useAssets` hooks (synchronous mock) so photo viewer test is deterministic without relying on TanStack Query async timing.
+
+---
+
+### 2026-03-18_8
+
+**[feature] Baby profile photo — Phase 3: UI/UX polish, photo viewer, theme fix**
+
+- `src/components/ProfileAvatar.tsx`: Increased sizes 50% (`md` 72→108dp, `lg` 96→144dp, emoji sizes scaled). Fixed theme reactivity bug — avatar now derives border/background colors from `getThemeForSex(sex prop)` instead of `useTheme()` (which reads stored sex, not the in-form sex). Badge sizes scaled to `42/36dp`; icons `30/24`; positions `-6/-3`.
+- `app/onboarding.tsx`: Moved `ProfileAvatar lg` to top of screen (above title), replacing the emoji `Text`. Removed the bottom photo section (buttons + preview block). Photo picking now triggered by tapping the avatar at any time. `allowsEditing: true` restored for camera.
+- `app/(tabs)/home.tsx`: `emptyHero` block moved before stats grid (renders when `totalWords === 0`). `EditProfileModal` removed — tapping avatar now opens a fullscreen photo viewer Modal (`testID="home-photo-viewer"`) if a photo exists, or opens source picker Alert if no photo. Viewer shows full-size image with Change + Remove action buttons. Added `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`. Added `viewerBackdrop`, `viewerClose`, `viewerImage`, `viewerActions`, `viewerBtn`, `viewerBtnDanger`, `viewerBtnText` styles.
+- `src/components/EditProfileModal.tsx`: `allowsEditing: true, aspect: [1, 1]` restored for camera launch.
+- `app/(tabs)/settings.tsx`: Birth date and age moved to separate `<Text>` lines (removed dot separator between them).
+- `__tests__/screens/home.test.tsx`: Replaced "opens EditProfileModal" test with two tests: "tapping avatar without photo opens source picker alert" and "tapping avatar with photo opens photo viewer" (waits for emoji to disappear, confirming photo data loaded before press).
+
+---
+
+### 2026-03-18_7
+
+**[feature] Baby profile photo — Phase 2: camera support, tappable onboarding avatar, settings card layout**
+
+- `app/onboarding.tsx`: `ProfileAvatar` now tappable (`onPress={handlePickPhoto}`). Photo picker replaced with an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `launchPicker('camera'|'library')` handles permission request + launch for each source. Selected photo state extended to `{ uri, mimeType?, fileSize? }`.
+- `src/components/EditProfileModal.tsx`: Replaced gallery-only picker with camera + gallery source picker via `Alert.alert`. `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard); `launchPicker(source)` is async (requests permission, launches appropriate picker). Cancel button resets guard.
+- `app/(tabs)/settings.tsx`: Avatar upgraded from `sm` (44dp) to `md` (72dp). Profile card refactored to horizontal layout — avatar on left, text column (`flex:1`) on right, `gap: 14`. Added `profileRow`, `profileTextCol`, `profileNameInline`, `profileBirth` styles.
+- i18n: Added `settings.photoSourceTitle`, `settings.photoSourceCamera`, `settings.photoSourceGallery` to both `en-US.ts` and `pt-BR.ts`.
+- Tests: Updated `editProfileModal.test.tsx` — all photo picker tests now go through `pressLastAlertButton` helper to simulate Alert → button → picker flow; removed incorrect "permission ok" Alert count. Updated `onboarding.test.tsx` — added `pressLastAlertButton` / `fillAllFields` helpers; all picker tests now go through Alert source picker; camera path tested explicitly.
+
+---
+
+### 2026-03-18_6
+
+**[feature] Baby profile photo — storage, avatar component, and full screen integration**
+
+- `src/types/asset.ts`: Extended `ParentType` union to include `'profile'` for singleton profile photo storage.
+- `src/db/init.ts`: Updated `assets` table DDL to include `'profile'` in `parent_type` CHECK constraint for fresh installs.
+- `src/db/migrations/0002_add-profile-parent-type.ts`: New migration (v2) that recreates the `assets` table with the expanded CHECK constraint via the table-rename pattern (SQLite limitation workaround). Includes `down` for rollback.
+- `src/db/migrations/index.ts`: Registered migration v2.
+- `src/utils/assetStorage.ts`: Added `profile: 'profile'` to `PARENT_DIRS` record to satisfy TypeScript exhaustiveness on the updated `ParentType` union.
+- `src/repositories/assetRepository.ts`: Added `getProfilePhoto()` and `deleteProfilePhotoAsset()` repository functions querying `parent_type='profile'`, `parent_id=1`, `asset_type='photo'`.
+- `src/services/assetService.ts`: Added `getProfilePhoto()`, `saveProfilePhoto()` (delete-then-insert singleton pattern, guards `fileSize=0` from expo-image-picker), `deleteProfilePhoto()` functions.
+- `src/hooks/useAssets.ts`: Added `useProfilePhoto()`, `useSaveProfilePhoto()`, `useRemoveProfilePhoto()` TanStack Query hooks. `useProfilePhoto` returns `ProfilePhotoAsset | null` with computed `uri` via `select`.
+- `src/components/ProfileAvatar.tsx`: New reusable avatar component with `sm`/`md`/`lg` sizes, photo/emoji fallback, optional decorations (book + speech bubble badges on `lg`), `onPress` touch target, full theme token usage.
+- `app/onboarding.tsx`: Added optional photo selection step (after all fields filled), `handlePickPhoto` with permission guard, saves photo via `useSaveProfilePhoto` on continue.
+- `app/(tabs)/home.tsx`: Replaced emoji `Text` with `ProfileAvatar lg`; tapping opens `EditProfileModal`; `useProfilePhoto` query provides photo URI.
+- `app/(tabs)/settings.tsx`: Replaced emoji `Text` with `ProfileAvatar sm` (no decorations, `testID="settings-profile-emoji"` preserved); `useProfilePhoto` query provides photo URI.
+- `src/components/EditProfileModal.tsx`: Added `ProfileAvatar md` at top of form; `handlePickPhoto` opens expo-image-picker; `handleRemovePhoto` with confirmation Alert; photo pre-fill from `useProfilePhoto` on modal open; uses `useSaveProfilePhoto` / `useRemoveProfilePhoto`.
+- i18n: Added `onboarding.addPhoto`, `onboarding.photoOptional`, `onboarding.skipPhoto`, `onboarding.changePhoto`, `settings.tapToChangePhoto`, `settings.removePhoto`, `settings.removePhotoConfirm`, `settings.editPhoto`, `settings.photoPermissionDenied` to both `en-US.ts` and `pt-BR.ts`.
+- Tests: Added `__tests__/unit/profilePhotoService.test.ts`, `__tests__/integration/ProfileAvatar.test.tsx`; updated `useAssets.test.tsx` (+3 hook describe blocks), `editProfileModal.test.tsx` (migrated to `renderWithProviders`, +8 photo tests), `onboarding.test.tsx` (+7 photo section tests), `home.test.tsx` (+2 avatar tests), `settings.test.tsx` (updated 3 emoji assertions to work with `ProfileAvatar` wrapper `View`); fixed `assetDatabase.test.ts` and `migrator.test.ts` for new constraint/migration count.
+- `CLAUDE.md`: Updated hooks list, assets table description, service description; added `ProfileAvatar` component entry.
+
+---
+
 ### 2026-03-18_5
 
 **[fix] Stabilize CI flake in `ImportModal` integration test**
