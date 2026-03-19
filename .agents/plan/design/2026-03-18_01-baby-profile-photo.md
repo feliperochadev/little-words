@@ -528,6 +528,29 @@ const asset = result.assets[0];
 
 Consider extracting a shared `pickProfilePhoto(t)` utility to avoid duplication between onboarding and EditProfileModal.
 
+### 13. Android Native Cropper Finalization (post-implementation)
+
+During branch validation, native Android cropper surfaces exposed two additional constraints:
+
+1. The crop toolbar/controls (and flip submenu) are rendered by native Android resources/theme and can have poor contrast unless explicitly overridden.
+2. The crop action label (`crop_image_menu_crop`) is not sourced from app JS i18n; it comes from native Android string resources and locale resolution.
+
+Finalized solution:
+
+- Keep `expo-image-picker` plugin color configuration in `app.json` for generated/prebuild alignment.
+- Also provide direct native resource overrides in:
+  - `android/app/src/main/res/values/colors.xml`
+  - `android/app/src/main/res/values-night/colors.xml`
+- Override cropper activity theme in app manifest:
+  - `android/app/src/main/AndroidManifest.xml` (`expo.modules.imagepicker.ExpoCropImageActivity` → `@style/ExpoCropImageThemeOverride`)
+- Add explicit popup-menu style overrides for flip submenu readability:
+  - `android/app/src/main/res/values/styles.xml`
+- Override crop button label:
+  - default: `values/strings.xml` → `Save`
+  - Portuguese: `values-pt/strings.xml` and `values-pt-rBR/strings.xml` → `Salvar`
+
+Implementation note: an attempted `android:panelMenuListTheme` override caused `aapt2` failure because it is a private Android attribute in this build context. The final implementation removed this attribute and kept supported style hooks only.
+
 ---
 
 ### UI / UX Decisions
@@ -538,6 +561,7 @@ Consider extracting a shared `pickProfilePhoto(t)` utility to avoid duplication 
 - **EditProfileModal:** Photo is saved immediately on pick (not deferred to the "Save" button). The remove-photo action also takes effect immediately. This matches user expectations for photo interactions and avoids complexity of tracking "pending" photo changes.
 - **Settings:** Medium avatar (72dp) without decorations, displayed in a horizontal card layout with the avatar on the left and profile text on the right. Upgraded from `sm` (44dp) to `md` (72dp) for better visual presence.
 - **Decorations:** Only shown at `lg` size on the home screen. The book and speech bubble icons are thematic to the app's purpose (recording words/language).
+- **Native cropper locale behavior:** Cropper action strings (`Save`, `Flip`, etc.) are resolved by Android native resources, not app runtime locale state from JS i18n. Therefore, resource overrides in `values-pt*` are required for Portuguese labels.
 
 ### Error Handling
 
@@ -693,5 +717,14 @@ All resolved — no blockers.
 | `__tests__/screens/onboarding.test.tsx` | Extend |
 | `__tests__/screens/home.test.tsx` | Extend |
 | `__tests__/screens/settings.test.tsx` | Extend |
+| `android/app/src/main/AndroidManifest.xml` | Modify (override Expo crop activity theme) |
+| `android/app/src/main/res/values/colors.xml` | Modify (cropper light-mode resource colors) |
+| `android/app/src/main/res/values-night/colors.xml` | Modify (cropper dark-mode resource colors) |
+| `android/app/src/main/res/values/styles.xml` | Modify (cropper popup/theme readability overrides) |
+| `android/app/src/main/res/values/strings.xml` | Modify (crop action label: Save) |
+| `android/app/src/main/res/values-pt/strings.xml` | **New** (crop action label: Salvar) |
+| `android/app/src/main/res/values-pt-rBR/strings.xml` | **New** (crop action label: Salvar) |
+| `.gitignore` | Modify (selective Android unignore for profile-photo cropper files) |
+| `__tests__/unit/appConfig.test.ts` | **New** (regression coverage for app config + native Android resource overrides) |
 
-**Total:** 23 files (5 new, 18 modified/extended)
+**Total:** 33 files (9 new, 24 modified/extended)

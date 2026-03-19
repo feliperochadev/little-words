@@ -2,6 +2,7 @@
 
 Entries are added after every approved change. Most recent first.
 
+<<<<<<< HEAD
 ### 2026-03-19_1
 
 **[feature] Resume `/implement 2026-03-18_02-media-capture-and-linking` and complete media capture integration**
@@ -22,6 +23,70 @@ Entries are added after every approved change. Most recent first.
 - Validation:
   - `npm run agent:review` → `Simple change` internal review passed.
   - `npm run ci` passed (lint + typecheck + coverage + semgrep).
+=======
+### 2026-03-19_5
+
+**[fix] Restore Android build and track cropper-native files with selective unignore**
+
+- `android/app/src/main/res/values/styles.xml`: removed unsupported private attribute `android:panelMenuListTheme` from `ExpoCropImageThemeOverride` to fix `aapt2` resource-linking failure during `npm run android` / `app:assembleDebug`.
+- `.gitignore`: switched from fully ignored `android/` to a selective whitelist for only the cropper-related native files (`AndroidManifest.xml` + targeted `res/values*/*.xml`) so these fixes can be versioned without tracking the entire native tree.
+- Native resource files now tracked for this fix set:
+  - `android/app/src/main/AndroidManifest.xml`
+  - `android/app/src/main/res/values/colors.xml`
+  - `android/app/src/main/res/values/styles.xml`
+  - `android/app/src/main/res/values/strings.xml`
+  - `android/app/src/main/res/values-night/colors.xml`
+  - `android/app/src/main/res/values-pt/strings.xml`
+  - `android/app/src/main/res/values-pt-rBR/strings.xml`
+- Validation:
+  - `./android/gradlew app:assembleDebug -x lint -x test ...` passed.
+  - `npm run ci` passed.
+
+---
+
+### 2026-03-19_4
+
+**[fix] Strengthen flip submenu contrast and broaden Portuguese crop-label fallback**
+
+- `android/app/src/main/res/values/styles.xml`: strengthened cropper popup theming with explicit light palette values and additional menu theming hooks (`android:actionOverflowMenuStyle`, `actionOverflowMenuStyle`, `android:panelMenuListTheme`) to improve readability in flip submenu surfaces that were still rendering dark.
+- `android/app/src/main/res/values-pt/strings.xml` (new): added generic Portuguese override `crop_image_menu_crop = "Salvar"` in addition to `values-pt-rBR` to cover locale resolution paths that do not map to region-specific resources.
+- `__tests__/unit/appConfig.test.ts`: updated assertions to cover the stronger popup/menu theme wiring and verify both `values-pt` and `values-pt-rBR` crop-label overrides.
+
+---
+
+### 2026-03-19_3
+
+**[fix] Improve flip submenu readability and localize crop action label in Android photo editor**
+
+- `android/app/src/main/res/values/styles.xml`: added `ExpoCropImageThemeOverride` plus popup-menu styles to force readable flip submenu contrast in Expo ImagePicker crop activity (`ExpoCropPopupMenuStyle`, `ExpoCropPopupMenuItemText`).
+- `android/app/src/main/AndroidManifest.xml`: explicitly overrides `expo.modules.imagepicker.ExpoCropImageActivity` theme to `@style/ExpoCropImageThemeOverride` with `tools:replace="android:theme"`.
+- `android/app/src/main/res/values/strings.xml`: overrides `crop_image_menu_crop` from "Crop" to "Save".
+- `android/app/src/main/res/values-pt-rBR/strings.xml` (new): adds Portuguese override `crop_image_menu_crop` = "Salvar".
+- `__tests__/unit/appConfig.test.ts`: added regression coverage for activity theme override, popup style wiring, and crop action label overrides in default + pt-BR resources.
+
+---
+
+### 2026-03-19_2
+
+**[fix] Force Android crop editor toolbar contrast via native resource overrides**
+
+- `android/app/src/main/res/values/colors.xml`: added explicit Expo ImagePicker crop color resources (`expoCropToolbarColor`, `expoCropToolbarIconColor`, `expoCropToolbarActionTextColor`, `expoCropBackButtonIconColor`, `expoCropBackgroundColor`) for light mode to ensure dark controls on bright toolbar/editing surfaces.
+- `android/app/src/main/res/values-night/colors.xml`: added matching dark-mode Expo ImagePicker crop color resources to ensure light controls on dark toolbar/editing surfaces.
+- `__tests__/unit/appConfig.test.ts`: expanded with a second regression test that validates both Android resource XML files include the expected high-contrast `expoCrop*` color definitions.
+
+---
+
+### 2026-03-19_1
+
+**[fix] Improve Android profile photo editor control contrast in crop toolbar**
+
+- `app.json`: added `expo-image-picker` config plugin entry with explicit Android crop UI colors to increase top-right control contrast in the native editor:
+  - light mode: white toolbar/background with dark icon/action/back colors (`#0B1F33`)
+  - dark mode: dark toolbar (`#0B1F33`) with white icon/action/back colors and black crop background
+- `__tests__/unit/appConfig.test.ts` (new): regression test that parses `app.json` and asserts the `expo-image-picker` plugin contains the expected high-contrast light/dark crop color configuration.
+
+---
+>>>>>>> main
 
 ### 2026-03-18_13
 
