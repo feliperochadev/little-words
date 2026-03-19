@@ -199,7 +199,7 @@ export function MediaFAB() {
 
   const tabBarHeight = 62 + insets.bottom;
 
-  const fabIcon = isActive ? 'stop-circle' : 'mic';
+  const fabIcon = 'mic' as const;
 
   return (
     <>
@@ -274,16 +274,18 @@ export function MediaFAB() {
         {/* Camera button (hidden during recording/paused) */}
         {!isActive && (
           <View style={s.cameraContainer}>
-            {/* Expanded overlay: Photo + Video options above camera */}
+            {/* Expanded overlay: Photo + Video options above camera (in-flow, not absolute) */}
             {expanded && (
               <View style={s.overlay}>
                 <TouchableOpacity
-                  style={[s.overlayBtn, s.overlayBtnLocked, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={[s.overlayBtn, s.overlayBtnLocked, s.overlayBtnColumn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={handleVideoPress}
                   testID="media-video-btn-locked"
                 >
-                  <Ionicons name="videocam" size={18} color={colors.textMuted} />
-                  <Ionicons name="lock-closed" size={10} color={colors.textMuted} style={s.lockIcon} />
+                  <View style={s.videoIconRow}>
+                    <Ionicons name="videocam" size={18} color={colors.textMuted} />
+                    <Ionicons name="lock-closed" size={10} color={colors.textMuted} style={s.lockIcon} />
+                  </View>
                   <Text style={[s.overlayLabel, { color: colors.textMuted }]}>
                     {t('mediaCapture.videoLocked')}
                   </Text>
@@ -321,11 +323,11 @@ export function MediaFAB() {
           ]}
           testID="media-fab-mic"
         >
-          <Ionicons
-            name={fabIcon}
-            size={26}
-            color={isActive ? '#FF3B30' : colors.textOnPrimary}
-          />
+          {isActive ? (
+            <View style={s.stopDot} />
+          ) : (
+            <Ionicons name={fabIcon} size={26} color={colors.textOnPrimary} />
+          )}
         </View>
       </Animated.View>
     </>
@@ -347,7 +349,7 @@ const s = StyleSheet.create({
     right: 16,
     zIndex: 100,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   leftContent: {
     flex: 1,
@@ -387,12 +389,9 @@ const s = StyleSheet.create({
     elevation: 4,
   },
   overlay: {
-    position: 'absolute',
-    bottom: CAMERA_SIZE + 8,
-    right: 0,
     gap: 6,
     alignItems: 'flex-end',
-    zIndex: 101,
+    marginBottom: 6,
   },
   overlayBtn: {
     flexDirection: 'row',
@@ -403,6 +402,11 @@ const s = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
   },
+  overlayBtnColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 3,
+  },
   overlayBtnLocked: {
     opacity: 0.5,
   },
@@ -412,6 +416,16 @@ const s = StyleSheet.create({
   },
   lockIcon: {
     marginLeft: -2,
+  },
+  videoIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stopDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FF3B30',
   },
   waveformPill: {
     flexDirection: 'row',

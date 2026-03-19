@@ -3,6 +3,13 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-19_9
+
+**[feature] MediaFAB overlay positioning + video button layout + stop indicator**
+
+- `src/components/MediaFAB.tsx`: overlay moved from `position: absolute` to in-flow column above camera button (fixes popup appearing too high on screen); container `alignItems` changed to `flex-end` so camera button and FAB share bottom baseline; video button changed to column layout (icon row on top, "coming soon" text below); FAB stop indicator replaced with a plain red circle (no square) using a styled `View`.
+
+
 ### 2026-03-19_8
 
 **[feature] MediaFAB recording controls swap + overlay reorder**
