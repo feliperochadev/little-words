@@ -8,6 +8,18 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../src/components/MediaFAB', () => ({
+  MediaFAB: () => null,
+}));
+
+jest.mock('../../src/components/MediaLinkingModal', () => ({
+  MediaLinkingModal: () => null,
+}));
+
+jest.mock('../../src/providers/MediaCaptureProvider', () => ({
+  MediaCaptureProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Override the Tabs mock to render tabBarIcon callbacks with both active and inactive colors
 jest.mock('expo-router', () => {
   const React = require('react');

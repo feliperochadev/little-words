@@ -1,0 +1,269 @@
+import React, { createContext, useState, useRef, useCallback } from 'react';
+import { Alert } from 'react-native';
+import { Audio } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
+import { useQueryClient } from '@tanstack/react-query';
+import { ASSET_MUTATION_KEYS } from '../hooks/queryKeys';
+import * as assetService from '../services/assetService';
+import { getAssetsByParentAndType } from '../repositories/assetRepository';
+import { getAssetFileUri } from '../utils/assetStorage';
+import { useI18n } from '../i18n/i18n';
+import type { ParentType, AssetType } from '../types/asset';
+
+export type CapturePhase = 'idle' | 'recording' | 'captured' | 'linking' | 'creating-word';
+
+export interface PendingMedia {
+  uri: string;
+  type: AssetType;
+  mimeType: string;
+  fileSize: number;
+  durationMs?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface MediaCaptureContextValue {
+  phase: CapturePhase;
+  pendingMedia: PendingMedia | null;
+  prefilledWordName: string;
+  playingAssetId: number | null;
+
+  setPhase: (phase: CapturePhase) => void;
+  setCapturedMedia: (media: PendingMedia) => void;
+  resetCapture: () => void;
+
+  // Linking actions
+  linkMediaToWord: (wordId: number) => Promise<void>;
+  startCreateWord: (wordName: string) => void;
+  onWordCreated: (wordId: number) => Promise<void>;
+
+  // Photo capture
+  launchPhotoPicker: () => void;
+
+  // Inline audio playback
+  playAssetByParent: (parentType: ParentType, parentId: number) => Promise<void>;
+  stopPlayback: () => Promise<void>;
+}
+
+export const MediaCaptureContext = createContext<MediaCaptureContextValue | null>(null);
+
+type Props = { children: React.ReactNode };
+
+export function MediaCaptureProvider({ children }: Readonly<Props>) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+
+  const [phase, setPhase] = useState<CapturePhase>('idle');
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
+  const [prefilledWordName, setPrefilledWordName] = useState('');
+  const [playingAssetId, setPlayingAssetId] = useState<number | null>(null);
+
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const invalidateAssetCaches = useCallback(() => {
+    ASSET_MUTATION_KEYS.forEach(key =>
+      queryClient.invalidateQueries({ queryKey: key })
+    );
+  }, [queryClient]);
+
+  const resetCapture = useCallback(() => {
+    setPhase('idle');
+    setPendingMedia(null);
+    setPrefilledWordName('');
+  }, []);
+
+  const setCapturedMedia = useCallback((media: PendingMedia) => {
+    setPendingMedia(media);
+    setPhase('linking');
+  }, []);
+
+  const linkMediaToWord = useCallback(async (wordId: number) => {
+    if (!pendingMedia) return;
+    try {
+      await assetService.saveAsset({
+        sourceUri: pendingMedia.uri,
+        parentType: 'word',
+        parentId: wordId,
+        assetType: pendingMedia.type,
+        mimeType: pendingMedia.mimeType,
+        fileSize: pendingMedia.fileSize,
+        durationMs: pendingMedia.durationMs,
+        width: pendingMedia.width,
+        height: pendingMedia.height,
+      });
+      invalidateAssetCaches();
+    } catch {
+      Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
+    }
+    resetCapture();
+  }, [pendingMedia, invalidateAssetCaches, resetCapture, t]);
+
+  const startCreateWord = useCallback((wordName: string) => {
+    setPrefilledWordName(wordName);
+    setPhase('creating-word');
+  }, []);
+
+  const onWordCreated = useCallback(async (wordId: number) => {
+    if (!pendingMedia) {
+      resetCapture();
+      return;
+    }
+    try {
+      await assetService.saveAsset({
+        sourceUri: pendingMedia.uri,
+        parentType: 'word',
+        parentId: wordId,
+        assetType: pendingMedia.type,
+        mimeType: pendingMedia.mimeType,
+        fileSize: pendingMedia.fileSize,
+        durationMs: pendingMedia.durationMs,
+        width: pendingMedia.width,
+        height: pendingMedia.height,
+      });
+      invalidateAssetCaches();
+    } catch {
+      // Asset save failed but word was created — don't block
+    }
+    resetCapture();
+  }, [pendingMedia, invalidateAssetCaches, resetCapture]);
+
+  const launchPhotoPicker = useCallback(() => {
+    Alert.alert(
+      t('settings.photoSourceTitle'),
+      undefined,
+      [
+        {
+          text: t('settings.photoSourceCamera'),
+          onPress: async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+              return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+              allowsEditing: false,
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets.length > 0) {
+              const asset = result.assets[0];
+              setCapturedMedia({
+                uri: asset.uri,
+                type: 'photo',
+                mimeType: asset.mimeType ?? 'image/jpeg',
+                fileSize: Math.max(asset.fileSize ?? 1, 1),
+                width: asset.width,
+                height: asset.height,
+              });
+            }
+          },
+        },
+        {
+          text: t('settings.photoSourceGallery'),
+          onPress: async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
+              return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ['images'],
+              allowsEditing: false,
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets.length > 0) {
+              const asset = result.assets[0];
+              setCapturedMedia({
+                uri: asset.uri,
+                type: 'photo',
+                mimeType: asset.mimeType ?? 'image/jpeg',
+                fileSize: Math.max(asset.fileSize ?? 1, 1),
+                width: asset.width,
+                height: asset.height,
+              });
+            }
+          },
+        },
+        { text: t('common.cancel'), style: 'cancel' },
+      ],
+    );
+  }, [t, setCapturedMedia]);
+
+  // ── Inline audio playback (single-sound manager) ───────────────────────────
+
+  const stopPlayback = useCallback(async () => {
+    if (soundRef.current) {
+      try {
+        await soundRef.current.unloadAsync();
+      } catch {
+        // Already unloaded
+      }
+      soundRef.current = null;
+    }
+    setPlayingAssetId(null);
+  }, []);
+
+  const playAssetByParent = useCallback(async (parentType: ParentType, parentId: number) => {
+    // If already playing something for this parent, toggle off
+    const assets = await getAssetsByParentAndType(parentType, parentId, 'audio');
+    if (assets.length === 0) return;
+
+    const asset = assets[0];
+
+    // Toggle off if same asset
+    if (playingAssetId === asset.id) {
+      await stopPlayback();
+      return;
+    }
+
+    // Stop any currently playing sound
+    await stopPlayback();
+
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+      });
+
+      const uri = getAssetFileUri(parentType, parentId, 'audio', asset.filename);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true },
+      );
+
+      soundRef.current = sound;
+      setPlayingAssetId(asset.id);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlayingAssetId(null);
+          sound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
+    } catch {
+      setPlayingAssetId(null);
+    }
+  }, [playingAssetId, stopPlayback]);
+
+  const contextValue: MediaCaptureContextValue = {
+    phase,
+    pendingMedia,
+    prefilledWordName,
+    playingAssetId,
+    setPhase,
+    setCapturedMedia,
+    resetCapture,
+    linkMediaToWord,
+    startCreateWord,
+    onWordCreated,
+    launchPhotoPicker,
+    playAssetByParent,
+    stopPlayback,
+  };
+
+  return (
+    <MediaCaptureContext.Provider value={contextValue}>
+      {children}
+    </MediaCaptureContext.Provider>
+  );
+}

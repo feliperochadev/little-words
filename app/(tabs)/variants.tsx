@@ -16,6 +16,7 @@ import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useAllVariants } from '../../src/hooks/useVariants';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
+import { AudioPlayerInline } from '../../src/components/AudioPlayerInline';
 
 const EMPTY_VARIANTS: Variant[] = [];
 const EMPTY_WORDS: Word[] = [];
@@ -68,6 +69,14 @@ export default function VariantsScreen() {
             <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
             <Text style={[styles.mainWord, { color: colors.text }]}>{item.main_word}</Text>
             <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
+            {(item.asset_count ?? 0) > 0 && (
+              <View style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.secondary, '16') }]} testID={`variant-asset-count-${item.id}`}>
+                <AudioPlayerInline parentType="variant" parentId={item.id} />
+                <Text style={[styles.assetCountText, { color: colors.secondary }]}>
+                  {item.asset_count}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
         {item.notes && (
@@ -168,4 +177,6 @@ const styles = StyleSheet.create({
   date: { fontSize: 12, flex: 1, textAlign: 'right' },
   notesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   notes: { fontSize: 12, flex: 1, lineHeight: 16 },
+  assetCountChip: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
+  assetCountText: { fontSize: 11, fontWeight: '700' },
 });

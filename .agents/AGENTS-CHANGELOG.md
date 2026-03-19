@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-19_1
+
+**[feature] Resume `/implement 2026-03-18_02-media-capture-and-linking` and complete media capture integration**
+
+- Re-applied reverted tracked integration changes for media capture flow:
+  - `app/(tabs)/_layout.tsx`: added `MediaCaptureProvider` wrapper and mounted global `MediaFAB` + `MediaLinkingModal`.
+  - `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx`: added inline media asset count chips with `AudioPlayerInline` actions.
+  - `src/components/AddWordModal.tsx`: integrated `MediaChips`, wired `creating-word` handoff (`prefilledWordName`, `onWordCreated`, pending media cleanup).
+  - `__tests__/helpers/renderWithProviders.tsx`: wrapped test renders with `MediaCaptureProvider`.
+  - `__tests__/screens/tabLayout.test.tsx`: mocked `MediaFAB`, `MediaLinkingModal`, and provider wrapper for stable tab layout tests.
+- i18n additions:
+  - `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`: added `mediaCapture.*` translation namespace (linking modal copy, permission/error/remove messages, labels/placeholders).
+- Test and mock fixes:
+  - `__tests__/integration/MediaFAB.test.tsx`: mocked `useI18n()` to decouple component rendering from provider in unit-style integration tests.
+  - `jest.setup.js`: expanded `expo-av` mock with reusable global `__mockSound`/`__mockRecording` and full methods used by `useAudioPlayer`/`useAudioRecording`.
+  - `__tests__/screens/home.test.tsx`: expanded `useAssets` mock to include `useAssetsByParent` and `useRemoveAsset` required by `MediaChips` in `AddWordModal`.
+  - `__tests__/unit/useAudioPlayer.test.ts` and `__tests__/unit/useAudioRecording.test.ts`: typed global mock access via `Record<string, unknown>` for strict TS compatibility.
+- Validation:
+  - `npm run agent:review` → `Simple change` internal review passed.
+  - `npm run ci` passed (lint + typecheck + coverage + semgrep).
+
 ### 2026-03-18_13
 
 **[test] Coverage uplift — asset repository, migrator rollback v2, onboarding photo callback**

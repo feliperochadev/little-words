@@ -2,6 +2,7 @@ import React from 'react';
 import { render, RenderOptions } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../../src/i18n/i18n';
+import { MediaCaptureProvider } from '../../src/providers/MediaCaptureProvider';
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -29,7 +30,9 @@ export function renderWithProviders(
   return render(ui, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <MediaCaptureProvider>{children}</MediaCaptureProvider>
+        </I18nProvider>
       </QueryClientProvider>
     ),
     ...renderOptions,

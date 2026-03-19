@@ -203,6 +203,9 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
+- `useAudioRecording()` — recording lifecycle hook (`expo-av`), amplitude polling, 60s auto-stop, discard/reset flows
+- `useAudioPlayer()` — lightweight playback hook for media preview and inline audio controls
+- `useMediaCapture()` — context access hook for global media capture/linking state
 - `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)
 - `useProfilePhotoPicker({ onPhotoSelected, onPhotoRemoved? })` — shared photo picker UX hook; encapsulates `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Callers provide callbacks for what to do after select/remove. Used in `home.tsx`, `onboarding.tsx`, and `EditProfileModal.tsx`.
 - `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
@@ -254,6 +257,16 @@ components/hooks → services → repositories → db/client
 **Photo picker pattern:** Camera + gallery are both supported via an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard). `launchPicker(source)` is async: requests the appropriate permission (`requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`), then launches the picker. Used consistently in `EditProfileModal` and `app/onboarding.tsx`.
 
 **Dependencies:** `expo-av` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
+
+### Media Capture & Linking Layer
+
+Media capture is orchestrated globally at tab level:
+- `src/providers/MediaCaptureProvider.tsx` manages capture phases (`idle`/`recording`/`linking`/`creating-word`), pending media metadata, linking-to-word actions, and single-sound inline playback state.
+- `app/(tabs)/_layout.tsx` wraps tab routes with `MediaCaptureProvider` and mounts `MediaFAB` + `MediaLinkingModal` globally so capture is available from every tab.
+- `src/components/MediaFAB.tsx` handles mic tap/long-press behavior, waveform/timer UI during recording, photo action, and locked video placeholder.
+- `src/components/MediaLinkingModal.tsx` handles preview + target-word search/create flow and calls provider link/create callbacks.
+- `src/components/MediaChips.tsx` displays pending/saved media chips in edit contexts with remove and preview/play interactions.
+- `src/components/AudioPlayerInline.tsx` provides compact audio playback triggers used in word/variant list metadata rows.
 
 ### Internationalization (`src/i18n/`)
 

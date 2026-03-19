@@ -22,6 +22,8 @@ import { useVariantsByWord, useUpdateVariant, useDeleteVariant } from '../hooks/
 import { useAddWord, useUpdateWord, useDeleteWord } from '../hooks/useWords';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { TIMING } from '../utils/animationConstants';
+import { MediaChips } from './MediaChips';
+import { useMediaCapture } from '../hooks/useMediaCapture';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -48,6 +50,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const { colors } = useTheme();
   const today = new Date().toISOString().split('T')[0];
   const queryClient = useQueryClient();
+  const {
+    phase,
+    pendingMedia,
+    prefilledWordName,
+    onWordCreated,
+    resetCapture,
+  } = useMediaCapture();
 
   // Server state via hooks
   const { data: categories = EMPTY_CATEGORIES } = useCategories();
@@ -84,7 +93,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const [editingVariantTexts, setEditingVariantTexts] = useState<Record<number, string>>({});
 
   // Modal animation and gesture handling
-  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, onClose);
+  const handleClose = () => {
+    if (phase === 'creating-word') {
+      resetCapture();
+    }
+    onClose();
+  };
+  const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, handleClose);
 
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
@@ -113,7 +128,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       setNotes(editWord.notes || '');
       setVariants([]);
     } else {
-      setWord(''); setSelectedCategory(null);
+      setWord(prefilledWordName || ''); setSelectedCategory(null);
       setDateAdded(today); setNotes(''); setVariants([]);
       setExistingVariants([]);
       setCatScrolled(false);
@@ -125,7 +140,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     setEditingVariantTexts({});
     setShowNewCategory(false);
     setDuplicate(null);
-  }, [visible, editWord, today]);
+  }, [visible, editWord, today, prefilledWordName]);
 
   // Scroll category carousel to the selected chip when editing (runs when categories load).
   useEffect(() => {
@@ -194,6 +209,9 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
         wordId = editWord.id;
       } else {
         wordId = await addWordMutation.mutateAsync({ word: word.trim(), categoryId: selectedCategory, dateAdded, notes });
+        if (phase === 'creating-word' && pendingMedia) {
+          await onWordCreated(wordId);
+        }
       }
       // Flush any inline variant edits still open — use service directly to batch all
       // side effects (cache invalidation + sync) in a single call at the end of handleSave.
@@ -216,7 +234,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       VARIANT_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      onClose();
+      handleClose();
       onSave?.();
     } finally {
       setLoading(false);
@@ -244,6 +262,14 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
               </TouchableOpacity>
             )}
           </View>
+
+          <MediaChips
+            parentType="word"
+            parentId={editWord?.id ?? 0}
+            enabled={!!editWord}
+            pendingMedia={pendingMedia}
+            onRemovePending={phase === 'creating-word' ? resetCapture : undefined}
+          />
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -441,7 +467,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             />
 
             <View style={s.actions}>
-              <Button title={t('common.cancel')} onPress={onClose} variant="outline" style={s.actionBtn} testID="word-cancel-btn" />
+               <Button title={t('common.cancel')} onPress={handleClose} variant="outline" style={s.actionBtn} testID="word-cancel-btn" />
               <Button
                 title={editWord ? t('addWord.btnSave') : t('addWord.btnAdd')}
                 onPress={handleSave} loading={loading}
