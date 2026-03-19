@@ -2,8 +2,8 @@
 
 Entries are added after every approved change. Most recent first.
 
-<<<<<<< HEAD
-### 2026-03-19_1
+
+### 2026-03-19_6
 
 **[feature] Resume `/implement 2026-03-18_02-media-capture-and-linking` and complete media capture integration**
 
@@ -23,7 +23,9 @@ Entries are added after every approved change. Most recent first.
 - Validation:
   - `npm run agent:review` → `Simple change` internal review passed.
   - `npm run ci` passed (lint + typecheck + coverage + semgrep).
-=======
+
+---
+
 ### 2026-03-19_5
 
 **[fix] Restore Android build and track cropper-native files with selective unignore**
@@ -86,7 +88,6 @@ Entries are added after every approved change. Most recent first.
 - `__tests__/unit/appConfig.test.ts` (new): regression test that parses `app.json` and asserts the `expo-image-picker` plugin contains the expected high-contrast light/dark crop color configuration.
 
 ---
->>>>>>> main
 
 ### 2026-03-18_13
 
