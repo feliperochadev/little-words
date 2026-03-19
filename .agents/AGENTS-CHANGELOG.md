@@ -2,6 +2,16 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_13
+
+**[test] Coverage uplift — asset repository, migrator rollback v2, onboarding photo callback**
+
+- `__tests__/unit/assetRepository.test.ts`: Added `describe` blocks for `getProfilePhoto` (returns asset, returns null, correct SQL) and `deleteProfilePhotoAsset` (correct DELETE SQL, resolves undefined).
+- `__tests__/unit/migrator.test.ts`: Added test for `rollbackMigration(1)` — verifies v2 down migration deletes profile rows, creates `assets_old`, and removes migration record.
+- `__tests__/screens/onboarding.test.tsx`: Added "shows saving text while form is submitting" (tests loading state during async submit) and "photo selection updates avatar state" (verifies `onPhotoSelected` callback wires through to `saveProfilePhoto` on continue).
+
+---
+
 ### 2026-03-18_12
 
 **[refactor] Extract `useProfilePhotoPicker` hook to eliminate photo picker duplication**

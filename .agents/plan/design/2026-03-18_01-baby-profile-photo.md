@@ -47,11 +47,12 @@ The profile photo is stored as a singleton asset in the existing `assets` table 
 | Repository functions | `getProfilePhoto()`, `deleteProfilePhotoAsset()` | `src/repositories/assetRepository.ts` |
 | Service functions | `getProfilePhoto()`, `saveProfilePhoto()`, `deleteProfilePhoto()` | `src/services/assetService.ts` |
 | Query hooks | `useProfilePhoto()`, `useSaveProfilePhoto()`, `useRemoveProfilePhoto()` | `src/hooks/useAssets.ts` |
-| ProfileAvatar | Reusable avatar component (sm/md/lg) with decorations | `src/components/ProfileAvatar.tsx` |
-| Onboarding integration | Optional inline photo section after preview card | `app/onboarding.tsx` |
-| Home integration | Replace emoji, add `EditProfileModal`, tap-to-edit | `app/(tabs)/home.tsx` |
-| Settings integration | Replace emoji with small avatar | `app/(tabs)/settings.tsx` |
-| EditProfileModal | Add photo picker, remove photo, preview at top | `src/components/EditProfileModal.tsx` |
+| useProfilePhotoPicker | Shared photo picker UX hook — source Alert, permissions, remove confirm | `src/hooks/useProfilePhotoPicker.ts` |
+| ProfileAvatar | Reusable avatar component (sm/md/lg) with decorations and `tapHint` | `src/components/ProfileAvatar.tsx` |
+| Onboarding integration | Avatar at top of screen, tappable via `useProfilePhotoPicker` | `app/onboarding.tsx` |
+| Home integration | Replace emoji with avatar; tapping opens photo viewer Modal or picker | `app/(tabs)/home.tsx` |
+| Settings integration | Replace emoji with `md` avatar in horizontal card layout | `app/(tabs)/settings.tsx` |
+| EditProfileModal | Add photo picker via `useProfilePhotoPicker`, remove photo, avatar at top | `src/components/EditProfileModal.tsx` |
 | i18n keys | Add all new translation keys | `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts` |
 
 ### Data Flow
@@ -236,19 +237,22 @@ export function useRemoveProfilePhoto() {
 
 ```ts
 interface ProfileAvatarProps {
-  size: 'sm' | 'md' | 'lg';       // 44dp | 72dp | 96dp
+  size: 'sm' | 'md' | 'lg';       // 44dp | 108dp | 144dp
   photoUri?: string | null;
   sex?: 'boy' | 'girl' | null;     // fallback emoji selection
   onPress?: () => void;
   showDecorations?: boolean;        // default: true for 'lg', false for 'sm'/'md'
+  tapHint?: string;                 // hint text shown inside circle when no photo and size ≠ sm
   testID?: string;
 }
 ```
 
-**Size constants:**
+**Size constants (as implemented — 50% increase from original design):**
 ```ts
-const AVATAR_SIZES = { sm: 44, md: 72, lg: 96 } as const;
+const AVATAR_SIZES = { sm: 44, md: 108, lg: 144 } as const;
 ```
+
+**`tapHint` rendering:** When `tapHint` is provided and no photo and `size !== 'sm'`: emoji renders at `0.65×` scale, followed by hint text (`9px`, `fontWeight: '600'`, `textAlign: 'center'`) constrained to `diameter × 0.78` width to prevent clipping of longer Portuguese text.
 
 **Rendering logic:**
 
@@ -267,42 +271,28 @@ const AVATAR_SIZES = { sm: 44, md: 72, lg: 96 } as const;
 
 ### 7. Onboarding Integration (`app/onboarding.tsx`)
 
-The onboarding is a single `ScrollView` — not a step wizard. The photo section appears as an **inline block below the preview card** when `allFilled` is true.
+The onboarding is a single `ScrollView` — not a step wizard. The `ProfileAvatar lg` is placed at the **top of the screen** (above the title), tappable at any time to trigger the photo picker.
 
 **New state:**
 ```ts
 const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; mimeType?: string; fileSize?: number } | null>(null);
-const [pickingPhoto, setPickingPhoto] = useState(false);
 ```
 
-**New hook:**
+**New hooks:**
 ```ts
 const saveProfilePhoto = useSaveProfilePhoto();
+const { handlePickPhoto } = useProfilePhotoPicker({
+  onPhotoSelected: (photo) => setSelectedPhoto(photo),
+});
 ```
 
-**UI (renders after the preview card, before the continue button, when `allFilled`):**
+**UI (avatar at top of screen, always visible):**
 ```
-[ProfileAvatar lg, photoUri=selectedPhoto?.uri, sex=sex, onPress=handlePickPhoto]
-  (tapping the avatar also triggers the photo picker — same as the button)
-[Optional label: t('onboarding.photoOptional')]
-[Single button:]
-  - "Add photo" / "Change photo" (outline) → handlePickPhoto()
-  (no separate "Skip" button — the main CTA "Start with [name]" handles continuation)
+[ProfileAvatar lg, photoUri=selectedPhoto?.uri, sex=sex, onPress=handlePickPhoto,
+ tapHint=t('onboarding.tapToAddPhoto')]
 ```
 
-**Source picker flow (camera + gallery via Alert):**
-
-`handlePickPhoto` is synchronous — it shows an `Alert.alert` with three buttons:
-- "Take Photo" → `launchPicker('camera')`
-- "Choose from Library" → `launchPicker('library')`
-- "Cancel" → `setPickingPhoto(false)`
-
-`launchPicker(source)` is async:
-1. Request `requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`
-2. If denied: `Alert.alert(t('common.error'), t('settings.photoPermissionDenied'))`, `setPickingPhoto(false)`, return
-3. `launchCameraAsync` or `launchImageLibraryAsync` with `{ allowsEditing: true, aspect: [1, 1], quality: 0.8 }`
-4. On success: `setSelectedPhoto({ uri, mimeType, fileSize })`
-5. `setPickingPhoto(false)`
+Sex buttons changed to row layout (`flexDirection: 'row'`, `gap: 8`, `paddingVertical: 14`, emoji `fontSize: 22`).
 
 **`handleContinue` modification:**
 After `setChildProfile()` and `setSetting('onboarding_done', '1')`:
@@ -316,53 +306,40 @@ if (selectedPhoto) {
 }
 ```
 
-**i18n keys to add:**
+**i18n keys added:**
 - `onboarding.addPhoto` — "Add photo"
 - `onboarding.photoOptional` — "Add a photo (optional)"
-- `onboarding.skipPhoto` — "Skip"
 - `onboarding.changePhoto` — "Change photo"
+- `onboarding.tapToAddPhoto` — "tap to add photo"
+- `onboarding.welcome` — updated to `'Welcome! 💕'` (removed "to Little Words")
 
 ### 8. Home Screen Integration (`app/(tabs)/home.tsx`)
 
 **Changes:**
 
-1. **Import** `ProfileAvatar` from `../../src/components/ProfileAvatar`
-2. **Import** `EditProfileModal` from `../../src/components/EditProfileModal`
-3. **Import** `useProfilePhoto` from `../../src/hooks/useAssets`
-4. **Add state:** `const [showEditProfile, setShowEditProfile] = useState(false);`
-5. **Add query:** `const { data: profilePhoto } = useProfilePhoto();`
-6. **Compute URI:** `const profilePhotoUri = profilePhoto?.filename ? getAssetFileUri('profile', 1, 'photo', profilePhoto.filename) : null;`
-
-   Note: The `uri` field is not stored in the DB — the filename is. The full URI must be reconstructed using `getAssetFileUri`. Alternatively, if `useProfilePhoto()` returns the asset, compute the URI from it. The service could return a computed `uri` field — but to stay consistent with the existing pattern, reconstruct it.
-
-   **Simpler approach:** Add a `getProfilePhotoUri()` helper to `assetService` that returns the full file URI or null.
-
-7. **Replace in profileBlock:**
+1. **Import** `ProfileAvatar`, `useProfilePhoto`, `useProfilePhotoPicker`.
+2. **Add query:** `const { data: profilePhoto } = useProfilePhoto();` — returns `ProfilePhotoAsset | null` with computed `uri` field via TQ `select`.
+3. **Photo picker hook:**
+```ts
+const { handlePickPhoto } = useProfilePhotoPicker({
+  onPhotoSelected: async (photo) => { await saveMutation.mutateAsync(photo); },
+  onPhotoRemoved: async () => { await removeMutation.mutateAsync(); },
+});
+```
+4. **`emptyHero` block** moved before the stats grid (renders when `totalWords === 0`).
+5. **Replace emoji with avatar:**
 ```tsx
-// Before:
-<Text style={styles.profileEmoji}>{emoji}</Text>
-
-// After:
 <ProfileAvatar
   size="lg"
-  photoUri={profilePhotoUri}
+  photoUri={profilePhoto?.uri ?? null}
   sex={sex}
-  onPress={() => setShowEditProfile(true)}
+  onPress={profilePhoto ? () => setViewerVisible(true) : handlePickPhoto}
+  tapHint={profilePhoto ? undefined : t('onboarding.tapToAddPhoto')}
   testID="home-profile-avatar"
 />
 ```
-
-8. **Add `EditProfileModal` at the bottom (alongside existing `AddWordModal`):**
-```tsx
-<EditProfileModal
-  visible={showEditProfile}
-  onClose={() => setShowEditProfile(false)}
-/>
-```
-
-9. **Remove** the old `emojiBySex` constant and `emoji` computation (no longer needed).
-
-10. **Remove** `profileEmoji` style (no longer used).
+6. **Photo viewer Modal** (`testID="home-photo-viewer"`): fullscreen overlay showing photo at full size with "Change photo" and "Remove photo" action buttons. Opens when avatar is tapped and a photo exists.
+7. **Remove** old `emojiBySex`, `emoji`, `profileEmoji` style, and `EditProfileModal` usage.
 
 ### 9. Settings Screen Integration (`app/(tabs)/settings.tsx`)
 
@@ -381,7 +358,7 @@ if (selectedPhoto) {
 // After: horizontal row — avatar on left, text column on right
 <View style={styles.profileRow}>
   <ProfileAvatar
-    size="md"               // ← upgraded from sm to md (72dp)
+    size="md"               // ← upgraded from sm to md (108dp)
     photoUri={profilePhotoUri}
     sex={childSex}
     showDecorations={false}
@@ -412,9 +389,9 @@ profileNameInline: { marginBottom: 0 },
 
 **New imports:**
 ```ts
-import * as ImagePicker from 'expo-image-picker';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../hooks/useAssets';
+import { useProfilePhotoPicker } from '../hooks/useProfilePhotoPicker';
 ```
 
 **New state & hooks:**
@@ -422,9 +399,18 @@ import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../
 const { data: profilePhotoAsset } = useProfilePhoto();
 const savePhoto = useSaveProfilePhoto();
 const removePhoto = useRemoveProfilePhoto();
-
 const [photoUri, setPhotoUri] = useState<string | null>(null);
-const [pickingPhoto, setPickingPhoto] = useState(false);
+
+const { handlePickPhoto, handleRemovePhoto } = useProfilePhotoPicker({
+  onPhotoSelected: async (photo) => {
+    setPhotoUri(photo.uri); // optimistic local preview
+    await savePhoto.mutateAsync(photo);
+  },
+  onPhotoRemoved: async () => {
+    setPhotoUri(null);
+    await removePhoto.mutateAsync();
+  },
+});
 ```
 
 **Pre-fill photo URI on modal open** (add to existing `useEffect`):
@@ -432,7 +418,7 @@ const [pickingPhoto, setPickingPhoto] = useState(false);
 useEffect(() => {
   if (!visible) return;
   // ... existing name/sex/birth pre-fill
-  setPhotoUri(profilePhotoAsset ? computeUri(profilePhotoAsset) : null);
+  setPhotoUri(profilePhotoAsset?.uri ?? null);
 }, [visible, storedName, storedSex, storedBirth, profilePhotoAsset]);
 ```
 
@@ -441,16 +427,19 @@ useEffect(() => {
 ```tsx
 <View style={s.avatarSection}>
   <ProfileAvatar
-    size="md"
+    size="lg"
     photoUri={photoUri}
     sex={sex}
     onPress={handlePickPhoto}
     showDecorations={false}
+    tapHint={photoUri ? undefined : t('onboarding.tapToAddPhoto')}
     testID="edit-profile-avatar"
   />
-  <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
-    {t('settings.tapToChangePhoto')}
-  </Text>
+  {photoUri && (
+    <Text style={[s.photoHint, { color: THEME_COLORS.textMuted }]}>
+      {t('settings.tapToChangePhoto')}
+    </Text>
+  )}
   {photoUri && (
     <TouchableOpacity onPress={handleRemovePhoto} testID="edit-profile-remove-photo-btn">
       <Text style={[s.removePhotoText, { color: THEME_COLORS.error }]}>
@@ -461,39 +450,7 @@ useEffect(() => {
 </View>
 ```
 
-**`handlePickPhoto` (synchronous — shows source picker Alert):**
-1. Guard: if `pickingPhoto` return
-2. `setPickingPhoto(true)`
-3. `Alert.alert(t('settings.photoSourceTitle'), undefined, [Take Photo, Choose from Library, Cancel])`
-   - Cancel button: `setPickingPhoto(false)`
-
-**`launchPicker(source: 'camera' | 'library')` (async — called from Alert button callbacks):**
-1. Request `requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`
-2. If denied: `Alert.alert(t('common.error'), t('settings.photoPermissionDenied'))`, `setPickingPhoto(false)`, return
-3. `launchCameraAsync` or `launchImageLibraryAsync` with `{ allowsEditing: true, aspect: [1, 1], quality: 0.8 }`
-4. On success:
-   - `setPhotoUri(result.assets[0].uri)` (optimistic local preview)
-   - `await savePhoto.mutateAsync({ sourceUri, mimeType, fileSize })`
-5. `setPickingPhoto(false)`
-
-**`handleRemovePhoto`:**
-```ts
-Alert.alert(
-  t('settings.removePhoto'),
-  t('settings.removePhotoConfirm'),
-  [
-    { text: t('common.cancel'), style: 'cancel' },
-    {
-      text: t('settings.removePhoto'),
-      style: 'destructive',
-      onPress: async () => {
-        setPhotoUri(null);
-        await removePhoto.mutateAsync();
-      },
-    },
-  ]
-);
-```
+Sex buttons changed to row layout (same as onboarding). `ImagePicker`, `pickingPhoto`, and inline `launchPicker`/`handlePickPhoto`/`handleRemovePhoto` removed — all delegated to `useProfilePhotoPicker`.
 
 **New styles:**
 ```ts
@@ -616,25 +573,25 @@ All resolved — no blockers.
 
 ## Acceptance Criteria
 
-- [ ] Migration `0002_add-profile-parent-type` widens `assets` CHECK constraint to include `'profile'`
-- [ ] `init.ts` DDL updated with `'profile'` in CHECK for fresh installs
-- [ ] `PARENT_DIRS` in `assetStorage.ts` includes `profile: 'profile'`
-- [ ] `ParentType` union in `asset.ts` includes `'profile'`
-- [ ] `getProfilePhoto()`, `saveProfilePhoto()`, `deleteProfilePhoto()` in service + repository
-- [ ] `useProfilePhoto()`, `useSaveProfilePhoto()`, `useRemoveProfilePhoto()` hooks
-- [ ] `ProfileAvatar` component with `sm`/`md`/`lg` sizes, emoji fallback, `onError` image fallback, conditional decorations
-- [ ] Onboarding shows optional inline photo section after preview card
-- [ ] Home screen uses `ProfileAvatar lg` with tap → `EditProfileModal`
-- [ ] `EditProfileModal` added to home screen (import, state, render)
-- [ ] Settings screen uses `ProfileAvatar md` (72dp) in horizontal card layout, `testID="settings-profile-emoji"` preserved
-- [ ] EditProfileModal shows avatar at top with tap-to-change (camera or gallery via Alert), remove-photo link, permission handling
-- [ ] Onboarding avatar is tappable (same source picker Alert as the button below it)
-- [ ] Camera support: `requestCameraPermissionsAsync` + `launchCameraAsync` in both onboarding and EditProfileModal
-- [ ] Double-tap guard on photo picker in both onboarding and EditProfileModal
-- [ ] All i18n keys added to `en-US.ts` and `pt-BR.ts`
-- [ ] All color/spacing/shape values use theme tokens (no hardcoded hex)
-- [ ] `accessibilityRole="button"` and translated `accessibilityLabel` on tappable avatar
-- [ ] `npm run ci` passes with >= 99% line / >= 95% branch coverage on new code
+- [x] Migration `0002_add-profile-parent-type` widens `assets` CHECK constraint to include `'profile'`
+- [x] `init.ts` DDL updated with `'profile'` in CHECK for fresh installs
+- [x] `PARENT_DIRS` in `assetStorage.ts` includes `profile: 'profile'`
+- [x] `ParentType` union in `asset.ts` includes `'profile'`
+- [x] `getProfilePhoto()`, `saveProfilePhoto()`, `deleteProfilePhoto()` in service + repository
+- [x] `useProfilePhoto()`, `useSaveProfilePhoto()`, `useRemoveProfilePhoto()` hooks
+- [x] `useProfilePhotoPicker` hook extracted — encapsulates source Alert, permissions, remove confirm; used in home, onboarding, EditProfileModal
+- [x] `ProfileAvatar` component with `sm`/`md`/`lg` sizes (44/108/144dp), `tapHint` prop, emoji fallback, `onError` image fallback, conditional decorations
+- [x] Onboarding: `ProfileAvatar lg` at top of screen, tappable; sex buttons in row layout
+- [x] Home screen: `ProfileAvatar lg` with tap → photo viewer Modal (if photo) or picker (if no photo); `emptyHero` moved before stats grid
+- [x] Settings screen uses `ProfileAvatar md` (108dp) in horizontal card layout, `testID="settings-profile-emoji"` preserved; birth/age on separate lines
+- [x] EditProfileModal shows avatar (`lg`) at top with `tapHint`; `tapToChangePhoto` hint shown only when photo exists; remove-photo link; all via `useProfilePhotoPicker`
+- [x] Camera support: `requestCameraPermissionsAsync` + `launchCameraAsync` delegated through `useProfilePhotoPicker`
+- [x] Double-tap guard on photo picker (inside `useProfilePhotoPicker`)
+- [x] All i18n keys added to `en-US.ts` and `pt-BR.ts` including `tapToAddPhoto`, updated `welcome`
+- [x] All color/spacing/shape values use theme tokens (no hardcoded hex)
+- [x] `accessibilityRole="button"` and translated `accessibilityLabel` on tappable avatar
+- [x] Sonar nested ternary rule satisfied (explicit `if/else` blocks in ProfileAvatar)
+- [x] `npm run ci` passed — 1119 tests, 0 semgrep findings
 
 ---
 
@@ -642,7 +599,7 @@ All resolved — no blockers.
 
 ### Unit Tests
 
-**`__tests__/unit/profilePhotoStorage.test.ts`:**
+**`__tests__/unit/profilePhotoService.test.ts`:**
 - `getProfilePhoto()` returns null when no photo exists
 - `getProfilePhoto()` returns the asset when a photo exists
 - `saveProfilePhoto()` calls `deleteProfilePhoto()` then `saveAsset()` (singleton enforcement)
@@ -651,52 +608,48 @@ All resolved — no blockers.
 - `deleteProfilePhoto()` is a no-op when no photo exists
 - `saveProfilePhoto()` rollback: if file copy fails, DB record is cleaned up
 
-**`__tests__/unit/migrations.test.ts`:**
+**`__tests__/unit/migrator.test.ts`:**
 - Migration 0002 `up`: recreates table with expanded CHECK constraint, preserves existing rows, recreates indices
 - Migration 0002 `down`: reverses the process, removes profile rows first
 
 ### Integration Tests
 
-**`__tests__/integration/ProfileAvatar.test.tsx`:**
-- Renders at all three sizes (sm=44, md=72, lg=96) with correct dimensions
-- Shows photo when `photoUri` is provided
-- Shows girl emoji when `sex='girl'` and no photo
-- Shows boy emoji when `sex='boy'` and no photo
-- Shows baby emoji when `sex=null` and no photo
-- Falls back to emoji on image `onError`
-- Shows decorations by default at `lg` size
-- Hides decorations when `showDecorations={false}`
-- Hides decorations by default at `sm` and `md` sizes
-- Calls `onPress` when tapped
-- Does not render `TouchableOpacity` when `onPress` is undefined
-- Forwards `testID` prop
-- Uses theme colors (primary border, surface background)
-- Has correct accessibility attributes when `onPress` is defined
+**`__tests__/integration/useProfilePhotoPicker.test.tsx`:**
+- `handlePickPhoto` guard (no concurrent launch)
+- Alert structure (camera + library + cancel buttons)
+- Camera success path, cancel path, permission denied path
+- Library success path, cancel path, permission denied path
+- `handleRemovePhoto` confirm and cancel paths
+- Optional `onPhotoRemoved` callback
 
-**`__tests__/integration/EditProfileModal.test.tsx`:**
-- Shows avatar at top of form
-- Shows "Tap to change photo" hint text
-- Tapping avatar triggers image picker
-- Shows permission denied alert when permission not granted
-- Saves photo on successful pick
-- Shows "Remove photo" link only when photo exists
-- Hides "Remove photo" link when no photo
-- Remove photo shows confirmation alert
-- Confirming removal calls `useRemoveProfilePhoto`
-- Pre-fills photo URI from `useProfilePhoto` on modal open
+**`__tests__/integration/ProfileAvatar.test.tsx`:**
+- Renders at all three sizes (sm=44, md=108, lg=144) with correct dimensions
+- Shows photo when `photoUri` is provided
+- Shows girl/boy/baby emoji fallback by `sex` prop
+- Falls back to emoji on image `onError`
+- Shows decorations by default at `lg` size; hides at `sm`/`md`
+- Hides decorations when `showDecorations={false}`
+- Calls `onPress` when tapped; no `TouchableOpacity` when undefined
+- Forwards `testID`; correct accessibility attributes
+- Renders `tapHint` text and scaled emoji when no photo and size ≠ sm
+
+**`__tests__/integration/editProfileModal.test.tsx`:**
+- Shows avatar at top of form; pre-fills photo from hook on open
+- `tapHint` shown when no photo; `tapToChangePhoto` shown when photo exists
+- Tapping avatar triggers picker (via `useProfilePhotoPicker`)
+- Permission denied alert; saves photo on successful pick
+- "Remove photo" link only when photo exists; confirmation alert; removal mutation called
 - Double-tap guard prevents concurrent picker launches
 
 ### Screen Tests
 
 **`__tests__/screens/onboarding.test.tsx` (extend existing):**
-- Photo section appears when all fields are filled
-- Photo section hidden when fields incomplete
-- "Add photo" button opens image picker
-- "Skip" button does not save any photo
-- Selected photo appears in `ProfileAvatar` preview
+- Avatar visible at top of screen always
+- Tapping avatar opens source picker Alert
+- Camera and gallery picker paths
 - Photo saved during `handleContinue` when selected
-- Continue without photo when skipped — navigates to home
-- Permission denied alert shown when gallery access denied
+- Continue without photo — navigates to home
+- Permission denied alert shown
 
 **`__tests__/screens/home.test.tsx` (extend existing):**
 - `ProfileAvatar` renders in profile block
@@ -718,7 +671,6 @@ All resolved — no blockers.
 | File | Change Type |
 |------|-------------|
 | `src/types/asset.ts` | Modify (extend ParentType) |
-| `src/types/domain.ts` | Verify/update re-export |
 | `src/db/init.ts` | Modify (CHECK constraint) |
 | `src/db/migrations/0002_add-profile-parent-type.ts` | **New** |
 | `src/db/migrations/index.ts` | Modify (register migration) |
@@ -726,18 +678,20 @@ All resolved — no blockers.
 | `src/repositories/assetRepository.ts` | Modify (add functions) |
 | `src/services/assetService.ts` | Modify (add functions) |
 | `src/hooks/useAssets.ts` | Modify (add hooks) |
+| `src/hooks/useProfilePhotoPicker.ts` | **New** (shared photo picker UX hook) |
 | `src/components/ProfileAvatar.tsx` | **New** |
-| `app/onboarding.tsx` | Modify (photo section) |
-| `app/(tabs)/home.tsx` | Modify (avatar + EditProfileModal) |
-| `app/(tabs)/settings.tsx` | Modify (avatar) |
-| `src/components/EditProfileModal.tsx` | Modify (photo picker) |
-| `src/i18n/en-US.ts` | Modify (add keys) |
-| `src/i18n/pt-BR.ts` | Modify (add keys) |
-| `__tests__/unit/profilePhotoStorage.test.ts` | **New** |
+| `app/onboarding.tsx` | Modify (avatar at top, useProfilePhotoPicker, sex row layout) |
+| `app/(tabs)/home.tsx` | Modify (avatar + photo viewer Modal, emptyHero reorder) |
+| `app/(tabs)/settings.tsx` | Modify (md avatar, horizontal card, birth/age split) |
+| `src/components/EditProfileModal.tsx` | Modify (lg avatar, tapHint, useProfilePhotoPicker, sex row layout) |
+| `src/i18n/en-US.ts` | Modify (add keys incl. tapToAddPhoto, updated welcome) |
+| `src/i18n/pt-BR.ts` | Modify (add keys incl. tapToAddPhoto, updated welcome) |
+| `__tests__/unit/profilePhotoService.test.ts` | **New** |
 | `__tests__/integration/ProfileAvatar.test.tsx` | **New** |
-| `__tests__/integration/EditProfileModal.test.tsx` | Extend |
+| `__tests__/integration/useProfilePhotoPicker.test.tsx` | **New** |
+| `__tests__/integration/editProfileModal.test.tsx` | Extend |
 | `__tests__/screens/onboarding.test.tsx` | Extend |
 | `__tests__/screens/home.test.tsx` | Extend |
 | `__tests__/screens/settings.test.tsx` | Extend |
 
-**Total:** 22 files (4 new, 18 modified/extended)
+**Total:** 23 files (5 new, 18 modified/extended)

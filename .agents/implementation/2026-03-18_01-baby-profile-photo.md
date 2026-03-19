@@ -9,7 +9,7 @@ worktree: false
 
 ## Summary
 
-Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2: camera + gallery source picker via Alert, tappable onboarding avatar. Phase 3 (UI/UX polish): avatar sizes increased 50% (md=108dp, lg=144dp), avatar moved to onboarding top, emptyHero moved before stats grid, EditProfileModal theme reactivity fixed, home screen photo viewer modal added, settings birth/age split to two lines.
+Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2: camera + gallery source picker via Alert, tappable onboarding avatar. Phase 3 (UI/UX polish): avatar sizes increased 50% (md=108dp, lg=144dp), avatar moved to onboarding top, emptyHero moved before stats grid, EditProfileModal theme reactivity fixed, home screen photo viewer modal added, settings birth/age split to two lines. Phase 4 (polish follow-up): onboarding title simplified, `tapHint` prop added to `ProfileAvatar` for in-frame "tap to add photo" affordance, sex buttons changed to row layout, EditProfileModal avatar enlarged to `lg`, photo viewer i18n key bug fixed.
 
 ## Changes
 
@@ -57,3 +57,20 @@ Added optional baby profile photo feature: singleton asset storage, reusable `Pr
 | `src/components/EditProfileModal.tsx` | modified | allowsEditing restored for camera |
 | `__tests__/screens/home.test.tsx` | modified | Updated avatar tests for photo viewer flow |
 | `__tests__/screens/onboarding.test.tsx` | modified | Updated for top-avatar structure |
+| **Phase 4 (polish follow-up — changelog 2026-03-18_9 + _10)** | | |
+| `src/i18n/en-US.ts` | modified | Updated `onboarding.welcome` (removed "to Little Words"); added `onboarding.tapToAddPhoto` |
+| `src/i18n/pt-BR.ts` | modified | `welcome` → `'Bem-vindo(a)! 💕'` (gender-neutral); added `tapToAddPhoto` in Portuguese |
+| `src/components/ProfileAvatar.tsx` | modified | Added `tapHint?: string` prop — renders emoji at 0.65× + 9px hint text constrained to `diameter × 0.78` inside the circle when no photo and size ≠ sm |
+| `app/onboarding.tsx` | modified | Passes `tapHint` to avatar; sex buttons changed to row layout (`flexDirection: 'row'`, `gap: 8`, `paddingVertical: 14`, emoji `fontSize: 22`) matching language picker style |
+| `src/components/EditProfileModal.tsx` | modified | Same sex button row layout; avatar upgraded to `size="lg"` (≈33% larger); `tapHint` shown when no photo; `tapToChangePhoto` hint conditioned on photo existing |
+| `app/(tabs)/home.tsx` | modified | Avatar passes `tapHint` when no photo; fixed photo viewer "Change photo" button from `t('settings.changePhoto')` → `t('onboarding.changePhoto')` |
+| `__tests__/screens/home.test.tsx` | modified | Added `jest.mock` for `useAssets` hooks (synchronous) so photo viewer test is deterministic without TanStack Query async timing |
+| **Phase 5 (Sonar fixes + refactor — changelog 2026-03-18_11 + _12)** | | |
+| `src/components/ProfileAvatar.tsx` | modified | Replaced nested ternaries with explicit `if/else` blocks to satisfy Sonar rule `typescript:S3358` |
+| `__tests__/screens/home.test.tsx` | modified | Added branch coverage for source picker cancel, camera/gallery save, permission denied, photo viewer change/remove/close, and `AddWordModal` callback paths |
+| `src/hooks/useProfilePhotoPicker.ts` | created | Extracted shared photo picker UX hook: `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, remove confirm dialog. Accepts `onPhotoSelected` and optional `onPhotoRemoved` callbacks. |
+| `app/(tabs)/home.tsx` | modified | Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto`, `useRemoveProfilePhoto`, `ImagePicker`, `Alert`; replaced with `useProfilePhotoPicker` |
+| `app/onboarding.tsx` | modified | Removed inline `launchPicker`, `handlePickPhoto`, `pickingPhoto`, `ImagePicker`; replaced with `useProfilePhotoPicker` |
+| `src/components/EditProfileModal.tsx` | modified | Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto`, `useRemoveProfilePhoto`, `ImagePicker`; replaced with `useProfilePhotoPicker` |
+| `__tests__/integration/useProfilePhotoPicker.test.tsx` | created | 13 tests covering `handlePickPhoto` guard, Alert structure, camera/library success/cancel/permission-denied paths, `handleRemovePhoto` confirm/cancel, optional `onPhotoRemoved` callback |
+| `CLAUDE.md` | modified | Added `useProfilePhotoPicker` to hooks documentation |

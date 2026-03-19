@@ -229,6 +229,57 @@ describe('OnboardingScreen', () => {
     });
   });
 
+  it('shows saving text while form is submitting', async () => {
+    let resolveSubmit!: () => void;
+    const submitBlocker = new Promise<void>((res) => { resolveSubmit = res; });
+    (db.setChildProfile as jest.Mock).mockReturnValueOnce(submitBlocker);
+
+    const { findByText, findByPlaceholderText } = renderOnboarding();
+    fireEvent.changeText(await findByPlaceholderText(/Sofia/), 'Luna');
+    fireEvent.press(await findByText('Girl'));
+    fireEvent.press(await findByText(/Select date/));
+    fireEvent.press(await findByText(/Confirm/));
+
+    const continueBtn = await findByText(/Start with Luna/);
+    act(() => { fireEvent.press(continueBtn); });
+
+    expect(await findByText(/Saving/i)).toBeTruthy();
+    await act(async () => { resolveSubmit(); });
+  });
+
+  it('photo selection updates avatar state (onPhotoSelected callback)', async () => {
+    const launchMock = ImagePicker.launchImageLibraryAsync as jest.Mock;
+    launchMock.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///tmp/avatar.jpg', mimeType: 'image/jpeg', fileSize: 2048 }],
+    });
+    const helpers = renderOnboarding();
+    await act(async () => { fireEvent.press(await helpers.findByTestId('onboarding-profile-avatar')); });
+    await act(async () => {
+      const calls = (Alert.alert as jest.Mock).mock.calls;
+      const buttons = calls[calls.length - 1][2] as Array<{ text: string; onPress?: () => void }>;
+      const galleryBtn = buttons.find((b) => b.text === 'Choose from Library');
+      galleryBtn?.onPress?.();
+    });
+    // Verify photo was received: if selectedPhoto is set, saveProfilePhoto is called on continue
+    const assetService = require('../../src/services/assetService');
+    await helpers.findByPlaceholderText(/Sofia/).then(input => fireEvent.changeText(input, 'Luna'));
+    fireEvent.press(await helpers.findByText('Girl'));
+    fireEvent.press(await helpers.findByText(/Select date/));
+    fireEvent.press(await helpers.findByText(/Confirm/));
+    const continueBtn = await helpers.findByText(/Start with Luna/);
+    await act(async () => { fireEvent.press(continueBtn); });
+    await waitFor(() => {
+      expect(assetService.saveProfilePhoto).toHaveBeenCalledWith(
+        'file:///tmp/avatar.jpg',
+        'image/jpeg',
+        2048,
+        undefined,
+        undefined,
+      );
+    });
+  });
+
   it('does not save photo on continue when no photo selected (skip)', async () => {
     const assetService = require('../../src/services/assetService');
     const { findByText, findByPlaceholderText } = renderOnboarding();

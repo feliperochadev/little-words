@@ -82,6 +82,22 @@ describe('migrator', () => {
       await expect(rollbackMigration(0)).rejects.toThrow('Cannot rollback initial schema');
     });
 
+    it('rolls back migration v2 (add-profile-parent-type) to target version 1', async () => {
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 2 }]);
+      mockDb.withTransactionSync.mockImplementationOnce((fn: () => void) => fn());
+      await rollbackMigration(1);
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM assets WHERE parent_type = 'profile'"),
+      );
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS assets_old'),
+      );
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM schema_migrations WHERE version = ?'),
+        expect.arrayContaining([2]),
+      );
+    });
+
     it('rejects when getAllSync throws', async () => {
       mockDb.getAllSync.mockImplementationOnce(() => { throw new Error('read error'); });
       await expect(rollbackMigration(0)).rejects.toThrow('read error');
