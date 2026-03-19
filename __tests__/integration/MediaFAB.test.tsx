@@ -254,7 +254,7 @@ describe('MediaFAB', () => {
       expect(audioMock.startRecording).toHaveBeenCalledTimes(1);
     });
 
-    it('pauses recording on tap when already recording', () => {
+    it('stops recording on tap when already recording', () => {
       const { audioMock } = setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
       const fab = getByTestId('media-fab-mic');
@@ -262,12 +262,12 @@ describe('MediaFAB', () => {
       fireEvent(fab, 'responderGrant', grantEvent());
       fireEvent(fab, 'responderRelease', releaseEvent());
 
-      expect(audioMock.pauseRecording).toHaveBeenCalledTimes(1);
-      expect(audioMock.stopRecording).not.toHaveBeenCalled();
+      expect(audioMock.stopRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.pauseRecording).not.toHaveBeenCalled();
       expect(audioMock.startRecording).not.toHaveBeenCalled();
     });
 
-    it('resumes recording on tap when paused', () => {
+    it('stops recording on tap when paused', () => {
       const { audioMock } = setupMocks({}, { state: 'paused' });
       const { getByTestId } = renderFAB();
       const fab = getByTestId('media-fab-mic');
@@ -275,7 +275,7 @@ describe('MediaFAB', () => {
       fireEvent(fab, 'responderGrant', grantEvent());
       fireEvent(fab, 'responderRelease', releaseEvent());
 
-      expect(audioMock.resumeRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.stopRecording).toHaveBeenCalledTimes(1);
       expect(audioMock.pauseRecording).not.toHaveBeenCalled();
       expect(audioMock.startRecording).not.toHaveBeenCalled();
     });
@@ -428,10 +428,10 @@ describe('MediaFAB', () => {
       expect(getByTestId('media-waveform-discard')).toBeTruthy();
     });
 
-    it('shows stop button in waveform during recording', () => {
+    it('shows pause button in waveform during recording', () => {
       setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
-      expect(getByTestId('media-waveform-stop')).toBeTruthy();
+      expect(getByTestId('media-waveform-pause')).toBeTruthy();
     });
 
     it('renders FAB with record icon during recording', () => {
@@ -553,7 +553,7 @@ describe('MediaFAB', () => {
 
   // ── Waveform discard and stop ─────────────────────────────────────────
 
-  describe('waveform discard and stop buttons', () => {
+  describe('waveform discard and pause buttons', () => {
     it('pressing trash button calls discardRecording', () => {
       const { audioMock } = setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
@@ -563,20 +563,31 @@ describe('MediaFAB', () => {
       expect(audioMock.discardRecording).toHaveBeenCalledTimes(1);
     });
 
-    it('pressing stop button calls stopRecording', () => {
+    it('pressing pause button calls pauseRecording when recording', () => {
       const { audioMock } = setupMocks({}, { state: 'recording' });
       const { getByTestId } = renderFAB();
 
-      fireEvent.press(getByTestId('media-waveform-stop'));
+      fireEvent.press(getByTestId('media-waveform-pause'));
 
-      expect(audioMock.stopRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.pauseRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.stopRecording).not.toHaveBeenCalled();
     });
 
-    it('shows trash and stop buttons when paused', () => {
+    it('pressing pause button calls resumeRecording when paused', () => {
+      const { audioMock } = setupMocks({}, { state: 'paused' });
+      const { getByTestId } = renderFAB();
+
+      fireEvent.press(getByTestId('media-waveform-pause'));
+
+      expect(audioMock.resumeRecording).toHaveBeenCalledTimes(1);
+      expect(audioMock.stopRecording).not.toHaveBeenCalled();
+    });
+
+    it('shows trash and pause buttons when paused', () => {
       setupMocks({}, { state: 'paused' });
       const { getByTestId } = renderFAB();
       expect(getByTestId('media-waveform-discard')).toBeTruthy();
-      expect(getByTestId('media-waveform-stop')).toBeTruthy();
+      expect(getByTestId('media-waveform-pause')).toBeTruthy();
     });
   });
 

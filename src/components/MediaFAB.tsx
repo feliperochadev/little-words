@@ -101,17 +101,22 @@ export function MediaFAB() {
 
   const handleMicPress = useCallback(() => {
     const current = recordingStateRef.current;
-    if (current === 'recording') {
-      void pauseRecording();
-      return;
-    }
-    if (current === 'paused') {
-      void resumeRecording();
+    if (current === 'recording' || current === 'paused') {
+      void stopRecording();
       return;
     }
     // Idle — start recording
     void startRecording();
-  }, [startRecording, pauseRecording, resumeRecording]);
+  }, [startRecording, stopRecording]);
+
+  const handlePauseResume = useCallback(() => {
+    const current = recordingStateRef.current;
+    if (current === 'recording') {
+      void pauseRecording();
+    } else if (current === 'paused') {
+      void resumeRecording();
+    }
+  }, [pauseRecording, resumeRecording]);
 
   // Stable ref so PanResponder (created once) always calls latest version
   const handleMicPressRef = useRef(handleMicPress);
@@ -121,10 +126,6 @@ export function MediaFAB() {
     void discardRecording();
     setExpanded(false);
   }, [discardRecording]);
-
-  const handleStopRecording = useCallback(() => {
-    void stopRecording();
-  }, [stopRecording]);
 
   const handleCameraButtonPress = useCallback(() => {
     setExpanded(prev => !prev);
@@ -198,7 +199,7 @@ export function MediaFAB() {
 
   const tabBarHeight = 62 + insets.bottom;
 
-  const fabIcon = isRecording ? 'pause' : isPaused ? 'play' : 'mic';
+  const fabIcon = isActive ? 'stop-circle' : 'mic';
 
   return (
     <>
@@ -257,14 +258,14 @@ export function MediaFAB() {
                 {formatTimer(durationMs)}
               </Text>
 
-              {/* Stop: finalize recording */}
+              {/* Pause / Resume */}
               <TouchableOpacity
-                onPress={handleStopRecording}
+                onPress={handlePauseResume}
                 style={s.waveformAction}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                testID="media-waveform-stop"
+                testID="media-waveform-pause"
               >
-                <Ionicons name="stop-circle" size={22} color={colors.primary} />
+                <Ionicons name={isRecording ? 'pause' : 'play'} size={22} color={colors.primary} />
               </TouchableOpacity>
             </View>
           )}
@@ -277,16 +278,6 @@ export function MediaFAB() {
             {expanded && (
               <View style={s.overlay}>
                 <TouchableOpacity
-                  style={[s.overlayBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={handlePhotoPress}
-                  testID="media-photo-btn"
-                >
-                  <Ionicons name="camera" size={18} color={colors.primary} />
-                  <Text style={[s.overlayLabel, { color: colors.text }]}>
-                    {t('mediaCapture.photo')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
                   style={[s.overlayBtn, s.overlayBtnLocked, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={handleVideoPress}
                   testID="media-video-btn-locked"
@@ -295,6 +286,16 @@ export function MediaFAB() {
                   <Ionicons name="lock-closed" size={10} color={colors.textMuted} style={s.lockIcon} />
                   <Text style={[s.overlayLabel, { color: colors.textMuted }]}>
                     {t('mediaCapture.videoLocked')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.overlayBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={handlePhotoPress}
+                  testID="media-photo-btn"
+                >
+                  <Ionicons name="camera" size={18} color={colors.primary} />
+                  <Text style={[s.overlayLabel, { color: colors.text }]}>
+                    {t('mediaCapture.photo')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -323,7 +324,7 @@ export function MediaFAB() {
           <Ionicons
             name={fabIcon}
             size={26}
-            color={isPaused ? colors.textOnPrimary : (isRecording ? '#FF3B30' : colors.textOnPrimary)}
+            color={isActive ? '#FF3B30' : colors.textOnPrimary}
           />
         </View>
       </Animated.View>
@@ -371,6 +372,7 @@ const s = StyleSheet.create({
   },
   cameraContainer: {
     marginRight: 8,
+    alignItems: 'flex-end',
   },
   cameraBtn: {
     width: CAMERA_SIZE,

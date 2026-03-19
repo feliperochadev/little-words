@@ -3,6 +3,14 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-19_8
+
+**[feature] MediaFAB recording controls swap + overlay reorder**
+
+- `src/components/MediaFAB.tsx`: FAB now shows stop-circle (red) during recording/paused and calls `stopRecording` on tap; waveform pill right button replaced with pause/play toggle (`handlePauseResume`); overlay reordered — video (locked) on top, photo below; `cameraContainer` gains `alignItems: 'flex-end'` for right-edge alignment.
+- `__tests__/integration/MediaFAB.test.tsx`: updated FAB tap tests (recording/paused → stopRecording); updated waveform pill tests (`media-waveform-pause` testID, pause/resume behavior); added resume-when-paused test.
+
+
 ### 2026-03-19_7
 
 **[feature] MediaFAB & MediaLinkingModal UX fixes (6 improvements)**
