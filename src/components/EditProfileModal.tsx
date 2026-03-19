@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView, Alert, Animated,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { useProfilePhotoPicker } from '../hooks/useProfilePhotoPicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors as THEME_COLORS } from '../theme';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -14,7 +14,7 @@ import { WheelDatePickerModal } from './WheelDatePickerModal';
 import { useI18n } from '../i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../utils/dateHelpers';
 import { ProfileAvatar } from './ProfileAvatar';
-import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../hooks/useAssets';
+import { useProfilePhoto, useSaveProfilePhoto } from '../hooks/useAssets';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -34,11 +34,20 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [pickingPhoto, setPickingPhoto] = useState(false);
 
   const { data: profilePhoto } = useProfilePhoto();
   const saveProfilePhoto = useSaveProfilePhoto();
-  const removeProfilePhoto = useRemoveProfilePhoto();
+  const { handlePickPhoto, handleRemovePhoto } = useProfilePhotoPicker({
+    onPhotoSelected: async (asset) => {
+      setPhotoUri(asset.uri);
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: asset.uri,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+        fileSize: asset.fileSize ?? 0,
+      });
+    },
+    onPhotoRemoved: () => setPhotoUri(null),
+  });
 
   const accentColor = getThemeForSex(sex).colors.primary;
   const isBoy = sex === 'boy';
@@ -61,71 +70,6 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
     if (!visible) return;
     setPhotoUri(profilePhoto?.uri ?? null);
   }, [visible, profilePhoto]);
-
-  const launchPicker = async (source: 'camera' | 'library') => {
-    if (source === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
-        setPickingPhoto(false);
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setPhotoUri(asset.uri);
-        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
-        setPickingPhoto(false);
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setPhotoUri(asset.uri);
-        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    }
-    setPickingPhoto(false);
-  };
-
-  const handlePickPhoto = () => {
-    if (pickingPhoto) return;
-    setPickingPhoto(true);
-    Alert.alert(
-      t('settings.photoSourceTitle'),
-      undefined,
-      [
-        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
-        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
-        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
-      ]
-    );
-  };
-
-  const handleRemovePhoto = () => {
-    Alert.alert(
-      t('settings.removePhoto'),
-      t('settings.removePhotoConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('settings.removePhoto'),
-          style: 'destructive',
-          onPress: async () => {
-            await removeProfilePhoto.mutateAsync();
-            setPhotoUri(null);
-          },
-        },
-      ]
-    );
-  };
 
   const handleSave = async () => {
     if (!name.trim()) { Alert.alert(t('common.attention'), t('onboarding.errorName')); return; }

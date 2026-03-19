@@ -204,6 +204,7 @@ The app uses a three-tier state strategy:
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
 - `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)
+- `useProfilePhotoPicker({ onPhotoSelected, onPhotoRemoved? })` — shared photo picker UX hook; encapsulates `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Callers provide callbacks for what to do after select/remove. Used in `home.tsx`, `onboarding.tsx`, and `EditProfileModal.tsx`.
 - `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
 - `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
 

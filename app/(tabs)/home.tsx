@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
-  Modal, Image, Alert,
+  Modal, Image,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard, Card } from '../../src/components/UIComponents';
@@ -16,7 +15,8 @@ import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useProfilePhoto, useSaveProfilePhoto, useRemoveProfilePhoto } from '../../src/hooks/useAssets';
+import { useProfilePhoto, useSaveProfilePhoto } from '../../src/hooks/useAssets';
+import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -27,66 +27,21 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
-  const [pickingPhoto, setPickingPhoto] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;
   const saveProfilePhoto = useSaveProfilePhoto();
-  const removeProfilePhoto = useRemoveProfilePhoto();
+  const { handlePickPhoto, handleRemovePhoto } = useProfilePhotoPicker({
+    onPhotoSelected: async (asset) => {
+      await saveProfilePhoto.mutateAsync({
+        sourceUri: asset.uri,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+        fileSize: asset.fileSize ?? 0,
+      });
+    },
+    onPhotoRemoved: () => setShowPhotoViewer(false),
+  });
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
-
-  const launchPicker = async (source: 'camera' | 'library') => {
-    if (source === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') { Alert.alert(t('common.error'), t('settings.photoPermissionDenied')); setPickingPhoto(false); return; }
-      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') { Alert.alert(t('common.error'), t('settings.photoPermissionDenied')); setPickingPhoto(false); return; }
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        await saveProfilePhoto.mutateAsync({ sourceUri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    }
-    setPickingPhoto(false);
-  };
-
-  const handlePickPhoto = () => {
-    if (pickingPhoto) return;
-    setPickingPhoto(true);
-    Alert.alert(
-      t('settings.photoSourceTitle'),
-      undefined,
-      [
-        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
-        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
-        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
-      ]
-    );
-  };
-
-  const handleRemovePhoto = () => {
-    Alert.alert(
-      t('settings.removePhoto'),
-      t('settings.removePhotoConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('settings.removePhoto'),
-          style: 'destructive',
-          onPress: async () => {
-            await removeProfilePhoto.mutateAsync();
-            setShowPhotoViewer(false);
-          },
-        },
-      ]
-    );
-  };
 
   // Map numeric month index (1-based) to the short label key
   const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

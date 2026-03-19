@@ -2,6 +2,20 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-18_12
+
+**[refactor] Extract `useProfilePhotoPicker` hook to eliminate photo picker duplication**
+
+- `src/hooks/useProfilePhotoPicker.ts` (created): New shared hook that encapsulates the full profile photo picker UX — `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Accepts `onPhotoSelected` and optional `onPhotoRemoved` callbacks so callers control asset handling.
+- `app/(tabs)/home.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto` state, `useRemoveProfilePhoto`, `ImagePicker`, and `Alert` imports; replaced with `useProfilePhotoPicker`.
+- `app/onboarding.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `pickingPhoto` state, and `ImagePicker` import; replaced with `useProfilePhotoPicker`.
+- `src/components/EditProfileModal.tsx`: Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto` state, `useRemoveProfilePhoto`, and `ImagePicker` import; replaced with `useProfilePhotoPicker`.
+- `__tests__/integration/useProfilePhotoPicker.test.tsx` (created): 13 tests covering `handlePickPhoto` guard, Alert structure, camera/library success/cancel/permission-denied paths, `handleRemovePhoto` confirm/cancel, and optional `onPhotoRemoved` callback.
+- `CLAUDE.md`: Added `useProfilePhotoPicker` to hooks documentation.
+- Validation: `npm run ci` passed — 1119 tests, 0 semgrep findings.
+
+---
+
 ### 2026-03-18_11
 
 **[fix] PR 40 Sonar nested ternaries in ProfileAvatar + new-code coverage uplift**

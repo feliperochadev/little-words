@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,7 @@ import { WheelDatePickerModal } from '../src/components/WheelDatePickerModal';
 import { useI18n, LANGUAGES } from '../src/i18n/i18n';
 import { formatDisplayDate, toStorageDate } from '../src/utils/dateHelpers';
 import { useSaveProfilePhoto } from '../src/hooks/useAssets';
+import { useProfilePhotoPicker } from '../src/hooks/useProfilePhotoPicker';
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -27,9 +27,13 @@ export default function OnboardingScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; mimeType: string; fileSize: number } | null>(null);
-  const [pickingPhoto, setPickingPhoto] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const saveProfilePhoto = useSaveProfilePhoto();
+  const { handlePickPhoto } = useProfilePhotoPicker({
+    onPhotoSelected: (asset) => {
+      setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
+    },
+  });
 
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
@@ -72,51 +76,6 @@ export default function OnboardingScreen() {
     await useSettingsStore.getState().setOnboardingDone();
     setLoading(false);
     router.replace('/(tabs)/home');
-  };
-
-  const launchPicker = async (source: 'camera' | 'library') => {
-    if (source === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
-        setPickingPhoto(false);
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('settings.photoPermissionDenied'));
-        setPickingPhoto(false);
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setSelectedPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileSize: asset.fileSize ?? 0 });
-      }
-    }
-    setPickingPhoto(false);
-  };
-
-  const handlePickPhoto = () => {
-    if (pickingPhoto) return;
-    setPickingPhoto(true);
-    Alert.alert(
-      t('settings.photoSourceTitle'),
-      undefined,
-      [
-        { text: t('settings.photoSourceCamera'), onPress: () => { void launchPicker('camera'); } },
-        { text: t('settings.photoSourceGallery'), onPress: () => { void launchPicker('library'); } },
-        { text: t('common.cancel'), style: 'cancel', onPress: () => setPickingPhoto(false) },
-      ]
-    );
   };
 
   return (
