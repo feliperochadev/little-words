@@ -132,3 +132,19 @@ Unit, integration, and screen tests covering all new code paths.
 ### 4. Refined Prompt
 
 See the Design Document at `.agents/plan/design/2026-03-18_01-baby-profile-photo.md` for the complete, refined specification that addresses all identified gaps.
+
+---
+
+## Post-Implementation Addendum (2026-03-19)
+
+Follow-up fixes on this implementation branch introduced Android-native cropper constraints and decisions that should be part of the final prompt context:
+
+- The profile photo crop UI (crop/save/flip/rotate controls) is native Android UI from the cropper library, not React-rendered UI.
+- App runtime locale selection (JS i18n) does not automatically control native cropper action strings.
+- To guarantee contrast and localized labels, the implementation includes:
+  - `expo-image-picker` plugin color config in `app.json`
+  - Direct Android resource overrides in `values`/`values-night`
+  - Activity theme override for `expo.modules.imagepicker.ExpoCropImageActivity`
+  - Native string overrides for `crop_image_menu_crop` in `values`, `values-pt`, and `values-pt-rBR`
+- Repository workflow update: keep `android/` mostly ignored, but selectively unignore only the cropper-related Android files needed by this feature for reproducible commits.
+- Build compatibility note: avoid private Android attributes in style overrides (an attempted `android:panelMenuListTheme` caused `aapt2` linking failure and was removed).

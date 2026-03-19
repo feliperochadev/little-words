@@ -11,6 +11,12 @@ worktree: false
 
 Added optional baby profile photo feature: singleton asset storage, reusable `ProfileAvatar` component with size variants and decorations, and full integration into onboarding, home, settings, and `EditProfileModal`. Phase 2: camera + gallery source picker via Alert, tappable onboarding avatar. Phase 3 (UI/UX polish): avatar sizes increased 50% (md=108dp, lg=144dp), avatar moved to onboarding top, emptyHero moved before stats grid, EditProfileModal theme reactivity fixed, home screen photo viewer modal added, settings birth/age split to two lines. Phase 4 (polish follow-up): onboarding title simplified, `tapHint` prop added to `ProfileAvatar` for in-frame "tap to add photo" affordance, sex buttons changed to row layout, EditProfileModal avatar enlarged to `lg`, photo viewer i18n key bug fixed.
 
+Post-implementation Android-native cropper hardening was added on this branch to close UI contrast and localization issues in the profile photo editing flow:
+- High-contrast crop toolbar colors for light/dark modes (native Android resources).
+- Crop action label override to `Save` / `Salvar` (Portuguese resources).
+- Selective git tracking of only the Android native files required for this profile-photo cropper behavior (instead of unignoring the full `android/` tree).
+- Build-fix correction: removed unsupported private Android style attr that broke `npm run android`.
+
 ## Changes
 
 | File | Action | Notes |
@@ -74,3 +80,14 @@ Added optional baby profile photo feature: singleton asset storage, reusable `Pr
 | `src/components/EditProfileModal.tsx` | modified | Removed inline `launchPicker`, `handlePickPhoto`, `handleRemovePhoto`, `pickingPhoto`, `useRemoveProfilePhoto`, `ImagePicker`; replaced with `useProfilePhotoPicker` |
 | `__tests__/integration/useProfilePhotoPicker.test.tsx` | created | 13 tests covering `handlePickPhoto` guard, Alert structure, camera/library success/cancel/permission-denied paths, `handleRemovePhoto` confirm/cancel, optional `onPhotoRemoved` callback |
 | `CLAUDE.md` | modified | Added `useProfilePhotoPicker` to hooks documentation |
+| **Phase 6 (Android cropper UX + localization — changelog 2026-03-19_1.._5)** | | |
+| `app.json` | modified | Added `expo-image-picker` plugin crop color configuration for Android (light + dark) |
+| `android/app/src/main/res/values/colors.xml` | modified | Added `expoCrop*` light-mode resource overrides for toolbar/icons/action text/background |
+| `android/app/src/main/res/values-night/colors.xml` | modified | Added `expoCrop*` dark-mode resource overrides |
+| `android/app/src/main/res/values/styles.xml` | modified | Added `ExpoCropImageThemeOverride` + popup menu styles for flip menu readability; removed unsupported private attr in final fix |
+| `android/app/src/main/AndroidManifest.xml` | modified | Overrode `expo.modules.imagepicker.ExpoCropImageActivity` theme to app-defined cropper override |
+| `android/app/src/main/res/values/strings.xml` | modified | Overrode crop action label key `crop_image_menu_crop` to `Save` |
+| `android/app/src/main/res/values-pt/strings.xml` | created | Added Portuguese fallback `crop_image_menu_crop = Salvar` |
+| `android/app/src/main/res/values-pt-rBR/strings.xml` | created | Added pt-BR `crop_image_menu_crop = Salvar` |
+| `.gitignore` | modified | Middle-ground unignore: keep `android/` ignored by default but whitelist only cropper-related Android files used by this feature |
+| `__tests__/unit/appConfig.test.ts` | created | Added regression tests for app config plugin, Android crop resources, activity theme override, and crop label overrides (`values`, `values-pt`, `values-pt-rBR`) |

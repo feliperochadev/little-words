@@ -1,0 +1,10 @@
+<resources>
+  <color name="splashscreen_background">#FAF4EC</color>
+  <color name="iconBackground">#FAF4EC</color>
+  <color name="colorPrimary">#023c69</color>
+  <color name="expoCropToolbarColor">#FFFFFF</color>
+  <color name="expoCropToolbarIconColor">#0B1F33</color>
+  <color name="expoCropToolbarActionTextColor">#0B1F33</color>
+  <color name="expoCropBackButtonIconColor">#0B1F33</color>
+  <color name="expoCropBackgroundColor">#FFFFFF</color>
+</resources>
