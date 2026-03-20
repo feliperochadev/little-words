@@ -7,8 +7,21 @@ import { useI18n } from '../../src/i18n/i18n';
 import { MediaCaptureProvider } from '../../src/providers/MediaCaptureProvider';
 import { MediaFAB } from '../../src/components/MediaFAB';
 import { MediaLinkingModal } from '../../src/components/MediaLinkingModal';
+import { AddWordModal } from '../../src/components/AddWordModal';
+import { useMediaCapture } from '../../src/hooks/useMediaCapture';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** Opens AddWordModal globally whenever the capture phase is 'creating-word'. */
+function GlobalAddWordModal() {
+  const { phase, resetCapture } = useMediaCapture();
+  return (
+    <AddWordModal
+      visible={phase === 'creating-word'}
+      onClose={resetCapture}
+    />
+  );
+}
 
 function TabIcon({ name, color, focused }: Readonly<{ name: IoniconsName; color: string; focused: boolean }>) {
   return <Ionicons name={name} size={22} color={color} style={{ opacity: focused ? 1 : 0.6 }} />;
@@ -80,6 +93,7 @@ export default function TabLayout() {
       </Tabs>
       <MediaFAB />
       <MediaLinkingModal />
+      <GlobalAddWordModal />
     </MediaCaptureProvider>
   );
 }

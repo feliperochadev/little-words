@@ -3,6 +3,25 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-20_2
+
+**[feature] Navigate to words tab and focus saved word after AddWordModal save**
+
+- `src/components/AddWordModal.tsx`: added `useRouter` + `router.push({ pathname: '/(tabs)/words', params: { highlightId: String(wordId) } })` after every successful save (new and edit), so the user is always taken to the words list with the saved word highlighted
+- `app/(tabs)/words.tsx`: added `useLocalSearchParams` to read `highlightId`, FlatList `ref`, `scrolledHighlightRef` guard (prevents double-scroll on re-renders), `handleScrollToIndexFailed` fallback, and a `useEffect` that scrolls the list to the matching word when `highlightId` or `sortedWords` changes
+- `__tests__/integration/AddWordModal.test.tsx`: added local `expo-router` mock capturing `mockRouterPush`; added `mockRouterPush.mockClear()` to both `beforeEach` blocks; updated `'saves a new word'` assertion; added `'navigates to words tab with highlightId after saving new word'` and `'navigates to words tab with highlightId after editing a word'` tests; fixed mock isolation with `mockResolvedValueOnce`
+- Builds on: `2026-03-18_02-media-capture-and-linking`
+
+### 2026-03-20_1
+
+**[fix] Enhance 2026-03-18_02-media-capture-and-linking: add GlobalAddWordModal to tab layout for creating-word phase**
+
+- `app/(tabs)/_layout.tsx`: added `GlobalAddWordModal` component that renders `AddWordModal` with `visible={phase === 'creating-word'}` and `onClose={resetCapture}`, so pressing "Create New Word" in `MediaLinkingModal` now opens the word form globally regardless of active tab
+- `__tests__/screens/tabLayout.test.tsx`: added mocks for `useMediaCapture` and `AddWordModal`; added `GlobalAddWordModal` describe block with 5 tests covering idle/creating-word/linking/recording phases and `onClose` prop wiring
+- Builds on: `2026-03-18_02-media-capture-and-linking`
+
+
+
 ### 2026-03-21_4
 
 **[fix] Upgrade flatted to resolve high-severity prototype pollution vulnerability (GHSA-rf6f-7fwh-wjgh)**

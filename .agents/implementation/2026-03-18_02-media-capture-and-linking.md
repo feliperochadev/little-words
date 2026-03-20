@@ -33,3 +33,16 @@ Full media capture & linking feature: FAB with audio recording + photo capture, 
 
 - `npm run ci` ✅ passed
 - `npm run agent:review` ✅ simple change internal review passed
+
+## Enhancements
+
+### 2026-03-20 — Fix creating-word phase: GlobalAddWordModal missing from tab layout
+
+- **Description:** When `startCreateWord()` was called from `MediaLinkingModal`, the phase changed to `'creating-word'` and the linking modal correctly closed, but no `AddWordModal` was ever opened. The `creating-word` phase had no global handler — only `words.tsx` and `home.tsx` had local `AddWordModal` instances driven by `showAddWord` state, which were never triggered. The fix adds a `GlobalAddWordModal` component to `app/(tabs)/_layout.tsx` that renders `AddWordModal` with `visible={phase === 'creating-word'}`, ensuring the modal opens globally regardless of the active tab.
+- **Files Modified:** `app/(tabs)/_layout.tsx`, `__tests__/screens/tabLayout.test.tsx`
+- **Root Cause:** `_layout.tsx` mounted `MediaFAB` and `MediaLinkingModal` globally but omitted a global `AddWordModal` for the `creating-word` phase.
+
+### 2026-03-20 — Navigate to words tab and focus saved word after AddWordModal save
+
+- **Description:** After a word is saved (new or edited), `AddWordModal` now calls `router.push({ pathname: '/(tabs)/words', params: { highlightId: String(wordId) } })` to navigate the user to the words list. `words.tsx` reads the `highlightId` param via `useLocalSearchParams` and scrolls the FlatList to the matching word using a ref and `scrolledHighlightRef` guard to prevent double-scroll on re-renders or tab refocus.
+- **Files Modified:** `src/components/AddWordModal.tsx`, `app/(tabs)/words.tsx`, `__tests__/integration/AddWordModal.test.tsx`

@@ -24,6 +24,7 @@ import { useModalAnimation } from '../hooks/useModalAnimation';
 import { TIMING } from '../utils/animationConstants';
 import { MediaChips } from './MediaChips';
 import { useMediaCapture } from '../hooks/useMediaCapture';
+import { useRouter } from 'expo-router';
 
 // Stable empty arrays to avoid creating new references on every render
 const EMPTY_CATEGORIES: Category[] = [];
@@ -50,6 +51,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   const { colors } = useTheme();
   const today = new Date().toISOString().split('T')[0];
   const queryClient = useQueryClient();
+  const router = useRouter();
   const {
     phase,
     pendingMedia,
@@ -236,6 +238,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
       );
       handleClose();
       onSave?.();
+      router.push({ pathname: '/(tabs)/words', params: { highlightId: String(wordId) } });
     } finally {
       setLoading(false);
     }

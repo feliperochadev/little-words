@@ -20,6 +20,35 @@ jest.mock('../../src/providers/MediaCaptureProvider', () => ({
   MediaCaptureProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+// Mutable phase for GlobalAddWordModal tests
+let mockPhase = 'idle';
+const mockResetCapture = jest.fn();
+
+jest.mock('../../src/hooks/useMediaCapture', () => ({
+  useMediaCapture: () => ({
+    phase: mockPhase,
+    resetCapture: mockResetCapture,
+    pendingMedia: null,
+    prefilledWordName: '',
+    prefilledMediaName: '',
+    playingAssetId: null,
+    setPhase: jest.fn(),
+    setCapturedMedia: jest.fn(),
+    linkMediaToWord: jest.fn(),
+    startCreateWord: jest.fn(),
+    onWordCreated: jest.fn(),
+    launchPhotoPicker: jest.fn(),
+    playAssetByParent: jest.fn(),
+    stopPlayback: jest.fn(),
+  }),
+}));
+
+// Capture AddWordModal calls to inspect visible prop
+const mockAddWordModal = jest.fn((_props: any) => null);
+jest.mock('../../src/components/AddWordModal', () => ({
+  AddWordModal: (props: any) => mockAddWordModal(props),
+}));
+
 // Override the Tabs mock to render tabBarIcon callbacks with both active and inactive colors
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -59,6 +88,11 @@ function findAllByTypeName(tree: any, typeName: string): any[] {
 }
 
 describe('TabLayout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPhase = 'idle';
+  });
+
   it('renders tab icons using Ionicons', async () => {
     const { toJSON } = render(
       <I18nProvider><TabLayout /></I18nProvider>
@@ -96,5 +130,54 @@ describe('TabLayout', () => {
       return style.opacity === 1;
     });
     expect(activeIcon).toBeTruthy();
+  });
+
+  // ── GlobalAddWordModal ─────────────────────────────────────────────────────
+
+  describe('GlobalAddWordModal', () => {
+    it('renders AddWordModal with visible=false when phase is idle', async () => {
+      mockPhase = 'idle';
+      render(<I18nProvider><TabLayout /></I18nProvider>);
+      await act(async () => { await Promise.resolve(); });
+      expect(mockAddWordModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({ visible: false }),
+      );
+    });
+
+    it('renders AddWordModal with visible=true when phase is creating-word', async () => {
+      mockPhase = 'creating-word';
+      render(<I18nProvider><TabLayout /></I18nProvider>);
+      await act(async () => { await Promise.resolve(); });
+      expect(mockAddWordModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({ visible: true }),
+      );
+    });
+
+    it('passes resetCapture as onClose to AddWordModal', async () => {
+      mockPhase = 'creating-word';
+      render(<I18nProvider><TabLayout /></I18nProvider>);
+      await act(async () => { await Promise.resolve(); });
+      expect(mockAddWordModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({ onClose: mockResetCapture }),
+      );
+    });
+
+    it('renders AddWordModal with visible=false when phase is linking', async () => {
+      mockPhase = 'linking';
+      render(<I18nProvider><TabLayout /></I18nProvider>);
+      await act(async () => { await Promise.resolve(); });
+      expect(mockAddWordModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({ visible: false }),
+      );
+    });
+
+    it('renders AddWordModal with visible=false when phase is recording', async () => {
+      mockPhase = 'recording';
+      render(<I18nProvider><TabLayout /></I18nProvider>);
+      await act(async () => { await Promise.resolve(); });
+      expect(mockAddWordModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({ visible: false }),
+      );
+    });
   });
 });
