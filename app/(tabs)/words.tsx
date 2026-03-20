@@ -1,11 +1,12 @@
 import { withOpacity } from '../../src/utils/colorHelpers';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { ListScreenControls } from '../../src/components/ListScreenControls';
 import { AddWordModal } from '../../src/components/AddWordModal';
@@ -18,6 +19,7 @@ import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
 import type { Word, Variant } from '../../src/types/domain';
+import { WordAssetChips } from '../../src/components/WordAssetChips';
 
 const EMPTY_WORDS: Word[] = [];
 
@@ -27,6 +29,12 @@ export default function WordsScreen() {
   const { colors } = useTheme();
 
   const sortOptions = buildDefaultSortOptions(t);
+
+  // Highlight word navigated from AddWordModal
+  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
+  const highlightWordId = highlightId ? Number(highlightId) : null;
+  const listRef = useRef<FlatList<Word>>(null);
+  const scrolledHighlightRef = useRef<number | null>(null);
 
   // Local UI state only — no server state managed here
   const [search, setSearch] = useState('');
@@ -43,14 +51,30 @@ export default function WordsScreen() {
   const { data: words = EMPTY_WORDS, refetch } = useWords(search);
   const [refreshing, setRefreshing] = useState(false);
 
+  const sortedWords = sortWords(words, sort);
+  const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
+
+  // Scroll to the word referenced by highlightId (set when navigating from AddWordModal)
+  const handleScrollToIndexFailed = useCallback((info: { index: number; averageItemLength: number }) => {
+    listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+  }, []);
+
+  useEffect(() => {
+    if (!highlightWordId || sortedWords.length === 0) return;
+    if (scrolledHighlightRef.current === highlightWordId) return;
+    const idx = sortedWords.findIndex(w => w.id === highlightWordId);
+    if (idx < 0) return;
+    scrolledHighlightRef.current = highlightWordId;
+    setTimeout(() => {
+      listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+    }, 150);
+  }, [highlightWordId, sortedWords]);
+
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
   const handleSearch = (text: string) => { setSearch(text); };
 
   const closeWordModal = () => { setShowAddWord(false); setEditWord(null); };
-
-  const sortedWords = sortWords(words, sort);
-  const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
 
   const renderWord = ({ item, index }: { item: Word; index: number }) => (
     <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
@@ -92,6 +116,9 @@ export default function WordsScreen() {
                   <Text style={[styles.variantChipText, { color: colors.primaryDark }]} testID={`word-variant-text-${v}`}>{v}</Text>
                 </View>
               ))}
+              {(item.asset_count ?? 0) > 0 && (
+                <WordAssetChips wordId={item.id} />
+              )}
             </View>
             {item.notes && (
               <View style={styles.noteRow}>
@@ -139,10 +166,12 @@ export default function WordsScreen() {
       />
 
       <FlatList
+        ref={listRef}
         data={sortedWords}
         keyExtractor={item => item.id.toString()}
         renderItem={renderWord}
         contentContainerStyle={styles.list}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <EmptyState

@@ -140,7 +140,7 @@ export default function DashboardScreen() {
                 return last6.map(m => (
                   <View key={m.month} style={styles.barItem}>
                     <View style={styles.barWrapper}>
-                      <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: colors.primary }]} />
+                      <View style={[styles.bar, { height: Math.max((m.count / max) * 100, 4), backgroundColor: colors.primaryLight }]} />
                     </View>
                     <Text style={[styles.barLabel, { color: colors.textSecondary }]} testID={`bar-label-${m.month}`}>{formatMonth(m.month, showYear)}</Text>
                     <Text style={[styles.barValue, { color: colors.primary }]} testID={`bar-value-${m.month}`}>{m.count}</Text>

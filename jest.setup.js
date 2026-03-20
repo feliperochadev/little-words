@@ -1,3 +1,8 @@
+// Make TanStack Query observer notifications synchronous in tests to prevent
+// "Jest environment accessed after teardown" errors caused by TQ's batched setTimeout scheduler.
+const { notifyManager } = require('@tanstack/react-query');
+notifyManager.setScheduler(cb => cb());
+
 // Jest 30 wraps the global object in a Proxy. expo/src/winter/runtime.native.ts installs lazy
 // property getters that call require() on first access. When the Proxy fires after leaveTestCode()
 // sets isInsideTestCode=false, jest-runtime throws "outside of scope" errors.
@@ -138,12 +143,32 @@ jest.mock('react-native-svg', () => ({
 }));
 
 // Mock expo-av
+const mockSound = {
+  unloadAsync: jest.fn(() => Promise.resolve()),
+  playAsync: jest.fn(() => Promise.resolve()),
+  stopAsync: jest.fn(() => Promise.resolve()),
+  pauseAsync: jest.fn(() => Promise.resolve()),
+  setOnPlaybackStatusUpdate: jest.fn(),
+};
+const mockRecording = {
+  prepareToRecordAsync: jest.fn(() => Promise.resolve()),
+  startAsync: jest.fn(() => Promise.resolve()),
+  stopAndUnloadAsync: jest.fn(() => Promise.resolve()),
+  pauseAsync: jest.fn(() => Promise.resolve()),
+  getStatusAsync: jest.fn(() => Promise.resolve({ isRecording: true, metering: -30 })),
+  getURI: jest.fn(() => 'file:///mock/recording.m4a'),
+};
+globalThis.__mockSound = mockSound;
+globalThis.__mockRecording = mockRecording;
 jest.mock('expo-av', () => ({
   Audio: {
-    Recording: jest.fn(),
+    Recording: jest.fn(() => mockRecording),
+    RecordingOptionsPresets: {
+      HIGH_QUALITY: {},
+    },
     Sound: {
       createAsync: jest.fn(() =>
-        Promise.resolve({ sound: { unloadAsync: jest.fn(), playAsync: jest.fn(), stopAsync: jest.fn() }, status: {} })
+        Promise.resolve({ sound: mockSound, status: { isLoaded: true, durationMillis: 5000 } })
       ),
     },
     setAudioModeAsync: jest.fn(() => Promise.resolve()),

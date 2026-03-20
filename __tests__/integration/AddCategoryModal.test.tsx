@@ -10,6 +10,17 @@ import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
 jest.spyOn(Alert, 'alert');
 
+jest.mock('../../src/utils/animationConstants', () => {
+  const actual = jest.requireActual('../../src/utils/animationConstants');
+  return {
+    ...actual,
+    TIMING: {
+      ...actual.TIMING,
+      DUPLICATE_CHECK_DEBOUNCE: 0,
+    },
+  };
+});
+
 jest.mock('../../src/services/categoryService', () => ({
   ...jest.requireActual('../../src/services/categoryService'),
   findCategoryByName: jest.fn().mockResolvedValue(null),
@@ -43,6 +54,7 @@ describe('AddCategoryModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    (categoryService.findCategoryByName as jest.Mock).mockResolvedValue(null);
   });
 
   it('renders create mode title', async () => {

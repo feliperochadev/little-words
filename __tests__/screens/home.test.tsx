@@ -36,6 +36,8 @@ jest.mock('../../src/hooks/useAssets', () => ({
   useProfilePhoto: jest.fn().mockReturnValue({ data: null }),
   useSaveProfilePhoto: jest.fn(),
   useRemoveProfilePhoto: jest.fn(),
+  useAssetsByParent: jest.fn().mockReturnValue({ data: [] }),
+  useRemoveAsset: jest.fn().mockReturnValue({ mutateAsync: jest.fn() }),
 }));
 
 jest.mock('../../src/services/wordService', () => ({

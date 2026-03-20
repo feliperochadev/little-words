@@ -7,6 +7,7 @@ export interface Asset {
   parent_id: number;
   asset_type: AssetType;
   filename: string;
+  name: string | null;
   mime_type: string;
   file_size: number;
   duration_ms: number | null;
@@ -20,6 +21,7 @@ export interface NewAsset {
   parent_id: number;
   asset_type: AssetType;
   filename: string;
+  name?: string | null;
   mime_type: string;
   file_size: number;
   duration_ms?: number | null;
@@ -68,4 +70,19 @@ export function getExtensionForMime(mimeType: string): string {
     throw new Error(`Unsupported MIME type: ${mimeType}`);
   }
   return ext;
+}
+
+/** Shared overlay state for audio preview modals */
+export interface AudioOverlayState {
+  uri: string;
+  name: string;
+  createdAt: string;
+  durationMs?: number | null;
+}
+
+/** Shared overlay state for photo preview modals */
+export interface PhotoOverlayState {
+  uri: string;
+  name: string;
+  createdAt: string;
 }

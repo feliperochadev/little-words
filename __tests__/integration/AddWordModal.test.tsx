@@ -11,6 +11,26 @@ import * as settingsService from '../../src/services/settingsService';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { getThemeForSex } from '../../src/theme/getThemeForSex';
 
+// ─── Router mock (overrides global jest.setup.js mock) ────────────────────────
+const mockRouterPush = jest.fn();
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const StackComponent = ({ children }: any) => React.createElement(React.Fragment, null, children);
+  StackComponent.Screen = () => null;
+  const TabsComponent = ({ children }: any) => React.createElement(React.Fragment, null, children);
+  TabsComponent.Screen = () => null;
+  return {
+    useRouter: jest.fn(() => ({ push: mockRouterPush, replace: jest.fn(), back: jest.fn() })),
+    useLocalSearchParams: jest.fn(() => ({})),
+    useFocusEffect: jest.fn((cb: any) => {
+      const R = require('react');
+      R.useEffect(() => { const cleanup = cb(); return typeof cleanup === 'function' ? cleanup : undefined; }, []);
+    }),
+    Stack: StackComponent,
+    Tabs: TabsComponent,
+  };
+});
+
 jest.mock('../../src/services/categoryService', () => ({
   ...jest.requireActual('../../src/services/categoryService'),
   getCategories: jest.fn().mockResolvedValue([]),
@@ -66,6 +86,7 @@ function flattenStyle(style: unknown): Record<string, unknown> {
 describe('AddWordModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouterPush.mockClear();
     (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
     ]);
@@ -135,6 +156,27 @@ describe('AddWordModal', () => {
       expect(wordService.addWord).toHaveBeenCalledWith('hello', null, expect.any(String), '');
       expect(onSave).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
+      expect(mockRouterPush).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: '/(tabs)/words',
+          params: expect.objectContaining({ highlightId: '1' }),
+        }),
+      );
+    });
+  });
+
+  it('navigates to words tab with highlightId after saving new word', async () => {
+    (wordService.addWord as jest.Mock).mockResolvedValueOnce(42);
+    const { findByText, findByPlaceholderText } = renderModal();
+    fireEvent.changeText(await findByPlaceholderText(/E\.g\./), 'coco');
+    await act(async () => { fireEvent.press(await findByText('Add')); });
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: '/(tabs)/words',
+          params: expect.objectContaining({ highlightId: '42' }),
+        }),
+      );
     });
   });
 
@@ -148,6 +190,20 @@ describe('AddWordModal', () => {
     await waitFor(() => {
       expect(wordService.updateWord).toHaveBeenCalledWith(1, 'mamãe', 1, '2024-01-01', 'a note');
       expect(onSave).toHaveBeenCalled();
+    });
+  });
+
+  it('navigates to words tab with editWord highlightId after editing a word', async () => {
+    const { findByText, findByDisplayValue } = renderModal({ editWord: mockWord });
+    await findByDisplayValue('mamãe');
+    await act(async () => { fireEvent.press(await findByText('Save')); });
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: '/(tabs)/words',
+          params: expect.objectContaining({ highlightId: '1' }),
+        }),
+      );
     });
   });
 
@@ -494,6 +550,7 @@ describe('AddWordModal — panResponder gesture handlers', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouterPush.mockClear();
     capturedConfig = null;
     (categoryService.getCategories as jest.Mock).mockResolvedValue([
       { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },

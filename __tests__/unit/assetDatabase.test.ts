@@ -235,7 +235,7 @@ describe('asset database operations', () => {
       expect(id).toBe(42);
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO assets'),
-        ['word', 1, 'audio', 'asset_1.m4a', 'audio/mp4', 12345, 3000, null, null],
+        ['word', 1, 'audio', 'asset_1.m4a', null, 'audio/mp4', 12345, 3000, null, null],
       );
     });
 
@@ -262,7 +262,7 @@ describe('asset database operations', () => {
 
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO assets'),
-        ['variant', 5, 'photo', 'asset_2.jpg', 'image/jpeg', 5000, null, null, null],
+        ['variant', 5, 'photo', 'asset_2.jpg', null, 'image/jpeg', 5000, null, null, null],
       );
     });
 
@@ -283,7 +283,7 @@ describe('asset database operations', () => {
 
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.any(String),
-        ['word', 2, 'photo', 'asset_3.png', 'image/png', 80000, null, 1920, 1080],
+        ['word', 2, 'photo', 'asset_3.png', null, 'image/png', 80000, null, 1920, 1080],
       );
     });
   });

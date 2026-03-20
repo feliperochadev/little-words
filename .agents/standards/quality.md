@@ -11,7 +11,7 @@ Aligned with the **Sonar Way** quality gate active for this project. All conditi
 | Maintainability Rating | **A** (≤ 0 debt ratio) | No new code smells rated above A |
 | Reliability Rating | **A** (0 bugs) | No new bugs introduced |
 | Coverage | **≥ 80 %** | New lines must be covered by tests |
-| Duplicated Lines Density | **< 3 %** | New code duplication must stay below 3 % |
+| Duplicated Lines Density | **< 3 %** (gate) / **< 2 %** (project standard) | New code duplication must stay below 2 % |
 
 > These are hard gates — a PR that fails any condition must **not be shipped** until fixed.
 
@@ -82,11 +82,26 @@ If the state setter name conflicts with another function in scope, rename the ot
 
 ## Code Duplication
 
-- New code must stay **below 3 %** duplicated lines density (Sonar gate).
+- New code must stay **below 2 %** duplicated lines density (project standard — stricter than the Sonar gate's 3 %).
 - Shared animation logic → `src/hooks/useModalAnimation.ts`
+- Shared waveform playback animation → `src/hooks/useWaveformAnimation.ts`
+- Shared audio/photo overlay state + handlers → `src/hooks/useAssetPreviewOverlays.ts`
+- Shared overlay JSX pair rendering → `src/components/AssetPreviewOverlays.tsx`
 - Shared color helpers → `src/utils/colorHelpers.ts` (`withOpacity`)
-- Shared animation constants → `src/utils/animationConstants.ts`
+- Shared animation constants → `src/utils/animationConstants.ts` (`WAVEFORM`, `MODAL_ANIMATION`, `TIMING`)
 - Before duplicating a block > 5 lines, extract a utility or hook.
+
+**How to check duplication before shipping:**
+1. Run `npm run ci` — the full suite also runs the Sonar-equivalent checks locally.
+2. After merging a PR, review the SonarCloud "New Code" tab for "Duplicated Lines Density". If it shows ≥ 2 %, the PR must not be shipped until fixed.
+3. As a manual proxy: count duplicated lines in your diff; if the same block (> 5 lines) appears in more than one file, extract it.
+
+**Common duplication hotspots to watch:**
+
+- **Waveform animation** — the `useEffect` that drives bar animations is token-for-token identical across `AudioPreviewOverlay`, `MediaLinkingModal`, and any future audio playback UI. Always use `useWaveformAnimation(isPlaying)` instead of inline.
+- **Overlay state types** (`AudioOverlayState`, `PhotoOverlayState`) and their matching `useState` + overlay JSX pattern — use `useAssetPreviewOverlays()` + `<AssetPreviewOverlays>` instead of duplicating state and overlay pairs.
+- **Media chip rendering** — components that render `<TouchableOpacity>` chips with an Ionicon + label + remove button (like `MediaChips` and `WordAssetChips`) share significant structure. Extract a reusable chip row component when the same chip shape appears in more than one layout branch.
+- **Context value objects in providers** — always wrap the value object in `useMemo` (see S6481 below) to avoid the value changing on every render, which itself inflates duplication metrics across all consumers.
 
 ---
 
@@ -185,6 +200,83 @@ React Native props like `onPress`, `onChangeText`, `onSubmit` expect `() => void
 
 ---
 
+## Useless Variable Assignments (S1854)
+
+Remove dead assignments — variables that are assigned but never read before being overwritten or going out of scope.
+
+```ts
+// ❌ Don't — otherAssets is assigned but never used
+const otherAssets = assets.filter(a => a.asset_type !== 'audio' && a.asset_type !== 'photo');
+
+// ✅ Do — only compute what you actually use; delete unused destructuring
+```
+
+When filtering a list into multiple typed sub-arrays, only keep variables you render or pass somewhere. Delete the rest.
+
+---
+
+## Array Index as React List Keys (S6479)
+
+Never use the array index as the `key` prop on list items. Always use a stable, unique identifier.
+
+```tsx
+// ❌ Don't — index keys cause subtle bugs when the list order changes
+bars.map((height, i) => <Animated.View key={i} ... />)
+
+// ✅ Do — use a domain ID or a stable derived string
+bars.map((bar, i) => <Animated.View key={`waveform-bar-${i}`} ... />)
+
+// ✅ For truly static, fixed-length arrays (e.g. waveform bars) a prefixed
+//    string including the index is acceptable because the array never reorders:
+linkingBarHeights.map((height, i) => <Animated.View key={`lbar-${i}`} ... />)
+// ^ only acceptable when the array length is a compile-time constant and items
+//    are never added, removed, or reordered at runtime.
+```
+
+For data arrays (assets, words, variants, categories) always use the entity's `id`.
+
+---
+
+## Prefer Optional Chaining (S6582)
+
+Replace `x && x.y` (short-circuit guard) with optional chaining `x?.y`. It is shorter, reads more clearly, and avoids the `0`-is-falsy pitfall.
+
+```ts
+// ❌ Don't
+if (!pendingMedia || pendingMedia.type !== 'audio') return;
+
+// ✅ Do — use optional chaining and nullish coalescing together
+if (pendingMedia?.type !== 'audio') return;
+
+// ❌ Don't — redundant null guard before property access
+const dur = pendingMedia && pendingMedia.durationMs;
+
+// ✅ Do
+const dur = pendingMedia?.durationMs;
+```
+
+---
+
+## Context Value Must Be Memoized (S6481)
+
+When a React Context provider's `value` is an object literal created inline, it gets a new reference on every render. Every consumer re-renders unnecessarily.
+
+```tsx
+// ❌ Don't — new object on every render
+<MyContext.Provider value={{ foo, bar, handleAction }}>
+
+// ✅ Do — stable reference via useMemo
+const contextValue = useMemo(
+  () => ({ foo, bar, handleAction }),
+  [foo, bar, handleAction],
+);
+<MyContext.Provider value={contextValue}>
+```
+
+This applies to all providers in `src/providers/`. Wrap `contextValue` in `useMemo` with the exact deps that make up the object.
+
+---
+
 ## Deprecated StyleSheet APIs (S1874)
 
 `StyleSheet.absoluteFillObject` is deprecated. Use explicit absolute position properties instead.
@@ -204,13 +296,46 @@ backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgrou
 
 
 
+## Updating Standards for New Sonar Issues / Security Hotspots
+
+Whenever a new SonarCloud issue or security hotspot is surfaced — in a PR diff, via the API, or from the GitHub Security tab — **do not just fix the code: also update the standards files** so the same mistake is never made again.
+
+### Triage routing
+
+| Issue type | Where to document |
+|------------|--------------------|
+| Code smell, bug, reliability rule, security hotspot | `.agents/standards/quality.md` |
+| Naming, casing, file organisation, component structure, StyleSheet usage | `.agents/standards/styling-and-naming.md` |
+
+### Update steps
+
+1. **Identify the rule ID** (e.g. `typescript:S6479`) from the issue detail.
+2. **Open the correct standards file** based on the table above.
+3. **Add a new `## <Rule Title> (<Rule ID>)` section** containing:
+   - A one-line description of what the rule prohibits.
+   - A `// ❌ Don't` code block from the actual offending code (or a minimal representative example).
+   - A `// ✅ Do` code block showing the correct pattern.
+   - Any project-specific caveats or exceptions.
+4. **Add a checkbox** to the pre-commit checklist at the bottom of `quality.md` (even if the rule lives in `styling-and-naming.md` — the checklist is the single authoritative gate).
+5. If the rule applies to all three vendor agents, update `CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` via the cross-vendor documentation rule (only when the rule represents a workflow/architectural change, not a code-style detail — code style stays in `.agents/standards/`).
+
+### Do this before closing the fix PR
+
+A Sonar issue is not fully resolved until both the code is fixed **and** the corresponding rule is documented in the standards. Skipping the documentation step means the same issue will re-appear in a future PR.
+
+---
+
 Before every commit, verify new code:
 
 - [ ] No function exceeds cognitive complexity 15
 - [ ] No `let` variable that is never reassigned (use `const`)
 - [ ] No unused imports or variables
+- [ ] No useless variable assignments — every assigned variable must be read (S1854)
 - [ ] No negated conditions where a positive form is clearer
-- [ ] No duplicated block > 5 lines — extract a helper
+- [ ] No duplicated block > 5 lines — extract a helper; new code duplication density **< 2 %**
+- [ ] No array index as list key (S6479) — use a stable domain ID; prefixed index string only for truly static, fixed-length arrays
+- [ ] Optional chaining used instead of `x && x.y` guards (S6582)
+- [ ] Context provider `value` wrapped in `useMemo` (S6481)
 - [ ] `useState` destructuring follows `[value, setValue]` naming
 - [ ] Magic numbers replaced with named constants
 - [ ] `node:` prefix used for all Node.js built-in imports

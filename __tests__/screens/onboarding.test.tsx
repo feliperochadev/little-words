@@ -40,6 +40,10 @@ describe('OnboardingScreen', () => {
     useSettingsStore.setState({ name: '', sex: null, birth: '', isOnboardingDone: false, isHydrated: true });
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   // ─── Normal (create) mode ───────────────────────────────────────────────
 
   it('renders welcome text', async () => {
