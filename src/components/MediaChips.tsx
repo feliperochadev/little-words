@@ -11,7 +11,7 @@ import { getAssetFileUri } from '../utils/assetStorage';
 import { withOpacity } from '../utils/colorHelpers';
 import { AudioPreviewOverlay } from './AudioPreviewOverlay';
 import { PhotoPreviewOverlay } from './PhotoPreviewOverlay';
-import type { Asset, ParentType } from '../types/asset';
+import type { Asset, ParentType, AudioOverlayState, PhotoOverlayState } from '../types/asset';
 import type { PendingMedia } from '../providers/MediaCaptureProvider';
 
 const EMPTY_ASSETS: Asset[] = [];
@@ -27,18 +27,6 @@ type Props = {
   separateRows?: boolean;
 };
 
-interface AudioOverlayState {
-  uri: string;
-  name: string;
-  createdAt: string;
-  durationMs?: number | null;
-}
-
-interface PhotoOverlayState {
-  uri: string;
-  name: string;
-  createdAt: string;
-}
 
 export function MediaChips({
   parentType, parentId, enabled = true, pendingMedia, onRemovePending, separateRows = false,
@@ -82,184 +70,165 @@ export function MediaChips({
   const totalItems = assets.length + (pendingMedia ? 1 : 0);
   if (totalItems === 0) return null;
 
-  if (separateRows) {
-    return (
-      <>
-        {/* ── Audio row ── */}
-        {(audioAssets.length > 0 || (pendingMedia?.type === 'audio')) && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={s.rowScroll}
-            testID="media-chips-audio"
-          >
-            {pendingMedia?.type === 'audio' && (
-              <View
-                style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]}
-                testID="media-chip-pending"
-              >
-                <Ionicons name="mic" size={14} color={colors.primary} />
-                <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
-                  {t('mediaCapture.recording')}
-                </Text>
-                {onRemovePending && (
-                  <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-            {audioAssets.map(asset => (
-              <View
-                key={asset.id}
-                style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
-                testID={`media-chip-${asset.id}`}
-              >
-                <TouchableOpacity onPress={() => handleAudioChipPress(asset)} style={s.chipContent} testID={`media-chip-play-${asset.id}`}>
-                  <Ionicons name="mic" size={14} color={colors.primary} />
-                  <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
-                    {asset.name ?? asset.filename}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
+  const visibleAssets = assets.slice(0, MAX_VISIBLE);
+  const overflow = assets.length - MAX_VISIBLE;
 
-        {/* ── Photo row ── */}
-        {(photoAssets.length > 0 || (pendingMedia?.type === 'photo')) && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={s.rowScroll}
-            testID="media-chips-photos"
-          >
-            {pendingMedia?.type === 'photo' && (
-              <View
-                style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]}
-                testID="media-chip-pending"
-              >
-                <Ionicons name="image" size={14} color={colors.primary} />
-                <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
-                  {t('mediaCapture.photo')}
-                </Text>
-                {onRemovePending && (
-                  <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-            {photoAssets.map(asset => (
-              <View
-                key={asset.id}
-                style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
-                testID={`media-chip-${asset.id}`}
-              >
-                <TouchableOpacity onPress={() => handlePhotoChipPress(asset)} style={s.chipContent} testID={`media-chip-play-${asset.id}`}>
-                  <Ionicons name="image" size={14} color={colors.primary} />
-                  <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
-                    {asset.name ?? asset.filename}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
-
-        <AudioPreviewOverlay
-          visible={!!audioOverlay}
-          uri={audioOverlay?.uri ?? ''}
-          name={audioOverlay?.name ?? ''}
-          createdAt={audioOverlay?.createdAt ?? ''}
-          durationMs={audioOverlay?.durationMs}
-          onClose={() => setAudioOverlay(null)}
-        />
-        <PhotoPreviewOverlay
-          visible={!!photoOverlay}
-          uri={photoOverlay?.uri ?? ''}
-          name={photoOverlay?.name ?? ''}
-          createdAt={photoOverlay?.createdAt ?? ''}
-          onClose={() => setPhotoOverlay(null)}
-        />
-      </>
-    );
-  }
-
-  // ── Single-row layout (default) ──────────────────────────────────────────
-
-  const allAssets = assets;
-  const visibleAssets = allAssets.slice(0, MAX_VISIBLE);
-  const overflow = allAssets.length - MAX_VISIBLE;
-
-  return (
+  const mediaRows = separateRows ? (
     <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.container} testID="media-chips">
-        {/* Pending media chip */}
-        {pendingMedia && (
-          <View style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]} testID="media-chip-pending">
+      {/* ── Audio row ── */}
+      {(audioAssets.length > 0 || (pendingMedia?.type === 'audio')) && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.rowScroll}
+          testID="media-chips-audio"
+        >
+          {pendingMedia?.type === 'audio' && (
+            <View
+              style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]}
+              testID="media-chip-pending"
+            >
+              <Ionicons name="mic" size={14} color={colors.primary} />
+              <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
+                {t('mediaCapture.recording')}
+              </Text>
+              {onRemovePending && (
+                <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+          {audioAssets.map(asset => (
+            <View
+              key={asset.id}
+              style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
+              testID={`media-chip-${asset.id}`}
+            >
+              <TouchableOpacity onPress={() => handleAudioChipPress(asset)} style={s.chipContent} testID={`media-chip-play-${asset.id}`}>
+                <Ionicons name="mic" size={14} color={colors.primary} />
+                <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
+                  {asset.name ?? asset.filename}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* ── Photo row ── */}
+      {(photoAssets.length > 0 || (pendingMedia?.type === 'photo')) && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.rowScroll}
+          testID="media-chips-photos"
+        >
+          {pendingMedia?.type === 'photo' && (
+            <View
+              style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]}
+              testID="media-chip-pending"
+            >
+              <Ionicons name="image" size={14} color={colors.primary} />
+              <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
+                {t('mediaCapture.photo')}
+              </Text>
+              {onRemovePending && (
+                <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+          {photoAssets.map(asset => (
+            <View
+              key={asset.id}
+              style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
+              testID={`media-chip-${asset.id}`}
+            >
+              <TouchableOpacity onPress={() => handlePhotoChipPress(asset)} style={s.chipContent} testID={`media-chip-play-${asset.id}`}>
+                <Ionicons name="image" size={14} color={colors.primary} />
+                <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
+                  {asset.name ?? asset.filename}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+    </>
+  ) : (
+    // ── Single-row layout (default) ────────────────────────────────────────
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.container} testID="media-chips">
+      {/* Pending media chip */}
+      {pendingMedia && (
+        <View style={[s.chip, s.chipPending, { borderColor: withOpacity(colors.primary, '50') }]} testID="media-chip-pending">
+          <Ionicons
+            name={pendingMedia.type === 'audio' ? 'mic' : 'image'}
+            size={14}
+            color={colors.primary}
+          />
+          <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
+            {pendingMedia.type === 'audio' ? t('mediaCapture.recording') : t('mediaCapture.photo')}
+          </Text>
+          {onRemovePending && (
+            <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Saved asset chips */}
+      {visibleAssets.map(asset => (
+        <View
+          key={asset.id}
+          style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
+          testID={`media-chip-${asset.id}`}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              if (asset.asset_type === 'audio') {
+                handleAudioChipPress(asset);
+              } else if (asset.asset_type === 'photo') {
+                handlePhotoChipPress(asset);
+              }
+            }}
+            style={s.chipContent}
+            testID={`media-chip-play-${asset.id}`}
+          >
             <Ionicons
-              name={pendingMedia.type === 'audio' ? 'mic' : 'image'}
+              name={asset.asset_type === 'audio' ? 'mic' : 'image'}
               size={14}
               color={colors.primary}
             />
-            <Text style={[s.chipLabel, { color: colors.primary }]} numberOfLines={1}>
-              {pendingMedia.type === 'audio' ? t('mediaCapture.recording') : t('mediaCapture.photo')}
+            <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
+              {asset.name ?? asset.filename}
             </Text>
-            {onRemovePending && (
-              <TouchableOpacity onPress={onRemovePending} testID="media-chip-remove-pending" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      ))}
 
-        {/* Saved asset chips */}
-        {visibleAssets.map(asset => (
-          <View
-            key={asset.id}
-            style={[s.chip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]}
-            testID={`media-chip-${asset.id}`}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                if (asset.asset_type === 'audio') {
-                  handleAudioChipPress(asset);
-                } else if (asset.asset_type === 'photo') {
-                  handlePhotoChipPress(asset);
-                }
-              }}
-              style={s.chipContent}
-              testID={`media-chip-play-${asset.id}`}
-            >
-              <Ionicons
-                name={asset.asset_type === 'audio' ? 'mic' : 'image'}
-                size={14}
-                color={colors.primary}
-              />
-              <Text style={[s.chipLabel, { color: colors.text }]} numberOfLines={1}>
-                {asset.name ?? asset.filename}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleRemoveAsset(asset)} testID={`media-chip-remove-${asset.id}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        ))}
+      {overflow > 0 && (
+        <View style={[s.chip, { backgroundColor: withOpacity(colors.primary, '08'), borderColor: withOpacity(colors.primary, '25') }]} testID="media-chips-overflow">
+          <Text style={[s.chipLabel, { color: colors.textSecondary }]}>+{overflow}</Text>
+        </View>
+      )}
+    </ScrollView>
+  );
 
-        {overflow > 0 && (
-          <View style={[s.chip, { backgroundColor: withOpacity(colors.primary, '08'), borderColor: withOpacity(colors.primary, '25') }]} testID="media-chips-overflow">
-            <Text style={[s.chipLabel, { color: colors.textSecondary }]}>+{overflow}</Text>
-          </View>
-        )}
-      </ScrollView>
-
+  return (
+    <>
+      {mediaRows}
       <AudioPreviewOverlay
         visible={!!audioOverlay}
         uri={audioOverlay?.uri ?? ''}

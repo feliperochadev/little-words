@@ -54,7 +54,7 @@ export function MediaFAB() {
 
   // Waveform bar animated values
   const barHeights = useRef(
-    Array.from({ length: WAVEFORM_BAR_COUNT }, () => new Animated.Value(WAVEFORM_MIN_HEIGHT))
+    Array.from({ length: WAVEFORM_BAR_COUNT }, (_, i) => ({ id: `bar-${i}`, anim: new Animated.Value(WAVEFORM_MIN_HEIGHT) }))
   ).current;
 
   const isRecording = recordingState === 'recording';
@@ -67,12 +67,12 @@ export function MediaFAB() {
       barHeights.forEach((bar, i) => {
         const variation = 0.3 + (Math.sin(i * 1.5 + Date.now() / 200) + 1) / 2 * 0.7;
         const height = WAVEFORM_MIN_HEIGHT + amplitude * variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
-        Animated.timing(bar, { toValue: height, duration: 120, useNativeDriver: false }).start();
+        Animated.timing(bar.anim, { toValue: height, duration: 120, useNativeDriver: false }).start();
       });
     } else if (recordingState !== 'paused') {
       // Idle or stopped — settle to min (paused = freeze at last position)
       barHeights.forEach(bar =>
-        Animated.timing(bar, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
+        Animated.timing(bar.anim, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
       );
     }
   }, [amplitude, recordingState, barHeights]);
@@ -238,13 +238,13 @@ export function MediaFAB() {
 
               {/* Waveform bars */}
               <View style={s.waveformBars} testID="media-waveform-bars">
-                {barHeights.map((height, i) => (
+                {barHeights.map((bar, i) => (
                   <Animated.View
-                    key={`bar-${i}`}
+                    key={bar.id}
                     style={[
                       s.waveformBar,
                       {
-                        height,
+                        height: bar.anim,
                         backgroundColor: isPaused ? colors.textMuted : colors.primary,
                         opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
                       },

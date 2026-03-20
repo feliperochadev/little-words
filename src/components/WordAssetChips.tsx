@@ -7,7 +7,7 @@ import { getAssetFileUri } from '../utils/assetStorage';
 import { withOpacity } from '../utils/colorHelpers';
 import { AudioPreviewOverlay } from './AudioPreviewOverlay';
 import { PhotoPreviewOverlay } from './PhotoPreviewOverlay';
-import type { Asset } from '../types/asset';
+import type { Asset, AudioOverlayState, PhotoOverlayState } from '../types/asset';
 
 const EMPTY_ASSETS: Asset[] = [];
 const MAX_VISIBLE = 4;
@@ -16,18 +16,6 @@ interface Props {
   wordId: number;
 }
 
-interface AudioOverlayState {
-  uri: string;
-  name: string;
-  createdAt: string;
-  durationMs?: number | null;
-}
-
-interface PhotoOverlayState {
-  uri: string;
-  name: string;
-  createdAt: string;
-}
 
 export function WordAssetChips({ wordId }: Readonly<Props>) {
   const { colors } = useTheme();

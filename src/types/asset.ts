@@ -71,3 +71,18 @@ export function getExtensionForMime(mimeType: string): string {
   }
   return ext;
 }
+
+/** Shared overlay state for audio preview modals */
+export interface AudioOverlayState {
+  uri: string;
+  name: string;
+  createdAt: string;
+  durationMs?: number | null;
+}
+
+/** Shared overlay state for photo preview modals */
+export interface PhotoOverlayState {
+  uri: string;
+  name: string;
+  createdAt: string;
+}

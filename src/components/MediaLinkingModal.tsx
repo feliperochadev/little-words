@@ -58,17 +58,17 @@ export function MediaLinkingModal() {
 
   // Waveform animation for audio playback preview
   const linkingBarHeights = useRef(
-    Array.from({ length: WAVEFORM_BAR_COUNT }, () => new Animated.Value(WAVEFORM_MIN_HEIGHT))
+    Array.from({ length: WAVEFORM_BAR_COUNT }, (_, i) => ({ id: `lbar-${i}`, anim: new Animated.Value(WAVEFORM_MIN_HEIGHT) }))
   ).current;
   const animTickRef = useRef(0);
 
   useEffect(() => {
     if (!audioPlayer.isPlaying) {
       linkingBarHeights.forEach(bar =>
-        Animated.timing(bar, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
+        Animated.timing(bar.anim, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
       );
       return () => {
-        linkingBarHeights.forEach(bar => bar.stopAnimation());
+        linkingBarHeights.forEach(bar => bar.anim.stopAnimation());
       };
     }
 
@@ -78,13 +78,13 @@ export function MediaLinkingModal() {
       linkingBarHeights.forEach((bar, i) => {
         const variation = 0.4 + (Math.sin(i * 1.5 + tick * 0.4 + Date.now() / 300) + 1) / 2 * 0.6;
         const height = WAVEFORM_MIN_HEIGHT + variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
-        Animated.timing(bar, { toValue: height, duration: 120, useNativeDriver: false }).start();
+        Animated.timing(bar.anim, { toValue: height, duration: 120, useNativeDriver: false }).start();
       });
     }, 150);
 
     return () => {
       clearInterval(intervalId);
-      linkingBarHeights.forEach(bar => bar.stopAnimation());
+      linkingBarHeights.forEach(bar => bar.anim.stopAnimation());
     };
   }, [audioPlayer.isPlaying, linkingBarHeights]);
 
@@ -139,7 +139,7 @@ export function MediaLinkingModal() {
   };
 
   const handlePlayPreview = () => {
-    if (!pendingMedia || pendingMedia.type !== 'audio') return;
+    if (pendingMedia?.type !== 'audio') return;
     if (audioPlayer.isPlaying) {
       void audioPlayer.stop();
     } else {
@@ -180,13 +180,13 @@ export function MediaLinkingModal() {
                     />
                     {/* Waveform bars — animate when playing */}
                     <View style={s.audioWaveformContainer} testID="media-preview-waveform">
-                      {linkingBarHeights.map((height, i) => (
+                      {linkingBarHeights.map((bar, i) => (
                         <Animated.View
-                          key={`lbar-${i}`}
+                          key={bar.id}
                           style={[
                             s.audioWaveformBar,
                             {
-                              height,
+                              height: bar.anim,
                               backgroundColor: colors.primary,
                               opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
                             },

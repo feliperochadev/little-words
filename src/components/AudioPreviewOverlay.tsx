@@ -34,17 +34,17 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
   const audioPlayer = useAudioPlayer();
 
   const barHeights = useRef(
-    Array.from({ length: WAVEFORM_BAR_COUNT }, () => new Animated.Value(WAVEFORM_MIN_HEIGHT))
+    Array.from({ length: WAVEFORM_BAR_COUNT }, (_, i) => ({ id: `apbar-${i}`, anim: new Animated.Value(WAVEFORM_MIN_HEIGHT) }))
   ).current;
   const animTickRef = useRef(0);
 
   useEffect(() => {
     if (!audioPlayer.isPlaying) {
       barHeights.forEach(bar =>
-        Animated.timing(bar, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
+        Animated.timing(bar.anim, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
       );
       return () => {
-        barHeights.forEach(bar => bar.stopAnimation());
+        barHeights.forEach(bar => bar.anim.stopAnimation());
       };
     }
 
@@ -54,13 +54,13 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
       barHeights.forEach((bar, i) => {
         const variation = 0.4 + (Math.sin(i * 1.5 + tick * 0.4 + Date.now() / 300) + 1) / 2 * 0.6;
         const height = WAVEFORM_MIN_HEIGHT + variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
-        Animated.timing(bar, { toValue: height, duration: 120, useNativeDriver: false }).start();
+        Animated.timing(bar.anim, { toValue: height, duration: 120, useNativeDriver: false }).start();
       });
     }, 150);
 
     return () => {
       clearInterval(intervalId);
-      barHeights.forEach(bar => bar.stopAnimation());
+      barHeights.forEach(bar => bar.anim.stopAnimation());
     };
   }, [audioPlayer.isPlaying, barHeights]);
 
@@ -130,13 +130,13 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
             </TouchableOpacity>
 
             <View style={s.waveformContainer} testID="audio-preview-waveform">
-              {barHeights.map((height, i) => (
+              {barHeights.map((bar, i) => (
                 <Animated.View
-                  key={`apbar-${i}`}
+                  key={bar.id}
                   style={[
                     s.waveformBar,
                     {
-                      height,
+                      height: bar.anim,
                       backgroundColor: colors.primary,
                       opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
                     },

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useRef, useCallback } from 'react';
+import React, { createContext, useState, useRef, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
@@ -253,7 +253,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     }
   }, [playingAssetId, stopPlayback]);
 
-  const contextValue: MediaCaptureContextValue = {
+  const contextValue = useMemo<MediaCaptureContextValue>(() => ({
     phase,
     pendingMedia,
     prefilledWordName,
@@ -268,7 +268,11 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     launchPhotoPicker,
     playAssetByParent,
     stopPlayback,
-  };
+  }), [
+    phase, pendingMedia, prefilledWordName, prefilledMediaName, playingAssetId,
+    setPhase, setCapturedMedia, resetCapture, linkMediaToWord, startCreateWord,
+    onWordCreated, launchPhotoPicker, playAssetByParent, stopPlayback,
+  ]);
 
   return (
     <MediaCaptureContext.Provider value={contextValue}>

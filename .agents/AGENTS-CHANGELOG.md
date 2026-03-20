@@ -3,6 +3,19 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-21_2
+
+**[fix] Resolve all 5 remaining Sonar issues (S6479 x3, S6582, S6481) and reduce duplication below 2%**
+
+- `src/components/AudioPreviewOverlay.tsx`: changed `barHeights` from `Animated.Value[]` to `{id, anim}[]` — key now uses `bar.id` instead of array index (S6479); animation refs updated to `bar.anim`
+- `src/components/MediaFAB.tsx`: same `barHeights` restructure — `key={bar.id}`, animation refs updated (S6479)
+- `src/components/MediaLinkingModal.tsx`: same `linkingBarHeights` restructure (S6479); changed `!pendingMedia || pendingMedia.type !== 'audio'` to `pendingMedia?.type !== 'audio'` (S6582)
+- `src/providers/MediaCaptureProvider.tsx`: added `useMemo` import; wrapped `contextValue` in `useMemo` with full dependency array (S6481)
+- `src/types/asset.ts`: extracted `AudioOverlayState` and `PhotoOverlayState` interfaces (were duplicated across MediaChips and WordAssetChips)
+- `src/components/MediaChips.tsx`: removed local overlay type definitions; imported shared types from asset.ts; restructured to render `<AudioPreviewOverlay>` and `<PhotoPreviewOverlay>` once outside both separateRows/default branches (eliminated 12-line internal duplicate block)
+- `src/components/WordAssetChips.tsx`: removed local overlay type definitions; imported shared types from asset.ts
+
+
 ### 2026-03-21_1
 
 **[fix] Resolve Jest exit timeout by wrapping timer cleanup in act() and adding forceExit config**
