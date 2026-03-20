@@ -105,6 +105,10 @@ describe('useAudioRecording', () => {
     (Audio.setAudioModeAsync as jest.Mock).mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   // ── Initial state ──────────────────────────────────────────────────────────
 
   describe('initial state', () => {

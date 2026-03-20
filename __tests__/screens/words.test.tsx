@@ -72,6 +72,10 @@ describe('WordsScreen', () => {
     useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('renders words list', async () => {
     const { findByText } = renderWithProviders(<WordsScreen />);
     expect(await findByText('mamãe', {}, { timeout: 5000 })).toBeTruthy();

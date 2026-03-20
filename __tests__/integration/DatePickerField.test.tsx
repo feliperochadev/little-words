@@ -19,6 +19,10 @@ function renderPicker(props: Partial<React.ComponentProps<typeof DatePickerField
 }
 
 describe('DatePickerField', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('renders the formatted date', async () => {
     const { findByText } = renderPicker();
     expect(await findByText('15/03/2024')).toBeTruthy();

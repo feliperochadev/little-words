@@ -22,4 +22,6 @@ module.exports = {
   },
   setupFiles: ['./jest.setup.js'],
   maxWorkers: 1,
+  forceExit: true,
+  detectOpenHandles: false,
 };

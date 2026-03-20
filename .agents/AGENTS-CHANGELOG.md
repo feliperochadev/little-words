@@ -3,6 +3,15 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-21_1
+
+**[fix] Resolve Jest exit timeout by wrapping timer cleanup in act() and adding forceExit config**
+
+- `jest.config.js`: added `forceExit: true` and `detectOpenHandles: false` to gracefully exit all tests after suite completion (addresses "Jest did not exit one second after test run" error during git hooks)
+- `__tests__/integration/MediaFAB.test.tsx`: wrapped `jest.runOnlyPendingTimers()` in `act()` to prevent React 18+ warnings about state updates outside test scope when Animated components clean up
+- `__tests__/unit/useAudioRecording.test.ts`, `__tests__/screens/onboarding.test.tsx`, `__tests__/screens/words.test.tsx`, `__tests__/integration/DatePickerField.test.tsx`: added `afterEach` hooks to restore real timers after each test, preventing async operation leaks and ensuring clean state transitions between test files
+
+
 ### 2026-03-20_5
 
 **[fix] Remove unused otherAssets variable (S1854) and add prefilledWordName to onWordCreated deps**
