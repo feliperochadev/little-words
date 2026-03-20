@@ -56,9 +56,24 @@ Read every file found in Step 1 before writing any code. Build a complete unders
 - The **architectural decisions** — patterns, constraints, chosen approaches, rejected alternatives.
 - The **research** — benchmarks, audits, or analysis that informed decisions.
 
+**As you review, identify any open questions** related to architecture, design, or behaviour. Document these explicitly before moving to Step 3.
+
 ---
 
-## Step 3 — Identify Implementation Scope
+## Step 3 — Ask About Open Architecture &amp; Design Questions
+
+If you identify **any open questions** about architecture, design decisions, or ambiguities in expected behaviour:
+
+1. **Pause and list the questions clearly** with context from the plan.
+2. **Provide 2–4 concrete options** for each question (preferably using `ask_user` with a `choices` array).
+3. **Wait for user input** before proceeding.
+4. **Record the decisions** in the implementation tracking file (`.agents/implementation/[implementation-name].md`) under a new `## Design Decisions Made` section.
+
+If the plan is unambiguous and complete, write "No open questions — plan is complete and clear."
+
+---
+
+## Step 4 — Identify Implementation Scope
 
 Determine exactly what this `/implement` invocation will deliver:
 
@@ -68,26 +83,47 @@ Determine exactly what this `/implement` invocation will deliver:
 
 ---
 
-## Step 4 — Execute Implementation
+## Step 5 — Execute Implementation
 
 Follow these rules strictly:
 
 - **Adhere to plan documents.** Do not deviate from architectural decisions or design specs without explicit user approval.
 - **Break work into clear, atomic steps.** Complete one step before moving to the next.
 - **Explain major design choices** inline as you implement — especially where the plan left room for interpretation.
+- **When encountering ambiguities during implementation**, pause immediately and ask the user with options (do not guess).
 - **Follow all repository code standards** in `.agents/standards/` relevant to the files being changed.
 - **Write tests** for every change (unit, integration, or screen tests as appropriate). Coverage target: 99% lines, 95% functions/branches/statements.
 - **Run `npm run ci`** after implementation is complete. Do not consider the task done until CI passes.
 
 ---
 
-## Step 5 — Mark Implementation as Done
+## Step 6 — Review and Update Plan Documents
 
-Once CI passes, update `.agents/implementation/[implementation-name].md`:
+Once CI passes, **before marking the implementation done**:
+
+1. Re-read all plan documents created in Step 1.
+2. **Identify any new information discovered during implementation** that was not in the plan:
+   - Architectural decisions made mid-implementation (from Step 3 questions or Step 5 ambiguities).
+   - Design choices that evolved as code was written.
+   - New constraints, edge cases, or accepted tradeoffs.
+   - Changes to file structure, API, or data model.
+3. **Update all related plan documents** to reflect these discoveries:
+   - `design/` — update UI/component specs, data flows, acceptance criteria.
+   - `architecture/` — update architectural decisions, patterns, or rejected alternatives.
+   - `prompts/` — update the refined prompt if scope changed.
+   - Implementation tracking file — record all decisions under `## Design Decisions Made`.
+4. **Ensure consistency** across all updated documents so future readers understand the actual implementation, not just the original plan.
+
+---
+
+## Step 7 — Mark Implementation as Done
+
+Once CI passes and plan documents are updated, update `.agents/implementation/[implementation-name].md`:
 
 1. Set `status: done`.
 2. Fill in the `## Changes` table with every file that was created, modified, or deleted.
 3. Add a one-sentence `## Summary` describing what was delivered.
+4. Ensure `## Design Decisions Made` section is complete with all decisions from Steps 3 and 5.
 
 If a worktree was used, merge or open a PR for the worktree branch, then clean it up:
 ```
