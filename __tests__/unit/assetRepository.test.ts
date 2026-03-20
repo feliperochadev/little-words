@@ -111,7 +111,7 @@ describe('assetRepository', () => {
       expect(id).toBe(42);
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO assets'),
-        ['word', 1, 'audio', 'asset_1.m4a', 'audio/mp4', 12345, 3000, null, null],
+        ['word', 1, 'audio', 'asset_1.m4a', null, 'audio/mp4', 12345, 3000, null, null],
       );
     });
 
@@ -134,7 +134,7 @@ describe('assetRepository', () => {
       await addAsset(minimal);
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.any(String),
-        ['variant', 5, 'photo', 'a.jpg', 'image/jpeg', 5000, null, null, null],
+        ['variant', 5, 'photo', 'a.jpg', null, 'image/jpeg', 5000, null, null, null],
       );
     });
   });

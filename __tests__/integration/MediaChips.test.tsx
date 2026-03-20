@@ -8,27 +8,6 @@ import type { PendingMedia } from '../../src/providers/MediaCaptureProvider';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
-const mockPlayAssetByParent = jest.fn().mockResolvedValue(undefined);
-const mockStopPlayback = jest.fn().mockResolvedValue(undefined);
-
-jest.mock('../../src/hooks/useMediaCapture', () => ({
-  useMediaCapture: () => ({
-    playAssetByParent: mockPlayAssetByParent,
-    stopPlayback: mockStopPlayback,
-    playingAssetId: null,
-    phase: 'idle' as const,
-    pendingMedia: null,
-    prefilledWordName: '',
-    setPhase: jest.fn(),
-    setCapturedMedia: jest.fn(),
-    resetCapture: jest.fn(),
-    linkMediaToWord: jest.fn(),
-    startCreateWord: jest.fn(),
-    onWordCreated: jest.fn(),
-    launchPhotoPicker: jest.fn(),
-  }),
-}));
-
 const mockMutateAsync = jest.fn().mockResolvedValue(undefined);
 let mockAssetsData: Asset[] = [];
 
@@ -38,8 +17,21 @@ jest.mock('../../src/hooks/useAssets', () => ({
 }));
 
 jest.mock('../../src/utils/assetStorage', () => ({
-  getAssetFileUri: (parentType: string, parentId: number, _assetType: string, filename: string) =>
-    `file:///media/${parentType}/${parentId}/photos/${filename}`,
+  getAssetFileUri: (parentType: string, parentId: number, assetType: string, filename: string) =>
+    `file:///media/${parentType}/${parentId}/${assetType}/${filename}`,
+}));
+
+const mockAudioPlay = jest.fn().mockResolvedValue(undefined);
+const mockAudioStop = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../../src/hooks/useAudioPlayer', () => ({
+  useAudioPlayer: () => ({
+    isPlaying: false,
+    durationMs: 0,
+    play: mockAudioPlay,
+    stop: mockAudioStop,
+    unload: jest.fn(),
+  }),
 }));
 
 jest.spyOn(Alert, 'alert');
@@ -53,6 +45,7 @@ function makeAsset(overrides: Partial<Asset> = {}): Asset {
     parent_id: 10,
     asset_type: 'audio',
     filename: 'recording.m4a',
+    name: 'audio_1',
     mime_type: 'audio/mp4',
     file_size: 1024,
     duration_ms: 3000,
@@ -121,7 +114,7 @@ describe('MediaChips', () => {
   });
 
   it('renders photo asset chip', () => {
-    const photoAsset = makeAsset({ id: 8, asset_type: 'photo', filename: 'snap.jpg', mime_type: 'image/jpeg' });
+    const photoAsset = makeAsset({ id: 8, asset_type: 'photo', filename: 'snap.jpg', mime_type: 'image/jpeg', name: 'photo_8' });
     mockAssetsData = [photoAsset];
 
     const { getByTestId } = renderWithProviders(
@@ -134,8 +127,8 @@ describe('MediaChips', () => {
   it('renders multiple asset chips', () => {
     mockAssetsData = [
       makeAsset({ id: 1, asset_type: 'audio' }),
-      makeAsset({ id: 2, asset_type: 'photo', filename: 'pic.jpg', mime_type: 'image/jpeg' }),
-      makeAsset({ id: 3, asset_type: 'audio', filename: 'voice2.m4a' }),
+      makeAsset({ id: 2, asset_type: 'photo', filename: 'pic.jpg', mime_type: 'image/jpeg', name: 'photo_2' }),
+      makeAsset({ id: 3, asset_type: 'audio', filename: 'voice2.m4a', name: 'audio_3' }),
     ];
 
     const { getByTestId } = renderWithProviders(
@@ -147,35 +140,23 @@ describe('MediaChips', () => {
     expect(getByTestId('media-chip-3')).toBeTruthy();
   });
 
-  // ── Audio chip tap → playAssetByParent ───────────────────────────
+  // ── Audio chip tap → opens AudioPreviewOverlay ───────────────────
 
-  it('calls playAssetByParent when audio chip is tapped', () => {
-    mockAssetsData = [makeAsset({ id: 11, asset_type: 'audio' })];
+  it('opens AudioPreviewOverlay when audio chip is tapped', () => {
+    mockAssetsData = [makeAsset({ id: 11, asset_type: 'audio', name: 'My Recording' })];
 
     const { getByTestId } = renderWithProviders(
       <MediaChips parentType="word" parentId={10} />
     );
 
     fireEvent.press(getByTestId('media-chip-play-11'));
-    expect(mockPlayAssetByParent).toHaveBeenCalledTimes(1);
-    expect(mockPlayAssetByParent).toHaveBeenCalledWith('word', 10);
+    expect(getByTestId('audio-preview-modal')).toBeTruthy();
   });
 
-  it('calls playAssetByParent with variant parentType', () => {
-    mockAssetsData = [makeAsset({ id: 20, asset_type: 'audio', parent_type: 'variant', parent_id: 5 })];
+  // ── Photo chip tap → opens PhotoPreviewOverlay ───────────────────
 
-    const { getByTestId } = renderWithProviders(
-      <MediaChips parentType="variant" parentId={5} />
-    );
-
-    fireEvent.press(getByTestId('media-chip-play-20'));
-    expect(mockPlayAssetByParent).toHaveBeenCalledWith('variant', 5);
-  });
-
-  // ── Photo chip tap → opens fullscreen viewer ─────────────────────
-
-  it('opens fullscreen photo viewer when photo chip is tapped', () => {
-    const photoAsset = makeAsset({ id: 15, asset_type: 'photo', filename: 'sunset.jpg', mime_type: 'image/jpeg' });
+  it('opens PhotoPreviewOverlay when photo chip is tapped', () => {
+    const photoAsset = makeAsset({ id: 15, asset_type: 'photo', filename: 'sunset.jpg', mime_type: 'image/jpeg', name: 'Sunset' });
     mockAssetsData = [photoAsset];
 
     const { getByTestId } = renderWithProviders(
@@ -183,56 +164,64 @@ describe('MediaChips', () => {
     );
 
     fireEvent.press(getByTestId('media-chip-play-15'));
-
-    // Photo viewer close button should now be visible (viewer is open)
-    expect(getByTestId('media-photo-viewer-close')).toBeTruthy();
+    expect(getByTestId('photo-preview-modal')).toBeTruthy();
   });
 
-  it('closes fullscreen viewer when close button is pressed', () => {
-    const photoAsset = makeAsset({ id: 15, asset_type: 'photo', filename: 'sunset.jpg', mime_type: 'image/jpeg' });
+  it('closes PhotoPreviewOverlay when dismiss is pressed', () => {
+    const photoAsset = makeAsset({ id: 15, asset_type: 'photo', filename: 'sunset.jpg', mime_type: 'image/jpeg', name: 'Sunset' });
     mockAssetsData = [photoAsset];
 
     const { getByTestId, queryByTestId } = renderWithProviders(
       <MediaChips parentType="word" parentId={10} />
     );
 
-    // Open viewer
     fireEvent.press(getByTestId('media-chip-play-15'));
-    expect(getByTestId('media-photo-viewer-close')).toBeTruthy();
+    expect(getByTestId('photo-preview-modal')).toBeTruthy();
 
-    // Close viewer
-    fireEvent.press(getByTestId('media-photo-viewer-close'));
-    expect(queryByTestId('media-photo-viewer-close')).toBeNull();
+    fireEvent.press(getByTestId('photo-preview-dismiss'));
+    expect(queryByTestId('photo-preview-image')).toBeNull();
   });
 
-  it('does not call playAssetByParent when photo chip is tapped', () => {
-    mockAssetsData = [makeAsset({ id: 15, asset_type: 'photo', filename: 'pic.jpg', mime_type: 'image/jpeg' })];
-
-    const { getByTestId } = renderWithProviders(
-      <MediaChips parentType="word" parentId={10} />
-    );
-
-    fireEvent.press(getByTestId('media-chip-play-15'));
-    expect(mockPlayAssetByParent).not.toHaveBeenCalled();
-  });
-
-  // ── Modal onRequestClose calls stopPlayback ──────────────────────
-
-  it('calls stopPlayback and closes viewer on modal onRequestClose', () => {
-    const photoAsset = makeAsset({ id: 15, asset_type: 'photo', filename: 'sunset.jpg', mime_type: 'image/jpeg' });
-    mockAssetsData = [photoAsset];
+  it('does not open overlay for video chip (noop)', () => {
+    const videoAsset = makeAsset({
+      id: 61,
+      asset_type: 'video',
+      filename: 'clip.mp4',
+      mime_type: 'video/mp4',
+      name: 'video_61',
+    });
+    mockAssetsData = [videoAsset];
 
     const { getByTestId, queryByTestId } = renderWithProviders(
       <MediaChips parentType="word" parentId={10} />
     );
 
-    // Open viewer
-    fireEvent.press(getByTestId('media-chip-play-15'));
-    expect(getByTestId('media-photo-viewer-close')).toBeTruthy();
+    fireEvent.press(getByTestId('media-chip-play-61'));
 
-    // Press close button (simulates back/close)
-    fireEvent.press(getByTestId('media-photo-viewer-close'));
-    expect(queryByTestId('media-photo-viewer-close')).toBeNull();
+    expect(queryByTestId('audio-preview-modal')).toBeNull();
+    expect(queryByTestId('photo-preview-modal')).toBeNull();
+  });
+
+  // ── Asset name display ───────────────────────────────────────────
+
+  it('shows asset name in chip when name is set', () => {
+    mockAssetsData = [makeAsset({ id: 99, name: 'My First Word' })];
+
+    const { getByText } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} />
+    );
+
+    expect(getByText('My First Word')).toBeTruthy();
+  });
+
+  it('falls back to filename when name is null', () => {
+    mockAssetsData = [makeAsset({ id: 99, name: null, filename: 'asset_99.m4a' })];
+
+    const { getByText } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} />
+    );
+
+    expect(getByText('asset_99.m4a')).toBeTruthy();
   });
 
   // ── Remove confirmation via Alert ────────────────────────────────
@@ -267,7 +256,6 @@ describe('MediaChips', () => {
 
     fireEvent.press(getByTestId('media-chip-remove-31'));
 
-    // Extract the destructive button callback from Alert.alert
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
     const buttons = alertCall[2] as Array<{ text: string; style: string; onPress?: () => void }>;
     const destructiveBtn = buttons.find(b => b.style === 'destructive');
@@ -292,7 +280,6 @@ describe('MediaChips', () => {
     const cancelBtn = buttons.find(b => b.style === 'cancel');
     expect(cancelBtn).toBeDefined();
 
-    // Cancel button has no onPress or its onPress does not call mutateAsync
     if (cancelBtn!.onPress) {
       cancelBtn!.onPress();
     }
@@ -302,15 +289,12 @@ describe('MediaChips', () => {
   // ── Pending media chip ───────────────────────────────────────────
 
   it('renders pending audio chip', () => {
-    const { getByTestId, getByText } = renderWithProviders(
+    const { getByTestId } = renderWithProviders(
       <MediaChips parentType="word" parentId={10} pendingMedia={pendingAudio} />
     );
 
     expect(getByTestId('media-chips')).toBeTruthy();
     expect(getByTestId('media-chip-pending')).toBeTruthy();
-    // The mic icon is rendered for audio pending media
-    const pendingChip = getByTestId('media-chip-pending');
-    expect(pendingChip).toBeTruthy();
   });
 
   it('renders pending photo chip', () => {
@@ -361,8 +345,6 @@ describe('MediaChips', () => {
     expect(getByTestId('media-chip-50')).toBeTruthy();
   });
 
-  // ── Renders only with pending (no saved assets) shows container ──
-
   it('shows container when only pending media exists (no saved assets)', () => {
     mockAssetsData = [];
 
@@ -374,14 +356,13 @@ describe('MediaChips', () => {
     expect(getByTestId('media-chip-pending')).toBeTruthy();
   });
 
-  // ── Video asset type chip renders image icon ─────────────────────
-
-  it('renders video asset chip with image icon (non-audio path)', () => {
+  it('renders video asset chip (non-audio, non-photo)', () => {
     const videoAsset = makeAsset({
       id: 60,
       asset_type: 'video',
       filename: 'clip.mp4',
       mime_type: 'video/mp4',
+      name: 'video_60',
     });
     mockAssetsData = [videoAsset];
 
@@ -391,28 +372,6 @@ describe('MediaChips', () => {
 
     expect(getByTestId('media-chip-60')).toBeTruthy();
   });
-
-  it('does not call playAssetByParent and does not open viewer for video chip press', () => {
-    const videoAsset = makeAsset({
-      id: 61,
-      asset_type: 'video',
-      filename: 'clip.mp4',
-      mime_type: 'video/mp4',
-    });
-    mockAssetsData = [videoAsset];
-
-    const { getByTestId, queryByTestId } = renderWithProviders(
-      <MediaChips parentType="word" parentId={10} />
-    );
-
-    fireEvent.press(getByTestId('media-chip-play-61'));
-
-    // video asset_type doesn't match 'audio' or 'photo' branches
-    expect(mockPlayAssetByParent).not.toHaveBeenCalled();
-    expect(queryByTestId('media-photo-viewer-close')).toBeNull();
-  });
-
-  // ── Enabled defaults to true ─────────────────────────────────────
 
   it('renders assets when enabled is not provided (defaults to true)', () => {
     mockAssetsData = [makeAsset({ id: 70 })];
@@ -424,18 +383,13 @@ describe('MediaChips', () => {
     expect(getByTestId('media-chip-70')).toBeTruthy();
   });
 
-  // ── parentId=0 edge case (enabled && parentId > 0 is false) ─────
-
   it('does not crash with parentId=0 and no pending', () => {
     const { queryByTestId } = renderWithProviders(
       <MediaChips parentType="word" parentId={0} />
     );
 
-    // No assets, no pending → null
     expect(queryByTestId('media-chips')).toBeNull();
   });
-
-  // ── pendingMedia=null explicitly ─────────────────────────────────
 
   it('handles pendingMedia=null explicitly', () => {
     mockAssetsData = [makeAsset({ id: 80 })];
@@ -446,5 +400,71 @@ describe('MediaChips', () => {
 
     expect(getByTestId('media-chip-80')).toBeTruthy();
     expect(queryByTestId('media-chip-pending')).toBeNull();
+  });
+
+  // ── Overflow chip (MAX_VISIBLE = 4) ──────────────────────────────
+
+  it('shows overflow chip when assets exceed 4', () => {
+    mockAssetsData = [
+      makeAsset({ id: 1 }),
+      makeAsset({ id: 2, name: 'audio_2' }),
+      makeAsset({ id: 3, name: 'audio_3' }),
+      makeAsset({ id: 4, name: 'audio_4' }),
+      makeAsset({ id: 5, name: 'audio_5' }),
+    ];
+
+    const { getByTestId } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} />
+    );
+
+    expect(getByTestId('media-chips-overflow')).toBeTruthy();
+    // Only first 4 visible
+    expect(getByTestId('media-chip-1')).toBeTruthy();
+    expect(getByTestId('media-chip-4')).toBeTruthy();
+  });
+
+  // ── separateRows layout ──────────────────────────────────────────
+
+  it('renders audio row and photo row in separateRows mode', () => {
+    mockAssetsData = [
+      makeAsset({ id: 1, asset_type: 'audio', name: 'rec1' }),
+      makeAsset({ id: 2, asset_type: 'photo', filename: 'pic.jpg', mime_type: 'image/jpeg', name: 'pic2' }),
+    ];
+
+    const { getByTestId } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} separateRows />
+    );
+
+    expect(getByTestId('media-chips-audio')).toBeTruthy();
+    expect(getByTestId('media-chips-photos')).toBeTruthy();
+  });
+
+  it('renders pending audio chip in audio row (separateRows)', () => {
+    const { getByTestId } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} pendingMedia={pendingAudio} separateRows />
+    );
+
+    expect(getByTestId('media-chips-audio')).toBeTruthy();
+    expect(getByTestId('media-chip-pending')).toBeTruthy();
+  });
+
+  it('renders pending photo chip in photo row (separateRows)', () => {
+    const { getByTestId } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} pendingMedia={pendingPhoto} separateRows />
+    );
+
+    expect(getByTestId('media-chips-photos')).toBeTruthy();
+    expect(getByTestId('media-chip-pending')).toBeTruthy();
+  });
+
+  it('opens AudioPreviewOverlay in separateRows mode when audio chip is tapped', () => {
+    mockAssetsData = [makeAsset({ id: 11, asset_type: 'audio', name: 'My Audio' })];
+
+    const { getByTestId } = renderWithProviders(
+      <MediaChips parentType="word" parentId={10} separateRows />
+    );
+
+    fireEvent.press(getByTestId('media-chip-play-11'));
+    expect(getByTestId('audio-preview-modal')).toBeTruthy();
   });
 });

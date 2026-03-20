@@ -5,6 +5,27 @@ import { renderWithProviders } from '../helpers/renderWithProviders';
 import type { Word } from '../../src/types/domain';
 import type { PendingMedia, CapturePhase } from '../../src/providers/MediaCaptureProvider';
 
+// ─── Router mock ─────────────────────────────────────────────────────────────
+// Variables prefixed with 'mock' are allowed in jest.mock factory (Jest hoisting rule)
+const mockRouterPush = jest.fn();
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const StackComponent = ({ children }: any) => React.createElement(React.Fragment, null, children);
+  StackComponent.Screen = () => null;
+  const TabsComponent = ({ children }: any) => React.createElement(React.Fragment, null, children);
+  TabsComponent.Screen = () => null;
+  return {
+    useRouter: jest.fn(() => ({ push: mockRouterPush, replace: jest.fn(), back: jest.fn() })),
+    useLocalSearchParams: jest.fn(() => ({})),
+    useFocusEffect: jest.fn((cb: () => void) => {
+      const ReactLib = require('react');
+      ReactLib.useEffect(() => { const cleanup = cb(); return typeof cleanup === 'function' ? cleanup : undefined; }, []);
+    }),
+    Stack: StackComponent,
+    Tabs: TabsComponent,
+  };
+});
+
 // ─── Mock data ───────────────────────────────────────────────────────────────
 
 const AUDIO_MEDIA: PendingMedia = {
@@ -429,7 +450,7 @@ describe('MediaLinkingModal', () => {
       const { getByTestId } = renderModal();
       fireEvent.changeText(getByTestId('media-word-search'), '  hello  ');
       fireEvent.press(getByTestId('media-create-word-btn'));
-      expect(mockStartCreateWord).toHaveBeenCalledWith('hello');
+      expect(mockStartCreateWord).toHaveBeenCalledWith('hello', '');
     });
 
     it('create button appears alongside matching results', () => {
@@ -477,8 +498,32 @@ describe('MediaLinkingModal', () => {
         fireEvent.press(getByTestId('media-link-btn'));
       });
       await waitFor(() => {
-        expect(mockLinkMediaToWord).toHaveBeenCalledWith(1);
+        expect(mockLinkMediaToWord).toHaveBeenCalledWith(1, '', 'mama');
       });
+    });
+
+    it('navigates to words tab after successful link', async () => {
+      const { getByTestId } = renderModal();
+      fireEvent.changeText(getByTestId('media-word-search'), 'mama');
+      fireEvent.press(getByTestId('media-word-result-mama'));
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+      });
+      await waitFor(() => {
+        expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/words');
+      });
+    });
+
+    it('does not navigate when linkMediaToWord throws', async () => {
+      mockLinkMediaToWord.mockRejectedValueOnce(new Error('link failed'));
+      const { getByTestId } = renderModal();
+      fireEvent.changeText(getByTestId('media-word-search'), 'mama');
+      fireEvent.press(getByTestId('media-word-result-mama'));
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+        await Promise.resolve();
+      });
+      expect(mockRouterPush).not.toHaveBeenCalled();
     });
 
     it('does not call linkMediaToWord when no word is selected', async () => {
@@ -507,7 +552,7 @@ describe('MediaLinkingModal', () => {
         resolveLink!();
       });
 
-      expect(mockLinkMediaToWord).toHaveBeenCalledWith(1);
+      expect(mockLinkMediaToWord).toHaveBeenCalledWith(1, '', 'mama');
     });
 
     it('resets loading state even if linkMediaToWord throws', async () => {
@@ -521,7 +566,7 @@ describe('MediaLinkingModal', () => {
         await Promise.resolve(); // flush microtask queue
       });
       await waitFor(() => {
-        expect(mockLinkMediaToWord).toHaveBeenCalledWith(1);
+        expect(mockLinkMediaToWord).toHaveBeenCalledWith(1, '', 'mama');
       });
     });
   });

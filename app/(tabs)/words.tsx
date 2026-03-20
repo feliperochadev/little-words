@@ -18,7 +18,7 @@ import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
 import type { Word, Variant } from '../../src/types/domain';
-import { AudioPlayerInline } from '../../src/components/AudioPlayerInline';
+import { WordAssetChips } from '../../src/components/WordAssetChips';
 
 const EMPTY_WORDS: Word[] = [];
 
@@ -94,12 +94,7 @@ export default function WordsScreen() {
                 </View>
               ))}
               {(item.asset_count ?? 0) > 0 && (
-                <View style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.primary, '16') }]} testID={`word-asset-count-${item.id}`}>
-                  <AudioPlayerInline parentType="word" parentId={item.id} />
-                  <Text style={[styles.assetCountText, { color: colors.primary }]}>
-                    {item.asset_count}
-                  </Text>
-                </View>
+                <WordAssetChips wordId={item.id} />
               )}
             </View>
             {item.notes && (
@@ -206,6 +201,4 @@ const styles = StyleSheet.create({
   variantChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   variantChipIcon: { marginRight: 3 },
   variantChipText: { fontSize: 11, fontWeight: '700' },
-  assetCountChip: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
-  assetCountText: { fontSize: 11, fontWeight: '700' },
 });

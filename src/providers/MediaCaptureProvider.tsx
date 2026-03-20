@@ -26,6 +26,7 @@ export interface MediaCaptureContextValue {
   phase: CapturePhase;
   pendingMedia: PendingMedia | null;
   prefilledWordName: string;
+  prefilledMediaName: string;
   playingAssetId: number | null;
 
   setPhase: (phase: CapturePhase) => void;
@@ -33,8 +34,8 @@ export interface MediaCaptureContextValue {
   resetCapture: () => void;
 
   // Linking actions
-  linkMediaToWord: (wordId: number) => Promise<void>;
-  startCreateWord: (wordName: string) => void;
+  linkMediaToWord: (wordId: number, name?: string, parentName?: string) => Promise<void>;
+  startCreateWord: (wordName: string, mediaName?: string) => void;
   onWordCreated: (wordId: number) => Promise<void>;
 
   // Photo capture
@@ -56,6 +57,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
   const [phase, setPhase] = useState<CapturePhase>('idle');
   const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
   const [prefilledWordName, setPrefilledWordName] = useState('');
+  const [prefilledMediaName, setPrefilledMediaName] = useState('');
   const [playingAssetId, setPlayingAssetId] = useState<number | null>(null);
 
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -70,6 +72,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     setPhase('idle');
     setPendingMedia(null);
     setPrefilledWordName('');
+    setPrefilledMediaName('');
   }, []);
 
   const setCapturedMedia = useCallback((media: PendingMedia) => {
@@ -77,7 +80,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     setPhase('linking');
   }, []);
 
-  const linkMediaToWord = useCallback(async (wordId: number) => {
+  const linkMediaToWord = useCallback(async (wordId: number, name?: string, parentName?: string) => {
     if (!pendingMedia) return;
     try {
       await assetService.saveAsset({
@@ -87,6 +90,8 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         assetType: pendingMedia.type,
         mimeType: pendingMedia.mimeType,
         fileSize: pendingMedia.fileSize,
+        name,
+        parentName,
         durationMs: pendingMedia.durationMs,
         width: pendingMedia.width,
         height: pendingMedia.height,
@@ -98,8 +103,9 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     resetCapture();
   }, [pendingMedia, invalidateAssetCaches, resetCapture, t]);
 
-  const startCreateWord = useCallback((wordName: string) => {
+  const startCreateWord = useCallback((wordName: string, mediaName?: string) => {
     setPrefilledWordName(wordName);
+    setPrefilledMediaName(mediaName ?? '');
     setPhase('creating-word');
   }, []);
 
@@ -116,6 +122,8 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         assetType: pendingMedia.type,
         mimeType: pendingMedia.mimeType,
         fileSize: pendingMedia.fileSize,
+        name: prefilledMediaName || undefined,
+        parentName: prefilledWordName || undefined,
         durationMs: pendingMedia.durationMs,
         width: pendingMedia.width,
         height: pendingMedia.height,
@@ -125,7 +133,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
       // Asset save failed but word was created — don't block
     }
     resetCapture();
-  }, [pendingMedia, invalidateAssetCaches, resetCapture]);
+  }, [pendingMedia, prefilledMediaName, invalidateAssetCaches, resetCapture]);
 
   const launchPhotoPicker = useCallback(() => {
     Alert.alert(
@@ -249,6 +257,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     phase,
     pendingMedia,
     prefilledWordName,
+    prefilledMediaName,
     playingAssetId,
     setPhase,
     setCapturedMedia,

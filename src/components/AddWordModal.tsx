@@ -269,6 +269,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             enabled={!!editWord}
             pendingMedia={pendingMedia}
             onRemovePending={phase === 'creating-word' ? resetCapture : undefined}
+            separateRows
           />
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

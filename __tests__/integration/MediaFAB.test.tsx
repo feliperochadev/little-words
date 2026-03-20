@@ -19,11 +19,12 @@ const mockUseI18n = useI18n as jest.MockedFunction<typeof useI18n>;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function buildMediaCaptureMock(overrides: Partial<ReturnType<typeof useMediaCapture>> = {}) {
+function buildMediaCaptureMock(overrides: Partial<ReturnType<typeof useMediaCapture>> = {}): ReturnType<typeof useMediaCapture> {
   return {
     phase: 'idle' as const,
     pendingMedia: null,
     prefilledWordName: '',
+    prefilledMediaName: '',
     playingAssetId: null,
     setPhase: jest.fn(),
     setCapturedMedia: jest.fn(),
