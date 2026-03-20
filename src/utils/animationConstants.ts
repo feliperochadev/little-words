@@ -21,6 +21,17 @@ export const MODAL_ANIMATION = {
   BACKDROP_HIDDEN: 0,
 } as const;
 
+// Waveform animation constants
+// Shared by AudioPreviewOverlay, MediaLinkingModal, and the useWaveformAnimation hook
+export const WAVEFORM = {
+  BAR_COUNT: 20,
+  BAR_WIDTH: 3,
+  BAR_GAP: 2,
+  PLAYBACK_MAX_HEIGHT: 24,
+  RECORDING_MAX_HEIGHT: 28,
+  MIN_HEIGHT: 3,
+} as const;
+
 // Timing constants for UI interactions
 export const TIMING = {
   SCROLL_INITIAL_DELAY: 60,

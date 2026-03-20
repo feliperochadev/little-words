@@ -3,6 +3,34 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-21_4
+
+**[fix] Upgrade flatted to resolve high-severity prototype pollution vulnerability (GHSA-rf6f-7fwh-wjgh)**
+
+- `package-lock.json`: upgraded `flatted` from 3.4.1 to 3.4.2 (patches prototype pollution via parse() — CVSS 7.5 high)
+- Validation:
+  - `npm audit` now reports `0` vulnerabilities
+
+
+### 2026-03-21_3
+
+**[fix] Reduce duplication below 3% Sonar gate: extract useWaveformAnimation, useAssetPreviewOverlays, AssetPreviewOverlays, AssetChipRow**
+
+- `src/utils/animationConstants.ts`: added `WAVEFORM` constants object (`BAR_COUNT`, `BAR_WIDTH`, `BAR_GAP`, `PLAYBACK_MAX_HEIGHT`, `RECORDING_MAX_HEIGHT`, `MIN_HEIGHT`)
+- `src/hooks/useWaveformAnimation.ts` (new): extracts the identical waveform animation `useEffect` from `AudioPreviewOverlay` and `MediaLinkingModal` — eliminates the 30-line duplicate block present in both files
+- `src/hooks/useAssetPreviewOverlays.ts` (new): extracts overlay state (`audioOverlay`, `photoOverlay`) + open/close handlers shared by `MediaChips` and `WordAssetChips`
+- `src/components/AssetPreviewOverlays.tsx` (new): renders `<AudioPreviewOverlay>` + `<PhotoPreviewOverlay>` pair from overlay state — eliminates the 14-line duplicate block repeated in `MediaChips` and `WordAssetChips`
+- `src/components/AudioPreviewOverlay.tsx`: replaced inline waveform refs + `useEffect` with `useWaveformAnimation(audioPlayer.isPlaying)`; replaced local constants with `WAVEFORM` imports
+- `src/components/MediaLinkingModal.tsx`: same waveform hook refactor; replaced local constants with `WAVEFORM` imports
+- `src/components/MediaChips.tsx`: added internal `AssetChipRow` component to eliminate the ~40-line audio/photo row duplication in `separateRows` layout; uses `useAssetPreviewOverlays` + `<AssetPreviewOverlays>`; removed `handleAudioChipPress`/`handlePhotoChipPress`
+- `src/components/WordAssetChips.tsx`: uses `useAssetPreviewOverlays` + `<AssetPreviewOverlays>`; removed `getAssetFileUri` import and inline overlay state
+- `.agents/standards/quality.md`: updated Code Duplication section with new shared patterns (`useWaveformAnimation`, `useAssetPreviewOverlays`, `AssetPreviewOverlays`) and explicit "How to check duplication before shipping" guidance
+- `__tests__/unit/useWaveformAnimation.test.ts` (new): 10 tests covering structure, reference stability, and lifecycle
+- `__tests__/unit/useAssetPreviewOverlays.test.ts` (new): 19 tests covering all overlay open/close/replace paths
+- `__tests__/integration/AssetPreviewOverlays.test.tsx` (new): 10 tests covering render, dismiss callbacks, and both-overlays-at-once case
+- `__tests__/integration/AddCategoryModal.test.tsx`: added `jest.mock('animationConstants')` to pin `DUPLICATE_CHECK_DEBOUNCE: 0` — eliminates flaky test failures caused by debounce timing in parallel Jest workers
+
+
 ### 2026-03-21_2
 
 **[fix] Resolve all 5 remaining Sonar issues (S6479 x3, S6582, S6481) and reduce duplication below 2%**
@@ -23,6 +51,13 @@ Entries are added after every approved change. Most recent first.
 - `jest.config.js`: added `forceExit: true` and `detectOpenHandles: false` to gracefully exit all tests after suite completion (addresses "Jest did not exit one second after test run" error during git hooks)
 - `__tests__/integration/MediaFAB.test.tsx`: wrapped `jest.runOnlyPendingTimers()` in `act()` to prevent React 18+ warnings about state updates outside test scope when Animated components clean up
 - `__tests__/unit/useAudioRecording.test.ts`, `__tests__/screens/onboarding.test.tsx`, `__tests__/screens/words.test.tsx`, `__tests__/integration/DatePickerField.test.tsx`: added `afterEach` hooks to restore real timers after each test, preventing async operation leaks and ensuring clean state transitions between test files
+
+
+### 2026-03-20_6
+
+**[fix] Speed up AddCategoryModal duplicate-check tests by removing debounce delay**
+
+- `__tests__/integration/AddCategoryModal.test.tsx`: mocked `TIMING.DUPLICATE_CHECK_DEBOUNCE` to `0` so duplicate-check assertions do not wait 400ms; reset `findCategoryByName` default mock to avoid bleed between tests
 
 
 ### 2026-03-20_5

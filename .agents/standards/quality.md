@@ -84,14 +84,23 @@ If the state setter name conflicts with another function in scope, rename the ot
 
 - New code must stay **below 2 %** duplicated lines density (project standard — stricter than the Sonar gate's 3 %).
 - Shared animation logic → `src/hooks/useModalAnimation.ts`
+- Shared waveform playback animation → `src/hooks/useWaveformAnimation.ts`
+- Shared audio/photo overlay state + handlers → `src/hooks/useAssetPreviewOverlays.ts`
+- Shared overlay JSX pair rendering → `src/components/AssetPreviewOverlays.tsx`
 - Shared color helpers → `src/utils/colorHelpers.ts` (`withOpacity`)
-- Shared animation constants → `src/utils/animationConstants.ts`
+- Shared animation constants → `src/utils/animationConstants.ts` (`WAVEFORM`, `MODAL_ANIMATION`, `TIMING`)
 - Before duplicating a block > 5 lines, extract a utility or hook.
+
+**How to check duplication before shipping:**
+1. Run `npm run ci` — the full suite also runs the Sonar-equivalent checks locally.
+2. After merging a PR, review the SonarCloud "New Code" tab for "Duplicated Lines Density". If it shows ≥ 2 %, the PR must not be shipped until fixed.
+3. As a manual proxy: count duplicated lines in your diff; if the same block (> 5 lines) appears in more than one file, extract it.
 
 **Common duplication hotspots to watch:**
 
-- **Overlay state types** (`AudioOverlayState`, `PhotoOverlayState`) and their matching `useState` + overlay JSX pattern — if two or more components both manage audio/photo preview overlays, extract the types and the `<AudioPreviewOverlay>` / `<PhotoPreviewOverlay>` rendering into a shared hook or wrapper component.
-- **Media chip rendering** — components that render `<TouchableOpacity>` chips with an Ionicon + label + remove button (like `MediaChips` and `WordAssetChips`) share significant structure. Extract a reusable `<AssetChip>` primitive when the same chip shape appears in more than one file.
+- **Waveform animation** — the `useEffect` that drives bar animations is token-for-token identical across `AudioPreviewOverlay`, `MediaLinkingModal`, and any future audio playback UI. Always use `useWaveformAnimation(isPlaying)` instead of inline.
+- **Overlay state types** (`AudioOverlayState`, `PhotoOverlayState`) and their matching `useState` + overlay JSX pattern — use `useAssetPreviewOverlays()` + `<AssetPreviewOverlays>` instead of duplicating state and overlay pairs.
+- **Media chip rendering** — components that render `<TouchableOpacity>` chips with an Ionicon + label + remove button (like `MediaChips` and `WordAssetChips`) share significant structure. Extract a reusable chip row component when the same chip shape appears in more than one layout branch.
 - **Context value objects in providers** — always wrap the value object in `useMemo` (see S6481 below) to avoid the value changing on every render, which itself inflates duplication metrics across all consumers.
 
 ---

@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useAssetsByParent } from '../hooks/useAssets';
-import { getAssetFileUri } from '../utils/assetStorage';
+import { useAssetPreviewOverlays } from '../hooks/useAssetPreviewOverlays';
 import { withOpacity } from '../utils/colorHelpers';
-import { AudioPreviewOverlay } from './AudioPreviewOverlay';
-import { PhotoPreviewOverlay } from './PhotoPreviewOverlay';
-import type { Asset, AudioOverlayState, PhotoOverlayState } from '../types/asset';
+import { AssetPreviewOverlays } from './AssetPreviewOverlays';
+import type { Asset } from '../types/asset';
 
 const EMPTY_ASSETS: Asset[] = [];
 const MAX_VISIBLE = 4;
@@ -20,9 +19,7 @@ interface Props {
 export function WordAssetChips({ wordId }: Readonly<Props>) {
   const { colors } = useTheme();
   const { data: assets = EMPTY_ASSETS } = useAssetsByParent('word', wordId);
-
-  const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
-  const [photoOverlay, setPhotoOverlay] = useState<PhotoOverlayState | null>(null);
+  const { audioOverlay, photoOverlay, openAudioOverlay, openPhotoOverlay, closeAudioOverlay, closePhotoOverlay } = useAssetPreviewOverlays();
 
   if (assets.length === 0) return null;
 
@@ -31,11 +28,9 @@ export function WordAssetChips({ wordId }: Readonly<Props>) {
 
   const handleAssetPress = (asset: Asset) => {
     if (asset.asset_type === 'audio') {
-      const uri = getAssetFileUri('word', wordId, 'audio', asset.filename);
-      setAudioOverlay({ uri, name: asset.name ?? asset.filename, createdAt: asset.created_at, durationMs: asset.duration_ms });
+      openAudioOverlay(asset);
     } else if (asset.asset_type === 'photo') {
-      const uri = getAssetFileUri('word', wordId, 'photo', asset.filename);
-      setPhotoOverlay({ uri, name: asset.name ?? asset.filename, createdAt: asset.created_at });
+      openPhotoOverlay(asset);
     }
   };
 
@@ -65,20 +60,11 @@ export function WordAssetChips({ wordId }: Readonly<Props>) {
         </View>
       )}
 
-      <AudioPreviewOverlay
-        visible={!!audioOverlay}
-        uri={audioOverlay?.uri ?? ''}
-        name={audioOverlay?.name ?? ''}
-        createdAt={audioOverlay?.createdAt ?? ''}
-        durationMs={audioOverlay?.durationMs}
-        onClose={() => setAudioOverlay(null)}
-      />
-      <PhotoPreviewOverlay
-        visible={!!photoOverlay}
-        uri={photoOverlay?.uri ?? ''}
-        name={photoOverlay?.name ?? ''}
-        createdAt={photoOverlay?.createdAt ?? ''}
-        onClose={() => setPhotoOverlay(null)}
+      <AssetPreviewOverlays
+        audioOverlay={audioOverlay}
+        photoOverlay={photoOverlay}
+        onCloseAudio={closeAudioOverlay}
+        onClosePhoto={closePhotoOverlay}
       />
     </>
   );

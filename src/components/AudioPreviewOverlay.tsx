@@ -1,17 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useWaveformAnimation } from '../hooks/useWaveformAnimation';
 import { formatDateDMY } from '../utils/dateHelpers';
-
-const WAVEFORM_BAR_COUNT = 20;
-const WAVEFORM_BAR_WIDTH = 3;
-const WAVEFORM_BAR_GAP = 2;
-const WAVEFORM_MAX_HEIGHT = 24;
-const WAVEFORM_MIN_HEIGHT = 3;
+import { WAVEFORM } from '../utils/animationConstants';
 
 interface Props {
   visible: boolean;
@@ -32,37 +28,7 @@ function formatDuration(ms: number): string {
 export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs, onClose }: Readonly<Props>) {
   const { colors } = useTheme();
   const audioPlayer = useAudioPlayer();
-
-  const barHeights = useRef(
-    Array.from({ length: WAVEFORM_BAR_COUNT }, (_, i) => ({ id: `apbar-${i}`, anim: new Animated.Value(WAVEFORM_MIN_HEIGHT) }))
-  ).current;
-  const animTickRef = useRef(0);
-
-  useEffect(() => {
-    if (!audioPlayer.isPlaying) {
-      barHeights.forEach(bar =>
-        Animated.timing(bar.anim, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
-      );
-      return () => {
-        barHeights.forEach(bar => bar.anim.stopAnimation());
-      };
-    }
-
-    const intervalId = setInterval(() => {
-      animTickRef.current += 1;
-      const tick = animTickRef.current;
-      barHeights.forEach((bar, i) => {
-        const variation = 0.4 + (Math.sin(i * 1.5 + tick * 0.4 + Date.now() / 300) + 1) / 2 * 0.6;
-        const height = WAVEFORM_MIN_HEIGHT + variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
-        Animated.timing(bar.anim, { toValue: height, duration: 120, useNativeDriver: false }).start();
-      });
-    }, 150);
-
-    return () => {
-      clearInterval(intervalId);
-      barHeights.forEach(bar => bar.anim.stopAnimation());
-    };
-  }, [audioPlayer.isPlaying, barHeights]);
+  const barHeights = useWaveformAnimation(audioPlayer.isPlaying);
 
   // Stop playback when overlay closes
   useEffect(() => {
@@ -138,7 +104,7 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
                     {
                       height: bar.anim,
                       backgroundColor: colors.primary,
-                      opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
+                      opacity: 0.4 + (i / WAVEFORM.BAR_COUNT) * 0.6,
                     },
                   ]}
                 />
@@ -202,11 +168,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: WAVEFORM_BAR_GAP,
-    height: WAVEFORM_MAX_HEIGHT,
+    gap: WAVEFORM.BAR_GAP,
+    height: WAVEFORM.PLAYBACK_MAX_HEIGHT,
   },
   waveformBar: {
-    width: WAVEFORM_BAR_WIDTH,
+    width: WAVEFORM.BAR_WIDTH,
     borderRadius: 2,
   },
   duration: {

@@ -12,18 +12,14 @@ import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useWords } from '../hooks/useWords';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useMediaCapture } from '../hooks/useMediaCapture';
+import { useWaveformAnimation } from '../hooks/useWaveformAnimation';
 import { DatePickerField } from './DatePickerField';
 import { Button } from './UIComponents';
 import { withOpacity } from '../utils/colorHelpers';
+import { WAVEFORM } from '../utils/animationConstants';
 import type { Word } from '../types/domain';
 
 const EMPTY_WORDS: Word[] = [];
-
-const WAVEFORM_BAR_COUNT = 20;
-const WAVEFORM_BAR_WIDTH = 3;
-const WAVEFORM_BAR_GAP = 2;
-const WAVEFORM_MAX_HEIGHT = 24;
-const WAVEFORM_MIN_HEIGHT = 3;
 
 export function MediaLinkingModal() {
   const { t } = useI18n();
@@ -57,36 +53,7 @@ export function MediaLinkingModal() {
   const [photoExpanded, setPhotoExpanded] = useState(false);
 
   // Waveform animation for audio playback preview
-  const linkingBarHeights = useRef(
-    Array.from({ length: WAVEFORM_BAR_COUNT }, (_, i) => ({ id: `lbar-${i}`, anim: new Animated.Value(WAVEFORM_MIN_HEIGHT) }))
-  ).current;
-  const animTickRef = useRef(0);
-
-  useEffect(() => {
-    if (!audioPlayer.isPlaying) {
-      linkingBarHeights.forEach(bar =>
-        Animated.timing(bar.anim, { toValue: WAVEFORM_MIN_HEIGHT, duration: 100, useNativeDriver: false }).start()
-      );
-      return () => {
-        linkingBarHeights.forEach(bar => bar.anim.stopAnimation());
-      };
-    }
-
-    const intervalId = setInterval(() => {
-      animTickRef.current += 1;
-      const tick = animTickRef.current;
-      linkingBarHeights.forEach((bar, i) => {
-        const variation = 0.4 + (Math.sin(i * 1.5 + tick * 0.4 + Date.now() / 300) + 1) / 2 * 0.6;
-        const height = WAVEFORM_MIN_HEIGHT + variation * (WAVEFORM_MAX_HEIGHT - WAVEFORM_MIN_HEIGHT);
-        Animated.timing(bar.anim, { toValue: height, duration: 120, useNativeDriver: false }).start();
-      });
-    }, 150);
-
-    return () => {
-      clearInterval(intervalId);
-      linkingBarHeights.forEach(bar => bar.anim.stopAnimation());
-    };
-  }, [audioPlayer.isPlaying, linkingBarHeights]);
+  const linkingBarHeights = useWaveformAnimation(audioPlayer.isPlaying);
 
   // Reset form state when modal opens; close photo expanded when modal closes
   useEffect(() => {
@@ -188,7 +155,7 @@ export function MediaLinkingModal() {
                             {
                               height: bar.anim,
                               backgroundColor: colors.primary,
-                              opacity: 0.4 + (i / WAVEFORM_BAR_COUNT) * 0.6,
+                              opacity: 0.4 + (i / WAVEFORM.BAR_COUNT) * 0.6,
                             },
                           ]}
                         />
@@ -385,11 +352,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: WAVEFORM_BAR_GAP,
-    height: WAVEFORM_MAX_HEIGHT,
+    gap: WAVEFORM.BAR_GAP,
+    height: WAVEFORM.PLAYBACK_MAX_HEIGHT,
   },
   audioWaveformBar: {
-    width: WAVEFORM_BAR_WIDTH,
+    width: WAVEFORM.BAR_WIDTH,
     borderRadius: 2,
   },
   audioDuration: { fontSize: 13, minWidth: 36, textAlign: 'right' },
