@@ -128,7 +128,11 @@ The app supports audio, photo, and video attachments on words and variants:
    - **⛔ `/plan` must NEVER auto-implement.** Its only output is documents in `.agents/plan/`. Implementation requires an explicit user request via `/implement [plan-name]`. No agent may self-trigger implementation after planning, regardless of mode (fleet, autopilot, or interactive).
    - **`/implement` tracking:** When `/implement` runs, it creates `.agents/implementation/[name].md` (from `TEMPLATE.md`) with `status: in progress` at start and `status: done` after CI passes. If another implementation file has `status: in progress`, a git worktree is created for isolation before any work begins.
 
-11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
+11. **Implementing a plan (`/implement [implementation-name]`).** Executes a specific plan from `.agents/plan/`. The slug must match a `YYYY-MM-DD_NN-<slug>` plan file. Required steps: check for concurrent in-progress implementations (create a git worktree if one exists); read all plan artifacts; surface open architecture questions and wait for user input; implement, write tests, run `npm run ci`; update plan documents if decisions diverged; mark tracking file `status: done`. Implementation tracking files live in `.agents/implementation/[name].md` (use `TEMPLATE.md`).
+
+    **`/enhance-implementation [implementation-name] [change-description]`** improves a completed implementation (fixes bugs, applies missed decisions, improves quality). Requires the implementation file to have `status: done`. Runs `/refine` on the description, creates a worktree, applies changes, writes/updates tests, runs CI, updates related plan documents if needed, and appends an `## Enhancements` section to the implementation file.
+
+12. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
 12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
@@ -154,6 +158,12 @@ npm run agent:review "Change summary"
 
 # Ship approved changes
 /ship
+
+# Implement a plan (slug must match a YYYY-MM-DD_NN-<slug> file in .agents/plan/)
+/implement 2026-03-20_01-my-feature
+
+# Enhance a completed implementation
+/enhance-implementation 2026-03-18_01-baby-profile-photo "Fix missing validation"
 ```
 
 ## Permanently Allowed Commands

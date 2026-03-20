@@ -3,6 +3,16 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-20_4
+
+**[config] Sonar rules S1854/S6479/S6582/S6481 + 2% duplication gate + Sonar-update workflow + /implement and /enhance-implementation docs in all vendor readmes**
+
+- `.agents/standards/quality.md`: tightened duplication threshold to < 2% (stricter than Sonar's 3% gate); added common duplication hotspot guidance (overlay state types, media chip rendering, context value memoization); added 4 new Sonar rule sections: S1854 (useless variable assignments), S6479 (array index as React list keys), S6582 (prefer optional chaining), S6481 (context value must be memoized); added "Updating Standards for New Sonar Issues / Security Hotspots" workflow section with triage routing table and step-by-step update protocol; updated pre-commit checklist with 4 new items
+- `CLAUDE.md`: added `### Implementing a plan (/implement)` and `### Enhancing a completed implementation (/enhance-implementation)` subsections under Commands with usage examples and tracking file notes
+- `AGENTS.md`: added Rule 11 documenting `/implement` and `/enhance-implementation` workflows and tracking file conventions; renumbered "project root only" to Rule 12
+- `GEMINI.md`: added Rule 11 (same as AGENTS.md) and added both commands with usage examples to the Commands bash block
+
+
 ### 2026-03-20_3
 
 **[fix] Monthly progress bars use primaryLight color for better visual contrast with FAB buttons**

@@ -130,6 +130,24 @@ npm run agent:availability   # show which agents are online/offline
 /ship
 ```
 
+### Implementing a plan (`/implement`)
+
+`/implement [implementation-name]` executes a specific plan from `.agents/plan/`. The slug must match a `YYYY-MM-DD_NN-<slug>` plan file. Steps: check for concurrent in-progress implementations (create a git worktree if one exists), read all plan artifacts, surface open architecture questions, then implement, write tests, run `npm run ci`, and update the tracking file to `status: done`.
+
+```
+/implement 2026-03-20_01-media-capture-and-linking
+```
+
+**Tracking file:** `.agents/implementation/[name].md` is created at start (`status: in progress`) and updated to `status: done` once CI passes. Worktree path is recorded in the file when one is created.
+
+### Enhancing a completed implementation (`/enhance-implementation`)
+
+`/enhance-implementation [implementation-name] [change-description]` improves a recently completed implementation — fixes bugs, applies missed design decisions, or improves quality based on feedback. Requires the target implementation file to exist with `status: done`. Runs `/refine` on the description, creates a worktree, applies changes, updates plan documents if needed, and appends an `## Enhancements` section to the implementation file.
+
+```
+/enhance-implementation 2026-03-18_01-baby-profile-photo "Add missing audio validation and improve error messaging"
+```
+
 What it does:
 1. Verifies the current branch is not `main`/`master` (asks the user to create a branch if so).
 2. Reads `.agents/AGENTS-CHANGELOG.md` and collects entries above the most recent `YYYY-MM-DD_N` tag (fallback to the git-log method once if no tag exists).
