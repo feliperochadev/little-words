@@ -3,6 +3,14 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-20_5
+
+**[fix] Remove unused otherAssets variable (S1854) and add prefilledWordName to onWordCreated deps**
+
+- `src/components/MediaChips.tsx`: removed unused `otherAssets` filter assignment (S1854 — useless variable assignment)
+- `src/providers/MediaCaptureProvider.tsx`: added `prefilledWordName` to `onWordCreated` useCallback dependency array (react-hooks/exhaustive-deps warning)
+
+
 ### 2026-03-20_4
 
 **[config] Sonar rules S1854/S6479/S6582/S6481 + 2% duplication gate + Sonar-update workflow + /implement and /enhance-implementation docs in all vendor readmes**

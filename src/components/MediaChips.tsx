@@ -53,7 +53,6 @@ export function MediaChips({
 
   const audioAssets = assets.filter(a => a.asset_type === 'audio');
   const photoAssets = assets.filter(a => a.asset_type === 'photo');
-  const otherAssets = assets.filter(a => a.asset_type !== 'audio' && a.asset_type !== 'photo');
 
   const handleRemoveAsset = (asset: Asset) => {
     Alert.alert(

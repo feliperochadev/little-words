@@ -133,7 +133,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
       // Asset save failed but word was created — don't block
     }
     resetCapture();
-  }, [pendingMedia, prefilledMediaName, invalidateAssetCaches, resetCapture]);
+  }, [pendingMedia, prefilledMediaName, prefilledWordName, invalidateAssetCaches, resetCapture]);
 
   const launchPhotoPicker = useCallback(() => {
     Alert.alert(
