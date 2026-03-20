@@ -88,6 +88,7 @@ const SAMPLE_ASSET: Asset = {
   parent_id: 1,
   asset_type: 'audio',
   filename: 'audio-42.m4a',
+  name: 'audio_42',
   mime_type: 'audio/mp4',
   file_size: 12345,
   duration_ms: 3000,

@@ -322,6 +322,9 @@ export default {
 
   mediaCapture: {
     linkTitle: 'Vincular Midia',
+    addAudioTitle: 'Adicionar Audio',
+    addPhotoTitle: 'Adicionar Foto',
+    saveButton: 'Salvar',
     nameLabel: 'Nome',
     namePlaceholder: 'Nome (opcional)',
     targetWord: 'Palavra',

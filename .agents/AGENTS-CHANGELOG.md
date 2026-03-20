@@ -3,6 +3,47 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-20_3
+
+**[fix] Monthly progress bars use primaryLight color for better visual contrast with FAB buttons**
+
+- `app/(tabs)/home.tsx`: bar `backgroundColor` changed from `colors.primary` to `colors.primaryLight` so bars are visually lighter than the mic/camera FAB buttons across all themes (blossom, breeze, honey)
+
+
+### 2026-03-20_2
+
+**[feature] Asset parentName-counter naming, centered audio overlay, icon-only photo chips in AddWordModal, navigate-to-words after link**
+
+- `src/services/assetService.ts`: `saveAsset` now accepts `parentName`; generates `{parentName}-N` fallback name (counter per asset type, separate sequences for audio/photo)
+- `src/providers/MediaCaptureProvider.tsx`: `linkMediaToWord(wordId, name?, parentName?)` passes `parentName`; `onWordCreated` passes `parentName: prefilledWordName`
+- `src/components/MediaLinkingModal.tsx`: `handleLink` passes `selectedWord.word` as `parentName`; navigates to `/(tabs)/words` after successful link
+- `src/components/AudioPreviewOverlay.tsx`: player card centered vertically (`justifyContent: 'center'`); date format fixed to handle SQLite space-separated timestamps
+- `src/components/PhotoPreviewOverlay.tsx`: name+date info bar moved to top-left outside image area; date format fixed; safe-area insets applied
+- `src/components/MediaChips.tsx`: `separateRows` photo row renders icon chips (no thumbnail) matching word list style
+- Tests: `assetService.test.ts` — added 4 parentName naming tests, fixed `updateAssetFilename` import to `updateAssetMeta`; `MediaLinkingModal.test.tsx` — added navigation tests, updated `linkMediaToWord` assertions to include `parentName`
+
+
+### 2026-03-20_1
+
+**[feature] Media asset naming, preview overlays, and word list asset chips**
+
+- `src/db/migrations/0003_add-asset-name.ts`: new migration adding nullable `name TEXT` column to assets table
+- `src/db/migrations/index.ts`: registered migration 0003
+- `src/types/asset.ts`: added `name: string | null` to `Asset` and `NewAsset` interfaces
+- `src/repositories/assetRepository.ts`: updated `addAsset` INSERT to include `name`; added `updateAssetMeta(id, filename, name)`
+- `src/services/assetService.ts`: `saveAsset` now accepts optional `name` param; generates fallback `{assetType}_{id}` name; calls `updateAssetMeta`
+- `src/providers/MediaCaptureProvider.tsx`: added `prefilledMediaName` state; `linkMediaToWord` and `startCreateWord` now accept optional `name` param
+- `src/i18n/en-US.ts` / `src/i18n/pt-BR.ts`: added `addAudioTitle`, `addPhotoTitle`, `saveButton` keys
+- `src/components/MediaLinkingModal.tsx`: dynamic title by media type; link button renamed to "Save"; fullscreen photo dismiss fixed (Image wrapped in `pointerEvents="none"` View); `handleLink`/`handleCreateWord` pass mediaName to provider
+- `src/components/AudioPreviewOverlay.tsx`: new component — bottom card with waveform animation, play/stop, name, date
+- `src/components/PhotoPreviewOverlay.tsx`: new component — fullscreen photo with name/date overlay and tap-to-dismiss
+- `src/components/WordAssetChips.tsx`: new component — inline chips per word with AudioPreviewOverlay/PhotoPreviewOverlay on tap
+- `src/components/MediaChips.tsx`: rewritten to use AudioPreviewOverlay/PhotoPreviewOverlay; added `separateRows` prop
+- `app/(tabs)/words.tsx`: replaced AudioPlayerInline + assetCountChip with WordAssetChips
+- `src/components/AddWordModal.tsx`: added `separateRows` to MediaChips
+- Tests: AudioPreviewOverlay.test.tsx, PhotoPreviewOverlay.test.tsx, WordAssetChips.test.tsx (new); MediaChips.test.tsx rewritten; assetService.test.ts, assetRepository.test.ts, assetDatabase.test.ts, migrator.test.ts, MediaCaptureProvider.test.tsx, useAssets.test.tsx, MediaFAB.test.tsx, MediaLinkingModal.test.tsx updated
+
+
 ### 2026-03-19_11
 
 **[feature] MediaFAB active state: themed border on record button**

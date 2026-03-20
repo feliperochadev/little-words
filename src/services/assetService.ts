@@ -3,8 +3,9 @@ import {
   addAsset,
   deleteAsset,
   deleteAssetsByParent,
-  updateAssetFilename,
+  updateAssetMeta,
   getProfilePhoto as getProfilePhotoFromRepo,
+  getAssetsByParentAndType as getAssetsByParentAndTypeFromRepo,
 } from '../repositories/assetRepository';
 import {
   saveAssetFile,
@@ -29,6 +30,9 @@ export interface SaveAssetParams {
   assetType: AssetType;
   mimeType: string;
   fileSize: number;
+  name?: string;
+  /** Parent entity name used to auto-generate the fallback asset name (e.g. "kiwi" → "kiwi-1") */
+  parentName?: string;
   durationMs?: number | null;
   width?: number | null;
   height?: number | null;
@@ -37,7 +41,7 @@ export interface SaveAssetParams {
 export async function saveAsset(params: SaveAssetParams): Promise<Asset> {
   const {
     sourceUri, parentType, parentId, assetType,
-    mimeType, fileSize, durationMs, width, height,
+    mimeType, fileSize, name, parentName, durationMs, width, height,
   } = params;
 
   if (!validateMimeType(assetType, mimeType)) {
@@ -46,6 +50,12 @@ export async function saveAsset(params: SaveAssetParams): Promise<Asset> {
   if (!validateFileSize(assetType, fileSize)) {
     throw new Error(`File size ${fileSize} exceeds limit for asset type "${assetType}"`);
   }
+
+  // Count existing assets of the same type for this parent BEFORE inserting,
+  // so the sequence number is correct (e.g. "kiwi-2" if one audio already exists)
+  const existingCount = (name?.trim() || !parentName)
+    ? 0
+    : (await getAssetsByParentAndTypeFromRepo(parentType, parentId, assetType)).length;
 
   // Insert DB record with placeholder filename to get the auto-increment ID
   const assetId = await addAsset({
@@ -61,9 +71,18 @@ export async function saveAsset(params: SaveAssetParams): Promise<Asset> {
   });
 
   const filename = buildAssetFilename(assetId, mimeType);
+  // Priority: explicit name > parentName-based counter > type_id fallback
+  let resolvedName: string;
+  if (name?.trim()) {
+    resolvedName = name.trim();
+  } else if (parentName) {
+    resolvedName = `${parentName}-${existingCount + 1}`;
+  } else {
+    resolvedName = `${assetType}_${assetId}`;
+  }
 
-  // Update filename in DB before copying file
-  await updateAssetFilename(assetId, filename);
+  // Update both filename and name in a single DB write
+  await updateAssetMeta(assetId, filename, resolvedName);
 
   try {
     saveAssetFile(sourceUri, parentType, parentId, assetType, assetId, mimeType);

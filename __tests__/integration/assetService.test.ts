@@ -11,7 +11,7 @@ import {
   addAsset,
   deleteAsset,
   deleteAssetsByParent,
-  updateAssetFilename,
+  updateAssetMeta,
   getAssetById,
 } from '../../src/repositories/assetRepository';
 import {
@@ -97,6 +97,7 @@ describe('assetService', () => {
       }`,
       mime_type: params.mimeType,
       file_size: params.fileSize,
+      name: params.name?.trim() || `${params.assetType}_${id}`,
       duration_ms: params.durationMs ?? null,
       width: params.width ?? null,
       height: params.height ?? null,
@@ -152,10 +153,10 @@ describe('assetService', () => {
         expect.stringContaining('INSERT INTO assets'),
         expect.arrayContaining(['pending']),
       );
-      // Second runAsync call = updateAssetFilename
+      // Second runAsync call = updateAssetMeta (filename + name)
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE assets SET filename'),
-        ['asset_5.m4a', 5],
+        ['asset_5.m4a', 'audio_5', 5],
       );
     });
 
@@ -429,6 +430,85 @@ describe('assetService', () => {
 
       expect(buildAssetFilename).toHaveBeenCalledWith(77, 'audio/mp4');
     });
+
+    it('uses parentName-N name when parentName provided and no existing assets', async () => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 7, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
+        if (sql.includes('WHERE id =')) {
+          return Promise.resolve([mockAssetRow(7, { ...AUDIO_PARAMS, parentName: 'kiwi' })]);
+        }
+        // getAssetsByParentAndType count query — 0 existing
+        return Promise.resolve([]);
+      });
+
+      await saveAsset({ ...AUDIO_PARAMS, parentName: 'kiwi' });
+
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET filename'),
+        ['asset_7.m4a', 'kiwi-1', 7],
+      );
+    });
+
+    it('increments counter when existing assets of same type already exist', async () => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 8, changes: 1 });
+      const existingAudio = mockAssetRow(3, AUDIO_PARAMS);
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
+        if (sql.includes('WHERE id =')) {
+          return Promise.resolve([mockAssetRow(8, { ...AUDIO_PARAMS, parentName: 'kiwi' })]);
+        }
+        // getAssetsByParentAndType for count — 1 existing audio asset
+        if (sql.includes('AND asset_type =')) {
+          return Promise.resolve([existingAudio]);
+        }
+        return Promise.resolve([]);
+      });
+
+      await saveAsset({ ...AUDIO_PARAMS, parentName: 'kiwi' });
+
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET filename'),
+        ['asset_8.m4a', 'kiwi-2', 8],
+      );
+    });
+
+    it('uses explicit name and skips count query when name and parentName both provided', async () => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 9, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
+        if (sql.includes('WHERE id =')) {
+          return Promise.resolve([mockAssetRow(9, { ...AUDIO_PARAMS, name: 'my-audio' })]);
+        }
+        return Promise.resolve([]);
+      });
+
+      await saveAsset({ ...AUDIO_PARAMS, name: 'my-audio', parentName: 'kiwi' });
+
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET filename'),
+        ['asset_9.m4a', 'my-audio', 9],
+      );
+      // Count query should not have been issued (explicit name short-circuits)
+      const countCallMade = (mockDb.getAllAsync as jest.Mock).mock.calls.some(
+        (args: unknown[]) => typeof args[0] === 'string' && (args[0] as string).includes('AND asset_type ='),
+      );
+      expect(countCallMade).toBe(false);
+    });
+
+    it('falls back to assetType_id when neither name nor parentName provided', async () => {
+      mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 10, changes: 1 });
+      mockDb.getAllAsync.mockImplementation((sql: string) => {
+        if (sql.includes('WHERE id =')) {
+          return Promise.resolve([mockAssetRow(10, AUDIO_PARAMS)]);
+        }
+        return Promise.resolve([]);
+      });
+
+      await saveAsset(AUDIO_PARAMS);
+
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET filename'),
+        ['asset_10.m4a', 'audio_10', 10],
+      );
+    });
   });
 
   // ─── removeAsset ──────────────────────────────────────────────────────────────
@@ -440,6 +520,7 @@ describe('assetService', () => {
       parent_id: 42,
       asset_type: 'audio',
       filename: 'asset_10.m4a',
+      name: 'audio_10',
       mime_type: 'audio/mp4',
       file_size: 1024,
       duration_ms: 3000,

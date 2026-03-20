@@ -7,6 +7,7 @@ export interface Asset {
   parent_id: number;
   asset_type: AssetType;
   filename: string;
+  name: string | null;
   mime_type: string;
   file_size: number;
   duration_ms: number | null;
@@ -20,6 +21,7 @@ export interface NewAsset {
   parent_id: number;
   asset_type: AssetType;
   filename: string;
+  name?: string | null;
   mime_type: string;
   file_size: number;
   duration_ms?: number | null;

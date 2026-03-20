@@ -322,6 +322,9 @@ export default {
 
   mediaCapture: {
     linkTitle: 'Link Media',
+    addAudioTitle: 'Add Audio',
+    addPhotoTitle: 'Add Photo',
+    saveButton: 'Save',
     nameLabel: 'Name',
     namePlaceholder: 'Name (optional)',
     targetWord: 'Word',

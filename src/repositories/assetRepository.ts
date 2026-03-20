@@ -26,13 +26,14 @@ export const getAssetsByParentAndType = (
 
 export const addAsset = async (asset: NewAsset): Promise<number> => {
   const result = await run(
-    `INSERT INTO assets (parent_type, parent_id, asset_type, filename, mime_type, file_size, duration_ms, width, height)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO assets (parent_type, parent_id, asset_type, filename, name, mime_type, file_size, duration_ms, width, height)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       asset.parent_type,
       asset.parent_id,
       asset.asset_type,
       asset.filename,
+      asset.name ?? null,
       asset.mime_type,
       asset.file_size,
       asset.duration_ms ?? null,
@@ -42,6 +43,9 @@ export const addAsset = async (asset: NewAsset): Promise<number> => {
   );
   return result.insertId ?? 0;
 };
+
+export const updateAssetMeta = (id: number, filename: string, name: string) =>
+  run('UPDATE assets SET filename = ?, name = ? WHERE id = ?', [filename, name, id]);
 
 export const deleteAsset = (id: number) =>
   run('DELETE FROM assets WHERE id = ?', [id]);

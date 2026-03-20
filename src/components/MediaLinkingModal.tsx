@@ -4,6 +4,7 @@ import {
   StyleSheet, ScrollView, Animated, Image, PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
 import { useI18n, useCategoryName } from '../i18n/i18n';
@@ -29,6 +30,7 @@ export function MediaLinkingModal() {
   const categoryName = useCategoryName();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
 
   const {
@@ -123,7 +125,8 @@ export function MediaLinkingModal() {
     if (!selectedWord) return;
     setLoading(true);
     try {
-      await linkMediaToWord(selectedWord.id);
+      await linkMediaToWord(selectedWord.id, mediaName, selectedWord.word);
+      router.push('/(tabs)/words');
     } catch {
       // Error handled by provider (shows Alert)
     } finally {
@@ -132,7 +135,7 @@ export function MediaLinkingModal() {
   };
 
   const handleCreateWord = () => {
-    startCreateWord(wordSearch.trim());
+    startCreateWord(wordSearch.trim(), mediaName);
   };
 
   const handlePlayPreview = () => {
@@ -162,7 +165,7 @@ export function MediaLinkingModal() {
             </View>
 
             <Text style={[s.title, { color: colors.text }]} testID="media-linking-title">
-              {t('mediaCapture.linkTitle')}
+              {isAudio ? t('mediaCapture.addAudioTitle') : t('mediaCapture.addPhotoTitle')}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -319,7 +322,7 @@ export function MediaLinkingModal() {
                   testID="media-cancel-btn"
                 />
                 <Button
-                  title={t('mediaCapture.linkButton')}
+                  title={t('mediaCapture.saveButton')}
                   onPress={handleLink}
                   loading={loading}
                   style={[s.actionBtn, !selectedWord && s.btnDisabled]}
@@ -340,17 +343,19 @@ export function MediaLinkingModal() {
         testID="media-photo-fullscreen-modal"
       >
         <View style={s.photoFullscreenContainer} {...photoDismissPan.panHandlers}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Image
+              source={{ uri: pendingMedia.uri }}
+              style={s.photoFullscreenImage}
+              resizeMode="contain"
+              testID="media-photo-fullscreen"
+            />
+          </View>
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={() => setPhotoExpanded(false)}
             testID="media-photo-fullscreen-dismiss"
-          />
-          <Image
-            source={{ uri: pendingMedia.uri }}
-            style={s.photoFullscreenImage}
-            resizeMode="contain"
-            testID="media-photo-fullscreen"
           />
         </View>
       </Modal>
