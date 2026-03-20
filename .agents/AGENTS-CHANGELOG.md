@@ -3,6 +3,14 @@
 Entries are added after every approved change. Most recent first.
 
 
+### 2026-03-20_3
+
+**[config] Bump version to 0.6.0-beta**
+
+- `package.json`: version bumped from 1.0.0 to 0.6.0-beta
+- `app.json`: version bumped from 1.0.0 to 0.6.0-beta
+- `package-lock.json`: version bumped from 1.0.0 to 0.6.0-beta
+
 ### 2026-03-20_2
 
 **[feature] Navigate to words tab and focus saved word after AddWordModal save**
