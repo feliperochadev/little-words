@@ -10,9 +10,13 @@ import {
   useProfilePhoto,
   useSaveProfilePhoto,
   useRemoveProfilePhoto,
+  useAllAssets,
+  useRelinkAsset,
+  useRenameAsset,
 } from '../../src/hooks/useAssets';
 import * as assetService from '../../src/services/assetService';
 import type { Asset, SaveAssetParams } from '../../src/services/assetService';
+import type { AssetWithLink } from '../../src/types/asset';
 
 const MOCK_PROFILE_ASSET: Asset = {
   id: 99,
@@ -65,6 +69,9 @@ jest.mock('../../src/services/assetService', () => ({
     created_at: '2024-06-01T00:00:00.000Z',
   })),
   deleteProfilePhoto: jest.fn(() => Promise.resolve()),
+  getAllAssets: jest.fn(() => Promise.resolve([])),
+  relinkAsset: jest.fn(() => Promise.resolve({ id: 1 })),
+  renameAsset: jest.fn(() => Promise.resolve()),
 }));
 
 const mockedService = assetService as jest.Mocked<typeof assetService>;
@@ -601,6 +608,106 @@ describe('useAssets hooks', () => {
 
       await waitFor(() => expect(result.current.isError).toBe(true));
       expect(result.current.error?.message).toBe('Delete failed');
+    });
+  });
+
+  describe('useAllAssets', () => {
+    const mockLinkedAsset: AssetWithLink = {
+      id: 1, parent_type: 'word', parent_id: 10, asset_type: 'audio',
+      filename: 'asset_1.m4a', name: 'test', mime_type: 'audio/mp4',
+      file_size: 1024, duration_ms: 3000, width: null, height: null,
+      created_at: '2024-01-01',
+      linked_word: 'baby', linked_word_id: 10, linked_variant: null, linked_variant_id: null,
+    };
+
+    it('returns empty array when no assets', async () => {
+      mockedService.getAllAssets.mockResolvedValueOnce([]);
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useAllAssets(), { wrapper: Wrapper });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual([]);
+    });
+
+    it('returns assets when available', async () => {
+      mockedService.getAllAssets.mockResolvedValueOnce([mockLinkedAsset]);
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useAllAssets(), { wrapper: Wrapper });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual([mockLinkedAsset]);
+    });
+
+    it('calls service with search, type, and sort params', async () => {
+      mockedService.getAllAssets.mockResolvedValueOnce([]);
+      const { Wrapper } = createWrapper();
+      renderHook(() => useAllAssets('baby', 'audio', 'name_asc'), { wrapper: Wrapper });
+      await waitFor(() => expect(mockedService.getAllAssets).toHaveBeenCalledWith('baby', 'audio', 'name_asc'));
+    });
+  });
+
+  describe('useRelinkAsset', () => {
+    const mockAsset: Asset = {
+      id: 1, parent_type: 'word', parent_id: 10, asset_type: 'audio',
+      filename: 'asset_1.m4a', name: 'test', mime_type: 'audio/mp4',
+      file_size: 1024, duration_ms: 3000, width: null, height: null,
+      created_at: '2024-01-01',
+    };
+
+    it('calls relinkAsset service with correct params', async () => {
+      mockedService.relinkAsset.mockResolvedValueOnce({ ...mockAsset, parent_type: 'variant', parent_id: 5 });
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useRelinkAsset(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ asset: mockAsset, newParentType: 'variant', newParentId: 5 });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedService.relinkAsset).toHaveBeenCalledWith(mockAsset, 'variant', 5);
+    });
+
+    it('invalidates allAssets query on success', async () => {
+      const { Wrapper, queryClient } = createWrapper();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useRelinkAsset(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ asset: mockAsset, newParentType: 'variant', newParentId: 5 });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['allAssets'] }),
+      );
+    });
+  });
+
+  describe('useRenameAsset', () => {
+    it('calls renameAsset service with correct params', async () => {
+      mockedService.renameAsset.mockResolvedValueOnce(undefined);
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useRenameAsset(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: 1, name: 'New Name' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedService.renameAsset).toHaveBeenCalledWith(1, 'New Name');
+    });
+
+    it('invalidates allAssets query on success', async () => {
+      const { Wrapper, queryClient } = createWrapper();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useRenameAsset(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: 1, name: 'New Name' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['allAssets'] }),
+      );
     });
   });
 });

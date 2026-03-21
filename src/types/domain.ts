@@ -1,5 +1,5 @@
 // Re-export asset types for convenience
-export type { Asset, NewAsset, ParentType, AssetType } from './asset';
+export type { Asset, NewAsset, ParentType, AssetType, AssetWithLink } from './asset';
 
 // ─── Category ─────────────────────────────────────────────────────────────────
 

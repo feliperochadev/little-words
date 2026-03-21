@@ -2,7 +2,29 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-21_5
+### 2026-03-21_7
+
+[fix] **More tab** now expands a floating popup (Modal) above the tab bar instead of navigating to a dedicated `more.tsx` screen. Tapping Media or Settings from the popup navigates to the respective hidden tab screen. `media` and `settings` are hidden from the tab bar via `href: null`. The `MoreTabButton` component in `_layout.tsx` is self-contained and manages open/close state internally.
+
+### 2026-03-21_6
+
+**[feature] Media Management screen — search, filter, sort, edit, relink**
+- Added `AssetWithLink` interface to `src/types/asset.ts` with `linked_word`, `linked_word_id`, `linked_variant`, `linked_variant_id` fields
+- Exported `AssetWithLink` from `src/types/domain.ts`
+- Added `getAllAssets`, `updateAssetParent`, `updateAssetName` to `src/repositories/assetRepository.ts`
+- Added `moveAssetFile` to `src/utils/assetStorage.ts` for moving files between parent directories
+- Added `renameAsset`, `relinkAsset` service functions and re-exported `getAllAssets`, `AssetWithLink` from `src/services/assetService.ts`
+- Added `allAssets` query key to `src/hooks/queryKeys.ts`
+- Added `useAllAssets`, `useRelinkAsset`, `useRenameAsset` hooks to `src/hooks/useAssets.ts`; `useRemoveAsset` now also invalidates `['allAssets']`
+- Added `more`, `media` keys to both `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`; added `tabs.media` and `tabs.more` keys
+- Created `src/components/EditAssetModal.tsx`: bottom-sheet modal for renaming assets and relinking them to different words/variants
+- Created `app/(tabs)/media.tsx`: full Media screen with search, audio/photo/video filter chips, sort menu, asset list with preview overlays, and edit/delete actions
+- Created `app/(tabs)/more.tsx`: hamburger menu screen linking to Media and Settings
+- Updated `app/(tabs)/_layout.tsx`: added Media tab and More tab; Settings tab hidden from tab bar (`href: null`)
+- Added tests: `__tests__/unit/assetRepository.test.ts` (getAllAssets, updateAssetParent, updateAssetName), `__tests__/unit/assetStorage.test.ts` (moveAssetFile), `__tests__/integration/EditAssetModal.test.tsx`, `__tests__/integration/useAssets.test.tsx` (useAllAssets, useRelinkAsset, useRenameAsset), `__tests__/screens/media.test.tsx`, `__tests__/screens/more.test.tsx`
+- All 1534 tests pass, TypeScript clean, ESLint clean, Semgrep clean
+
+
 
 **[feature] Migrate expo-av → expo-audio (SDK 55)**
 - Replaced `expo-av` with `expo-audio` across all audio recording and playback code

@@ -1,5 +1,5 @@
 import { query, run } from '../db/client';
-import type { Asset, NewAsset, ParentType, AssetType } from '../types/domain';
+import type { Asset, NewAsset, ParentType, AssetType, AssetWithLink } from '../types/domain';
 
 export const getAssetById = (id: number): Promise<Asset | null> =>
   query<Asset>('SELECT * FROM assets WHERE id = ?', [id])
@@ -70,3 +70,39 @@ export const deleteProfilePhotoAsset = (): Promise<void> =>
     "DELETE FROM assets WHERE parent_type = 'profile' AND parent_id = 1 AND asset_type = 'photo'",
     []
   ).then(() => undefined);
+
+export const getAllAssets = (
+  search?: string,
+  assetType?: AssetType | null,
+  sortKey?: 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc',
+): Promise<AssetWithLink[]> => {
+  const orderClause =
+    sortKey === 'name_asc'  ? 'ORDER BY LOWER(COALESCE(a.name, a.filename)) ASC' :
+    sortKey === 'name_desc' ? 'ORDER BY LOWER(COALESCE(a.name, a.filename)) DESC' :
+    sortKey === 'date_asc'  ? 'ORDER BY a.created_at ASC' :
+                              'ORDER BY a.created_at DESC';
+  const base = `
+    SELECT a.*,
+           w.word as linked_word, w.id as linked_word_id,
+           v.variant as linked_variant, v.id as linked_variant_id
+    FROM assets a
+    LEFT JOIN words w ON a.parent_type = 'word' AND a.parent_id = w.id
+    LEFT JOIN variants v ON a.parent_type = 'variant' AND a.parent_id = v.id
+    WHERE a.parent_type != 'profile'
+  `;
+  const params: (string | number)[] = [];
+  let extra = '';
+  if (assetType) { extra += ' AND a.asset_type = ?'; params.push(assetType); }
+  if (search?.trim()) { extra += ' AND LOWER(COALESCE(a.name, a.filename)) LIKE LOWER(?)'; params.push(`%${search.trim()}%`); }
+  return query<AssetWithLink>(base + extra + ' ' + orderClause, params);
+};
+
+export const updateAssetParent = (
+  id: number,
+  newParentType: ParentType,
+  newParentId: number,
+): Promise<void> =>
+  run('UPDATE assets SET parent_type = ?, parent_id = ? WHERE id = ?', [newParentType, newParentId, id]).then(() => undefined);
+
+export const updateAssetName = (id: number, name: string): Promise<void> =>
+  run('UPDATE assets SET name = ? WHERE id = ?', [name, id]).then(() => undefined);

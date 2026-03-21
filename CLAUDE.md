@@ -202,7 +202,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 - `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates `useSettingsStore`, then routes to `/(tabs)/home` or `/onboarding`.
 - `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>` and `<I18nProvider>`.
-- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `settings.tsx` (categories, CSV export).
+- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `media.tsx` (global media browser with search/filter/sort), `more.tsx` (hamburger menu linking to Settings and Media), `settings.tsx` (categories, CSV export — hidden from tab bar, accessible via More screen).
 - `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
 
 ### State Management
@@ -223,6 +223,8 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
+- `useAllAssets(search?, assetType?, sortKey?)` — fetches all non-profile assets with LEFT JOIN word/variant names; used by media screen
+- `useRelinkAsset` / `useRenameAsset` — mutations for editing asset metadata and re-linking to different words/variants
 - `useAudioRecording()` — recording lifecycle hook (`expo-audio`), amplitude via `useAudioRecorderState`, 60s auto-stop, pause/resume (native layer excludes paused time from `durationMillis`), discard/reset flows; states: `idle | recording | paused | stopped`
 - `useAudioPlayer()` — lightweight playback hook for media preview and inline audio controls
 - `useMediaCapture()` — context access hook for global media capture/linking state
@@ -287,6 +289,7 @@ Media capture is orchestrated globally at tab level:
 - `src/components/MediaLinkingModal.tsx` handles preview + target-word search/create flow and calls provider link/create callbacks.
 - `src/components/MediaChips.tsx` displays pending/saved media chips in edit contexts with remove and preview/play interactions.
 - `src/components/AudioPlayerInline.tsx` provides compact audio playback triggers used in word/variant list metadata rows.
+- `src/components/EditAssetModal.tsx` — bottom-sheet modal to rename assets and relink them to different words/variants; used by `app/(tabs)/media.tsx`.
 
 ### Internationalization (`src/i18n/`)
 

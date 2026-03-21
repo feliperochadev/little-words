@@ -20,7 +20,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 - `app/`: Expo Router screens and layouts.
   - `_layout.tsx`: Root layout with `QueryClientProvider` and `I18nProvider`.
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
-  - `(tabs)/`: Main application tabs (Home, Words, Variants, Settings).
+  - `(tabs)/`: Main application tabs (Home, Words, Variants, Media, More); Settings screen is accessible via the More tab and hidden from the tab bar.
 - `src/db/`: DB client (`client.ts` — `query`/`run`/`withTransaction` async helpers), initialization (`init.ts` — DDL at startup), migrations (`migrator.ts` + `migrations/` — schema versioning via `schema_migrations` table). Only `init.ts` and `migrator.ts` call `getDb()` directly.
 - `src/repositories/`: Per-entity SQL modules — `categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`. No React, hooks, or Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `schema_migrations`.
 - `src/services/`: Thin service wrappers over repositories providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).

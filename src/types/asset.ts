@@ -72,6 +72,13 @@ export function getExtensionForMime(mimeType: string): string {
   return ext;
 }
 
+export interface AssetWithLink extends Asset {
+  linked_word: string | null;
+  linked_word_id: number | null;
+  linked_variant: string | null;
+  linked_variant_id: number | null;
+}
+
 /** Shared overlay state for audio preview modals */
 export interface AudioOverlayState {
   uri: string;

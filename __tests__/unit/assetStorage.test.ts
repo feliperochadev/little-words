@@ -11,6 +11,7 @@ import {
   deleteAllAssetsForParent,
   deleteAllMedia,
   assetFileExists,
+  moveAssetFile,
 } from '../../src/utils/assetStorage';
 
 describe('assetStorage', () => {
@@ -383,6 +384,72 @@ describe('assetStorage', () => {
       });
 
       expect(assetFileExists('file:///bad')).toBe(false);
+    });
+  });
+
+  describe('moveAssetFile', () => {
+    const mockFileSrc = { exists: true, copy: jest.fn(), delete: jest.fn(), uri: '' };
+    const mockFileDest = { exists: false, copy: jest.fn(), delete: jest.fn(), uri: '' };
+    const mockDirExists = { exists: true, create: jest.fn() };
+    const mockDirNotExists = { exists: false, create: jest.fn() };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('returns early when same parent', () => {
+      const uri = moveAssetFile('word', 1, 'word', 1, 'audio', 'asset_1.m4a');
+      expect(uri).toContain('asset_1.m4a');
+      expect(FSFile).not.toHaveBeenCalled();
+    });
+
+    it('copies file to new parent directory and deletes source', () => {
+      (Directory as unknown as jest.Mock)
+        .mockReturnValueOnce(mockDirExists) // media root
+        .mockReturnValueOnce(mockDirExists) // parent type dir
+        .mockReturnValueOnce(mockDirExists) // parent id dir
+        .mockReturnValueOnce(mockDirExists); // asset type dir
+
+      (FSFile as unknown as jest.Mock)
+        .mockReturnValueOnce(mockFileSrc) // source file for copy
+        .mockReturnValueOnce(mockFileDest) // dest file for copy
+        .mockReturnValueOnce({ exists: true, delete: jest.fn() }); // source for delete
+
+      const uri = moveAssetFile('word', 1, 'variant', 2, 'audio', 'asset_1.m4a');
+
+      expect(mockFileSrc.copy).toHaveBeenCalledWith(mockFileDest);
+      expect(uri).toContain('variants');
+      expect(uri).toContain('asset_1.m4a');
+    });
+
+    it('returns new destination URI', () => {
+      (Directory as unknown as jest.Mock)
+        .mockReturnValue(mockDirExists);
+      (FSFile as unknown as jest.Mock)
+        .mockReturnValueOnce(mockFileSrc)
+        .mockReturnValueOnce(mockFileDest)
+        .mockReturnValueOnce({ exists: true, delete: jest.fn() });
+
+      const uri = moveAssetFile('word', 1, 'variant', 2, 'audio', 'asset_1.m4a');
+      expect(uri).toContain('variant');
+      expect(uri).toContain('2');
+      expect(uri).toContain('audio');
+    });
+
+    it('creates destination directory if it does not exist', () => {
+      (Directory as unknown as jest.Mock)
+        .mockReturnValueOnce(mockDirExists)
+        .mockReturnValueOnce(mockDirExists)
+        .mockReturnValueOnce(mockDirNotExists) // parent id dir does not exist
+        .mockReturnValueOnce(mockDirNotExists); // asset type dir does not exist
+
+      (FSFile as unknown as jest.Mock)
+        .mockReturnValueOnce(mockFileSrc)
+        .mockReturnValueOnce(mockFileDest)
+        .mockReturnValueOnce({ exists: true, delete: jest.fn() });
+
+      moveAssetFile('word', 1, 'variant', 99, 'audio', 'asset_1.m4a');
+      expect(mockDirNotExists.create).toHaveBeenCalled();
     });
   });
 });

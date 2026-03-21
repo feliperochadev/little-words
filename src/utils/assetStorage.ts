@@ -126,3 +126,29 @@ export function assetFileExists(fileUri: string): boolean {
     return false;
   }
 }
+
+/**
+ * Moves an asset file from one parent directory to another.
+ * The filename stays the same; only the directory changes.
+ * Returns the new file URI.
+ */
+export function moveAssetFile(
+  sourceParentType: ParentType,
+  sourceParentId: number,
+  destParentType: ParentType,
+  destParentId: number,
+  assetType: AssetType,
+  filename: string,
+): string {
+  if (sourceParentType === destParentType && sourceParentId === destParentId) {
+    return getAssetFileUri(sourceParentType, sourceParentId, assetType, filename);
+  }
+  const sourceUri = getAssetFileUri(sourceParentType, sourceParentId, assetType, filename);
+  ensureAssetDirTree(destParentType, destParentId, assetType);
+  const destUri = getAssetFileUri(destParentType, destParentId, assetType, filename);
+  const source = new FSFile(sourceUri);
+  const dest = new FSFile(destUri);
+  source.copy(dest);
+  deleteAssetFile(sourceUri);
+  return destUri;
+}

@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS, ASSET_MUTATION_KEYS } from './queryKeys';
 import * as assetService from '../services/assetService';
+import { relinkAsset, renameAsset, getAllAssets } from '../services/assetService';
 import { getAssetFileUri } from '../utils/assetStorage';
-import type { ParentType, AssetType, Asset } from '../types/asset';
+import type { ParentType, AssetType, Asset, AssetWithLink } from '../types/asset';
 
 const EMPTY_ASSETS: Asset[] = [];
 
@@ -54,6 +55,7 @@ export function useRemoveAsset() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
+      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }
@@ -104,6 +106,51 @@ export function useRemoveProfilePhoto() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
+    },
+  });
+}
+
+const EMPTY_ALL_ASSETS: AssetWithLink[] = [];
+
+export function useAllAssets(
+  search?: string,
+  assetType?: AssetType | null,
+  sortKey?: 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc',
+) {
+  return useQuery({
+    queryKey: QUERY_KEYS.allAssets(search, assetType, sortKey),
+    queryFn: () => getAllAssets(search, assetType, sortKey),
+    select: (data) => data ?? EMPTY_ALL_ASSETS,
+  });
+}
+
+export function useRelinkAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ asset, newParentType, newParentId }: {
+      asset: Asset;
+      newParentType: ParentType;
+      newParentId: number;
+    }) => relinkAsset(asset, newParentType, newParentId),
+    onSuccess: () => {
+      ASSET_MUTATION_KEYS.forEach(key =>
+        queryClient.invalidateQueries({ queryKey: key })
+      );
+      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
+    },
+  });
+}
+
+export function useRenameAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      renameAsset(id, name),
+    onSuccess: () => {
+      ASSET_MUTATION_KEYS.forEach(key =>
+        queryClient.invalidateQueries({ queryKey: key })
+      );
+      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }
