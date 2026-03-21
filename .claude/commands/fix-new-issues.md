@@ -1,12 +1,14 @@
 # /fix-new-issues [PR-NUMBER] — Fix SonarCloud quality issues on PR (Claude)
 
+**⛔ MANDATORY: This skill MUST fix ALL issues** (coverage + code smells + security hotspots). Fixing coverage alone is insufficient. All SonarCloud issues must be resolved or quality gate remains FAILED. **Before starting, review .agents/COMMON-RULES.md — it contains mandatory baseline rules for all agents.**
+
 Automate fixing SonarCloud issues, security hotspots, and test coverage gaps found on a pull request. This command:
 1. Opens the PR and checks quality gates
 2. Fetches issues, security hotspots, and metrics from SonarCloud API
-3. Analyzes and fixes issues, improving test coverage and security
+3. Analyzes and fixes ALL issue types (not just coverage)
 4. Documents findings in `.agents/standards/` for future prevention
 5. Pushes fixes to the PR branch
-6. Validates all quality checks pass
+6. Validates all quality checks pass, including zero remaining issues
 
 ## Steps
 
@@ -16,7 +18,8 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
    - **Issues on PR**: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | python3 -m json.tool`
    - **Quality Gate Status**: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | python3 -m json.tool`
    - **New Code Coverage**: `curl -s "https://sonarcloud.io/api/measures/component?component=feliperochadev_little-words&metricKeys=new_coverage" | python3 -m json.tool`
-   - **All Metrics**: `curl -s "https://sonarcloud.io/api/measures/component?component=feliperochadev_little-words&metricKeys=coverage,complexity,vulnerabilities,bugs" | python3 -m json.tool`
+
+   ⚠️ **Important**: All three types of issues (code smells, bugs, security hotspots) MUST be checked. Coverage alone does NOT satisfy the quality gate if other issues remain.
 
 3. **Analyze Issues** — Parse the API responses and categorize issues by type:
    - **Coverage Issues**: Files with coverage < 85%
@@ -60,17 +63,30 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
 
 9. **Wait for CI** — The GitHub Actions pre-push hook will run `npm run ci` automatically. Inform the user to wait for CI to complete.
 
-10. **Final Sonar Check** — After CI passes, wait 30 seconds for SonarCloud to reprocess, then re-fetch data:
-    - If **no issues remain** (or only informational), output success and mark complete
-    - If **issues remain**, iterate: go back to Step 3 and repeat until all issues are resolved (max 3 iterations)
+10. **Final Sonar Check** — After CI passes, wait 40-50 seconds for SonarCloud to reprocess, then re-fetch data:
+    - Check issues: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | grep -o '"total":[0-9]*'`
+    - Check quality gates: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | grep -o '"status":"[^"]*"'`
+    - **MANDATORY: BOTH must show success:**
+      - Zero issues remaining (total: 0)
+      - Quality gate status: OK
+    - If **any issues remain**, iterate: go back to Step 3 and repeat until all issues are resolved (max 3 iterations)
+    - **Failure to resolve ALL issues = skill failure. No exceptions.**
+
+## Critical Definition of Done
+
+✅ **DONE** = Quality gate OK + Zero issues remaining + 100% tests passing + `npm run ci` passes
+❌ **NOT DONE** = Coverage ≥80% but code smells/bugs/security issues remain (even if coverage is excellent)
 
 ## Notes
 
+- ⛔ **MANDATORY: Read .agents/COMMON-RULES.md before starting.** It contains baseline rules all agents must follow.
 - Never modify `.agents/standards/` files to document issues that were not actually fixed; only document patterns you fixed in the PR
 - Always run full `npm run ci` validation before pushing
 - Each fix must include a corresponding test case
 - Security hotspots are informational; document their risk level but do not force a "fix" if the code is intentionally sensitive
+- **Coverage alone does NOT pass the quality gate** if other issues remain. ALL issues must be resolved.
 - If Sonar API is unreachable or returns errors, stop and report the error to the user
+- If max 3 iterations exhausted and issues remain, escalate to the user — the PR cannot be merged.
 
 ## Environment
 
