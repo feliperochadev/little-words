@@ -61,3 +61,25 @@ Implements a full Media management screen with search/filter/sort, inline audio/
   - `__tests__/integration/useAssets.test.tsx` — 2 new tests for `useUpdateAssetDate`
   - `__tests__/integration/EditAssetModal.test.tsx` — 8 new tests (cancel, date field, type icon for audio/photo/video, drag handle)
 - **Plan Updates:** None — enhancement scope is contained within existing design.
+
+### 2026-03-21 — Auto-Refresh Media List + Audio Position Counter
+
+- **Description:** Fixed media list not refreshing after linking assets via MediaLinkingModal or editing via EditAssetModal; added a current-position time counter to the left of the waveform in AudioPreviewOverlay.
+- **Root cause of refresh issue:** `ASSET_MUTATION_KEYS` was missing `['allAssets']`, so `MediaCaptureProvider.invalidateAssetCaches()` never invalidated the query powering `useAllAssets` on the media screen.
+- **Files Modified:**
+  - `src/hooks/queryKeys.ts` — added `['allAssets']` to `ASSET_MUTATION_KEYS`
+  - `src/hooks/useAssets.ts` — removed now-redundant explicit `invalidateQueries(['allAssets'])` from individual mutation hooks
+  - `src/hooks/useAudioPlayer.ts` — added `positionMs` state; tracks `status.currentTime * 1000`; resets on stop/unload/finish
+  - `src/components/AudioPreviewOverlay.tsx` — added `audio-preview-position` counter to left of waveform; added `position` stylesheet entry
+  - `__tests__/unit/useAudioPlayer.test.ts` — updated initial state + added `positionMs` tests
+  - `__tests__/integration/AudioPreviewOverlay.test.tsx` — added position counter test; updated mock to include `positionMs`
+- **Plan Updates:** None.
+
+### 2026-03-21 — Audio Counter Spacing + Position Counter in MediaLinkingModal
+
+- **Description:** Tightened the spacing between the position/duration counters and the waveform (~20%) in AudioPreviewOverlay; applied the same position counter layout to MediaLinkingModal's audio preview.
+- **Files Modified:**
+  - `src/components/AudioPreviewOverlay.tsx` — `playerRow` gap 12→8; `duration`/`position` minWidth 36→30
+  - `src/components/MediaLinkingModal.tsx` — added `audioPosition` counter between play icon and waveform; added `media-preview-duration`/`media-preview-position` testIDs; `audioPreview` gap 12→8; added `audioPosition` style; `audioDuration` minWidth 36→30
+  - `__tests__/integration/MediaLinkingModal.test.tsx` — added `positionMs` to mock; added position counter test; fixed duration tests to use `testID` selectors
+- **Plan Updates:** None.

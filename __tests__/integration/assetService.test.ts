@@ -5,6 +5,9 @@ import {
   removeAllMedia,
   getAssetsByParent,
   getAssetsByParentAndType,
+  renameAsset,
+  updateAssetDate,
+  relinkAsset,
 } from '../../src/services/assetService';
 import type { Asset, SaveAssetParams } from '../../src/services/assetService';
 import {
@@ -13,7 +16,11 @@ import {
   deleteAssetsByParent,
   updateAssetMeta,
   getAssetById,
+  updateAssetParent,
+  updateAssetName,
+  updateAssetDate as updateAssetDateRepo,
 } from '../../src/repositories/assetRepository';
+import * as assetRepositoryModule from '../../src/repositories/assetRepository';
 import {
   saveAssetFile,
   deleteAssetFile,
@@ -21,6 +28,7 @@ import {
   deleteAllMedia as deleteAllMediaFS,
   buildAssetFilename,
   getAssetFileUri,
+  moveAssetFile,
 } from '../../src/utils/assetStorage';
 
 jest.mock('../../src/utils/assetStorage', () => ({
@@ -28,6 +36,7 @@ jest.mock('../../src/utils/assetStorage', () => ({
   deleteAssetFile: jest.fn(),
   deleteAllAssetsForParent: jest.fn(),
   deleteAllMedia: jest.fn(),
+  moveAssetFile: jest.fn(),
   buildAssetFilename: jest.fn((id: number, mime: string) => {
     const extMap: Record<string, string> = {
       'audio/mp4': '.m4a',
@@ -47,6 +56,17 @@ jest.mock('../../src/utils/assetStorage', () => ({
     (...args: string[]) => `file:///mock/${args.join('/')}`,
   ),
 }));
+
+jest.mock('../../src/repositories/assetRepository', () => {
+  const actualModule = jest.requireActual('../../src/repositories/assetRepository');
+  return {
+    ...actualModule,
+    updateAssetParent: jest.fn(),
+    updateAssetName: jest.fn(),
+    updateAssetDate: jest.fn(),
+  };
+});
+
 
 const mockDb = (globalThis as any).__mockDb;
 
@@ -84,6 +104,21 @@ const VIDEO_PARAMS: SaveAssetParams = {
 };
 
 describe('assetService', () => {
+  const mockAsset: Asset = {
+    id: 10,
+    parent_type: 'word',
+    parent_id: 42,
+    asset_type: 'audio',
+    filename: 'asset_10.m4a',
+    name: 'audio_10',
+    mime_type: 'audio/mp4',
+    file_size: 1024,
+    duration_ms: 3000,
+    width: null,
+    height: null,
+    created_at: '2024-01-01T00:00:00.000Z',
+  };
+
   function mockAssetRow(id: number, params: SaveAssetParams): Asset {
     return {
       id,
@@ -514,21 +549,6 @@ describe('assetService', () => {
   // ─── removeAsset ──────────────────────────────────────────────────────────────
 
   describe('removeAsset', () => {
-    const mockAsset: Asset = {
-      id: 10,
-      parent_type: 'word',
-      parent_id: 42,
-      asset_type: 'audio',
-      filename: 'asset_10.m4a',
-      name: 'audio_10',
-      mime_type: 'audio/mp4',
-      file_size: 1024,
-      duration_ms: 3000,
-      width: null,
-      height: null,
-      created_at: '2024-01-01T00:00:00.000Z',
-    };
-
     it('deletes DB record and then file', async () => {
       await removeAsset(mockAsset);
 
@@ -631,7 +651,7 @@ describe('assetService', () => {
 
   // ─── re-exports ───────────────────────────────────────────────────────────────
 
-  describe('re-exports', () => {
+   describe('re-exports', () => {
     it('re-exports getAssetsByParent from repository', () => {
       expect(getAssetsByParent).toBeDefined();
       expect(typeof getAssetsByParent).toBe('function');
@@ -642,4 +662,93 @@ describe('assetService', () => {
       expect(typeof getAssetsByParentAndType).toBe('function');
     });
   });
+
+  // ─── renameAsset ──────────────────────────────────────────────────────────
+
+  describe('renameAsset', () => {
+    it('calls updateAssetName with id and name', async () => {
+      await renameAsset(42, 'New Name');
+
+      expect(updateAssetName).toHaveBeenCalledWith(42, 'New Name');
+    });
+
+    it('propagates errors from repository', async () => {
+      (updateAssetName as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(renameAsset(42, 'New Name')).rejects.toThrow('DB error');
+    });
+  });
+
+  // ─── updateAssetDate ──────────────────────────────────────────────────────
+
+  describe('updateAssetDate', () => {
+    it('calls updateAssetDate repo function with id and date', async () => {
+      await updateAssetDate(42, '2025-06-01');
+
+      expect(updateAssetDateRepo).toHaveBeenCalledWith(42, '2025-06-01');
+    });
+
+    it('propagates errors from repository', async () => {
+      (updateAssetDateRepo as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(updateAssetDate(42, '2025-06-01')).rejects.toThrow('DB error');
+    });
+  });
+
+  // ─── relinkAsset ──────────────────────────────────────────────────────────
+
+  describe('relinkAsset', () => {
+    it('returns unchanged asset when parent type and id match', async () => {
+      const asset: Asset = { ...mockAsset, parent_type: 'word', parent_id: 5 };
+
+      const result = await relinkAsset(asset, 'word', 5);
+
+      expect(result).toEqual(asset);
+      expect(moveAssetFile).not.toHaveBeenCalled();
+    });
+
+    it('moves file and updates DB when relinking to different parent', async () => {
+      const asset: Asset = { ...mockAsset, parent_type: 'word', parent_id: 5 };
+      const updatedAsset = { ...asset, parent_type: 'variant', parent_id: 10 };
+      mockDb.getAllAsync.mockResolvedValueOnce([updatedAsset]);
+
+      const result = await relinkAsset(asset, 'variant', 10);
+
+      expect(moveAssetFile).toHaveBeenCalledWith('word', 5, 'variant', 10, 'audio', mockAsset.filename);
+      expect(updateAssetParent).toHaveBeenCalledWith(mockAsset.id, 'variant', 10);
+      expect(result).toEqual(updatedAsset);
+    });
+
+    it('reverts file move if updateAssetParent fails', async () => {
+      const asset: Asset = { ...mockAsset, parent_type: 'word', parent_id: 5 };
+      (updateAssetParent as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(relinkAsset(asset, 'variant', 10)).rejects.toThrow('DB error');
+
+      expect(moveAssetFile).toHaveBeenCalledTimes(2); // move + revert
+      expect(moveAssetFile).toHaveBeenNthCalledWith(1, 'word', 5, 'variant', 10, 'audio', mockAsset.filename);
+      expect(moveAssetFile).toHaveBeenNthCalledWith(2, 'variant', 10, 'word', 5, 'audio', mockAsset.filename);
+    });
+
+    it('throws error if asset not found after relink', async () => {
+      const asset: Asset = { ...mockAsset, parent_type: 'word', parent_id: 5 };
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+
+      await expect(relinkAsset(asset, 'variant', 10)).rejects.toThrow(/Asset.*not found after relink/);
+    });
+
+    it('continues even if file revert fails during error recovery', async () => {
+      const asset: Asset = { ...mockAsset, parent_type: 'word', parent_id: 5 };
+      (updateAssetParent as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+      (moveAssetFile as jest.Mock).mockImplementation((fromType, fromId, toType, toId) => {
+        if (fromType === 'variant') {
+          throw new Error('File revert failed');
+        }
+      });
+
+      await expect(relinkAsset(asset, 'variant', 10)).rejects.toThrow('DB error');
+      // Should not throw the file revert error
+    });
+  });
 });
+

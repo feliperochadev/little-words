@@ -38,6 +38,7 @@ export const CATEGORY_MUTATION_KEYS = [
 // Keys to invalidate after asset mutations
 export const ASSET_MUTATION_KEYS = [
   ['assets'],
+  ['allAssets'],
   ['words'],
   ['variants'],
   ['dashboard'],

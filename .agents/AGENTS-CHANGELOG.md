@@ -2,7 +2,33 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-21_8
+### 2026-03-21_11
+
+[fix] **Enhance media-management-screen**: fix audio counter spacing — counters now sit tight against the waveform (4px gap) while the play button keeps normal spacing (10px).
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/components/AudioPreviewOverlay.tsx`: removed uniform `gap` from `playerRow`; added `marginRight: 10` to `playBtn`; added `marginRight: 4` to `position` and `marginLeft: 4` to `duration` so counters hug the waveform edges
+- `src/components/MediaLinkingModal.tsx`: same layout — removed `gap` from `audioPreview`; `audioPosition` gets `marginLeft: 10` (from play button) + `marginRight: 4` (to waveform); `audioDuration` gets `marginLeft: 4` (from waveform)
+
+
+[feature] **Enhance media-management-screen**: tighten audio player counter spacing (gap 12→8, minWidth 36→30) and add position counter to MediaLinkingModal audio preview.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/components/AudioPreviewOverlay.tsx`: reduced `playerRow` gap from 12→8 and counter `minWidth` from 36→30 (~20% tighter toward waveform)
+- `src/components/MediaLinkingModal.tsx`: added `audioPosition` counter (`media-preview-position` testID) between play icon and waveform; added `media-preview-duration` testID; reduced `audioPreview` gap from 12→8; added `audioPosition` style
+- `__tests__/integration/MediaLinkingModal.test.tsx`: updated `useAudioPlayer` mock to include `positionMs`; added position counter test; fixed duration tests to use `testID` selectors (avoiding multi-match with new position counter)
+
+
+[fix] **Enhance media-management-screen**: auto-refresh media list after linking/editing assets; add current-position counter to audio player.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/hooks/queryKeys.ts`: added `['allAssets']` to `ASSET_MUTATION_KEYS` so `MediaCaptureProvider.invalidateAssetCaches()` now invalidates the media list query after linking
+- `src/hooks/useAssets.ts`: removed redundant explicit `queryClient.invalidateQueries({ queryKey: ['allAssets'] })` calls — now covered by `ASSET_MUTATION_KEYS`
+- `src/hooks/useAudioPlayer.ts`: added `positionMs` state tracking from `playbackStatusUpdate` `currentTime`; resets on stop/unload/finish
+- `src/components/AudioPreviewOverlay.tsx`: added `audio-preview-position` counter (formatted `0:00`) to the left of the waveform, waveform remains `flex:1` centered between position and duration
+- `__tests__/unit/useAudioPlayer.test.ts`: updated initial state test + added `positionMs` tests (tracking, reset on stop/unload/finish)
+- `__tests__/integration/AudioPreviewOverlay.test.tsx`: added test for position counter, updated `useAudioPlayer` mock to include `positionMs`
+
 
 [feature] **Enhance media-management-screen**: sort button moved to filters row in media screen; EditAssetModal gains drag handle + swipe-to-dismiss, date picker, tappable type icon (opens AudioPreviewOverlay/PhotoPreviewOverlay), and Cancel button.
 

@@ -55,7 +55,6 @@ export function useRemoveAsset() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }
@@ -136,7 +135,6 @@ export function useRelinkAsset() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }
@@ -150,7 +148,6 @@ export function useRenameAsset() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }
@@ -164,7 +161,6 @@ export function useUpdateAssetDate() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
-      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
     },
   });
 }

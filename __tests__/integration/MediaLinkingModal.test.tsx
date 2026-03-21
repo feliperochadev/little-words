@@ -94,6 +94,7 @@ jest.mock('../../src/hooks/useAudioPlayer', () => ({
   useAudioPlayer: () => ({
     isPlaying: mockIsPlaying,
     durationMs: 0,
+    positionMs: 0,
     play: mockAudioPlay,
     stop: mockAudioStop,
     unload: jest.fn(),
@@ -183,6 +184,11 @@ describe('MediaLinkingModal', () => {
     it('renders waveform bars in audio preview', () => {
       const { getByTestId } = renderModal();
       expect(getByTestId('media-preview-waveform')).toBeTruthy();
+    });
+
+    it('renders position counter showing 0:00 initially', () => {
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-position').props.children).toBe('0:00');
     });
 
     it('displays formatted duration (1:05 for 65000ms)', () => {
@@ -674,20 +680,20 @@ describe('MediaLinkingModal', () => {
   describe('audio duration display', () => {
     it('formats 65000ms as 1:05', () => {
       mockPendingMedia = { ...AUDIO_MEDIA, durationMs: 65000 };
-      const { getByText } = renderModal();
-      expect(getByText('1:05')).toBeTruthy();
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-duration').props.children).toBe('1:05');
     });
 
     it('formats 0ms as 0:00', () => {
       mockPendingMedia = { ...AUDIO_MEDIA, durationMs: 0 };
-      const { getByText } = renderModal();
-      expect(getByText('0:00')).toBeTruthy();
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-duration').props.children).toBe('0:00');
     });
 
     it('formats undefined durationMs as 0:00', () => {
       mockPendingMedia = { ...AUDIO_MEDIA, durationMs: undefined };
-      const { getByText } = renderModal();
-      expect(getByText('0:00')).toBeTruthy();
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-preview-duration').props.children).toBe('0:00');
     });
   });
 

@@ -145,6 +145,9 @@ export function MediaLinkingModal() {
                       size={40}
                       color={colors.primary}
                     />
+                    <Text style={[s.audioPosition, { color: colors.textSecondary }]} testID="media-preview-position">
+                      {formatDuration(audioPlayer.positionMs)}
+                    </Text>
                     {/* Waveform bars — animate when playing */}
                     <View style={s.audioWaveformContainer} testID="media-preview-waveform">
                       {linkingBarHeights.map((bar, i) => (
@@ -161,7 +164,7 @@ export function MediaLinkingModal() {
                         />
                       ))}
                     </View>
-                    <Text style={[s.audioDuration, { color: colors.textSecondary }]}>
+                    <Text style={[s.audioDuration, { color: colors.textSecondary }]} testID="media-preview-duration">
                       {formatDuration(pendingMedia.durationMs ?? 0)}
                     </Text>
                   </TouchableOpacity>
@@ -346,7 +349,7 @@ const s = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 20 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   previewSection: { borderRadius: 14, borderWidth: 1.5, padding: 16, marginBottom: 16, alignItems: 'center' },
-  audioPreview: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%' },
+  audioPreview: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   audioWaveformContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -359,7 +362,8 @@ const s = StyleSheet.create({
     width: WAVEFORM.BAR_WIDTH,
     borderRadius: 2,
   },
-  audioDuration: { fontSize: 13, minWidth: 36, textAlign: 'right' },
+  audioDuration: { fontSize: 13, minWidth: 30, textAlign: 'right', marginLeft: 4 },
+  audioPosition: { fontSize: 13, minWidth: 30, textAlign: 'left', marginRight: 4, marginLeft: 10 },
   photoPreview: { width: 120, height: 120, borderRadius: 12 },
   searchBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, marginBottom: 6 },
   searchIcon: { marginRight: 8 },

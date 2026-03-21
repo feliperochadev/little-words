@@ -6,6 +6,7 @@ export function useAudioPlayer() {
   const playerRef = useRef<ExpoAudioPlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [durationMs, setDurationMs] = useState(0);
+  const [positionMs, setPositionMs] = useState(0);
 
   const unload = useCallback(async () => {
     if (playerRef.current) {
@@ -18,6 +19,7 @@ export function useAudioPlayer() {
     }
     setIsPlaying(false);
     setDurationMs(0);
+    setPositionMs(0);
   }, []);
 
   const play = useCallback(async (uri: string) => {
@@ -36,8 +38,12 @@ export function useAudioPlayer() {
         if (status.duration) {
           setDurationMs(status.duration * 1000);
         }
+        if (status.currentTime !== undefined) {
+          setPositionMs(status.currentTime * 1000);
+        }
         if (status.didJustFinish) {
           setIsPlaying(false);
+          setPositionMs(0);
           player.remove();
           if (playerRef.current === player) playerRef.current = null;
         }
@@ -67,5 +73,5 @@ export function useAudioPlayer() {
     };
   }, []);
 
-  return { isPlaying, durationMs, play, stop, unload };
+  return { isPlaying, durationMs, positionMs, play, stop, unload };
 }
