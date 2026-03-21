@@ -1,6 +1,7 @@
 import React, { createContext, useState, useRef, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, AudioModule } from 'expo-audio';
+import type { AudioPlayer as ExpoAudioPlayer } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { ASSET_MUTATION_KEYS } from '../hooks/queryKeys';
@@ -60,7 +61,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
   const [prefilledMediaName, setPrefilledMediaName] = useState('');
   const [playingAssetId, setPlayingAssetId] = useState<number | null>(null);
 
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playerRef = useRef<ExpoAudioPlayer | null>(null);
 
   const invalidateAssetCaches = useCallback(() => {
     ASSET_MUTATION_KEYS.forEach(key =>
@@ -199,13 +200,13 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
   // ── Inline audio playback (single-sound manager) ───────────────────────────
 
   const stopPlayback = useCallback(async () => {
-    if (soundRef.current) {
+    if (playerRef.current) {
       try {
-        await soundRef.current.unloadAsync();
+        playerRef.current.remove();
       } catch {
-        // Already unloaded
+        // Already removed
       }
-      soundRef.current = null;
+      playerRef.current = null;
     }
     setPlayingAssetId(null);
   }, []);
@@ -227,25 +228,23 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     await stopPlayback();
 
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
+      await AudioModule.setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
       });
 
       const uri = getAssetFileUri(parentType, parentId, 'audio', asset.filename);
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-      );
+      const player = createAudioPlayer({ uri });
 
-      soundRef.current = sound;
+      playerRef.current = player;
       setPlayingAssetId(asset.id);
 
-      sound.setOnPlaybackStatusUpdate((status) => {
+      player.play();
+      player.addListener('playbackStatusUpdate', (status) => {
         if (status.isLoaded && status.didJustFinish) {
           setPlayingAssetId(null);
-          sound.unloadAsync().catch(() => {});
-          soundRef.current = null;
+          player.remove();
+          if (playerRef.current === player) playerRef.current = null;
         }
       });
     } catch {

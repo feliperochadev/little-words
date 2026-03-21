@@ -223,7 +223,7 @@ The app uses a three-tier state strategy:
 - `useAllVariants()` / `useVariantsByWord(wordId, enabled)` / `useAddVariant` / `useUpdateVariant` / `useDeleteVariant`
 - `useDashboardStats()` — includes `useFocusEffect` refetch
 - `useAssetsByParent(parentType, parentId)` / `useAssetsByType(parentType, parentId, assetType)` / `useSaveAsset` / `useRemoveAsset`
-- `useAudioRecording()` — recording lifecycle hook (`expo-av`), amplitude polling, 60s auto-stop, pause/resume (paused-time exclusion from elapsed duration), discard/reset flows; states: `idle | recording | paused | stopped`
+- `useAudioRecording()` — recording lifecycle hook (`expo-audio`), amplitude via `useAudioRecorderState`, 60s auto-stop, pause/resume (native layer excludes paused time from `durationMillis`), discard/reset flows; states: `idle | recording | paused | stopped`
 - `useAudioPlayer()` — lightweight playback hook for media preview and inline audio controls
 - `useMediaCapture()` — context access hook for global media capture/linking state
 - `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)
@@ -276,7 +276,7 @@ components/hooks → services → repositories → db/client
 
 **Photo picker pattern:** Camera + gallery are both supported via an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard). `launchPicker(source)` is async: requests the appropriate permission (`requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`), then launches the picker. Used consistently in `EditProfileModal` and `app/onboarding.tsx`.
 
-**Dependencies:** `expo-av` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
+**Dependencies:** `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 
 ### Media Capture & Linking Layer
 

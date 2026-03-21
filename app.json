@@ -2,7 +2,7 @@
   "expo": {
     "name": "Little Words",
     "slug": "little-words",
-    "version": "0.6.0-beta",
+    "version": "0.6.1-beta",
     "orientation": "portrait",
     "icon": "./assets/icon_1024.png",
     "userInterfaceStyle": "light",
@@ -61,7 +61,9 @@
           "appleUsageDescription": "Usado para exportar CSV"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-audio",
+      "expo-sharing"
     ],
     "scheme": "little-words",
     "extra": {

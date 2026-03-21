@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, AudioModule } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 
 import { MediaCaptureProvider } from '../../src/providers/MediaCaptureProvider';
@@ -28,13 +28,16 @@ const mockGetAssetFileUri = assetStorage.getAssetFileUri as jest.MockedFunction<
   typeof assetStorage.getAssetFileUri
 >;
 
-// expo-av and expo-image-picker are mocked in jest.setup.js
-const mockSound = (globalThis as Record<string, unknown>).__mockSound as {
-  unloadAsync: jest.Mock;
-  setOnPlaybackStatusUpdate: jest.Mock;
+// expo-audio and expo-image-picker are mocked in jest.setup.js
+type MockPlayer = {
+  play: jest.Mock;
+  pause: jest.Mock;
+  remove: jest.Mock;
+  addListener: jest.Mock;
 };
-const mockCreateAsync = Audio.Sound.createAsync as jest.Mock;
-const mockSetAudioModeAsync = Audio.setAudioModeAsync as jest.Mock;
+const mockPlayer = (globalThis as Record<string, unknown>).__mockPlayer as MockPlayer;
+const mockCreateAudioPlayer = createAudioPlayer as jest.Mock;
+const mockSetAudioModeAsync = AudioModule.setAudioModeAsync as jest.Mock;
 
 const mockLaunchCameraAsync = ImagePicker.launchCameraAsync as jest.Mock;
 const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.Mock;
@@ -111,12 +114,11 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
     mockSaveAsset.mockResolvedValue(SAVED_ASSET);
     mockGetAssetsByParentAndType.mockResolvedValue([]);
     mockGetAssetFileUri.mockReturnValue('file:///documents/media/words/1/audio/audio-42.m4a');
-    mockSound.unloadAsync.mockResolvedValue(undefined);
-    mockSound.setOnPlaybackStatusUpdate.mockImplementation(() => {});
-    mockCreateAsync.mockResolvedValue({
-      sound: mockSound,
-      status: { isLoaded: true, durationMillis: 5000 },
-    });
+    mockPlayer.remove.mockReset();
+    mockPlayer.addListener.mockReset();
+    mockPlayer.play.mockReset();
+    mockPlayer.pause.mockReset();
+    mockCreateAudioPlayer.mockReturnValue(mockPlayer);
     mockSetAudioModeAsync.mockResolvedValue(undefined);
   });
 
@@ -696,7 +698,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
   // ── playAssetByParent ────────────────────────────────────────────────────
 
   describe('playAssetByParent', () => {
-    it('fetches assets, sets audio mode, creates sound, and sets playingAssetId', async () => {
+    it('fetches assets, sets audio mode, creates player, and sets playingAssetId', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
@@ -706,16 +708,16 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
 
       expect(mockGetAssetsByParentAndType).toHaveBeenCalledWith('word', 1, 'audio');
       expect(mockSetAudioModeAsync).toHaveBeenCalledWith({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
+        allowsRecording: false,
+        playsInSilentMode: true,
       });
       expect(mockGetAssetFileUri).toHaveBeenCalledWith('word', 1, 'audio', 'audio-42.m4a');
-      expect(mockCreateAsync).toHaveBeenCalledWith(
-        { uri: 'file:///documents/media/words/1/audio/audio-42.m4a' },
-        { shouldPlay: true },
-      );
+      expect(mockCreateAudioPlayer).toHaveBeenCalledWith({
+        uri: 'file:///documents/media/words/1/audio/audio-42.m4a',
+      });
+      expect(mockPlayer.play).toHaveBeenCalled();
+      expect(mockPlayer.addListener).toHaveBeenCalledWith('playbackStatusUpdate', expect.any(Function));
       expect(result.current.playingAssetId).toBe(42);
-      expect(mockSound.setOnPlaybackStatusUpdate).toHaveBeenCalled();
     });
 
     it('is a no-op when no audio assets exist', async () => {
@@ -727,7 +729,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       });
 
       expect(mockSetAudioModeAsync).not.toHaveBeenCalled();
-      expect(mockCreateAsync).not.toHaveBeenCalled();
+      expect(mockCreateAudioPlayer).not.toHaveBeenCalled();
       expect(result.current.playingAssetId).toBeNull();
     });
 
@@ -746,12 +748,12 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
         await result.current.playAssetByParent('word', 1);
       });
       expect(result.current.playingAssetId).toBeNull();
-      expect(mockSound.unloadAsync).toHaveBeenCalled();
+      expect(mockPlayer.remove).toHaveBeenCalled();
     });
 
-    it('resets playingAssetId on createAsync error', async () => {
+    it('resets playingAssetId when createAudioPlayer throws', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
-      mockCreateAsync.mockRejectedValueOnce(new Error('Audio load failed'));
+      mockCreateAudioPlayer.mockImplementationOnce(() => { throw new Error('Audio load failed'); });
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
       await act(async () => {
@@ -764,8 +766,8 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
     it('handles playback status update didJustFinish', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       let statusCallback: (status: Record<string, unknown>) => void = () => {};
-      mockSound.setOnPlaybackStatusUpdate.mockImplementation(
-        (cb: (status: Record<string, unknown>) => void) => {
+      mockPlayer.addListener.mockImplementation(
+        (_event: string, cb: (status: Record<string, unknown>) => void) => {
           statusCallback = cb;
         },
       );
@@ -782,14 +784,14 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       });
 
       expect(result.current.playingAssetId).toBeNull();
-      expect(mockSound.unloadAsync).toHaveBeenCalled();
+      expect(mockPlayer.remove).toHaveBeenCalled();
     });
 
     it('ignores playback status that is not finished', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       let statusCallback: (status: Record<string, unknown>) => void = () => {};
-      mockSound.setOnPlaybackStatusUpdate.mockImplementation(
-        (cb: (status: Record<string, unknown>) => void) => {
+      mockPlayer.addListener.mockImplementation(
+        (_event: string, cb: (status: Record<string, unknown>) => void) => {
           statusCallback = cb;
         },
       );
@@ -810,8 +812,8 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
     it('ignores playback status when not loaded', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       let statusCallback: (status: Record<string, unknown>) => void = () => {};
-      mockSound.setOnPlaybackStatusUpdate.mockImplementation(
-        (cb: (status: Record<string, unknown>) => void) => {
+      mockPlayer.addListener.mockImplementation(
+        (_event: string, cb: (status: Record<string, unknown>) => void) => {
           statusCallback = cb;
         },
       );
@@ -828,7 +830,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       expect(result.current.playingAssetId).toBe(42);
     });
 
-    it('stops previous sound before playing new one', async () => {
+    it('stops previous player before playing new one', async () => {
       const asset2: Asset = { ...SAMPLE_ASSET, id: 100, filename: 'audio-100.m4a' };
       mockGetAssetsByParentAndType
         .mockResolvedValueOnce([SAMPLE_ASSET])
@@ -842,13 +844,17 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       });
       expect(result.current.playingAssetId).toBe(42);
 
-      // Play different asset — should stop first, then play new
+      jest.clearAllMocks();
+      mockCreateAudioPlayer.mockReturnValue(mockPlayer);
+      mockSetAudioModeAsync.mockResolvedValue(undefined);
+      mockGetAssetFileUri.mockReturnValue('file:///documents/media/words/2/audio/audio-100.m4a');
+
+      // Play different asset — should remove first player, then play new
       await act(async () => {
         await result.current.playAssetByParent('word', 2);
       });
 
-      // unloadAsync called during stopPlayback
-      expect(mockSound.unloadAsync).toHaveBeenCalled();
+      expect(mockPlayer.remove).toHaveBeenCalled();
       expect(result.current.playingAssetId).toBe(100);
     });
   });
@@ -856,7 +862,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
   // ── stopPlayback ─────────────────────────────────────────────────────────
 
   describe('stopPlayback', () => {
-    it('unloads the current sound and resets playingAssetId', async () => {
+    it('removes the current player and resets playingAssetId', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
@@ -866,16 +872,18 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       });
       expect(result.current.playingAssetId).toBe(42);
 
+      jest.clearAllMocks();
+
       // Stop
       await act(async () => {
         await result.current.stopPlayback();
       });
 
-      expect(mockSound.unloadAsync).toHaveBeenCalled();
+      expect(mockPlayer.remove).toHaveBeenCalled();
       expect(result.current.playingAssetId).toBeNull();
     });
 
-    it('is safe to call when no sound is playing', async () => {
+    it('is safe to call when no player is active', async () => {
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
       // Should not throw
@@ -886,7 +894,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       expect(result.current.playingAssetId).toBeNull();
     });
 
-    it('handles unloadAsync error gracefully', async () => {
+    it('handles remove() error gracefully', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
@@ -894,7 +902,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
         await result.current.playAssetByParent('word', 1);
       });
 
-      mockSound.unloadAsync.mockRejectedValueOnce(new Error('Already unloaded'));
+      mockPlayer.remove.mockImplementationOnce(() => { throw new Error('Already removed'); });
 
       await act(async () => {
         await result.current.stopPlayback();
@@ -929,18 +937,17 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
     });
   });
 
-  // ── edge case: unloadAsync error in didJustFinish callback ───────────────
+  // ── edge case: remove error in didJustFinish callback ────────────────────
 
   describe('playback finish callback', () => {
-    it('swallows unloadAsync error in didJustFinish callback', async () => {
+    it('remove() error in didJustFinish is handled gracefully', async () => {
       mockGetAssetsByParentAndType.mockResolvedValueOnce([SAMPLE_ASSET]);
       let statusCallback: (status: Record<string, unknown>) => void = () => {};
-      mockSound.setOnPlaybackStatusUpdate.mockImplementation(
-        (cb: (status: Record<string, unknown>) => void) => {
+      mockPlayer.addListener.mockImplementation(
+        (_event: string, cb: (status: Record<string, unknown>) => void) => {
           statusCallback = cb;
         },
       );
-      mockSound.unloadAsync.mockRejectedValueOnce(new Error('unload error'));
 
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
@@ -948,7 +955,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
         await result.current.playAssetByParent('word', 1);
       });
 
-      // Trigger didJustFinish — unloadAsync will reject but error is caught
+      // Trigger didJustFinish — player.remove() should be called
       act(() => {
         statusCallback({ isLoaded: true, didJustFinish: true });
       });

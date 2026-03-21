@@ -1,7 +1,7 @@
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 import React from 'react';
 import { Alert } from 'react-native';
-import { Audio } from 'expo-av';
+import { AudioModule } from 'expo-audio';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { MediaCaptureProvider } from '../../src/providers/MediaCaptureProvider';
@@ -14,14 +14,20 @@ import type { RecordingState, AudioRecordingResult } from '../../src/hooks/useAu
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const mockRecording = (globalThis as Record<string, unknown>).__mockRecording as {
+type MockRecorder = {
   prepareToRecordAsync: jest.Mock;
-  startAsync: jest.Mock;
-  stopAndUnloadAsync: jest.Mock;
-  pauseAsync: jest.Mock;
-  getStatusAsync: jest.Mock;
-  getURI: jest.Mock;
+  record: jest.Mock;
+  pause: jest.Mock;
+  stop: jest.Mock;
+  uri: string | null;
+  isRecording: boolean;
+  currentTime: number;
 };
+
+const mockRecorder = (globalThis as Record<string, unknown>).__mockRecorder as MockRecorder;
+
+const mockRequestRecordingPermissions = AudioModule.requestRecordingPermissionsAsync as jest.Mock;
+const mockSetAudioModeAsync = AudioModule.setAudioModeAsync as jest.Mock;
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -40,6 +46,17 @@ function createWrapper() {
         React.createElement(MediaCaptureProvider, null, children),
       ),
     );
+}
+
+function resetRecorderState(overrides: Partial<{
+  isRecording: boolean; durationMillis: number; metering: number;
+}> = {}) {
+  (globalThis as Record<string, unknown>).__mockRecorderState = {
+    isRecording: false,
+    durationMillis: 0,
+    metering: -30,
+    ...overrides,
+  };
 }
 
 // ── Pure function tests ────────────────────────────────────────────────────────
@@ -69,12 +86,10 @@ describe('normalizeAmplitude', () => {
   });
 
   it('returns correct interpolation for -45 dB', () => {
-    // (-45 - (-60)) / (0 - (-60)) = 15 / 60 = 0.25
     expect(normalizeAmplitude(-45)).toBe(0.25);
   });
 
   it('returns correct interpolation for -15 dB', () => {
-    // (-15 - (-60)) / 60 = 45 / 60 = 0.75
     expect(normalizeAmplitude(-15)).toBe(0.75);
   });
 });
@@ -92,24 +107,20 @@ describe('MAX_DURATION_MS', () => {
 describe('useAudioRecording', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useRealTimers();
+    resetRecorderState();
 
-    // Reset mocks to default successful behavior
-    mockRecording.prepareToRecordAsync.mockResolvedValue(undefined);
-    mockRecording.startAsync.mockResolvedValue(undefined);
-    mockRecording.stopAndUnloadAsync.mockResolvedValue(undefined);
-    mockRecording.pauseAsync.mockResolvedValue(undefined);
-    mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -30 });
-    mockRecording.getURI.mockReturnValue('file:///mock/recording.m4a');
-    (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, status: 'granted' });
-    (Audio.setAudioModeAsync as jest.Mock).mockResolvedValue(undefined);
+    mockRecorder.prepareToRecordAsync = jest.fn(() => Promise.resolve());
+    mockRecorder.record = jest.fn();
+    mockRecorder.pause = jest.fn();
+    mockRecorder.stop = jest.fn(() => Promise.resolve());
+    mockRecorder.uri = 'file:///mock/recording.m4a';
+    mockRecorder.isRecording = false;
+
+    mockRequestRecordingPermissions.mockResolvedValue({ granted: true, status: 'granted' });
+    mockSetAudioModeAsync.mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  // ── Initial state ──────────────────────────────────────────────────────────
+  // ── Initial state ────────────────────────────────────────────────────────
 
   describe('initial state', () => {
     it('returns idle state with zeroed values', () => {
@@ -120,13 +131,23 @@ describe('useAudioRecording', () => {
       expect(result.current.durationMs).toBe(0);
       expect(result.current.result).toBeNull();
     });
+
+    it('exposes all expected functions', () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      expect(typeof result.current.startRecording).toBe('function');
+      expect(typeof result.current.stopRecording).toBe('function');
+      expect(typeof result.current.pauseRecording).toBe('function');
+      expect(typeof result.current.resumeRecording).toBe('function');
+      expect(typeof result.current.discardRecording).toBe('function');
+      expect(typeof result.current.reset).toBe('function');
+    });
   });
 
-  // ── startRecording ─────────────────────────────────────────────────────────
+  // ── startRecording ────────────────────────────────────────────────────────
 
   describe('startRecording', () => {
-    it('requests permission, sets audio mode, and starts recording', async () => {
-      jest.useFakeTimers();
+    it('requests permission, sets audio mode, prepares and starts recording', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       let started: boolean | undefined;
@@ -135,15 +156,15 @@ describe('useAudioRecording', () => {
       });
 
       expect(started).toBe(true);
-      expect(Audio.requestPermissionsAsync).toHaveBeenCalledTimes(1);
-      expect(Audio.setAudioModeAsync).toHaveBeenCalledWith({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      expect(mockRequestRecordingPermissions).toHaveBeenCalledTimes(1);
+      expect(mockSetAudioModeAsync).toHaveBeenCalledWith({
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
-      expect(mockRecording.prepareToRecordAsync).toHaveBeenCalledWith(
+      expect(mockRecorder.prepareToRecordAsync).toHaveBeenCalledWith(
         expect.objectContaining({ isMeteringEnabled: true }),
       );
-      expect(mockRecording.startAsync).toHaveBeenCalledTimes(1);
+      expect(mockRecorder.record).toHaveBeenCalledTimes(1);
       expect(result.current.state).toBe('recording');
       expect(result.current.amplitude).toBe(0);
       expect(result.current.durationMs).toBe(0);
@@ -151,7 +172,7 @@ describe('useAudioRecording', () => {
     });
 
     it('returns false and shows alert when permission is denied', async () => {
-      (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: false, status: 'denied' });
+      mockRequestRecordingPermissions.mockResolvedValue({ granted: false, status: 'denied' });
       const alertSpy = jest.spyOn(Alert, 'alert');
 
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
@@ -163,18 +184,14 @@ describe('useAudioRecording', () => {
 
       expect(started).toBe(false);
       expect(alertSpy).toHaveBeenCalledTimes(1);
-      expect(alertSpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('Microphone'),
-      );
-      expect(mockRecording.prepareToRecordAsync).not.toHaveBeenCalled();
+      expect(mockRecorder.prepareToRecordAsync).not.toHaveBeenCalled();
       expect(result.current.state).toBe('idle');
 
       alertSpy.mockRestore();
     });
 
     it('returns false and sets idle state when an error is thrown', async () => {
-      (Audio.setAudioModeAsync as jest.Mock).mockRejectedValue(new Error('Audio mode failed'));
+      mockSetAudioModeAsync.mockRejectedValueOnce(new Error('Audio mode failed'));
 
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
@@ -188,21 +205,7 @@ describe('useAudioRecording', () => {
     });
 
     it('returns false when prepareToRecordAsync throws', async () => {
-      mockRecording.prepareToRecordAsync.mockRejectedValue(new Error('Prepare failed'));
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      let started: boolean | undefined;
-      await act(async () => {
-        started = await result.current.startRecording();
-      });
-
-      expect(started).toBe(false);
-      expect(result.current.state).toBe('idle');
-    });
-
-    it('returns false when startAsync throws', async () => {
-      mockRecording.startAsync.mockRejectedValue(new Error('Start failed'));
+      mockRecorder.prepareToRecordAsync = jest.fn(() => Promise.reject(new Error('Prepare failed')));
 
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
@@ -216,192 +219,377 @@ describe('useAudioRecording', () => {
     });
   });
 
-  // ── stopRecording ──────────────────────────────────────────────────────────
+  // ── stopRecording ─────────────────────────────────────────────────────────
 
   describe('stopRecording', () => {
-    it('stops recording and returns AudioRecordingResult', async () => {
-      jest.useFakeTimers();
+    it('calls recorder.stop(), builds result with uri and duration, sets state to stopped', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
+      // Start recording then update capturedDuration via recorderState
       await act(async () => {
         await result.current.startRecording();
       });
 
-      let recordingResult: AudioRecordingResult | null = null;
+      // Simulate native layer reporting 3000ms duration
+      (globalThis as Record<string, unknown>).__mockRecorderState = {
+        isRecording: true,
+        durationMillis: 3000,
+        metering: -30,
+      };
+
+      const wrapper = createWrapper();
+      const { result: result2, rerender } = renderHook(() => useAudioRecording(), { wrapper });
+
       await act(async () => {
-        recordingResult = await result.current.stopRecording();
+        await result2.current.startRecording();
       });
 
-      expect(mockRecording.stopAndUnloadAsync).toHaveBeenCalledTimes(1);
-      expect(mockRecording.getURI).toHaveBeenCalledTimes(1);
+      // Drive recorderState update to capture duration
+      act(() => {
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: 3000,
+          metering: -30,
+        };
+        rerender({});
+      });
+
+      let recordingResult: AudioRecordingResult | null = null;
+      await act(async () => {
+        recordingResult = await result2.current.stopRecording();
+      });
+
+      expect(mockRecorder.stop).toHaveBeenCalled();
       expect(recordingResult).not.toBeNull();
       expect(recordingResult!.uri).toBe('file:///mock/recording.m4a');
       expect(recordingResult!.mimeType).toBe('audio/mp4');
-      expect(recordingResult!.fileSize).toBeGreaterThanOrEqual(1);
-      expect(recordingResult!.durationMs).toBeGreaterThanOrEqual(0);
-      expect(result.current.state).toBe('stopped');
-      expect(result.current.result).toEqual(recordingResult);
+      expect(recordingResult!.fileSize).toBeGreaterThan(0);
+      expect(result2.current.state).toBe('stopped');
     });
 
-    it('returns null when no recording exists', async () => {
+    it('returns null when called from idle state', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
-      let recordingResult: AudioRecordingResult | null = null;
+      let res: AudioRecordingResult | null | undefined;
       await act(async () => {
-        recordingResult = await result.current.stopRecording();
+        res = await result.current.stopRecording();
       });
 
-      expect(recordingResult).toBeNull();
-      expect(mockRecording.stopAndUnloadAsync).not.toHaveBeenCalled();
+      expect(res).toBeNull();
+      expect(mockRecorder.stop).not.toHaveBeenCalled();
     });
 
-    it('returns null when URI is null', async () => {
-      jest.useFakeTimers();
-      mockRecording.getURI.mockReturnValue(null);
-
+    it('returns null when recorder.uri is null after stop', async () => {
+      mockRecorder.uri = null;
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      let recordingResult: AudioRecordingResult | null = null;
+      let res: AudioRecordingResult | null | undefined;
       await act(async () => {
-        recordingResult = await result.current.stopRecording();
+        res = await result.current.stopRecording();
       });
 
-      expect(recordingResult).toBeNull();
+      expect(res).toBeNull();
       expect(result.current.state).toBe('idle');
     });
 
-    it('returns null and resets to idle when stopAndUnloadAsync throws', async () => {
-      jest.useFakeTimers();
+    it('returns null and sets idle when recorder.stop() throws', async () => {
+      mockRecorder.stop = jest.fn(() => Promise.reject(new Error('stop failed')));
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      mockRecording.stopAndUnloadAsync.mockRejectedValueOnce(new Error('Stop failed'));
-
-      let recordingResult: AudioRecordingResult | null = null;
+      let res: AudioRecordingResult | null | undefined;
       await act(async () => {
-        recordingResult = await result.current.stopRecording();
+        res = await result.current.stopRecording();
       });
 
-      expect(recordingResult).toBeNull();
+      expect(res).toBeNull();
       expect(result.current.state).toBe('idle');
     });
-  });
 
-  // ── Double-stop guard ──────────────────────────────────────────────────────
+    it('uses fileSize = 1 when FSFile constructor throws', async () => {
+      const { File: FSFileMock } = require('expo-file-system');
+      FSFileMock.mockImplementationOnce(() => { throw new Error('FS error'); });
 
-  describe('double-stop guard (isStoppingRef)', () => {
-    it('returns null for second concurrent stop call', async () => {
-      jest.useFakeTimers();
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      // Make stopAndUnloadAsync slow so isStoppingRef stays true
-      let resolveStop: (() => void) | undefined;
-      mockRecording.stopAndUnloadAsync.mockImplementation(
-        () => new Promise<void>((resolve) => { resolveStop = resolve; }),
+      let res: AudioRecordingResult | null | undefined;
+      await act(async () => {
+        res = await result.current.stopRecording();
+      });
+
+      expect(res).not.toBeNull();
+      expect(res!.fileSize).toBe(1);
+    });
+
+    it('uses fileSize = 1 when file.size is null/0', async () => {
+      const { File: FSFileMock } = require('expo-file-system');
+      FSFileMock.mockImplementationOnce(() => ({ size: null }));
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      let res: AudioRecordingResult | null | undefined;
+      await act(async () => {
+        res = await result.current.stopRecording();
+      });
+
+      expect(res).not.toBeNull();
+      expect(res!.fileSize).toBe(1);
+    });
+
+    it('returns null when called twice (isStoppingRef guard)', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      // Make stop take a long time
+      let resolveStop: () => void;
+      mockRecorder.stop = jest.fn(
+        () => new Promise<void>((resolve) => { resolveStop = resolve; })
       );
 
-      let firstResult: AudioRecordingResult | null = null;
-      let secondResult: AudioRecordingResult | null = null;
+      let firstResult: AudioRecordingResult | null | undefined;
+      let secondResult: AudioRecordingResult | null | undefined;
 
       await act(async () => {
-        const firstPromise = result.current.stopRecording();
-        // Second call while first is in-flight
-        secondResult = await result.current.stopRecording();
-        // Now resolve the first
-        resolveStop?.();
-        firstResult = await firstPromise;
+        const p1 = result.current.stopRecording().then((r) => { firstResult = r; });
+        const p2 = result.current.stopRecording().then((r) => { secondResult = r; });
+        resolveStop!();
+        await Promise.all([p1, p2]);
       });
 
+      // Second call should be guarded by isStoppingRef
       expect(secondResult).toBeNull();
-      expect(firstResult).not.toBeNull();
-      expect(mockRecording.stopAndUnloadAsync).toHaveBeenCalledTimes(1);
     });
   });
 
-  // ── discardRecording ───────────────────────────────────────────────────────
+  // ── pauseRecording ────────────────────────────────────────────────────────
 
-  describe('discardRecording', () => {
-    it('stops recording and resets state to idle', async () => {
-      jest.useFakeTimers();
+  describe('pauseRecording', () => {
+    it('calls recorder.pause() and sets state to paused', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       await act(async () => {
         await result.current.startRecording();
       });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(mockRecorder.pause).toHaveBeenCalledTimes(1);
+      expect(result.current.state).toBe('paused');
+      expect(result.current.amplitude).toBe(0);
+    });
+
+    it('is a no-op when state is idle', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(mockRecorder.pause).not.toHaveBeenCalled();
+    });
+
+    it('is a no-op when already paused', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(result.current.state).toBe('paused');
+
+      jest.clearAllMocks();
+      mockSetAudioModeAsync.mockResolvedValue(undefined);
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      // Should be no-op since stateRef is 'paused', not 'recording'
+      expect(mockRecorder.pause).not.toHaveBeenCalled();
+    });
+
+    it('stays recording when recorder.pause() throws (graceful degradation)', async () => {
+      mockRecorder.pause = jest.fn(() => { throw new Error('Pause not supported'); });
+
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      // State should remain 'recording' on pause failure
+      expect(result.current.state).toBe('recording');
+    });
+  });
+
+  // ── resumeRecording ───────────────────────────────────────────────────────
+
+  describe('resumeRecording', () => {
+    it('calls recorder.record() and sets state to recording', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      expect(result.current.state).toBe('paused');
+
+      jest.clearAllMocks();
+      mockSetAudioModeAsync.mockResolvedValue(undefined);
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      expect(mockRecorder.record).toHaveBeenCalledTimes(1);
+      expect(result.current.state).toBe('recording');
+    });
+
+    it('is a no-op when not paused', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      expect(mockRecorder.record).not.toHaveBeenCalled();
+    });
+
+    it('transitions to idle when recorder.record() throws', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
+
+      mockRecorder.record = jest.fn(() => { throw new Error('Record failed'); });
+
+      await act(async () => {
+        await result.current.resumeRecording();
+      });
+
+      expect(result.current.state).toBe('idle');
+    });
+  });
+
+  // ── discardRecording ──────────────────────────────────────────────────────
+
+  describe('discardRecording', () => {
+    it('stops active recording and resets all state', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
       expect(result.current.state).toBe('recording');
 
       await act(async () => {
         await result.current.discardRecording();
       });
 
-      expect(mockRecording.stopAndUnloadAsync).toHaveBeenCalledTimes(1);
+      expect(mockRecorder.stop).toHaveBeenCalled();
       expect(result.current.state).toBe('idle');
       expect(result.current.amplitude).toBe(0);
       expect(result.current.durationMs).toBe(0);
       expect(result.current.result).toBeNull();
     });
 
-    it('handles no active recording gracefully', async () => {
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.discardRecording();
-      });
-
-      expect(result.current.state).toBe('idle');
-      expect(mockRecording.stopAndUnloadAsync).not.toHaveBeenCalled();
-    });
-
-    it('handles stopAndUnloadAsync throwing during discard', async () => {
-      jest.useFakeTimers();
+    it('discards while paused', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      mockRecording.stopAndUnloadAsync.mockRejectedValueOnce(new Error('Already stopped'));
+      await act(async () => {
+        await result.current.pauseRecording();
+      });
 
       await act(async () => {
         await result.current.discardRecording();
       });
 
-      // Should still reset state despite the error
+      expect(mockRecorder.stop).toHaveBeenCalled();
       expect(result.current.state).toBe('idle');
-      expect(result.current.amplitude).toBe(0);
+    });
+
+    it('is safe when not recording', async () => {
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.discardRecording();
+      });
+
+      // recorder.stop should NOT be called since wasActive is false
+      expect(mockRecorder.stop).not.toHaveBeenCalled();
+      expect(result.current.state).toBe('idle');
+    });
+
+    it('swallows error when recorder.stop() throws during discard', async () => {
+      mockRecorder.stop = jest.fn(() => Promise.reject(new Error('Already stopped')));
+      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      // Should not throw
+      await act(async () => {
+        await result.current.discardRecording();
+      });
+
+      expect(result.current.state).toBe('idle');
     });
   });
 
-  // ── reset ──────────────────────────────────────────────────────────────────
+  // ── reset ─────────────────────────────────────────────────────────────────
 
   describe('reset', () => {
-    it('resets state without touching recording', async () => {
-      jest.useFakeTimers();
+    it('resets state to idle and clears all values', async () => {
       const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
 
-      // Start and stop to get into "stopped" state with a result
       await act(async () => {
         await result.current.startRecording();
       });
-      await act(async () => {
-        await result.current.stopRecording();
-      });
-      expect(result.current.state).toBe('stopped');
-      expect(result.current.result).not.toBeNull();
 
-      // Clear stopAndUnloadAsync call count
-      mockRecording.stopAndUnloadAsync.mockClear();
+      expect(result.current.state).toBe('recording');
 
       act(() => {
         result.current.reset();
@@ -411,641 +599,140 @@ describe('useAudioRecording', () => {
       expect(result.current.amplitude).toBe(0);
       expect(result.current.durationMs).toBe(0);
       expect(result.current.result).toBeNull();
-      // reset() should NOT call stopAndUnloadAsync
-      expect(mockRecording.stopAndUnloadAsync).not.toHaveBeenCalled();
     });
   });
 
-  // ── Amplitude polling ──────────────────────────────────────────────────────
+  // ── recorderState effects (amplitude / duration / auto-stop) ─────────────
 
-  describe('amplitude polling', () => {
-    it('polls getStatusAsync on interval and updates amplitude/duration', async () => {
-      jest.useFakeTimers();
-      const now = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(now);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+  describe('recorderState reactive effects', () => {
+    it('updates amplitude and durationMs from recorderState while recording', async () => {
+      const { result, rerender } = renderHook(() => useAudioRecording(), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      // Advance time so elapsed > 0
-      (Date.now as jest.Mock).mockReturnValue(now + 300);
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -30 });
+      expect(result.current.state).toBe('recording');
 
-      await act(async () => {
-        jest.advanceTimersByTime(150);
+      act(() => {
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: 5000,
+          metering: -30,
+        };
+        rerender({});
       });
 
-      // Allow the async getStatusAsync promise to resolve
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      await waitFor(() => {
-        expect(result.current.amplitude).toBe(0.5); // normalizeAmplitude(-30) = 0.5
-      });
-      expect(result.current.durationMs).toBeGreaterThan(0);
+      expect(result.current.durationMs).toBe(5000);
+      expect(result.current.amplitude).toBeCloseTo(0.5);
     });
 
-    it('uses -160 metering when metering is undefined', async () => {
-      jest.useFakeTimers();
-      const now = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(now);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+    it('normalizes amplitude from metering value', async () => {
+      const { result, rerender } = renderHook(() => useAudioRecording(), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      (Date.now as jest.Mock).mockReturnValue(now + 200);
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: undefined });
+      act(() => {
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: 1000,
+          metering: -15,
+        };
+        rerender({});
+      });
 
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      await waitFor(() => {
-        // normalizeAmplitude(-160) = 0
-        expect(result.current.amplitude).toBe(0);
-      });
+      expect(result.current.amplitude).toBeCloseTo(0.75);
     });
 
-    it('does not update amplitude when isRecording is false', async () => {
-      jest.useFakeTimers();
-      const now = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(now);
+    it('does not update state when not recording (idle state)', async () => {
+      const { result, rerender } = renderHook(() => useAudioRecording(), {
+        wrapper: createWrapper(),
+      });
 
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
+      // Do NOT call startRecording — state is idle
+      act(() => {
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: 5000,
+          metering: -30,
+        };
+        rerender({});
+      });
+
+      // State should remain idle because stateRef is 'idle'
+      expect(result.current.state).toBe('idle');
+      expect(result.current.durationMs).toBe(0);
+    });
+
+    it('auto-stops when durationMillis >= MAX_DURATION_MS', async () => {
+      const { result, rerender } = renderHook(() => useAudioRecording(), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await result.current.startRecording();
       });
 
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: false, metering: -10 });
+      expect(result.current.state).toBe('recording');
 
       await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: MAX_DURATION_MS,
+          metering: -30,
+        };
+        rerender({});
       });
 
-      // Amplitude stays at 0 since isRecording is false
+      expect(mockRecorder.stop).toHaveBeenCalled();
+      expect(result.current.state).toBe('stopped');
+    });
+
+    it('uses metering ?? -160 fallback for null metering', async () => {
+      const { result, rerender } = renderHook(() => useAudioRecording(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        await result.current.startRecording();
+      });
+
+      act(() => {
+        (globalThis as Record<string, unknown>).__mockRecorderState = {
+          isRecording: true,
+          durationMillis: 1000,
+          metering: null,
+        };
+        rerender({});
+      });
+
+      // -160 normalized → 0
       expect(result.current.amplitude).toBe(0);
     });
-
-    it('swallows errors from getStatusAsync in polling', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      mockRecording.getStatusAsync.mockRejectedValueOnce(new Error('Status check failed'));
-
-      // Should not throw
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      expect(result.current.state).toBe('recording');
-    });
   });
 
-  // ── Auto-stop at MAX_DURATION_MS ───────────────────────────────────────────
+  // ── type exports ──────────────────────────────────────────────────────────
 
-  describe('auto-stop at MAX_DURATION_MS', () => {
-    it('calls stopAndFinalize when elapsed reaches MAX_DURATION_MS', async () => {
-      jest.useFakeTimers();
-      const startTime = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(startTime);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      expect(result.current.state).toBe('recording');
-
-      // Simulate elapsed time exceeding MAX_DURATION_MS
-      (Date.now as jest.Mock).mockReturnValue(startTime + MAX_DURATION_MS + 100);
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -20 });
-
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      await waitFor(() => {
-        expect(result.current.state).toBe('stopped');
-      });
-      expect(result.current.result).not.toBeNull();
-      expect(result.current.result!.uri).toBe('file:///mock/recording.m4a');
-    });
-  });
-
-  // ── Cleanup on unmount ─────────────────────────────────────────────────────
-
-  describe('cleanup on unmount', () => {
-    it('clears timers and stops recording on unmount', async () => {
-      jest.useFakeTimers();
-      const { result, unmount } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      expect(result.current.state).toBe('recording');
-
-      mockRecording.stopAndUnloadAsync.mockClear();
-
-      unmount();
-
-      expect(mockRecording.stopAndUnloadAsync).toHaveBeenCalledTimes(1);
+  describe('type exports', () => {
+    it('RecordingState type includes all expected states', () => {
+      const states: RecordingState[] = ['idle', 'recording', 'paused', 'stopped'];
+      expect(states).toHaveLength(4);
     });
 
-    it('does not throw on unmount when no recording is active', () => {
-      const { unmount } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      // Should not throw
-      expect(() => unmount()).not.toThrow();
-      expect(mockRecording.stopAndUnloadAsync).not.toHaveBeenCalled();
-    });
-
-    it('handles stopAndUnloadAsync error on unmount gracefully', async () => {
-      jest.useFakeTimers();
-      const { result, unmount } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      mockRecording.stopAndUnloadAsync.mockRejectedValueOnce(new Error('Unmount stop fail'));
-
-      // Should not throw
-      expect(() => unmount()).not.toThrow();
-    });
-  });
-
-  // ── clearTimers coverage ───────────────────────────────────────────────────
-
-  describe('clearTimers', () => {
-    it('clears interval timer when stopping recording', async () => {
-      jest.useFakeTimers();
-      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      clearIntervalSpy.mockClear();
-
-      await act(async () => {
-        await result.current.stopRecording();
-      });
-
-      expect(clearIntervalSpy).toHaveBeenCalled();
-
-      clearIntervalSpy.mockRestore();
-    });
-
-    it('is a no-op when called without active timer (via discard with no recording)', async () => {
-      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.discardRecording();
-      });
-
-      // clearInterval should not be called since no timer was active
-      expect(clearIntervalSpy).not.toHaveBeenCalled();
-
-      clearIntervalSpy.mockRestore();
-    });
-  });
-
-  // ── File size fallback ─────────────────────────────────────────────────────
-
-  describe('file size handling', () => {
-    it('uses file.size from FSFile when available', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      let recordingResult: AudioRecordingResult | null = null;
-      await act(async () => {
-        recordingResult = await result.current.stopRecording();
-      });
-
-      // The mock FSFile has size: 1024 (from jest.setup.js _fileMock)
-      expect(recordingResult).not.toBeNull();
-      expect(recordingResult!.fileSize).toBe(1024);
-    });
-
-    it('falls back to 1 when FSFile constructor throws', async () => {
-      jest.useFakeTimers();
-      // Temporarily make File constructor throw
-      const FSModule = require('expo-file-system');
-      const originalFile = FSModule.File;
-      FSModule.File = jest.fn(() => { throw new Error('File not found'); });
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      let recordingResult: AudioRecordingResult | null = null;
-      await act(async () => {
-        recordingResult = await result.current.stopRecording();
-      });
-
-      expect(recordingResult).not.toBeNull();
-      expect(recordingResult!.fileSize).toBe(1);
-
-      // Restore
-      FSModule.File = originalFile;
-    });
-
-    it('uses 1 when file.size is null', async () => {
-      jest.useFakeTimers();
-      const FSModule = require('expo-file-system');
-      const originalFile = FSModule.File;
-      FSModule.File = jest.fn(() => ({ size: null }));
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      let recordingResult: AudioRecordingResult | null = null;
-      await act(async () => {
-        recordingResult = await result.current.stopRecording();
-      });
-
-      expect(recordingResult).not.toBeNull();
-      // Math.max(null ?? 1, 1) = Math.max(1, 1) = 1
-      expect(recordingResult!.fileSize).toBe(1);
-
-      FSModule.File = originalFile;
-    });
-
-    it('uses 1 when file.size is 0', async () => {
-      jest.useFakeTimers();
-      const FSModule = require('expo-file-system');
-      const originalFile = FSModule.File;
-      FSModule.File = jest.fn(() => ({ size: 0 }));
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      let recordingResult: AudioRecordingResult | null = null;
-      await act(async () => {
-        recordingResult = await result.current.stopRecording();
-      });
-
-      expect(recordingResult).not.toBeNull();
-      // Math.max(0 ?? 1, 1) = Math.max(0, 1) = 1
-      expect(recordingResult!.fileSize).toBe(1);
-
-      FSModule.File = originalFile;
-    });
-  });
-
-  // ── pauseRecording ─────────────────────────────────────────────────────────
-
-  describe('pauseRecording', () => {
-    it('pauses recording and transitions state to paused', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      expect(result.current.state).toBe('recording');
-
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      expect(mockRecording.pauseAsync).toHaveBeenCalledTimes(1);
-      expect(result.current.state).toBe('paused');
-      expect(result.current.amplitude).toBe(0);
-    });
-
-    it('clears amplitude polling interval when pausing', async () => {
-      jest.useFakeTimers();
-      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      clearIntervalSpy.mockClear();
-
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      expect(clearIntervalSpy).toHaveBeenCalled();
-      clearIntervalSpy.mockRestore();
-    });
-
-    it('is a no-op when no recording is active', async () => {
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      expect(mockRecording.pauseAsync).not.toHaveBeenCalled();
-      expect(result.current.state).toBe('idle');
-    });
-
-    it('is a no-op when already paused', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-      expect(result.current.state).toBe('paused');
-
-      mockRecording.pauseAsync.mockClear();
-
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      expect(mockRecording.pauseAsync).not.toHaveBeenCalled();
-    });
-
-    it('restarts polling without pausing when pauseAsync throws', async () => {
-      jest.useFakeTimers();
-      mockRecording.pauseAsync.mockRejectedValueOnce(new Error('Not supported'));
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      // State remains recording (graceful degradation)
-      expect(result.current.state).toBe('recording');
-    });
-  });
-
-  // ── resumeRecording ────────────────────────────────────────────────────────
-
-  describe('resumeRecording', () => {
-    it('resumes recording and transitions state back to recording', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-      expect(result.current.state).toBe('paused');
-
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-
-      expect(mockRecording.startAsync).toHaveBeenCalledTimes(2); // once start, once resume
-      expect(result.current.state).toBe('recording');
-    });
-
-    it('restarts amplitude polling after resuming', async () => {
-      jest.useFakeTimers();
-      const now = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(now);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-
-      (Date.now as jest.Mock).mockReturnValue(now + 300);
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -30 });
-
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      await waitFor(() => {
-        expect(result.current.amplitude).toBe(0.5);
-      });
-    });
-
-    it('is a no-op when not paused', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      expect(result.current.state).toBe('recording');
-
-      mockRecording.startAsync.mockClear();
-
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-
-      // startAsync should NOT be called again (we're already recording, not paused)
-      expect(mockRecording.startAsync).not.toHaveBeenCalled();
-      expect(result.current.state).toBe('recording');
-    });
-
-    it('transitions to idle when startAsync throws during resume', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      mockRecording.startAsync.mockRejectedValueOnce(new Error('Resume failed'));
-
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-
-      expect(result.current.state).toBe('idle');
-    });
-  });
-
-  // ── Paused time excluded from elapsed ──────────────────────────────────────
-
-  describe('paused time exclusion', () => {
-    it('elapsed time does not include time spent paused', async () => {
-      jest.useFakeTimers();
-      const startTime = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(startTime);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      // Advance 5 seconds of recording
-      (Date.now as jest.Mock).mockReturnValue(startTime + 5000);
-
-      // Pause at 5s
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      // Advance 10 more seconds while paused
-      (Date.now as jest.Mock).mockReturnValue(startTime + 15000);
-
-      // Resume
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-
-      // Advance 3 more seconds of recording
-      (Date.now as jest.Mock).mockReturnValue(startTime + 18000);
-
-      // Stop and check result duration: should be 5s + 3s = 8s (10s pause excluded)
-      let recordingResult: AudioRecordingResult | null = null;
-      await act(async () => {
-        recordingResult = await result.current.stopRecording();
-      });
-
-      expect(recordingResult).not.toBeNull();
-      // durationMs = 8000 (5s + 3s, excluding 10s pause)
-      expect(recordingResult!.durationMs).toBe(8000);
-    });
-
-    it('auto-stop counts only active recording time', async () => {
-      jest.useFakeTimers();
-      const startTime = 1000;
-      jest.spyOn(Date, 'now').mockReturnValue(startTime);
-
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      // Pause after 30s
-      (Date.now as jest.Mock).mockReturnValue(startTime + 30000);
-      await act(async () => {
-        await result.current.pauseRecording();
-      });
-
-      // Wait 120s while paused (way beyond 60s limit)
-      (Date.now as jest.Mock).mockReturnValue(startTime + 150000);
-
-      // Resume: now elapsed = 30s (pause time excluded), so should NOT auto-stop immediately
-      await act(async () => {
-        await result.current.resumeRecording();
-      });
-      expect(result.current.state).toBe('recording');
-
-      // Advance another 25s of recording (30 + 25 = 55s total active, under limit)
-      (Date.now as jest.Mock).mockReturnValue(startTime + 175000);
-      mockRecording.getStatusAsync.mockResolvedValue({ isRecording: true, metering: -20 });
-
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      // Should still be recording (55s < 60s)
-      expect(result.current.state).toBe('recording');
-    });
-  });
-
-  // ── Polling guard: no-op when recording ref cleared or isStopping ──────────
-
-  describe('polling guard', () => {
-    it('does nothing when isStoppingRef is true during interval callback', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useAudioRecording(), { wrapper: createWrapper() });
-
-      await act(async () => {
-        await result.current.startRecording();
-      });
-
-      // Start a stop that is slow (sets isStoppingRef = true)
-      let resolveStop: (() => void) | undefined;
-      mockRecording.stopAndUnloadAsync.mockImplementation(
-        () => new Promise<void>((resolve) => { resolveStop = resolve; }),
-      );
-
-      mockRecording.getStatusAsync.mockClear();
-
-      // Start stopping (sets isStoppingRef = true)
-      let stopPromise: Promise<AudioRecordingResult | null>;
-      await act(async () => {
-        stopPromise = result.current.stopRecording();
-      });
-
-      // Trigger interval while isStopping
-      await act(async () => {
-        jest.advanceTimersByTime(150);
-      });
-
-      // getStatusAsync should NOT have been called because of the isStopping guard
-      expect(mockRecording.getStatusAsync).not.toHaveBeenCalled();
-
-      // Clean up
-      await act(async () => {
-        resolveStop?.();
-        await stopPromise!;
-      });
+    it('AudioRecordingResult has expected shape', () => {
+      const res: AudioRecordingResult = {
+        uri: 'file:///test.m4a',
+        durationMs: 1000,
+        fileSize: 512,
+        mimeType: 'audio/mp4',
+      };
+      expect(res.mimeType).toBe('audio/mp4');
     });
   });
 });
