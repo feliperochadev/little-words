@@ -12,10 +12,11 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
 
 1. **PR Validation** — Run `gh pr view <pr-number>` to fetch PR details and confirm it exists. If PR is already merged or doesn't exist, stop and inform the user.
 
-2. **Fetch SonarCloud Data** — Use curl to fetch data from SonarCloud API:
-   - **Issues**: `https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>`
-   - **Security Hotspots**: `https://sonarcloud.io/api/hotspots/search?projectKey=feliperochadev_little-words&pullRequest=<PR>`
-   - **Metrics** (coverage, complexity, duplications): `https://sonarcloud.io/api/measures/component_tree?component=feliperochadev_little-words&metricKeys=complexity,coverage,vulnerabilities,bugs,duplicated_lines_density,security_rating,security_hotspots&pullRequest=<PR>`
+2. **Fetch SonarCloud Data** — Use curl to fetch data from SonarCloud API (no authentication required for public projects):
+   - **Issues on PR**: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | python3 -m json.tool`
+   - **Quality Gate Status**: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | python3 -m json.tool`
+   - **New Code Coverage**: `curl -s "https://sonarcloud.io/api/measures/component?component=feliperochadev_little-words&metricKeys=new_coverage" | python3 -m json.tool`
+   - **All Metrics**: `curl -s "https://sonarcloud.io/api/measures/component?component=feliperochadev_little-words&metricKeys=coverage,complexity,vulnerabilities,bugs" | python3 -m json.tool`
 
 3. **Analyze Issues** — Parse the API responses and categorize issues by type:
    - **Coverage Issues**: Files with coverage < 85%
