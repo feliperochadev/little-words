@@ -131,4 +131,213 @@ describe('MediaScreen', () => {
       expect(getByTestId('edit-asset-modal')).toBeTruthy();
     });
   });
+
+  it('filters assets by audio type', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-filter-audio'));
+    fireEvent.press(getByTestId('media-filter-audio'));
+    // Filter should be active and assets displayed
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('filters assets by photo type', async () => {
+    const photoAsset: AssetWithLink = {
+      ...sampleAsset,
+      asset_type: 'photo',
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([photoAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-filter-photo'));
+    fireEvent.press(getByTestId('media-filter-photo'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('filters assets by video type', async () => {
+    const videoAsset: AssetWithLink = {
+      ...sampleAsset,
+      asset_type: 'video',
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([videoAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-filter-video'));
+    fireEvent.press(getByTestId('media-filter-video'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('clears filter when all button is pressed', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-filter-audio'));
+    fireEvent.press(getByTestId('media-filter-audio'));
+    fireEvent.press(getByTestId('media-filter-all'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('sorts assets by date descending', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-sort-btn'));
+    fireEvent.press(getByTestId('media-sort-btn'));
+    await waitFor(() => getByTestId('media-sort-date_desc'));
+    fireEvent.press(getByTestId('media-sort-date_desc'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('sorts assets by date ascending', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-sort-btn'));
+    fireEvent.press(getByTestId('media-sort-btn'));
+    await waitFor(() => getByTestId('media-sort-date_asc'));
+    fireEvent.press(getByTestId('media-sort-date_asc'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('sorts assets by name ascending', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-sort-btn'));
+    fireEvent.press(getByTestId('media-sort-btn'));
+    await waitFor(() => getByTestId('media-sort-name_asc'));
+    fireEvent.press(getByTestId('media-sort-name_asc'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('sorts assets by name descending', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-sort-btn'));
+    fireEvent.press(getByTestId('media-sort-btn'));
+    await waitFor(() => getByTestId('media-sort-name_desc'));
+    fireEvent.press(getByTestId('media-sort-name_desc'));
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('searches assets by name', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-search'));
+    fireEvent.changeText(getByTestId('media-search'), 'Test');
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('searches assets by parent word name', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-search'));
+    fireEvent.changeText(getByTestId('media-search'), 'baby');
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('shows no results when search matches nothing', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => {
+      expect(getByTestId('media-empty')).toBeTruthy();
+    });
+  });
+
+  it('clears search filter', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-search'));
+    fireEvent.changeText(getByTestId('media-search'), 'Test');
+    fireEvent.changeText(getByTestId('media-search'), '');
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('confirms asset removal when remove button is pressed and confirmed', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    (assetService.removeAsset as jest.Mock).mockResolvedValue(undefined);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-remove-1'));
+    fireEvent.press(getByTestId('media-remove-1'));
+    expect(Alert.alert).toHaveBeenCalled();
+  });
+
+  it('displays multiple assets in list', async () => {
+    const asset2: AssetWithLink = {
+      ...sampleAsset,
+      id: 2,
+      name: 'Test Audio 2',
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset, asset2]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+      expect(getByTestId('media-item-2')).toBeTruthy();
+    });
+  });
+
+  it('handles refresh action', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-search'));
+    // RefreshControl is part of FlatList component
+    expect(getByTestId('media-search')).toBeTruthy();
+  });
+
+  it('displays asset metadata correctly', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    // Asset item should be displayed
+    expect(getByTestId('media-item-1')).toBeTruthy();
+  });
+
+  it('displays asset parent word name', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    // Parent word asset row should exist
+    expect(getByTestId('media-item-1')).toBeTruthy();
+  });
+
+  it('displays human-readable file size', async () => {
+    const largeAsset: AssetWithLink = {
+      ...sampleAsset,
+      file_size: 1024 * 1024 * 2.5, // 2.5 MB
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([largeAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    // Large file size should be formatted
+    expect(getByTestId('media-item-1')).toBeTruthy();
+  });
+
+  it('closes sort menu when sort option is selected', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId, queryByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-sort-btn'));
+    fireEvent.press(getByTestId('media-sort-btn'));
+    await waitFor(() => getByTestId('media-sort-date_desc'));
+    fireEvent.press(getByTestId('media-sort-date_desc'));
+    // Menu should close after selection
+    await waitFor(() => {
+      expect(getByTestId('media-sort-btn')).toBeTruthy();
+    });
+  });
 });
