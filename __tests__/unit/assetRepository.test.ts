@@ -11,6 +11,7 @@ import {
   getAllAssets,
   updateAssetParent,
   updateAssetName,
+  updateAssetDate,
 } from '../../src/repositories/assetRepository';
 import type { NewAsset, AssetWithLink } from '../../src/types/asset';
 
@@ -320,6 +321,21 @@ describe('assetRepository', () => {
 
     it('resolves to undefined', async () => {
       const result = await updateAssetName(1, 'name');
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('updateAssetDate', () => {
+    it('updates asset created_at date', async () => {
+      await updateAssetDate(1, '2025-06-01');
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET created_at = ?'),
+        ['2025-06-01', 1],
+      );
+    });
+
+    it('resolves to undefined', async () => {
+      const result = await updateAssetDate(1, '2025-06-01');
       expect(result).toBeUndefined();
     });
   });

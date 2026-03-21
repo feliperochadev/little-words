@@ -10,10 +10,19 @@ jest.mock('../../src/services/assetService', () => ({
   getAllAssets: jest.fn().mockResolvedValue([]),
   relinkAsset: jest.fn().mockResolvedValue({ id: 1 }),
   renameAsset: jest.fn().mockResolvedValue(undefined),
+  updateAssetDate: jest.fn().mockResolvedValue(undefined),
   removeAsset: jest.fn().mockResolvedValue(undefined),
   getAssetsByParent: jest.fn().mockResolvedValue([]),
   getAssetsByParentAndType: jest.fn().mockResolvedValue([]),
   getProfilePhoto: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('../../src/utils/assetStorage', () => ({
+  getAssetFileUri: jest.fn().mockReturnValue('file:///mock/path/asset.m4a'),
+  saveAssetFile: jest.fn().mockResolvedValue('asset.m4a'),
+  deleteAssetFile: jest.fn().mockResolvedValue(undefined),
+  deleteAllAssetsForParent: jest.fn().mockResolvedValue(undefined),
+  moveAssetFile: jest.fn().mockReturnValue(undefined),
 }));
 
 jest.mock('../../src/services/wordService', () => ({
@@ -48,6 +57,12 @@ const mockPhotoAsset: AssetWithLink = {
   ...mockAsset,
   id: 2, asset_type: 'photo', filename: 'asset_2.jpg', name: 'Test Photo',
   mime_type: 'image/jpeg', duration_ms: null,
+};
+
+const mockVideoAsset: AssetWithLink = {
+  ...mockAsset,
+  id: 3, asset_type: 'video', filename: 'asset_3.mp4', name: 'Test Video',
+  mime_type: 'video/mp4', duration_ms: null,
 };
 
 describe('EditAssetModal', () => {
@@ -146,6 +161,86 @@ describe('EditAssetModal', () => {
     );
     await waitFor(() => {
       expect(getByText('Photo')).toBeTruthy();
+    });
+  });
+
+  it('renders drag handle for swipe-to-dismiss', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => {
+      expect(getByTestId('edit-asset-modal')).toBeTruthy();
+    });
+  });
+
+  it('renders cancel button', async () => {
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-cancel'));
+    fireEvent.press(getByTestId('edit-asset-cancel'));
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('renders date field pre-populated with asset date', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => {
+      expect(getByTestId('edit-asset-date')).toBeTruthy();
+    });
+  });
+
+  it('calls updateAssetDate when date is changed and save is pressed', async () => {
+    const onClose = jest.fn();
+    const mockUpdateDate = assetService.updateAssetDate as jest.Mock;
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-save'));
+    fireEvent.changeText(getByTestId('edit-asset-name-input'), mockAsset.name ?? '');
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(mockUpdateDate).not.toHaveBeenCalled();
+    });
+  });
+
+  it('type icon is interactive for audio asset', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => {
+      expect(getByTestId('audio-preview-modal')).toBeTruthy();
+    });
+  });
+
+  it('type icon is interactive for photo asset', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockPhotoAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => {
+      expect(getByTestId('photo-preview-modal')).toBeTruthy();
+    });
+  });
+
+  it('type icon press for video asset does not open overlay', async () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockVideoAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => {
+      expect(queryByTestId('audio-preview-modal')).toBeNull();
+      expect(queryByTestId('photo-preview-modal')).toBeNull();
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   useAllAssets,
   useRelinkAsset,
   useRenameAsset,
+  useUpdateAssetDate,
 } from '../../src/hooks/useAssets';
 import * as assetService from '../../src/services/assetService';
 import type { Asset, SaveAssetParams } from '../../src/services/assetService';
@@ -72,6 +73,7 @@ jest.mock('../../src/services/assetService', () => ({
   getAllAssets: jest.fn(() => Promise.resolve([])),
   relinkAsset: jest.fn(() => Promise.resolve({ id: 1 })),
   renameAsset: jest.fn(() => Promise.resolve()),
+  updateAssetDate: jest.fn(() => Promise.resolve()),
 }));
 
 const mockedService = assetService as jest.Mocked<typeof assetService>;
@@ -702,6 +704,36 @@ describe('useAssets hooks', () => {
 
       await act(async () => {
         result.current.mutate({ id: 1, name: 'New Name' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['allAssets'] }),
+      );
+    });
+  });
+
+  describe('useUpdateAssetDate', () => {
+    it('calls updateAssetDate service with correct params', async () => {
+      mockedService.updateAssetDate.mockResolvedValueOnce(undefined);
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => useUpdateAssetDate(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: 1, date: '2025-06-01' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedService.updateAssetDate).toHaveBeenCalledWith(1, '2025-06-01');
+    });
+
+    it('invalidates allAssets query on success', async () => {
+      const { Wrapper, queryClient } = createWrapper();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useUpdateAssetDate(), { wrapper: Wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: 1, date: '2025-06-01' });
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));

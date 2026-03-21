@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS, ASSET_MUTATION_KEYS } from './queryKeys';
 import * as assetService from '../services/assetService';
-import { relinkAsset, renameAsset, getAllAssets } from '../services/assetService';
+import { relinkAsset, renameAsset, updateAssetDate, getAllAssets } from '../services/assetService';
 import { getAssetFileUri } from '../utils/assetStorage';
 import type { ParentType, AssetType, Asset, AssetWithLink } from '../types/asset';
 
@@ -146,6 +146,20 @@ export function useRenameAsset() {
   return useMutation({
     mutationFn: ({ id, name }: { id: number; name: string }) =>
       renameAsset(id, name),
+    onSuccess: () => {
+      ASSET_MUTATION_KEYS.forEach(key =>
+        queryClient.invalidateQueries({ queryKey: key })
+      );
+      queryClient.invalidateQueries({ queryKey: ['allAssets'] });
+    },
+  });
+}
+
+export function useUpdateAssetDate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, date }: { id: number; date: string }) =>
+      updateAssetDate(id, date),
     onSuccess: () => {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })

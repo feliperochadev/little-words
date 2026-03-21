@@ -8,6 +8,7 @@ import {
   getAssetsByParentAndType as getAssetsByParentAndTypeFromRepo,
   updateAssetParent,
   updateAssetName as updateAssetNameInRepo,
+  updateAssetDate as updateAssetDateInRepo,
 } from '../repositories/assetRepository';
 import {
   saveAssetFile,
@@ -163,6 +164,10 @@ export async function deleteProfilePhoto(): Promise<void> {
 
 export async function renameAsset(id: number, name: string): Promise<void> {
   await updateAssetNameInRepo(id, name);
+}
+
+export async function updateAssetDate(id: number, date: string): Promise<void> {
+  await updateAssetDateInRepo(id, date);
 }
 
 export async function relinkAsset(

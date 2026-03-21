@@ -106,3 +106,6 @@ export const updateAssetParent = (
 
 export const updateAssetName = (id: number, name: string): Promise<void> =>
   run('UPDATE assets SET name = ? WHERE id = ?', [name, id]).then(() => undefined);
+
+export const updateAssetDate = (id: number, date: string): Promise<void> =>
+  run('UPDATE assets SET created_at = ? WHERE id = ?', [date, id]).then(() => undefined);

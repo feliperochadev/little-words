@@ -2,6 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-21_8
+
+[feature] **Enhance media-management-screen**: sort button moved to filters row in media screen; EditAssetModal gains drag handle + swipe-to-dismiss, date picker, tappable type icon (opens AudioPreviewOverlay/PhotoPreviewOverlay), and Cancel button.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `app/(tabs)/media.tsx`: sort button relocated from title row to the right of the filter chips; sort menu is now anchored relative to its container
+- `src/components/EditAssetModal.tsx`: added `useModalAnimation` for slide-in/swipe-to-dismiss, drag handle pill, `DatePickerField` for date editing, tappable type-icon badge that opens preview overlays for audio/photo assets, Cancel button alongside Save
+- `src/repositories/assetRepository.ts`: added `updateAssetDate(id, date)`
+- `src/services/assetService.ts`: added `updateAssetDate` service wrapper
+- `src/hooks/useAssets.ts`: added `useUpdateAssetDate` mutation hook
+- `src/i18n/en-US.ts` + `pt-BR.ts`: added `media.editDateLabel` and `media.editCancel` keys
+
 ### 2026-03-21_7
 
 [fix] **More tab** now expands a floating popup (Modal) above the tab bar instead of navigating to a dedicated `more.tsx` screen. Tapping Media or Settings from the popup navigates to the respective hidden tab screen. `media` and `settings` are hidden from the tab bar via `href: null`. The `MoreTabButton` component in `_layout.tsx` is self-contained and manages open/close state internally.

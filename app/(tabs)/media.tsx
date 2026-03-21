@@ -143,26 +143,7 @@ export default function MediaScreen() {
       <View style={s.titleRow}>
         <Ionicons name="images-outline" size={22} color={colors.primary} testID="media-screen-icon" />
         <Text style={[s.title, { color: theme.colors.text }]}>{t('media.title')}</Text>
-        <TouchableOpacity onPress={() => setShowSortMenu(v => !v)} style={s.sortBtn} testID="media-sort-btn">
-          <Ionicons name="funnel-outline" size={20} color={colors.primary} />
-        </TouchableOpacity>
       </View>
-
-      {showSortMenu && (
-        <View style={[s.sortMenu, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          {sortOptions.map(opt => (
-            <TouchableOpacity
-              key={opt.key}
-              style={[s.sortMenuItem, sort === opt.key && { backgroundColor: withOpacity(colors.primary, '1A') }]}
-              onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
-              testID={`media-sort-${opt.key}`}
-            >
-              <Text style={[s.sortMenuLabel, { color: sort === opt.key ? colors.primary : theme.colors.text }]}>{opt.label}</Text>
-              {sort === opt.key && <Ionicons name="checkmark" size={16} color={colors.primary} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
 
       <SearchBar
         value={search}
@@ -171,22 +152,43 @@ export default function MediaScreen() {
         testID="media-search"
       />
 
-      <View style={s.filters}>
-        {filterOptions.map(f => (
-          <TouchableOpacity
-            key={f.key ?? 'all'}
-            style={[
-              s.filterBtn,
-              { borderColor: theme.colors.border },
-              assetFilter === f.key && { backgroundColor: colors.primary, borderColor: colors.primary },
-            ]}
-            onPress={() => setAssetFilter(f.key)}
-            testID={`media-filter-${f.key ?? 'all'}`}
-          >
-            <Ionicons name={f.icon} size={14} color={assetFilter === f.key ? '#fff' : theme.colors.textMuted} />
-            <Text style={[s.filterLabel, { color: assetFilter === f.key ? '#fff' : theme.colors.text }]}>{f.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={s.filtersRow}>
+        <View style={s.filters}>
+          {filterOptions.map(f => (
+            <TouchableOpacity
+              key={f.key ?? 'all'}
+              style={[
+                s.filterBtn,
+                { borderColor: theme.colors.border },
+                assetFilter === f.key && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
+              onPress={() => setAssetFilter(f.key)}
+              testID={`media-filter-${f.key ?? 'all'}`}
+            >
+              <Ionicons name={f.icon} size={14} color={assetFilter === f.key ? '#fff' : theme.colors.textMuted} />
+              <Text style={[s.filterLabel, { color: assetFilter === f.key ? '#fff' : theme.colors.text }]}>{f.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity onPress={() => setShowSortMenu(v => !v)} style={s.sortBtn} testID="media-sort-btn">
+          <Ionicons name="funnel-outline" size={20} color={colors.primary} />
+        </TouchableOpacity>
+
+        {showSortMenu && (
+          <View style={[s.sortMenu, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            {sortOptions.map(opt => (
+              <TouchableOpacity
+                key={opt.key}
+                style={[s.sortMenuItem, sort === opt.key && { backgroundColor: withOpacity(colors.primary, '1A') }]}
+                onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
+                testID={`media-sort-${opt.key}`}
+              >
+                <Text style={[s.sortMenuLabel, { color: sort === opt.key ? colors.primary : theme.colors.text }]}>{opt.label}</Text>
+                {sort === opt.key && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       <FlatList
@@ -234,13 +236,14 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, gap: 8 },
   title: { fontSize: 20, fontWeight: '700', flex: 1 },
-  sortBtn: { padding: 4 },
-  sortMenu: { position: 'absolute', top: 56, right: 16, zIndex: 100, borderWidth: 1, borderRadius: 12, overflow: 'hidden', minWidth: 180 },
-  sortMenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 },
-  sortMenuLabel: { fontSize: 14 },
-  filters: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 8 },
+  filtersRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8, position: 'relative' },
+  filters: { flexDirection: 'row', flex: 1, gap: 8, flexWrap: 'nowrap' },
   filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   filterLabel: { fontSize: 12, fontWeight: '600' },
+  sortBtn: { padding: 4, marginLeft: 4 },
+  sortMenu: { position: 'absolute', top: '100%', right: 0, zIndex: 100, borderWidth: 1, borderRadius: 12, overflow: 'hidden', minWidth: 180 },
+  sortMenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 },
+  sortMenuLabel: { fontSize: 14 },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   emptyContainer: { flex: 1, paddingHorizontal: 16 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8, borderRadius: 12, borderWidth: 1, gap: 10 },
