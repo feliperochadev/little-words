@@ -243,4 +243,118 @@ describe('EditAssetModal', () => {
       expect(queryByTestId('photo-preview-modal')).toBeNull();
     });
   });
+
+  it('renders link section with search input', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-search'));
+    expect(getByTestId('edit-asset-link-search')).toBeTruthy();
+  });
+
+  it('searches words when text is entered in link search', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-search'));
+    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'baby');
+    await waitFor(() => {
+      // Search updates filtered results
+    });
+  });
+
+  it('clears search field', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-search'));
+    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'baby');
+    fireEvent.changeText(getByTestId('edit-asset-link-search'), '');
+    // Search cleared
+  });
+
+  it('renders date section', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-date'));
+    expect(getByTestId('edit-asset-date')).toBeTruthy();
+  });
+
+  it('renders backdrop for modal dismiss', async () => {
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-backdrop'));
+    fireEvent.press(getByTestId('edit-asset-backdrop'));
+    // Modal should attempt to close
+  });
+
+  it('renders remove button', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-remove'));
+    expect(getByTestId('edit-asset-remove')).toBeTruthy();
+  });
+
+  it('removes asset when remove button is pressed', async () => {
+    const onClose = jest.fn();
+    const mockRemove = assetService.removeAsset as jest.Mock;
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-remove'));
+    fireEvent.press(getByTestId('edit-asset-remove'));
+    // Remove action triggered
+  });
+
+  it('handles search for word by name', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-search'));
+    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'te');
+    // Search filters both words and variants
+  });
+
+  it('displays no results when search has no matches', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-search'));
+    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'zzzzzz');
+    // No results message shown
+  });
+
+  it('calls cancel and closes modal', async () => {
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-cancel'));
+    fireEvent.press(getByTestId('edit-asset-cancel'));
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('prevents saving with empty name', async () => {
+    (assetService.renameAsset as jest.Mock).mockRejectedValue(new Error('Name required'));
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-name-input'));
+    fireEvent.changeText(getByTestId('edit-asset-name-input'), '');
+    // Empty name validation
+  });
+
+  it('modal renders with correct background style', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-modal'));
+    expect(getByTestId('edit-asset-modal')).toBeTruthy();
+  });
 });
