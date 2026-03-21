@@ -131,17 +131,19 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
     );
   };
 
-  const typeIcon: React.ComponentProps<typeof Ionicons>['name'] = asset.asset_type === 'audio'
-    ? 'musical-notes'
-    : asset.asset_type === 'photo'
-    ? 'image'
-    : 'videocam';
+  const getTypeIcon = (): React.ComponentProps<typeof Ionicons>['name'] => {
+    if (asset.asset_type === 'audio') return 'musical-notes';
+    if (asset.asset_type === 'photo') return 'image';
+    return 'videocam';
+  };
+  const typeIcon = getTypeIcon();
 
-  const typeLabel = asset.asset_type === 'audio'
-    ? t('media.typeAudio')
-    : asset.asset_type === 'photo'
-    ? t('media.typePhoto')
-    : t('media.typeVideo');
+  const getTypeLabel = (): string => {
+    if (asset.asset_type === 'audio') return t('media.typeAudio');
+    if (asset.asset_type === 'photo') return t('media.typePhoto');
+    return t('media.typeVideo');
+  };
+  const typeLabel = getTypeLabel();
 
   const isInteractiveType = asset.asset_type === 'audio' || asset.asset_type === 'photo';
 
@@ -155,11 +157,14 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
     }
   };
 
-  const currentLinkLabel = selectedLink
-    ? (selectedLink.type === 'word'
-        ? t('media.linkedWord').replace('{{name}}', selectedLink.label)
-        : t('media.linkedVariant').replace('{{name}}', selectedLink.label))
-    : '—';
+  const getCurrentLinkLabel = (): string => {
+    if (!selectedLink) return '—';
+    if (selectedLink.type === 'word') {
+      return t('media.linkedWord').replace('{{name}}', selectedLink.label);
+    }
+    return t('media.linkedVariant').replace('{{name}}', selectedLink.label);
+  };
+  const currentLinkLabel = getCurrentLinkLabel();
 
   const isSaving = relinkAsset.isPending || renameAsset.isPending || updateAssetDate.isPending;
 

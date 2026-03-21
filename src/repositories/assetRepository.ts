@@ -76,11 +76,13 @@ export const getAllAssets = (
   assetType?: AssetType | null,
   sortKey?: 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc',
 ): Promise<AssetWithLink[]> => {
-  const orderClause =
-    sortKey === 'name_asc'  ? 'ORDER BY LOWER(COALESCE(a.name, a.filename)) ASC' :
-    sortKey === 'name_desc' ? 'ORDER BY LOWER(COALESCE(a.name, a.filename)) DESC' :
-    sortKey === 'date_asc'  ? 'ORDER BY a.created_at ASC' :
-                              'ORDER BY a.created_at DESC';
+  const getOrderClause = (): string => {
+    if (sortKey === 'name_asc') return 'ORDER BY LOWER(COALESCE(a.name, a.filename)) ASC';
+    if (sortKey === 'name_desc') return 'ORDER BY LOWER(COALESCE(a.name, a.filename)) DESC';
+    if (sortKey === 'date_asc') return 'ORDER BY a.created_at ASC';
+    return 'ORDER BY a.created_at DESC';
+  };
+  const orderClause = getOrderClause();
   const base = `
     SELECT a.*,
            w.word as linked_word, w.id as linked_word_id,

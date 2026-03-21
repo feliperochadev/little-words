@@ -89,13 +89,23 @@ export default function MediaScreen() {
   ];
 
   const renderAsset = useCallback(({ item }: { item: AssetWithLink }) => {
-    const typeIcon: React.ComponentProps<typeof Ionicons>['name'] = item.asset_type === 'audio' ? 'musical-notes' : item.asset_type === 'photo' ? 'image' : 'videocam';
+    const getTypeIcon = (): React.ComponentProps<typeof Ionicons>['name'] => {
+      if (item.asset_type === 'audio') return 'musical-notes';
+      if (item.asset_type === 'photo') return 'image';
+      return 'videocam';
+    };
+    const typeIcon = getTypeIcon();
     const displayName = item.name ?? item.filename;
-    const linkLabel = item.parent_type === 'word' && item.linked_word
-      ? t('media.linkedWord').replace('{{name}}', item.linked_word)
-      : item.parent_type === 'variant' && item.linked_variant
-      ? t('media.linkedVariant').replace('{{name}}', item.linked_variant)
-      : null;
+    const getLinkLabel = (): string | null => {
+      if (item.parent_type === 'word' && item.linked_word) {
+        return t('media.linkedWord').replace('{{name}}', item.linked_word);
+      }
+      if (item.parent_type === 'variant' && item.linked_variant) {
+        return t('media.linkedVariant').replace('{{name}}', item.linked_variant);
+      }
+      return null;
+    };
+    const linkLabel = getLinkLabel();
     const dateStr = item.created_at.split(/[T ]/)[0];
     return (
       <TouchableOpacity
