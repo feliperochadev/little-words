@@ -1,19 +1,20 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, AudioModule } from 'expo-audio';
+import type { AudioPlayer as ExpoAudioPlayer } from 'expo-audio';
 
 export function useAudioPlayer() {
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playerRef = useRef<ExpoAudioPlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [durationMs, setDurationMs] = useState(0);
 
   const unload = useCallback(async () => {
-    if (soundRef.current) {
+    if (playerRef.current) {
       try {
-        await soundRef.current.unloadAsync();
+        playerRef.current.remove();
       } catch {
-        // Already unloaded
+        // Already removed
       }
-      soundRef.current = null;
+      playerRef.current = null;
     }
     setIsPlaying(false);
     setDurationMs(0);
@@ -22,35 +23,35 @@ export function useAudioPlayer() {
   const play = useCallback(async (uri: string) => {
     await unload();
 
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
+    await AudioModule.setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
     });
 
-    const { sound, status } = await Audio.Sound.createAsync(
-      { uri },
-      { shouldPlay: true },
-    );
+    const player = createAudioPlayer({ uri });
+    playerRef.current = player;
 
-    soundRef.current = sound;
-    if (status.isLoaded) {
-      setDurationMs(status.durationMillis ?? 0);
-    }
-    setIsPlaying(true);
-
-    sound.setOnPlaybackStatusUpdate((playbackStatus) => {
-      if (playbackStatus.isLoaded && playbackStatus.didJustFinish) {
-        setIsPlaying(false);
-        sound.unloadAsync().catch(() => {});
-        soundRef.current = null;
+    player.addListener('playbackStatusUpdate', (status) => {
+      if (status.isLoaded) {
+        if (status.duration) {
+          setDurationMs(status.duration * 1000);
+        }
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+          player.remove();
+          if (playerRef.current === player) playerRef.current = null;
+        }
       }
     });
+
+    player.play();
+    setIsPlaying(true);
   }, [unload]);
 
   const stop = useCallback(async () => {
-    if (soundRef.current) {
+    if (playerRef.current) {
       try {
-        await soundRef.current.stopAsync();
+        playerRef.current.pause();
       } catch {
         // Already stopped
       }
@@ -62,7 +63,7 @@ export function useAudioPlayer() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
+      playerRef.current?.remove();
     };
   }, []);
 

@@ -2,6 +2,19 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-21_5
+
+**[feature] Migrate expo-av → expo-audio (SDK 55)**
+- Replaced `expo-av` with `expo-audio` across all audio recording and playback code
+- Rewrote `src/hooks/useAudioRecording.ts`: replaced `Audio.Recording` + `setInterval` polling with `useAudioRecorder` + `useAudioRecorderState` reactive hooks; removed `recordingRef`, `amplitudeTimerRef`, `startTimeRef`, `totalPausedMsRef`, `pauseStartTimeRef`; replaced `startAsync`/`stopAndUnloadAsync`/`pauseAsync`/`getURI` with `recorder.record()`/`recorder.stop()`/`recorder.pause()`/`recorder.uri`; duration now sourced from native layer via `recorderState.durationMillis`; added `stateRef` + `capturedDurationRef`; added `setStateTracked` helper
+- Rewrote `src/hooks/useAudioPlayer.ts`: replaced `Audio.Sound.createAsync` with `createAudioPlayer`; replaced `sound.unloadAsync`/`stopAsync`/`setOnPlaybackStatusUpdate` with `player.remove()`/`pause()`/`addListener`; duration now in seconds from `status.duration` × 1000
+- Updated `src/providers/MediaCaptureProvider.tsx`: replaced `Audio.Sound` inline playback with `createAudioPlayer`; updated `stopPlayback` and `playAssetByParent` accordingly
+- Updated `jest.setup.js`: replaced `expo-av` mock block with `expo-audio` mock (`createAudioPlayer`, `AudioModule`, `useAudioRecorder`, `useAudioRecorderState`, `RecordingPresets`); exposed `globalThis.__mockPlayer`, `globalThis.__mockRecorder`, `globalThis.__mockRecorderState`
+- Rewrote `__tests__/unit/useAudioPlayer.test.ts` and `__tests__/unit/useAudioRecording.test.ts` for new API; 94 tests passing
+- Updated `__tests__/integration/MediaCaptureProvider.test.tsx`: replaced `mockSound`/`mockCreateAsync` with `mockPlayer`/`mockCreateAudioPlayer`
+- Updated `AudioMode` property names: `allowsRecordingIOS` → `allowsRecording`, `playsInSilentModeIOS` → `playsInSilentMode`
+- All 1491 tests pass, semgrep clean, TypeScript clean
+
 
 ### 2026-03-20_8
 

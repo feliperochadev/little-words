@@ -60,7 +60,7 @@ The app supports audio, photo, and video attachments on words and variants:
 - **Service** (`src/services/assetService.ts`): Atomic save (DB insert → build filename → copy file → update DB; rollback on failure), remove, bulk cleanup.
 - **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
 - **DB**: `assets` table with `parent_type` discriminator + indexes, cascade deletion via `withTransactionSync`, `asset_count` subquery in word/variant queries.
-- **Dependencies**: `expo-av` (audio), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
+- **Dependencies**: `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
 
 ## Rules
 

@@ -142,39 +142,47 @@ jest.mock('react-native-svg', () => ({
   SvgXml: 'SvgXml',
 }));
 
-// Mock expo-av
-const mockSound = {
-  unloadAsync: jest.fn(() => Promise.resolve()),
-  playAsync: jest.fn(() => Promise.resolve()),
-  stopAsync: jest.fn(() => Promise.resolve()),
-  pauseAsync: jest.fn(() => Promise.resolve()),
-  setOnPlaybackStatusUpdate: jest.fn(),
+// Mock expo-audio (replaces expo-av)
+const mockPlayer = {
+  play: jest.fn(),
+  pause: jest.fn(),
+  remove: jest.fn(),
+  replace: jest.fn(),
+  seekTo: jest.fn(),
+  addListener: jest.fn(),
 };
-const mockRecording = {
+
+const mockRecorder = {
   prepareToRecordAsync: jest.fn(() => Promise.resolve()),
-  startAsync: jest.fn(() => Promise.resolve()),
-  stopAndUnloadAsync: jest.fn(() => Promise.resolve()),
-  pauseAsync: jest.fn(() => Promise.resolve()),
-  getStatusAsync: jest.fn(() => Promise.resolve({ isRecording: true, metering: -30 })),
-  getURI: jest.fn(() => 'file:///mock/recording.m4a'),
+  record: jest.fn(),
+  pause: jest.fn(),
+  stop: jest.fn(() => Promise.resolve()),
+  uri: 'file:///mock/recording.m4a',
+  isRecording: false,
+  currentTime: 0,
 };
-globalThis.__mockSound = mockSound;
-globalThis.__mockRecording = mockRecording;
-jest.mock('expo-av', () => ({
-  Audio: {
-    Recording: jest.fn(() => mockRecording),
-    RecordingOptionsPresets: {
-      HIGH_QUALITY: {},
-    },
-    Sound: {
-      createAsync: jest.fn(() =>
-        Promise.resolve({ sound: mockSound, status: { isLoaded: true, durationMillis: 5000 } })
-      ),
-    },
+
+globalThis.__mockPlayer = mockPlayer;
+globalThis.__mockRecorder = mockRecorder;
+
+// Mutable recorderState that tests can override
+globalThis.__mockRecorderState = {
+  isRecording: false,
+  durationMillis: 0,
+  metering: -30,
+};
+
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => (globalThis).__mockPlayer),
+  AudioModule: {
     setAudioModeAsync: jest.fn(() => Promise.resolve()),
-    requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
+    requestRecordingPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
   },
-  Video: jest.fn(),
+  useAudioRecorder: jest.fn(() => (globalThis).__mockRecorder),
+  useAudioRecorderState: jest.fn(() => (globalThis).__mockRecorderState),
+  RecordingPresets: {
+    HIGH_QUALITY: {},
+  },
 }));
 
 // Mock expo-image-picker
