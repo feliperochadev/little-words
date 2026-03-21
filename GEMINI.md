@@ -1,5 +1,7 @@
 # GEMINI.md - Palavrinhas (Little Words)
 
+**⚠️ MANDATORY: Read `.agents/COMMON-RULES.md` first.** It contains the authoritative baseline rules that ALL agents must follow. This file provides Gemini-specific guidance and enhancements.
+
 ## Project Overview
 
 **Palavrinhas** is a React Native / Expo mobile application designed to track a baby's first words, pronunciation variants, and developmental progress. It features a bilingual UI (English and Brazilian Portuguese), local SQLite storage, and CSV export/import.

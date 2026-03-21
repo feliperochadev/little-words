@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "_mandatory_read": ".agents/COMMON-RULES.md — ALL AGENTS MUST READ AND FOLLOW THIS BASELINE",
   "features": {
     "automatic_commit": true,
     "automatic_ship": false

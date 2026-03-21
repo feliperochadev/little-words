@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+**⚠️ MANDATORY: Read `.agents/COMMON-RULES.md` first.** It contains the authoritative baseline rules that ALL agents must follow. This file provides project-specific guidance and architecture details.
+
 ## Project Structure & Module Organization
 `app/` holds Expo Router screens and layouts, including `app/(tabs)/` for the main navigation. Shared UI belongs in `src/components/`, SQLite DB client in `src/db/`, per-entity SQL modules in `src/repositories/`, service wrappers in `src/services/`, translations in `src/i18n/`, and helpers in `src/utils/`. Tests are split into `__tests__/unit`, `__tests__/integration`, `__tests__/screens`, and Maestro flows in `__tests__/e2e`. Keep static assets in `assets/`.
 

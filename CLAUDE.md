@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+**⚠️ MANDATORY: Read `.agents/COMMON-RULES.md` first.** It contains the authoritative baseline rules that ALL agents must follow. This file provides Claude-specific guidance and enhancements on top of those common rules.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
