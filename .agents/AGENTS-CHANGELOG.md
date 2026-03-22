@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-07-14_4
+
+[feature] `EditAssetModal` redesigned with button-driven word/variant linking UX: two mode buttons ("Link to Word" / "Link to Variant") replace single combined search input; pressing a button reveals its search section with a cancel X; existing link shown as chip with ✕ to clear and return to button mode
+[fix] `assetRepository.getAllAssets` now excludes only `(parent_type='profile' AND asset_type='photo')` instead of all profile-parented assets, making unlinked media visible in the media screen
+[feature] `MediaCaptureProvider.saveWithoutLinking` auto-names unlinked assets (e.g. `audio-1`, `photo-1`) using `countAssetsByParentType`; new `countAssetsByParentType` function added to `assetRepository`
+[feature] `MediaLinkingModal` link button icons and colors aligned: word button uses `book-outline` icon; both buttons use `colors.primary`
+[feature] PT-BR: "Vincular a Palavra" → "Combinar com uma palavra", "Vincular a Variante" → "Combinar com uma variante", "Vinculado a" → "Combinado com"
+[test] `EditAssetModal` integration tests fully rewritten for new button-driven UX (46 tests); covers link mode buttons, chip display/clear, word/variant search, remove flow, date change, error paths, and overlay close handlers
+
 ### 2026-07-14_3
 
 [feature] `MediaLinkingModal` UX: replaced always-visible word/variant search boxes with two mode-select buttons ("Link to Word" / "Link to Variant"); pressing a button reveals the respective search section with a cancel X to return to button mode; removed separate "Save Without Linking" button — the main Save button now falls back to `saveWithoutLinking` when nothing is selected; chip X press returns to button mode instead of restoring search input

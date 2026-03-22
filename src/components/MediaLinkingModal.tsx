@@ -280,16 +280,16 @@ export function MediaLinkingModal() {
                     onPress={() => setLinkMode('word')}
                     testID="media-link-word-btn"
                   >
-                    <Ionicons name="text" size={16} color={colors.primary} />
+                    <Ionicons name="book-outline" size={16} color={colors.primary} />
                     <Text style={[s.linkBtnText, { color: colors.primary }]}>{t('mediaCapture.linkToWord')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[s.linkBtn, { borderColor: colors.secondary, backgroundColor: withOpacity(colors.secondary, '08') }]}
+                    style={[s.linkBtn, { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '08') }]}
                     onPress={() => setLinkMode('variant')}
                     testID="media-link-variant-btn"
                   >
-                    <Ionicons name="chatbubble-outline" size={16} color={colors.secondary} />
-                    <Text style={[s.linkBtnText, { color: colors.secondary }]}>{t('mediaCapture.linkToVariant')}</Text>
+                    <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
+                    <Text style={[s.linkBtnText, { color: colors.primary }]}>{t('mediaCapture.linkToVariant')}</Text>
                   </TouchableOpacity>
                 </View>
               )}

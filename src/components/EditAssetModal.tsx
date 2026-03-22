@@ -31,6 +31,7 @@ interface Props {
 }
 
 type LinkTarget = { type: 'word'; id: number; label: string } | { type: 'variant'; id: number; label: string };
+type EditLinkMode = 'none' | 'word' | 'variant';
 
 export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
   const { t } = useI18n();
@@ -39,7 +40,9 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
 
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [linkSearch, setLinkSearch] = useState('');
+  const [editLinkMode, setEditLinkMode] = useState<EditLinkMode>('none');
+  const [wordSearch, setWordSearch] = useState('');
+  const [variantSearch, setVariantSearch] = useState('');
   const [selectedLink, setSelectedLink] = useState<LinkTarget | null>(null);
   const [audioOverlay, setAudioOverlay] = useState<{ uri: string; name: string; createdAt: string; durationMs?: number | null } | null>(null);
   const [photoOverlay, setPhotoOverlay] = useState<{ uri: string; name: string; createdAt: string } | null>(null);
@@ -58,7 +61,9 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
     if (visible && asset) {
       setName(asset.name ?? asset.filename);
       setDate(asset.created_at.split(/[T ]/)[0]);
-      setLinkSearch('');
+      setEditLinkMode('none');
+      setWordSearch('');
+      setVariantSearch('');
       setAudioOverlay(null);
       setPhotoOverlay(null);
       if (asset.parent_type === 'word' && asset.linked_word) {
@@ -73,11 +78,11 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
 
   if (!asset) return null;
 
-  const filteredWords = linkSearch.trim()
-    ? words.filter(w => w.word.toLowerCase().includes(linkSearch.toLowerCase()))
+  const filteredWords = wordSearch.trim()
+    ? words.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
     : [];
-  const filteredVariants = linkSearch.trim()
-    ? variants.filter(v => v.variant.toLowerCase().includes(linkSearch.toLowerCase()))
+  const filteredVariants = variantSearch.trim()
+    ? variants.filter(v => v.variant.toLowerCase().includes(variantSearch.toLowerCase()))
     : [];
 
   const handleSave = async () => {
@@ -157,16 +162,11 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
     }
   };
 
-  const getCurrentLinkLabel = (): string => {
-    if (!selectedLink) return '—';
-    if (selectedLink.type === 'word') {
-      return t('media.linkedWord').replace('{{name}}', selectedLink.label);
-    }
-    return t('media.linkedVariant').replace('{{name}}', selectedLink.label);
-  };
-  const currentLinkLabel = getCurrentLinkLabel();
-
   const isSaving = relinkAsset.isPending || renameAsset.isPending || updateAssetDate.isPending;
+
+  const cancelWordMode = () => { setEditLinkMode('none'); setWordSearch(''); };
+  const cancelVariantMode = () => { setEditLinkMode('none'); setVariantSearch(''); };
+  const clearLink = () => { setSelectedLink(null); setEditLinkMode('none'); setWordSearch(''); setVariantSearch(''); };
 
   return (
     <>
@@ -224,53 +224,126 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
               </View>
 
               <Text style={[s.label, { color: theme.colors.textMuted }]}>{t('media.editLinkedLabel')}</Text>
-              <Text style={[s.currentLink, { color: theme.colors.text }]}>{currentLinkLabel}</Text>
 
-              <TextInput
-                style={[s.input, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.background }]}
-                value={linkSearch}
-                onChangeText={setLinkSearch}
-                placeholder={t('mediaCapture.searchPlaceholder')}
-                placeholderTextColor={theme.colors.textMuted}
-                testID="edit-asset-link-search"
-              />
+              {/* Selected link chip */}
+              {selectedLink && (
+                <TouchableOpacity
+                  style={[s.selectedChip, { backgroundColor: withOpacity(colors.primary, '15'), borderColor: colors.primary }]}
+                  onPress={clearLink}
+                  testID="edit-asset-selected-link"
+                >
+                  <Ionicons
+                    name={selectedLink.type === 'word' ? 'book-outline' : 'chatbubble-outline'}
+                    size={14}
+                    color={colors.primary}
+                  />
+                  <Text style={[s.selectedChipText, { color: colors.primary }]} numberOfLines={1}>
+                    {selectedLink.label}
+                  </Text>
+                  <Text style={[s.selectedChipClear, { color: colors.primary }]}>✕</Text>
+                </TouchableOpacity>
+              )}
 
-              {linkSearch.trim().length > 0 && (
-                <View style={[s.searchResults, { borderColor: theme.colors.border }]}>
-                  {filteredWords.map(w => (
-                    <TouchableOpacity
-                      key={`word-${w.id}`}
-                      style={[
-                        s.resultRow,
-                        { borderBottomColor: theme.colors.border },
-                        selectedLink?.id === w.id && selectedLink?.type === 'word' && { backgroundColor: withOpacity(colors.primary, '1A') },
-                      ]}
-                      onPress={() => { setSelectedLink({ type: 'word', id: w.id, label: w.word }); setLinkSearch(''); }}
-                      testID={`edit-asset-link-word-${w.id}`}
-                    >
-                      <Ionicons name="book-outline" size={14} color={theme.colors.textMuted} />
-                      <Text style={[s.resultLabel, { color: theme.colors.text }]}>{w.word}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  {filteredVariants.map(v => (
-                    <TouchableOpacity
-                      key={`variant-${v.id}`}
-                      style={[
-                        s.resultRow,
-                        { borderBottomColor: theme.colors.border },
-                        selectedLink?.id === v.id && selectedLink?.type === 'variant' && { backgroundColor: withOpacity(colors.primary, '1A') },
-                      ]}
-                      onPress={() => { setSelectedLink({ type: 'variant', id: v.id, label: v.variant }); setLinkSearch(''); }}
-                      testID={`edit-asset-link-variant-${v.id}`}
-                    >
-                      <Ionicons name="chatbubble-ellipses-outline" size={14} color={theme.colors.textMuted} />
-                      <Text style={[s.resultLabel, { color: theme.colors.text }]}>{v.variant}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  {filteredWords.length === 0 && filteredVariants.length === 0 && (
-                    <Text style={[s.noResults, { color: theme.colors.textMuted }]}>{t('mediaCapture.noResults')}</Text>
-                  )}
+              {/* Two mode buttons */}
+              {!selectedLink && editLinkMode === 'none' && (
+                <View style={s.linkBtnRow}>
+                  <TouchableOpacity
+                    style={[s.linkBtn, { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '08') }]}
+                    onPress={() => setEditLinkMode('word')}
+                    testID="edit-asset-link-word-btn"
+                  >
+                    <Ionicons name="book-outline" size={15} color={colors.primary} />
+                    <Text style={[s.linkBtnText, { color: colors.primary }]}>{t('mediaCapture.linkToWord')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.linkBtn, { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '08') }]}
+                    onPress={() => setEditLinkMode('variant')}
+                    testID="edit-asset-link-variant-btn"
+                  >
+                    <Ionicons name="chatbubble-outline" size={15} color={colors.primary} />
+                    <Text style={[s.linkBtnText, { color: colors.primary }]}>{t('mediaCapture.linkToVariant')}</Text>
+                  </TouchableOpacity>
                 </View>
+              )}
+
+              {/* Word search section */}
+              {!selectedLink && editLinkMode === 'word' && (
+                <>
+                  <View style={s.sectionHeaderRow}>
+                    <Text style={[s.sectionLabel, { color: theme.colors.textMuted }]}>{t('mediaCapture.linkToWord')}</Text>
+                    <TouchableOpacity onPress={cancelWordMode} testID="edit-asset-word-cancel" style={s.sectionCancelBtn}>
+                      <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={[s.input, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.background }]}
+                    value={wordSearch}
+                    onChangeText={setWordSearch}
+                    placeholder={t('mediaCapture.searchPlaceholder')}
+                    placeholderTextColor={theme.colors.textMuted}
+                    autoCapitalize="none"
+                    testID="edit-asset-word-search"
+                  />
+                  {wordSearch.trim().length > 0 && (
+                    <View style={[s.searchResults, { borderColor: theme.colors.border }]}>
+                      {filteredWords.length === 0 ? (
+                        <Text style={[s.noResults, { color: theme.colors.textMuted }]}>{t('mediaCapture.noResults')}</Text>
+                      ) : (
+                        filteredWords.map(w => (
+                          <TouchableOpacity
+                            key={`word-${w.id}`}
+                            style={[s.resultRow, { borderBottomColor: theme.colors.border }]}
+                            onPress={() => { setSelectedLink({ type: 'word', id: w.id, label: w.word }); setWordSearch(''); setEditLinkMode('none'); }}
+                            testID={`edit-asset-link-word-${w.id}`}
+                          >
+                            <Ionicons name="book-outline" size={14} color={theme.colors.textMuted} />
+                            <Text style={[s.resultLabel, { color: theme.colors.text }]}>{w.word}</Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* Variant search section */}
+              {!selectedLink && editLinkMode === 'variant' && (
+                <>
+                  <View style={s.sectionHeaderRow}>
+                    <Text style={[s.sectionLabel, { color: theme.colors.textMuted }]}>{t('mediaCapture.linkToVariant')}</Text>
+                    <TouchableOpacity onPress={cancelVariantMode} testID="edit-asset-variant-cancel" style={s.sectionCancelBtn}>
+                      <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={[s.input, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.background }]}
+                    value={variantSearch}
+                    onChangeText={setVariantSearch}
+                    placeholder={t('mediaCapture.searchPlaceholder')}
+                    placeholderTextColor={theme.colors.textMuted}
+                    autoCapitalize="none"
+                    testID="edit-asset-variant-search"
+                  />
+                  {variantSearch.trim().length > 0 && (
+                    <View style={[s.searchResults, { borderColor: theme.colors.border }]}>
+                      {filteredVariants.length === 0 ? (
+                        <Text style={[s.noResults, { color: theme.colors.textMuted }]}>{t('mediaCapture.noResults')}</Text>
+                      ) : (
+                        filteredVariants.map(v => (
+                          <TouchableOpacity
+                            key={`variant-${v.id}`}
+                            style={[s.resultRow, { borderBottomColor: theme.colors.border }]}
+                            onPress={() => { setSelectedLink({ type: 'variant', id: v.id, label: v.variant }); setVariantSearch(''); setEditLinkMode('none'); }}
+                            testID={`edit-asset-link-variant-${v.id}`}
+                          >
+                            <Ionicons name="chatbubble-ellipses-outline" size={14} color={theme.colors.textMuted} />
+                            <Text style={[s.resultLabel, { color: theme.colors.text }]}>{v.variant}</Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </View>
+                  )}
+                </>
               )}
             </ScrollView>
 
@@ -327,7 +400,15 @@ const s = StyleSheet.create({
   body: { paddingHorizontal: 16 },
   label: { fontSize: 12, fontWeight: '600', marginTop: 12, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
-  currentLink: { fontSize: 14, marginBottom: 8 },
+  selectedChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, marginBottom: 4 },
+  selectedChipText: { flex: 1, fontSize: 14, fontWeight: '600' },
+  selectedChipClear: { fontSize: 14, fontWeight: '700' },
+  linkBtnRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+  linkBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
+  linkBtnText: { fontSize: 13, fontWeight: '600' },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 4 },
+  sectionLabel: { fontSize: 13, fontWeight: '600' },
+  sectionCancelBtn: { padding: 2 },
   searchResults: { borderWidth: 1, borderRadius: 10, marginTop: 4, overflow: 'hidden' },
   resultRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   resultLabel: { fontSize: 14, flex: 1 },

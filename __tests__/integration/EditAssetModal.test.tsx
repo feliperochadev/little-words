@@ -65,6 +65,12 @@ const mockVideoAsset: AssetWithLink = {
   mime_type: 'video/mp4', duration_ms: null,
 };
 
+const unlinkedAsset: AssetWithLink = {
+  ...mockAsset,
+  parent_type: 'profile', parent_id: 1,
+  linked_word: null, linked_word_id: null,
+};
+
 describe('EditAssetModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -139,37 +145,12 @@ describe('EditAssetModal', () => {
     );
   });
 
-  it('shows search results for words when typing in link search', async () => {
-    const mockGetWords = require('../../src/services/wordService').getWords as jest.Mock;
-    mockGetWords.mockResolvedValue([
-      { id: 1, word: 'baby', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
-    ]);
-
-    const { getByTestId, queryByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'baby');
-    await waitFor(() => {
-      expect(queryByTestId('edit-asset-link-word-1')).toBeTruthy();
-    });
-  });
-
   it('renders photo type label for photo asset', async () => {
     const { getByText } = renderWithProviders(
       <EditAssetModal visible={true} asset={mockPhotoAsset} onClose={jest.fn()} />
     );
     await waitFor(() => {
       expect(getByText('Photo')).toBeTruthy();
-    });
-  });
-
-  it('renders drag handle for swipe-to-dismiss', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => {
-      expect(getByTestId('edit-asset-modal')).toBeTruthy();
     });
   });
 
@@ -244,33 +225,112 @@ describe('EditAssetModal', () => {
     });
   });
 
-  it('renders link section with search input', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    expect(getByTestId('edit-asset-link-search')).toBeTruthy();
-  });
+  // ── Link mode buttons ────────────────────────────────────────────────────
 
-  it('searches words when text is entered in link search', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'baby');
-    await waitFor(() => {
-      // Search updates filtered results
+  describe('link mode buttons', () => {
+    it('shows chip with label when asset is linked to a word', async () => {
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => {
+        expect(getByTestId('edit-asset-selected-link')).toBeTruthy();
+      });
     });
-  });
 
-  it('clears search field', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'baby');
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), '');
-    // Search cleared
+    it('shows two mode buttons for unlinked asset', async () => {
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => {
+        expect(getByTestId('edit-asset-link-word-btn')).toBeTruthy();
+        expect(getByTestId('edit-asset-link-variant-btn')).toBeTruthy();
+      });
+    });
+
+    it('pressing link-to-word button reveals word search', async () => {
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-word-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+      expect(getByTestId('edit-asset-word-search')).toBeTruthy();
+      expect(queryByTestId('edit-asset-link-word-btn')).toBeNull();
+    });
+
+    it('pressing link-to-variant button reveals variant search', async () => {
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-variant-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-variant-btn'));
+      expect(getByTestId('edit-asset-variant-search')).toBeTruthy();
+      expect(queryByTestId('edit-asset-link-variant-btn')).toBeNull();
+    });
+
+    it('pressing cancel on word section restores the two buttons', async () => {
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-word-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+      fireEvent.press(getByTestId('edit-asset-word-cancel'));
+      expect(getByTestId('edit-asset-link-word-btn')).toBeTruthy();
+      expect(getByTestId('edit-asset-link-variant-btn')).toBeTruthy();
+    });
+
+    it('pressing cancel on variant section restores the two buttons', async () => {
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-variant-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-variant-btn'));
+      fireEvent.press(getByTestId('edit-asset-variant-cancel'));
+      expect(getByTestId('edit-asset-link-word-btn')).toBeTruthy();
+      expect(getByTestId('edit-asset-link-variant-btn')).toBeTruthy();
+    });
+
+    it('pressing chip X on linked asset returns to two buttons', async () => {
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-selected-link'));
+      fireEvent.press(getByTestId('edit-asset-selected-link'));
+      expect(getByTestId('edit-asset-link-word-btn')).toBeTruthy();
+      expect(getByTestId('edit-asset-link-variant-btn')).toBeTruthy();
+    });
+
+    it('shows word search results when typing in word search', async () => {
+      const mockGetWords = require('../../src/services/wordService').getWords as jest.Mock;
+      mockGetWords.mockResolvedValue([
+        { id: 1, word: 'baby', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
+      ]);
+      const { getByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-word-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+      fireEvent.changeText(getByTestId('edit-asset-word-search'), 'baby');
+      await waitFor(() => {
+        expect(getByTestId('edit-asset-link-word-1')).toBeTruthy();
+      });
+    });
+
+    it('selecting a word shows chip and returns to none mode', async () => {
+      const mockGetWords = require('../../src/services/wordService').getWords as jest.Mock;
+      mockGetWords.mockResolvedValue([
+        { id: 1, word: 'baby', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
+      ]);
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+      );
+      await waitFor(() => getByTestId('edit-asset-link-word-btn'));
+      fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+      fireEvent.changeText(getByTestId('edit-asset-word-search'), 'baby');
+      await waitFor(() => getByTestId('edit-asset-link-word-1'));
+      fireEvent.press(getByTestId('edit-asset-link-word-1'));
+      expect(getByTestId('edit-asset-selected-link')).toBeTruthy();
+      expect(queryByTestId('edit-asset-word-search')).toBeNull();
+    });
   });
 
   it('renders date section', async () => {
@@ -288,7 +348,6 @@ describe('EditAssetModal', () => {
     );
     await waitFor(() => getByTestId('edit-asset-backdrop'));
     fireEvent.press(getByTestId('edit-asset-backdrop'));
-    // Modal should attempt to close
   });
 
   it('renders remove button', async () => {
@@ -299,63 +358,53 @@ describe('EditAssetModal', () => {
     expect(getByTestId('edit-asset-remove')).toBeTruthy();
   });
 
-  it('removes asset when remove button is pressed', async () => {
-    const onClose = jest.fn();
-    const mockRemove = assetService.removeAsset as jest.Mock;
+  it('handles asset with no linked word initially — shows two buttons', async () => {
     const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
-    );
-    await waitFor(() => getByTestId('edit-asset-remove'));
-    fireEvent.press(getByTestId('edit-asset-remove'));
-    // Remove action triggered
-  });
-
-  it('handles search for word by name', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'te');
-    // Search filters both words and variants
-  });
-
-  it('displays no results when search has no matches', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'zzzzzz');
-    // No results message shown
-  });
-
-  it('calls cancel and closes modal', async () => {
-    const onClose = jest.fn();
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
-    );
-    await waitFor(() => getByTestId('edit-asset-cancel'));
-    fireEvent.press(getByTestId('edit-asset-cancel'));
-    await waitFor(() => {
-      expect(onClose).toHaveBeenCalled();
-    });
-  });
-
-  it('prevents saving with empty name', async () => {
-    (assetService.renameAsset as jest.Mock).mockRejectedValue(new Error('Name required'));
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-name-input'));
-    fireEvent.changeText(getByTestId('edit-asset-name-input'), '');
-    // Empty name validation
-  });
-
-  it('modal renders with correct background style', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+      <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
     );
     await waitFor(() => getByTestId('edit-asset-modal'));
-    expect(getByTestId('edit-asset-modal')).toBeTruthy();
+    expect(getByTestId('edit-asset-link-word-btn')).toBeTruthy();
+    expect(getByTestId('edit-asset-link-variant-btn')).toBeTruthy();
+  });
+
+  it('handles asset with linked variant — shows chip', async () => {
+    const variantAsset = { ...mockAsset, parent_type: 'variant' as const, linked_variant: 'test-variant', linked_variant_id: 5 };
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={variantAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-selected-link'));
+    expect(getByTestId('edit-asset-selected-link')).toBeTruthy();
+  });
+
+  it('handles very long asset name', async () => {
+    const longNameAsset = { ...mockAsset, name: 'a'.repeat(100) };
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={longNameAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-name-input'));
+    expect(getByTestId('edit-asset-name-input')).toBeTruthy();
+  });
+
+  it('handles modal visibility toggle', async () => {
+    const onClose = jest.fn();
+    const { rerender, getByTestId, queryByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-modal'));
+
+    rerender(
+      <EditAssetModal visible={false} asset={mockAsset} onClose={onClose} />
+    );
+    expect(queryByTestId('edit-asset-modal')).toBeFalsy();
+  });
+
+  it('renders all control buttons', async () => {
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-save'));
+    expect(getByTestId('edit-asset-save')).toBeTruthy();
+    expect(getByTestId('edit-asset-cancel')).toBeTruthy();
   });
 
   it('handles rapid name input changes', async () => {
@@ -370,81 +419,260 @@ describe('EditAssetModal', () => {
     expect(getByTestId('edit-asset-name-input')).toBeTruthy();
   });
 
-  it('handles asset with no linked word initially', async () => {
-    const unlinkedAsset = { ...mockAsset, linked_word: null, linked_word_id: null };
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-modal'));
-    expect(getByTestId('edit-asset-modal')).toBeTruthy();
-  });
-
-  it('handles asset with linked variant', async () => {
-    const variantAsset = { ...mockAsset, linked_variant: 'test-variant', linked_variant_id: 5 };
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={variantAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-modal'));
-    expect(getByTestId('edit-asset-modal')).toBeTruthy();
-  });
-
-  it('handles very long asset name', async () => {
-    const longNameAsset = { ...mockAsset, name: 'a'.repeat(100) };
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={longNameAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-name-input'));
-    expect(getByTestId('edit-asset-name-input')).toBeTruthy();
-  });
-
-  it('handles search field clear', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-link-search'));
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), 'test');
-    fireEvent.changeText(getByTestId('edit-asset-link-search'), '');
-    expect(getByTestId('edit-asset-link-search')).toBeTruthy();
-  });
-
-  it('handles modal visibility toggle', async () => {
-    const onClose = jest.fn();
-    const { rerender, getByTestId, queryByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
-    );
-    await waitFor(() => getByTestId('edit-asset-modal'));
-    
-    rerender(
-      <EditAssetModal visible={false} asset={mockAsset} onClose={onClose} />
-    );
-    // Should handle visibility changes
-    expect(queryByTestId('edit-asset-modal')).toBeFalsy();
-  });
-
-  it('renders all control buttons', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-save'));
-    expect(getByTestId('edit-asset-save')).toBeTruthy();
-    expect(getByTestId('edit-asset-cancel')).toBeTruthy();
-  });
-
-  it('handles date input field interaction', async () => {
-    const { getByTestId } = renderWithProviders(
-      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
-    );
-    await waitFor(() => getByTestId('edit-asset-modal'));
-    // Date field should exist in modal
-    expect(getByTestId('edit-asset-modal')).toBeTruthy();
-  });
-
   it('modal footer styling consistency', async () => {
     const { getByTestId } = renderWithProviders(
       <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
     );
     await waitFor(() => getByTestId('edit-asset-modal'));
-    const modal = getByTestId('edit-asset-modal');
-    expect(modal).toBeTruthy();
+    expect(getByTestId('edit-asset-modal')).toBeTruthy();
+  });
+
+  it('calls relinkAsset when link is changed on save', async () => {
+    const mockRelink = assetService.relinkAsset as jest.Mock;
+    mockRelink.mockResolvedValueOnce({ id: 1 });
+    const mockGetWords = require('../../src/services/wordService').getWords as jest.Mock;
+    mockGetWords.mockResolvedValue([
+      { id: 99, word: 'cat', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
+    ]);
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-selected-link'));
+    // Clear existing link then select a different word
+    fireEvent.press(getByTestId('edit-asset-selected-link'));
+    await waitFor(() => getByTestId('edit-asset-link-word-btn'));
+    fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+    fireEvent.changeText(getByTestId('edit-asset-word-search'), 'cat');
+    await waitFor(() => getByTestId('edit-asset-link-word-99'));
+    fireEvent.press(getByTestId('edit-asset-link-word-99'));
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(mockRelink).toHaveBeenCalled();
+    });
+  });
+
+  it('calls updateAssetDate when date is changed via date picker', async () => {
+    const mockUpdateDate = assetService.updateAssetDate as jest.Mock;
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-date'));
+    // Open date picker and change day from 1 to 2, then confirm
+    fireEvent.press(getByTestId('date-picker-btn'));
+    // Select a different day to force dateChanged = true
+    fireEvent.press(getByTestId('date-picker-day-wheel-item-2'));
+    await act(async () => {
+      fireEvent.press(getByTestId('date-picker-confirm'));
+    });
+    // Now save with the new date
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(mockUpdateDate).toHaveBeenCalled();
+    });
+  });
+
+  it('shows error alert when save fails', async () => {
+    const mockRename = assetService.renameAsset as jest.Mock;
+    mockRename.mockRejectedValueOnce(new Error('fail'));
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-name-input'));
+    fireEvent.changeText(getByTestId('edit-asset-name-input'), 'New Name');
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+    });
+  });
+
+  it('confirms remove and calls removeAsset', async () => {
+    const mockRemove = assetService.removeAsset as jest.Mock;
+    mockRemove.mockResolvedValueOnce(undefined);
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-remove'));
+    fireEvent.press(getByTestId('edit-asset-remove'));
+    // Get the destructive button from the alert
+    const alertSpy = Alert.alert as jest.Mock;
+    const alertArgs = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
+    const buttons = alertArgs[2] as Array<{ text: string; onPress?: () => void }>;
+    const confirmBtn = buttons.find(b => b.text !== 'Cancel' && b.onPress);
+    await act(async () => {
+      confirmBtn?.onPress?.();
+    });
+    await waitFor(() => {
+      expect(mockRemove).toHaveBeenCalledWith(mockAsset);
+    });
+  });
+
+  it('shows error alert when remove fails', async () => {
+    const mockRemove = assetService.removeAsset as jest.Mock;
+    mockRemove.mockRejectedValueOnce(new Error('fail'));
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-remove'));
+    fireEvent.press(getByTestId('edit-asset-remove'));
+    const alertSpy = Alert.alert as jest.Mock;
+    const alertArgs = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
+    const buttons = alertArgs[2] as Array<{ text: string; onPress?: () => void }>;
+    const confirmBtn = buttons.find(b => b.text !== 'Cancel' && b.onPress);
+    await act(async () => {
+      confirmBtn?.onPress?.();
+    });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows variant search results when typing in variant search', async () => {
+    const mockGetVariants = require('../../src/services/variantService').getAllVariants as jest.Mock;
+    mockGetVariants.mockResolvedValue([
+      { id: 5, word_id: 1, variant: 'ba', main_word: 'baby', date_added: '2024-01-01', notes: null, created_at: '2024-01-01', asset_count: 0 },
+    ]);
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.press(getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.changeText(getByTestId('edit-asset-variant-search'), 'ba');
+    await waitFor(() => {
+      expect(getByTestId('edit-asset-link-variant-5')).toBeTruthy();
+    });
+  });
+
+  it('selecting a variant from search shows chip', async () => {
+    const mockGetVariants = require('../../src/services/variantService').getAllVariants as jest.Mock;
+    mockGetVariants.mockResolvedValue([
+      { id: 7, word_id: 1, variant: 'ma', main_word: 'mama', date_added: '2024-01-01', notes: null, created_at: '2024-01-01', asset_count: 0 },
+    ]);
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.press(getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.changeText(getByTestId('edit-asset-variant-search'), 'ma');
+    await waitFor(() => getByTestId('edit-asset-link-variant-7'));
+    fireEvent.press(getByTestId('edit-asset-link-variant-7'));
+    expect(getByTestId('edit-asset-selected-link')).toBeTruthy();
+    expect(queryByTestId('edit-asset-variant-search')).toBeNull();
+  });
+
+  it('closes audio overlay when backdrop pressed', async () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => getByTestId('audio-preview-modal'));
+    // Press backdrop to close
+    fireEvent.press(getByTestId('audio-preview-backdrop'));
+    await waitFor(() => {
+      expect(queryByTestId('audio-preview-modal')).toBeFalsy();
+    });
+  });
+
+  it('closes photo overlay when dismiss pressed', async () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockPhotoAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => getByTestId('photo-preview-modal'));
+    fireEvent.press(getByTestId('photo-preview-dismiss'));
+    await waitFor(() => {
+      expect(queryByTestId('photo-preview-modal')).toBeFalsy();
+    });
+  });
+
+  it('shows no-results for variant search', async () => {
+    const { getByTestId, getByText } = renderWithProviders(
+      <EditAssetModal visible={true} asset={unlinkedAsset} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.press(getByTestId('edit-asset-link-variant-btn'));
+    fireEvent.changeText(getByTestId('edit-asset-variant-search'), 'zzz');
+    await waitFor(() => {
+      expect(getByText(/No words found|Nenhuma palavra/)).toBeTruthy();
+    });
+  });
+
+  it('handles save with null asset name (falls back to filename in save logic)', async () => {
+    const mockRename = assetService.renameAsset as jest.Mock;
+    const nullNameAsset = { ...mockAsset, name: null };
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={nullNameAsset} onClose={onClose} />
+    );
+    await waitFor(() => getByTestId('edit-asset-name-input'));
+    fireEvent.changeText(getByTestId('edit-asset-name-input'), 'new name');
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(mockRename).toHaveBeenCalledWith(1, 'new name');
+    });
+  });
+
+  it('type icon press with null asset name for audio asset', async () => {
+    const nullNameAudio = { ...mockAsset, name: null };
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={nullNameAudio} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => {
+      expect(getByTestId('audio-preview-modal')).toBeTruthy();
+    });
+  });
+
+  it('type icon press with null asset name for photo asset', async () => {
+    const nullNamePhoto = { ...mockPhotoAsset, name: null };
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={nullNamePhoto} onClose={jest.fn()} />
+    );
+    await waitFor(() => getByTestId('edit-asset-type-icon'));
+    fireEvent.press(getByTestId('edit-asset-type-icon'));
+    await waitFor(() => {
+      expect(getByTestId('photo-preview-modal')).toBeTruthy();
+    });
+  });
+
+  it('save with link set to same existing word (link unchanged)', async () => {
+    const mockRelink = assetService.relinkAsset as jest.Mock;
+    const mockGetWords = require('../../src/services/wordService').getWords as jest.Mock;
+    // Asset is linked to word id 10; select the same word
+    mockGetWords.mockResolvedValue([
+      { id: 10, word: 'baby', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' },
+    ]);
+    const onClose = jest.fn();
+    const { getByTestId } = renderWithProviders(
+      <EditAssetModal visible={true} asset={mockAsset} onClose={onClose} />
+    );
+    // The chip shows word id=10. Clear it and re-select the same word
+    await waitFor(() => getByTestId('edit-asset-selected-link'));
+    fireEvent.press(getByTestId('edit-asset-selected-link'));
+    fireEvent.press(getByTestId('edit-asset-link-word-btn'));
+    fireEvent.changeText(getByTestId('edit-asset-word-search'), 'baby');
+    await waitFor(() => getByTestId('edit-asset-link-word-10'));
+    fireEvent.press(getByTestId('edit-asset-link-word-10'));
+    await act(async () => {
+      fireEvent.press(getByTestId('edit-asset-save'));
+    });
+    await waitFor(() => {
+      expect(mockRelink).not.toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 });
+

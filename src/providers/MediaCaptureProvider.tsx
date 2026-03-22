@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { ASSET_MUTATION_KEYS } from '../hooks/queryKeys';
 import * as assetService from '../services/assetService';
-import { getAssetsByParentAndType } from '../repositories/assetRepository';
+import { getAssetsByParentAndType, countAssetsByParentType } from '../repositories/assetRepository';
 import { getAssetFileUri } from '../utils/assetStorage';
 import { useI18n } from '../i18n/i18n';
 import type { ParentType, AssetType } from '../types/asset';
@@ -132,6 +132,11 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
   const saveWithoutLinking = useCallback(async (name?: string) => {
     if (!pendingMedia) return;
     try {
+      let assetName = name;
+      if (!assetName) {
+        const count = await countAssetsByParentType('profile', pendingMedia.type);
+        assetName = `${pendingMedia.type}-${count + 1}`;
+      }
       await assetService.saveAsset({
         sourceUri: pendingMedia.uri,
         parentType: 'profile',
@@ -139,7 +144,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         assetType: pendingMedia.type,
         mimeType: pendingMedia.mimeType,
         fileSize: pendingMedia.fileSize,
-        name,
+        name: assetName,
         durationMs: pendingMedia.durationMs,
         width: pendingMedia.width,
         height: pendingMedia.height,
