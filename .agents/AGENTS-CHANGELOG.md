@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-07-14_3
+
+[feature] `MediaLinkingModal` UX: replaced always-visible word/variant search boxes with two mode-select buttons ("Link to Word" / "Link to Variant"); pressing a button reveals the respective search section with a cancel X to return to button mode; removed separate "Save Without Linking" button — the main Save button now falls back to `saveWithoutLinking` when nothing is selected; chip X press returns to button mode instead of restoring search input
+[test] Updated 83 `MediaLinkingModal` integration tests to match new button-driven UX flow; added `openWordSection`/`openVariantSection` helpers; added "Link mode buttons" describe block with 7 new tests
+
 ### 2026-07-14_2
 
 [feature] Asset linking to variants: `MediaLinkingModal` now shows a variant search section alongside the word section; selecting a variant links captured media to it with `parent_type='variant'`; inline variant creation form (name + word picker) added
