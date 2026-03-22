@@ -71,10 +71,13 @@ const TEST_WORDS: Word[] = [
 
 const mockResetCapture = jest.fn();
 const mockLinkMediaToWord = jest.fn().mockResolvedValue(undefined);
+const mockLinkMediaToVariant = jest.fn().mockResolvedValue(undefined);
+const mockSaveWithoutLinking = jest.fn().mockResolvedValue(undefined);
 const mockStartCreateWord = jest.fn();
 const mockDismissModal = jest.fn();
 const mockAudioPlay = jest.fn().mockResolvedValue(undefined);
 const mockAudioStop = jest.fn().mockResolvedValue(undefined);
+const mockAddVariantMutateAsync = jest.fn().mockResolvedValue(99);
 
 let mockPhase: CapturePhase = 'linking';
 let mockPendingMedia: PendingMedia | null = AUDIO_MEDIA;
@@ -86,7 +89,22 @@ jest.mock('../../src/hooks/useMediaCapture', () => ({
     pendingMedia: mockPendingMedia,
     resetCapture: mockResetCapture,
     linkMediaToWord: mockLinkMediaToWord,
+    linkMediaToVariant: mockLinkMediaToVariant,
+    saveWithoutLinking: mockSaveWithoutLinking,
     startCreateWord: mockStartCreateWord,
+  }),
+}));
+
+jest.mock('../../src/hooks/useVariants', () => ({
+  useAllVariants: () => ({
+    data: [
+      { id: 10, word_id: 1, variant: 'mah', main_word: 'mama', date_added: '2026-01-01', notes: null, asset_count: 0, audio_count: 0, photo_count: 0, video_count: 0 },
+      { id: 11, word_id: 3, variant: 'ba', main_word: 'ball', date_added: '2026-01-02', notes: null, asset_count: 0, audio_count: 0, photo_count: 0, video_count: 0 },
+    ],
+    isLoading: false,
+  }),
+  useAddVariant: () => ({
+    mutateAsync: mockAddVariantMutateAsync,
   }),
 }));
 
@@ -138,6 +156,14 @@ jest.mock('../../src/components/DatePickerField', () => ({
 
 function renderModal() {
   return renderWithProviders(<MediaLinkingModal />);
+}
+
+function openWordSection(getByTestId: ReturnType<typeof renderModal>['getByTestId']) {
+  fireEvent.press(getByTestId('media-link-word-btn'));
+}
+
+function openVariantSection(getByTestId: ReturnType<typeof renderModal>['getByTestId']) {
+  fireEvent.press(getByTestId('media-link-variant-btn'));
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -315,16 +341,80 @@ describe('MediaLinkingModal', () => {
     });
   });
 
+  // ── Link mode buttons ──────────────────────────────────────────────────────
+
+  describe('link mode buttons', () => {
+    it('renders link-to-word and link-to-variant buttons initially', () => {
+      const { getByTestId } = renderModal();
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
+      expect(getByTestId('media-link-variant-btn')).toBeTruthy();
+    });
+
+    it('pressing link-to-word hides the buttons and shows word search', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      fireEvent.press(getByTestId('media-link-word-btn'));
+      expect(getByTestId('media-word-search')).toBeTruthy();
+      expect(queryByTestId('media-link-word-btn')).toBeNull();
+      expect(queryByTestId('media-link-variant-btn')).toBeNull();
+    });
+
+    it('pressing link-to-variant hides the buttons and shows variant search', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      fireEvent.press(getByTestId('media-link-variant-btn'));
+      expect(getByTestId('media-variant-search')).toBeTruthy();
+      expect(queryByTestId('media-link-word-btn')).toBeNull();
+    });
+
+    it('pressing cancel on word section restores the two buttons', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      fireEvent.press(getByTestId('media-link-word-btn'));
+      fireEvent.press(getByTestId('media-word-section-cancel'));
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
+      expect(getByTestId('media-link-variant-btn')).toBeTruthy();
+      expect(queryByTestId('media-word-search')).toBeNull();
+    });
+
+    it('pressing cancel on variant section restores the two buttons', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      fireEvent.press(getByTestId('media-link-variant-btn'));
+      fireEvent.press(getByTestId('media-variant-section-cancel'));
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
+      expect(queryByTestId('media-variant-search')).toBeNull();
+    });
+
+    it('pressing X on selected word chip restores the two buttons', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-word-search'), 'mama');
+      fireEvent.press(getByTestId('media-word-result-mama'));
+      fireEvent.press(getByTestId('media-selected-word'));
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
+      expect(queryByTestId('media-selected-word')).toBeNull();
+    });
+
+    it('pressing X on selected variant chip restores the two buttons', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'mah');
+      fireEvent.press(getByTestId('media-variant-result-mah'));
+      fireEvent.press(getByTestId('media-selected-variant'));
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
+      expect(queryByTestId('media-selected-variant')).toBeNull();
+    });
+  });
+
   // ── Word Search ────────────────────────────────────────────────────────────
 
   describe('word search', () => {
-    it('renders search input', () => {
+    it('renders search input after pressing link-to-word button', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       expect(getByTestId('media-word-search')).toBeTruthy();
     });
 
     it('filters words when entering search text', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'ma');
       expect(getByTestId('media-word-result-mama')).toBeTruthy();
       expect(queryByTestId('media-word-result-ball')).toBeNull();
@@ -332,37 +422,41 @@ describe('MediaLinkingModal', () => {
 
     it('shows results for partial match (case insensitive)', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'PA');
       expect(getByTestId('media-word-result-papa')).toBeTruthy();
     });
 
     it('shows no results message when no words match', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'zzz');
       expect(queryByTestId('media-word-result-mama')).toBeNull();
-      // "No results" text should be shown
       expect(getByTestId('media-word-search')).toBeTruthy();
     });
 
     it('does not show results list when search is empty', () => {
-      const { queryByTestId } = renderModal();
-      // No search text → no results rendered
+      const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       expect(queryByTestId('media-word-result-mama')).toBeNull();
     });
 
     it('shows clear button when search has text', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       expect(getByTestId('media-word-search-clear')).toBeTruthy();
     });
 
     it('does not show clear button when search is empty', () => {
-      const { queryByTestId } = renderModal();
+      const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       expect(queryByTestId('media-word-search-clear')).toBeNull();
     });
 
     it('clears search when pressing clear button', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       expect(getByTestId('media-word-search-clear')).toBeTruthy();
       fireEvent.press(getByTestId('media-word-search-clear'));
@@ -372,16 +466,16 @@ describe('MediaLinkingModal', () => {
 
     it('shows category info on result items that have a category', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       const result = getByTestId('media-word-result-mama');
       expect(result).toBeTruthy();
     });
 
     it('limits results to 7 items', () => {
-      // We only have 4 words, but we verify the slice logic doesn't crash
       const { getByTestId, getAllByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'a');
-      // 'mama', 'papa', 'ball', 'water' all contain 'a'
       const results = getAllByTestId(/^media-word-result-/);
       expect(results.length).toBeLessThanOrEqual(7);
     });
@@ -392,51 +486,44 @@ describe('MediaLinkingModal', () => {
   describe('word selection', () => {
     it('selects a word when tapping a result', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
-      // Search input should be replaced by the chosen chip
       expect(getByTestId('media-selected-word')).toBeTruthy();
       expect(queryByTestId('media-word-search')).toBeNull();
     });
 
     it('displays selected word name in the chip', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       const chip = getByTestId('media-selected-word');
-      // Find text content within the chip
       expect(chip).toBeTruthy();
     });
 
-    it('clears selected word when tapping the chip', () => {
+    it('clears selected word and returns to button mode when tapping the chip', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       expect(getByTestId('media-selected-word')).toBeTruthy();
       fireEvent.press(getByTestId('media-selected-word'));
       expect(queryByTestId('media-selected-word')).toBeNull();
-      expect(getByTestId('media-word-search')).toBeTruthy();
-    });
-
-    it('clears search text after selecting a word', () => {
-      const { getByTestId, queryByTestId } = renderModal();
-      fireEvent.changeText(getByTestId('media-word-search'), 'mama');
-      fireEvent.press(getByTestId('media-word-result-mama'));
-      // After clearing the selection, the search field should be empty
-      fireEvent.press(getByTestId('media-selected-word'));
-      expect(getByTestId('media-word-search').props.value).toBe('');
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
     });
 
     it('shows category info on the selected word chip when available', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
-      // Chip should be present (mama has category_name)
       expect(getByTestId('media-selected-word')).toBeTruthy();
     });
 
-    it('selecting a word without category does not show category meta', () => {
+    it('selecting a word without category does not crash', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'water');
       fireEvent.press(getByTestId('media-word-result-water'));
       expect(getByTestId('media-selected-word')).toBeTruthy();
@@ -448,12 +535,14 @@ describe('MediaLinkingModal', () => {
   describe('create new word', () => {
     it('shows create new word button in results', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'hello');
       expect(getByTestId('media-create-word-btn')).toBeTruthy();
     });
 
     it('calls startCreateWord with trimmed search text', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), '  hello  ');
       fireEvent.press(getByTestId('media-create-word-btn'));
       expect(mockStartCreateWord).toHaveBeenCalledWith('hello', '');
@@ -461,8 +550,8 @@ describe('MediaLinkingModal', () => {
 
     it('create button appears alongside matching results', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
-      // Both the result and the create button should be visible
       expect(getByTestId('media-word-result-mama')).toBeTruthy();
       expect(getByTestId('media-create-word-btn')).toBeTruthy();
     });
@@ -476,28 +565,28 @@ describe('MediaLinkingModal', () => {
       expect(getByTestId('media-link-btn')).toBeTruthy();
     });
 
-    it('has disabled opacity when no word is selected', () => {
+    it('is always enabled (saves without linking when nothing selected)', () => {
       const { getByTestId } = renderModal();
       const linkBtn = getByTestId('media-link-btn');
-      // The button wrapper should have the disabled style (opacity: 0.5)
+      // Button is always enabled since it falls back to saveWithoutLinking
       const flatStyle = Array.isArray(linkBtn.props.style)
         ? Object.assign({}, ...linkBtn.props.style.flat(Infinity).filter(Boolean))
         : linkBtn.props.style;
-      expect(flatStyle.opacity).toBe(0.5);
+      expect(flatStyle.opacity).not.toBe(0.5);
     });
 
     it('renders without disabled appearance when a word is selected', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
-      // Verify the selected word chip appears (confirmation that selection worked)
       expect(getByTestId('media-selected-word')).toBeTruthy();
-      // Link button should still be there and pressable
       expect(getByTestId('media-link-btn')).toBeTruthy();
     });
 
     it('calls linkMediaToWord with the selected word id on press', async () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       await act(async () => {
@@ -508,21 +597,23 @@ describe('MediaLinkingModal', () => {
       });
     });
 
-    it('navigates to words tab after successful link', async () => {
+    it('navigates to words tab with highlightId after successful link', async () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       await act(async () => {
         fireEvent.press(getByTestId('media-link-btn'));
       });
       await waitFor(() => {
-        expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/words');
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/words', params: { highlightId: '1' } });
       });
     });
 
     it('does not navigate when linkMediaToWord throws', async () => {
       mockLinkMediaToWord.mockRejectedValueOnce(new Error('link failed'));
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       await act(async () => {
@@ -532,12 +623,15 @@ describe('MediaLinkingModal', () => {
       expect(mockRouterPush).not.toHaveBeenCalled();
     });
 
-    it('does not call linkMediaToWord when no word is selected', async () => {
+    it('calls saveWithoutLinking when no word or variant is selected', async () => {
       const { getByTestId } = renderModal();
       await act(async () => {
         fireEvent.press(getByTestId('media-link-btn'));
       });
-      expect(mockLinkMediaToWord).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockSaveWithoutLinking).toHaveBeenCalled();
+        expect(mockLinkMediaToWord).not.toHaveBeenCalled();
+      });
     });
 
     it('sets loading state during link operation', async () => {
@@ -546,6 +640,7 @@ describe('MediaLinkingModal', () => {
         () => new Promise<void>((res) => { resolveLink = res; })
       );
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
 
@@ -564,6 +659,7 @@ describe('MediaLinkingModal', () => {
     it('resets loading state even if linkMediaToWord throws', async () => {
       mockLinkMediaToWord.mockRejectedValueOnce(new Error('link failed'));
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       // The handleLink catches the error internally via finally block
@@ -616,6 +712,7 @@ describe('MediaLinkingModal', () => {
     it('resets word selection when modal reopens', () => {
       const { getByTestId, queryByTestId, rerender } = renderModal();
       // Select a word
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'mama');
       fireEvent.press(getByTestId('media-word-result-mama'));
       expect(getByTestId('media-selected-word')).toBeTruthy();
@@ -627,11 +724,13 @@ describe('MediaLinkingModal', () => {
       rerender(<MediaLinkingModal />);
 
       expect(queryByTestId('media-selected-word')).toBeNull();
-      expect(getByTestId('media-word-search')).toBeTruthy();
+      // After reset, should be back to button mode
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
     });
 
     it('resets search text when modal reopens', () => {
       const { getByTestId, rerender } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'test');
 
       mockPhase = 'idle';
@@ -639,7 +738,8 @@ describe('MediaLinkingModal', () => {
       mockPhase = 'linking';
       rerender(<MediaLinkingModal />);
 
-      expect(getByTestId('media-word-search').props.value).toBe('');
+      // After reset, back to button mode — word search is not visible
+      expect(getByTestId('media-link-word-btn')).toBeTruthy();
     });
   });
 
@@ -702,13 +802,14 @@ describe('MediaLinkingModal', () => {
   describe('no results message', () => {
     it('shows no results text when search matches nothing', () => {
       const { getByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'zzzzzzz');
-      // The create button should still appear
       expect(getByTestId('media-create-word-btn')).toBeTruthy();
     });
 
     it('does not show result items when search matches nothing', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), 'zzzzzzz');
       expect(queryByTestId('media-word-result-mama')).toBeNull();
       expect(queryByTestId('media-word-result-papa')).toBeNull();
@@ -722,9 +823,154 @@ describe('MediaLinkingModal', () => {
   describe('whitespace-only search', () => {
     it('does not show results for whitespace-only search', () => {
       const { getByTestId, queryByTestId } = renderModal();
+      openWordSection(getByTestId);
       fireEvent.changeText(getByTestId('media-word-search'), '   ');
       expect(queryByTestId('media-word-result-mama')).toBeNull();
       expect(queryByTestId('media-create-word-btn')).toBeNull();
+    });
+  });
+
+  // ── Variant Search ─────────────────────────────────────────────────────────
+
+  describe('variant search section', () => {
+    it('renders the variant search input after pressing link-to-variant button', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      expect(getByTestId('media-variant-search')).toBeTruthy();
+    });
+
+    it('shows variant results matching search query', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'mah');
+      expect(getByTestId('media-variant-result-mah')).toBeTruthy();
+    });
+
+    it('shows variant result with word / variant format', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'ba');
+      const result = getByTestId('media-variant-result-ba');
+      expect(result.props.children).toBeDefined();
+    });
+
+    it('selecting a variant shows the chosen chip', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'mah');
+      fireEvent.press(getByTestId('media-variant-result-mah'));
+      expect(getByTestId('media-selected-variant')).toBeTruthy();
+    });
+
+    it('clearing the selected variant returns to button mode', () => {
+      const { getByTestId, queryByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'mah');
+      fireEvent.press(getByTestId('media-variant-result-mah'));
+      fireEvent.press(getByTestId('media-selected-variant'));
+      expect(queryByTestId('media-selected-variant')).toBeNull();
+      expect(getByTestId('media-link-variant-btn')).toBeTruthy();
+    });
+
+    it('shows not-found message when variant search matches nothing', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'zzz');
+      expect(getByTestId('media-variant-not-found')).toBeTruthy();
+    });
+
+    it('does not show not-found when variant search is empty', () => {
+      const { queryByTestId } = renderModal();
+      expect(queryByTestId('media-variant-not-found')).toBeNull();
+    });
+
+    it('calls linkMediaToVariant and navigates to variants tab on save with variant selected', async () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'mah');
+      fireEvent.press(getByTestId('media-variant-result-mah'));
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+      });
+      await waitFor(() => {
+        expect(mockLinkMediaToVariant).toHaveBeenCalledWith(10, '', 'mah', 'mama');
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { highlightId: '10' } });
+      });
+    });
+  });
+
+  // ── Save Without Linking (via main Save button) ────────────────────────────
+
+  describe('save without linking', () => {
+    it('does not render a separate save-without-linking button', () => {
+      const { queryByTestId } = renderModal();
+      expect(queryByTestId('media-save-without-linking-btn')).toBeNull();
+    });
+
+    it('calls saveWithoutLinking via main save button when nothing is selected', async () => {
+      const { getByTestId } = renderModal();
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+      });
+      await waitFor(() => {
+        expect(mockSaveWithoutLinking).toHaveBeenCalled();
+      });
+    });
+
+    it('navigates to media screen after saving without linking', async () => {
+      const { getByTestId } = renderModal();
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+      });
+      await waitFor(() => {
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/media' });
+      });
+    });
+  });
+
+  // ── Inline Variant Create ──────────────────────────────────────────────────
+
+  describe('inline variant create', () => {
+    it('shows create button when variant not found', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'zzz');
+      expect(getByTestId('media-create-variant-btn')).toBeTruthy();
+    });
+
+    it('shows inline create form when create variant tapped', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'zzz');
+      fireEvent.press(getByTestId('media-create-variant-btn'));
+      expect(getByTestId('media-inline-create-form')).toBeTruthy();
+    });
+
+    it('inline create form has name and word search inputs', () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'zzz');
+      fireEvent.press(getByTestId('media-create-variant-btn'));
+      expect(getByTestId('media-inline-variant-name-input')).toBeTruthy();
+      expect(getByTestId('media-inline-word-search')).toBeTruthy();
+    });
+
+    it('creates variant and links media when inline form submitted', async () => {
+      const { getByTestId } = renderModal();
+      openVariantSection(getByTestId);
+      fireEvent.changeText(getByTestId('media-variant-search'), 'zzz');
+      fireEvent.press(getByTestId('media-create-variant-btn'));
+      fireEvent.changeText(getByTestId('media-inline-variant-name-input'), 'zee');
+      fireEvent.changeText(getByTestId('media-inline-word-search'), 'mama');
+      fireEvent.press(getByTestId('media-inline-word-result-mama'));
+      await act(async () => {
+        fireEvent.press(getByTestId('media-inline-create-save-btn'));
+      });
+      await waitFor(() => {
+        expect(mockAddVariantMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ wordId: 1, variant: 'zee' }));
+        expect(mockLinkMediaToVariant).toHaveBeenCalledWith(99, '', 'zee', 'mama');
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { highlightId: '99' } });
+      });
     });
   });
 });

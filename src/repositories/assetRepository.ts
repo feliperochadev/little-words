@@ -99,6 +99,15 @@ export const getAllAssets = (
   return query<AssetWithLink>(base + extra + ' ' + orderClause, params);
 };
 
+export const countAssetsByParentType = (
+  parentType: ParentType,
+  assetType: AssetType,
+): Promise<number> =>
+  query<{ count: number }>(
+    'SELECT COUNT(*) as count FROM assets WHERE parent_type = ? AND asset_type = ?',
+    [parentType, assetType]
+  ).then(rows => rows[0]?.count ?? 0);
+
 export const updateAssetParent = (
   id: number,
   newParentType: ParentType,

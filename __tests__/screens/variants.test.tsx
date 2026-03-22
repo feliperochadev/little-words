@@ -20,17 +20,56 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+let mockHighlightId: string | undefined = undefined;
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(() => ({ highlightId: mockHighlightId })),
+  useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() })),
+  useFocusEffect: jest.fn(),
+}));
+
+const mockAssets: Record<string, any[]> = {};
+jest.mock('../../src/hooks/useAssets', () => ({
+  useAssetsByParent: jest.fn((parentType: string, parentId: number) => ({
+    data: mockAssets[`${parentType}-${parentId}`] ?? [],
+  })),
+}));
+
+jest.mock('../../src/hooks/useAudioPlayer', () => ({
+  useAudioPlayer: () => ({
+    isPlaying: false,
+    durationMs: 0,
+    play: jest.fn().mockResolvedValue(undefined),
+    stop: jest.fn().mockResolvedValue(undefined),
+    unload: jest.fn(),
+  }),
+}));
+
+jest.mock('../../src/utils/assetStorage', () => ({
+  getAssetFileUri: (parentType: string, parentId: number, assetType: string, filename: string) =>
+    `file:///media/${parentType}/${parentId}/${assetType}/${filename}`,
+}));
+
 import VariantsScreen from '../../app/(tabs)/variants';
 import * as db from '../../src/services/variantService';
 
 const sampleVariants = [
-  { id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-15', notes: 'close', created_at: '2024-01-15', main_word: 'mamãe' },
-  { id: 2, word_id: 1, variant: 'mama', date_added: '2024-02-01', notes: null, created_at: '2024-02-01', main_word: 'mamãe' },
+  {
+    id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-15', notes: 'close',
+    created_at: '2024-01-15', main_word: 'mamãe',
+    asset_count: 2, audio_count: 1, photo_count: 1, video_count: 0,
+  },
+  {
+    id: 2, word_id: 1, variant: 'mama', date_added: '2024-02-01', notes: null,
+    created_at: '2024-02-01', main_word: 'mamãe',
+    asset_count: 0, audio_count: 0, photo_count: 0, video_count: 0,
+  },
 ];
 
 describe('VariantsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockHighlightId = undefined;
+    Object.keys(mockAssets).forEach(k => delete mockAssets[k]);
     (db.getAllVariants as jest.Mock).mockResolvedValue(sampleVariants);
   });
 
@@ -134,5 +173,36 @@ describe('VariantsScreen', () => {
     await waitFor(() => {
       expect(queryByText(/New Variant/)).toBeNull();
     });
+  });
+
+  // ── Asset chips (WordAssetChips) ────────────────────────────────────────────
+
+  it('renders asset chips via WordAssetChips when asset_count > 0', async () => {
+    mockAssets['variant-1'] = [
+      { id: 10, parent_type: 'variant', parent_id: 1, asset_type: 'audio', filename: 'a.m4a', name: 'Rec 1', mime_type: 'audio/mp4', file_size: 1000, duration_ms: 2000, width: null, height: null, created_at: '2026-01-01T00:00:00Z' },
+    ];
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('word-asset-chip-10')).toBeTruthy();
+  });
+
+  it('does not render asset chips when asset_count is 0', async () => {
+    mockAssets['variant-2'] = [];
+    const { queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mama/);
+    expect(queryByTestId('word-asset-chip-10')).toBeNull();
+  });
+
+  // ── highlightId (scroll only, no visual focus) ───────────────────────────
+
+  it('does not crash when highlightId param matches', async () => {
+    mockHighlightId = '1';
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variant-item-mamá')).toBeTruthy();
+  });
+
+  it('does not crash when highlightId does not match any variant', async () => {
+    mockHighlightId = '9999';
+    const { findByText } = renderWithProviders(<VariantsScreen />);
+    expect(await findByText(/mamá/)).toBeTruthy();
   });
 });

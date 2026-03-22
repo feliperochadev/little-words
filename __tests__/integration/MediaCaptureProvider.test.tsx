@@ -937,6 +937,134 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
     });
   });
 
+  // ── linkMediaToVariant ────────────────────────────────────────────────────
+
+  describe('linkMediaToVariant', () => {
+    it('calls saveAsset with parent_type=variant and resets', async () => {
+      const queryClient = createQueryClient();
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      const { result } = renderHook(() => useMediaCapture(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      act(() => {
+        result.current.setCapturedMedia(SAMPLE_MEDIA);
+      });
+
+      await act(async () => {
+        await result.current.linkMediaToVariant(42, 'baa', 'baa', 'ball');
+      });
+
+      expect(mockSaveAsset).toHaveBeenCalledWith({
+        sourceUri: SAMPLE_MEDIA.uri,
+        parentType: 'variant',
+        parentId: 42,
+        assetType: 'audio',
+        mimeType: 'audio/mp4',
+        fileSize: 12345,
+        name: 'baa',
+        parentName: 'baa',
+        durationMs: 3000,
+        width: undefined,
+        height: undefined,
+      });
+      expect(invalidateSpy).toHaveBeenCalled();
+      expect(result.current.phase).toBe('idle');
+      expect(result.current.pendingMedia).toBeNull();
+    });
+
+    it('is a no-op when pendingMedia is null', async () => {
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.linkMediaToVariant(42);
+      });
+
+      expect(mockSaveAsset).not.toHaveBeenCalled();
+    });
+
+    it('shows Alert on error and still resets', async () => {
+      const alertSpy = jest.spyOn(Alert, 'alert');
+      mockSaveAsset.mockRejectedValueOnce(new Error('DB error'));
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setCapturedMedia(SAMPLE_MEDIA);
+      });
+
+      await act(async () => {
+        await result.current.linkMediaToVariant(42);
+      });
+
+      expect(alertSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+      );
+      expect(result.current.phase).toBe('idle');
+    });
+  });
+
+  // ── saveWithoutLinking ────────────────────────────────────────────────────
+
+  describe('saveWithoutLinking', () => {
+    it('calls saveAsset with parent_type=unlinked and resets', async () => {
+      const queryClient = createQueryClient();
+      const { result } = renderHook(() => useMediaCapture(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      act(() => {
+        result.current.setCapturedMedia(SAMPLE_MEDIA);
+      });
+
+      await act(async () => {
+        await result.current.saveWithoutLinking('my recording');
+      });
+
+      expect(mockSaveAsset).toHaveBeenCalledWith({
+        sourceUri: SAMPLE_MEDIA.uri,
+        parentType: 'unlinked',
+        parentId: 1,
+        assetType: 'audio',
+        mimeType: 'audio/mp4',
+        fileSize: 12345,
+        name: 'my recording',
+        durationMs: 3000,
+        width: undefined,
+        height: undefined,
+      });
+      expect(result.current.phase).toBe('idle');
+      expect(result.current.pendingMedia).toBeNull();
+    });
+
+    it('is a no-op when pendingMedia is null', async () => {
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.saveWithoutLinking();
+      });
+
+      expect(mockSaveAsset).not.toHaveBeenCalled();
+    });
+
+    it('shows Alert on error and still resets', async () => {
+      const alertSpy = jest.spyOn(Alert, 'alert');
+      mockSaveAsset.mockRejectedValueOnce(new Error('fail'));
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setCapturedMedia(SAMPLE_MEDIA);
+      });
+
+      await act(async () => {
+        await result.current.saveWithoutLinking();
+      });
+
+      expect(alertSpy).toHaveBeenCalled();
+      expect(result.current.phase).toBe('idle');
+    });
+  });
+
   // ── edge case: remove error in didJustFinish callback ────────────────────
 
   describe('playback finish callback', () => {

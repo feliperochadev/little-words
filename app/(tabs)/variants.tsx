@@ -1,10 +1,11 @@
 import { withOpacity } from '../../src/utils/colorHelpers';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import type { Variant, Word } from '../../src/types/domain';
 import { Card, EmptyState } from '../../src/components/UIComponents';
 import { ListScreenControls } from '../../src/components/ListScreenControls';
@@ -16,7 +17,7 @@ import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useAllVariants } from '../../src/hooks/useVariants';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
-import { AudioPlayerInline } from '../../src/components/AudioPlayerInline';
+import { WordAssetChips } from '../../src/components/WordAssetChips';
 
 const EMPTY_VARIANTS: Variant[] = [];
 const EMPTY_WORDS: Word[] = [];
@@ -24,6 +25,7 @@ const EMPTY_WORDS: Word[] = [];
 export default function VariantsScreen() {
   const { t, tc } = useI18n();
   const { colors } = useTheme();
+  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
 
   const sortOptions = buildDefaultSortOptions(t);
 
@@ -37,6 +39,9 @@ export default function VariantsScreen() {
   const [showAddVariant, setShowAddVariant] = useState(false);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
+
+  const flatListRef = useRef<FlatList<Variant>>(null);
+  const scrolledHighlightRef = useRef<number | null>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetchVariants(); } finally { setRefreshing(false); } };
 
@@ -58,35 +63,48 @@ export default function VariantsScreen() {
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
   const sorted = sortVariants(filtered, sort);
 
+  // Scroll to a variant when navigated with highlightId (no visual highlight)
+  useEffect(() => {
+    if (!highlightId) return;
+    const id = Number(highlightId);
+    if (scrolledHighlightRef.current === id) return;
+    const idx = sorted.findIndex(v => v.id === id);
+    if (idx < 0) return;
+    scrolledHighlightRef.current = id;
+    setTimeout(() => {
+      flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+    }, 150);
+  }, [highlightId, sorted]);
+
   const renderVariant = ({ item, index }: { item: Variant; index: number }) => (
-    <Card style={styles.variantCard} testID={`variant-pos-${index}-${item.variant}`}>
-      <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
-        <View style={styles.variantRow}>
-          <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
-            <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;</Text>
-          </View>
-          <View style={styles.variantMeta}>
-            <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
-            <Text style={[styles.mainWord, { color: colors.text }]}>{item.main_word}</Text>
-            <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
+      <Card
+        style={styles.variantCard}
+        testID={`variant-pos-${index}-${item.variant}`}
+      >
+        <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
+          <View style={styles.variantMain}>
+            <View style={styles.variantHeader}>
+              <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
+                <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;</Text>
+              </View>
+              <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
+              <Text style={[styles.mainWord, { color: colors.text }]} numberOfLines={1}>{item.main_word}</Text>
+              <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
+            </View>
             {(item.asset_count ?? 0) > 0 && (
-              <View style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.secondary, '16') }]} testID={`variant-asset-count-${item.id}`}>
-                <AudioPlayerInline parentType="variant" parentId={item.id} />
-                <Text style={[styles.assetCountText, { color: colors.secondary }]}>
-                  {item.asset_count}
-                </Text>
+              <View style={styles.variantMeta}>
+                <WordAssetChips parentType="variant" parentId={item.id} />
               </View>
             )}
           </View>
-        </View>
-        {item.notes && (
-          <View style={styles.notesRow}>
-            <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
-            <Text style={[styles.notes, { color: colors.textSecondary }]} numberOfLines={2}>{item.notes}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    </Card>
+          {item.notes && (
+            <View style={styles.notesRow}>
+              <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.notes, { color: colors.textSecondary }]} numberOfLines={2}>{item.notes}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Card>
   );
 
   return (
@@ -126,11 +144,13 @@ export default function VariantsScreen() {
       />
 
       <FlatList
+        ref={flatListRef}
         data={sorted}
         keyExtractor={item => item.id.toString()}
         renderItem={renderVariant}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.secondary} />}
+        onScrollToIndexFailed={() => {}}
         ListHeaderComponent={
           <View style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15') }]}>
             <Ionicons name="bulb-outline" size={14} color={colors.secondary} style={styles.hintIcon} testID="variants-hint-icon" />
@@ -165,18 +185,17 @@ const styles = StyleSheet.create({
   hintIcon: { marginRight: 6 },
   hintText: { fontSize: 13, lineHeight: 18, flex: 1 },
   variantCard: { marginBottom: 10 },
-  variantRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  variantMain: { flex: 1 },
+  variantHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   variantBubble: {
     paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: 16,
   },
   variantText: { fontSize: 18, fontWeight: '700', fontStyle: 'italic' },
-  variantMeta: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 6, flexWrap: 'wrap' },
+  variantMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 2 },
   arrow: { fontSize: 14 },
-  mainWord: { fontSize: 15, fontWeight: '700' },
-  date: { fontSize: 12, flex: 1, textAlign: 'right' },
+  mainWord: { fontSize: 15, fontWeight: '700', flex: 1 },
+  date: { fontSize: 12 },
   notesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   notes: { fontSize: 12, flex: 1, lineHeight: 16 },
-  assetCountChip: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
-  assetCountText: { fontSize: 11, fontWeight: '700' },
 });

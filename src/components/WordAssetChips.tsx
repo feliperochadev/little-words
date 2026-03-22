@@ -12,13 +12,14 @@ const EMPTY_ASSETS: Asset[] = [];
 const MAX_VISIBLE = 4;
 
 interface Props {
-  wordId: number;
+  parentType?: 'word' | 'variant';
+  parentId: number;
 }
 
 
-export function WordAssetChips({ wordId }: Readonly<Props>) {
+export function WordAssetChips({ parentType = 'word', parentId }: Readonly<Props>) {
   const { colors } = useTheme();
-  const { data: assets = EMPTY_ASSETS } = useAssetsByParent('word', wordId);
+  const { data: assets = EMPTY_ASSETS } = useAssetsByParent(parentType, parentId);
   const { audioOverlay, photoOverlay, openAudioOverlay, openPhotoOverlay, closeAudioOverlay, closePhotoOverlay } = useAssetPreviewOverlays();
 
   if (assets.length === 0) return null;

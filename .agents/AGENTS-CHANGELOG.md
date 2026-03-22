@@ -2,7 +2,53 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-22_1
+### 2026-03-22_7
+
+[fix] `variants.tsx`: remove visual focus highlight — `highlightedId` state and the border/background highlight on the Card are removed entirely; scroll-to behavior is preserved using `scrolledHighlightRef` to prevent re-triggering on re-renders
+[feature] `variants.tsx`: asset chips now use `WordAssetChips` (same component and icons as `words.tsx`) instead of manual count-based chips; `VariantAudioOverlay`, `VariantPhotoOverlay` and manual `assetCountChip` logic removed
+[refactor] `WordAssetChips`: `wordId` prop renamed to `parentId`; new optional `parentType` prop (defaults to `'word'`) allows reuse for both words and variants
+[test] `screens/variants.test.tsx`: updated mock from `useAssetsByType` → `useAssetsByParent`; added `useAudioPlayer` and `assetStorage` mocks; replaced old chip testID tests with `word-asset-chip-*` tests; added `mockAssets` clear in `beforeEach`
+[test] `integration/WordAssetChips.test.tsx`: updated all `wordId={10}` → `parentId={10}`
+
+### 2026-03-22_6
+
+[fix] Introduce `parent_type='unlinked'` as a distinct `ParentType` so assets saved without a word/variant link no longer share the `'profile'` parent type with the profile photo singleton; fixes unlinked photos/audio disappearing from the media screen and profile avatar showing wrong photo
+[fix] `getAllAssets` WHERE reverted to simple `WHERE a.parent_type != 'profile'` — correct now that `'profile'` is exclusively the profile photo
+[feature] Migration `0004_add-unlinked-parent-type`: recreates `assets` table with updated CHECK constraint; migrates existing `parent_type='profile'` records — keeps the most-recent profile photo, moves all others to `'unlinked'`
+[test] Updated `migrator.test.ts` to include version 4 in "all applied" fixture; updated `assetRepository.test.ts`, `MediaCaptureProvider.test.tsx`, and `EditAssetModal.test.tsx` for new `'unlinked'` parent type
+
+### 2026-03-22_5
+
+[feature] `MediaLinkingModal` + `EditAssetModal`: link buttons (word/variant) now stack vertically (2 lines) instead of side-by-side
+[feature] `MediaLinkingModal`: after saving without a word/variant link, navigates to the media screen (`/(tabs)/media`)
+[test] Added "navigates to media screen after saving without linking" test in `MediaLinkingModal.test.tsx`
+
+
+
+[feature] `EditAssetModal` redesigned with button-driven word/variant linking UX: two mode buttons ("Link to Word" / "Link to Variant") replace single combined search input; pressing a button reveals its search section with a cancel X; existing link shown as chip with ✕ to clear and return to button mode
+[fix] `assetRepository.getAllAssets` now excludes only `(parent_type='profile' AND asset_type='photo')` instead of all profile-parented assets, making unlinked media visible in the media screen
+[feature] `MediaCaptureProvider.saveWithoutLinking` auto-names unlinked assets (e.g. `audio-1`, `photo-1`) using `countAssetsByParentType`; new `countAssetsByParentType` function added to `assetRepository`
+[feature] `MediaLinkingModal` link button icons and colors aligned: word button uses `book-outline` icon; both buttons use `colors.primary`
+[feature] PT-BR: "Vincular a Palavra" → "Combinar com uma palavra", "Vincular a Variante" → "Combinar com uma variante", "Vinculado a" → "Combinado com"
+[test] `EditAssetModal` integration tests fully rewritten for new button-driven UX (46 tests); covers link mode buttons, chip display/clear, word/variant search, remove flow, date change, error paths, and overlay close handlers
+
+### 2026-07-14_3
+
+[feature] `MediaLinkingModal` UX: replaced always-visible word/variant search boxes with two mode-select buttons ("Link to Word" / "Link to Variant"); pressing a button reveals the respective search section with a cancel X to return to button mode; removed separate "Save Without Linking" button — the main Save button now falls back to `saveWithoutLinking` when nothing is selected; chip X press returns to button mode instead of restoring search input
+[test] Updated 83 `MediaLinkingModal` integration tests to match new button-driven UX flow; added `openWordSection`/`openVariantSection` helpers; added "Link mode buttons" describe block with 7 new tests
+
+### 2026-07-14_2
+
+[feature] Asset linking to variants: `MediaLinkingModal` now shows a variant search section alongside the word section; selecting a variant links captured media to it with `parent_type='variant'`; inline variant creation form (name + word picker) added
+[feature] `MediaCaptureProvider` gains `linkMediaToVariant(variantId, name?, variantName?, wordName?)` and `saveWithoutLinking(name?)` callbacks; save priority: variant > word > profile (unlinked)
+[feature] `variants.tsx` now accepts `highlightId` nav param (scroll-to + 2 s highlight animation); asset icon chips (🎵/🖼️) replace generic count chip; tapping a chip opens `AudioPreviewOverlay` / `PhotoPreviewOverlay` for the first asset of that type
+[feature] `Variant` type and `variantRepository.getAllVariants()` SQL extended with `audio_count`, `photo_count`, `video_count` per-type subquery columns
+[feature] New i18n keys in `mediaCapture.*` namespace (9 keys, both `en-US` and `pt-BR`): `linkToWord`, `linkToVariant`, `variantSearchPlaceholder`, `variantNotFound`, `createVariantInline`, `saveWithoutLinking`, `selectWord`, `noVariantResults`, `inlineVariantName`
+[test] `__tests__/integration/MediaLinkingModal.test.tsx`: 17 new tests for variant search, inline create, and save-without-linking flows; 3 existing tests updated for new behavior
+[test] `__tests__/integration/MediaCaptureProvider.test.tsx`: 6 new tests for `linkMediaToVariant` and `saveWithoutLinking`
+[test] `__tests__/screens/variants.test.tsx`: 11 new tests for asset icon chips (audio/photo, presence/absence, tap), `highlightId` param (match and no-match)
+[test] Updated mock shape in `MediaFAB.test.tsx`, `AudioPlayerInline.test.tsx`, `tabLayout.integration.test.tsx`, `tabLayout.test.tsx` to include new context callbacks
+
 
 [feature] Add `colors` (🎨, `#E17055`) and `toys` (🎠, `#FDCB6E`) as new default categories, inserted before `others` in `DEFAULT_CATEGORIES`
 [feature] EN translations: Colors, Toys — PT-BR translations: Cores, Brinquedos — added to `en-US.ts`, `pt-BR.ts`, and both label maps in `categoryKeys.ts`
