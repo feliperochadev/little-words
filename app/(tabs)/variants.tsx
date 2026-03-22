@@ -82,18 +82,20 @@ export default function VariantsScreen() {
         testID={`variant-pos-${index}-${item.variant}`}
       >
         <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
-          <View style={styles.variantRow}>
-            <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
-              <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;</Text>
-            </View>
-            <View style={styles.variantMeta}>
+          <View style={styles.variantMain}>
+            <View style={styles.variantHeader}>
+              <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
+                <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;</Text>
+              </View>
               <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
-              <Text style={[styles.mainWord, { color: colors.text }]}>{item.main_word}</Text>
+              <Text style={[styles.mainWord, { color: colors.text }]} numberOfLines={1}>{item.main_word}</Text>
               <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
-              {(item.asset_count ?? 0) > 0 && (
-                <WordAssetChips parentType="variant" parentId={item.id} />
-              )}
             </View>
+            {(item.asset_count ?? 0) > 0 && (
+              <View style={styles.variantMeta}>
+                <WordAssetChips parentType="variant" parentId={item.id} />
+              </View>
+            )}
           </View>
           {item.notes && (
             <View style={styles.notesRow}>
@@ -183,16 +185,17 @@ const styles = StyleSheet.create({
   hintIcon: { marginRight: 6 },
   hintText: { fontSize: 13, lineHeight: 18, flex: 1 },
   variantCard: { marginBottom: 10 },
-  variantRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  variantMain: { flex: 1 },
+  variantHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   variantBubble: {
     paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: 16,
   },
   variantText: { fontSize: 18, fontWeight: '700', fontStyle: 'italic' },
-  variantMeta: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 6, flexWrap: 'wrap' },
+  variantMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 2 },
   arrow: { fontSize: 14 },
-  mainWord: { fontSize: 15, fontWeight: '700' },
-  date: { fontSize: 12, flex: 1, textAlign: 'right' },
+  mainWord: { fontSize: 15, fontWeight: '700', flex: 1 },
+  date: { fontSize: 12 },
   notesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   notes: { fontSize: 12, flex: 1, lineHeight: 16 },
 });
