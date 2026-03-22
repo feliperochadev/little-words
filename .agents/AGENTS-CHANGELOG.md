@@ -2,6 +2,24 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_8
+
+[config] Bump version to 0.7.0-beta; update fix-new-issues Sonar polling strategy with exponential backoff
+[config] `.claude/commands/fix-new-issues.md`, `.codex/commands/fix-new-issues.md`, `.gemini/commands/fix-new-issues.md`: final Sonar check now polls with exponential backoff (1min, 2min, 4min), stops early on success, max 3 fix iterations before escalating
+[upgrade] Version bumped from 0.6.1-beta to 0.7.0-beta in `package.json`, `app.json`
+
+### 2026-03-22_9
+
+[fix] SonarCloud S6759: wrap sub-component props with `Readonly<>`; update Sonar wait from 40–50s to 3 minutes
+[fix] `src/components/MediaLinkingModal.tsx`: `WordLinkSection`, `VariantLinkSection`, `InlineVariantCreateForm` props wrapped with `Readonly<>`
+[config] `.claude/commands/fix-new-issues.md`, `.codex/commands/fix-new-issues.md`, `.gemini/commands/fix-new-issues.md`: final Sonar check wait increased from 40–50s to 3 minutes
+
+### 2026-03-22_10
+
+[fix] SonarCloud issues on PR #49: extract sub-components to reduce cognitive complexity
+[fix] Merge duplicate '../hooks/useVariants' imports (S3863) in `MediaLinkingModal.tsx`
+[refactor] `src/components/MediaLinkingModal.tsx`: extracted `WordLinkSection`, `VariantLinkSection`, `InlineVariantCreateForm` as sub-components to reduce cognitive complexity (22 → ~10, well below S3776 limit of 15)
+
 ### 2026-03-22_7
 
 [fix] `variants.tsx`: remove visual focus highlight — `highlightedId` state and the border/background highlight on the Card are removed entirely; scroll-to behavior is preserved using `scrolledHighlightRef` to prevent re-triggering on re-renders
