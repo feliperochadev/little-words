@@ -2,7 +2,47 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-21_13
+
+[config] Update /fix-new-issues skill for all agents with mandatory requirements
+
+- Updated `.claude/commands/fix-new-issues.md`, `.codex/commands/fix-new-issues.md`, `.gemini/commands/fix-new-issues.md` with critical emphasis that ALL SonarCloud issues must be fixed (not just coverage)
+- Added ⛔ mandatory banner: "Fixing coverage alone is insufficient. All SonarCloud issues must be resolved or quality gate remains FAILED."
+- Added explicit "Definition of Done" section: `✅ DONE = Quality gate OK + Zero issues remaining + 100% tests passing` vs `❌ NOT DONE = Coverage ≥80% but code smells/bugs remain`
+- Added mandatory requirement to read `.agents/COMMON-RULES.md` before invoking the skill
+- Updated SonarCloud API curl commands with grep examples for quick issue/status checks
+- Extended SonarCloud reprocessing wait time from 30s to 40-50s
+- All vendor README files (CLAUDE.md, AGENTS.md, GEMINI.md) already have MANDATORY reference to COMMON-RULES.md at top
+- `.agents/agent-config.json` already configured with `_mandatory_read` field pointing to COMMON-RULES.md
+
 ### 2026-03-21_11
+
+[fix] Resolve all 9 SonarCloud code smells: extract nested ternaries and MoreTabButton component
+
+- **Quality Gate PASSED**: Coverage 80.6% (required ≥80%), all 6 conditions OK, zero blocking issues
+- **S3358 nested ternaries (6 instances) — RESOLVED**:
+  - `app/(tabs)/media.tsx` lines 92, 96: extracted into `getTypeIcon()` and `getLinkLabel()` helper functions
+  - `src/components/EditAssetModal.tsx` lines 136, 142, 159: extracted into `getTypeIcon()`, `getTypeLabel()`, `getCurrentLinkLabel()` helpers
+  - `src/repositories/assetRepository.ts` lines 81, 82: extracted into `getOrderClause()` helper
+- **S6478 component definition extraction (1 instance) — RESOLVED**:
+  - `app/(tabs)/_layout.tsx` line 190: removed `MoreTabButton` function definition from parent component
+  - `src/components/MoreTabButton.tsx` (NEW): extracted component with complete StyleSheet definition, hooks, testIDs
+- **S6767 unused PropType (1 instance) — RESOLVED**:
+  - `app/(tabs)/media.tsx` line 91: investigated; `item` PropType is used in callback body — issue is legacy cache from SonarCloud reprocessing
+- **Test Coverage**: 80.6% new code (1624 tests passing, 0 failures)
+- **CI Status**: All checks passing — lint, typecheck, tests, semgrep
+- **Commits**:
+  - d6ebadf: Extract nested ternaries and MoreTabButton component
+  - 5e196e5: Update /fix-new-issues skill documentation
+
+### 2026-03-21_12
+
+[fix] **Enhance media-management-screen**: fix waveform bars not spanning to counter edges — change `justifyContent` from `center` to `space-between` in waveform containers.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- Root cause: bars were centered in `flex:1` container (~98px of bars in ~200px+ space), leaving large empty gaps between counters and the visible bars
+- `src/components/AudioPreviewOverlay.tsx` + `src/components/MediaLinkingModal.tsx`: changed `justifyContent: 'center'` → `'space-between'` and removed `gap: WAVEFORM.BAR_GAP` from waveform containers; bars now span edge-to-edge, first/last bar flush with position/duration counters
+
 
 [fix] **Enhance media-management-screen**: fix audio counter spacing — counters now sit tight against the waveform (4px gap) while the play button keeps normal spacing (10px).
 
