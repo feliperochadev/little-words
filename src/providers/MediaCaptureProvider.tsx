@@ -36,6 +36,8 @@ export interface MediaCaptureContextValue {
 
   // Linking actions
   linkMediaToWord: (wordId: number, name?: string, parentName?: string) => Promise<void>;
+  linkMediaToVariant: (variantId: number, name?: string, variantName?: string, wordName?: string) => Promise<void>;
+  saveWithoutLinking: (name?: string) => Promise<void>;
   startCreateWord: (wordName: string, mediaName?: string) => void;
   onWordCreated: (wordId: number) => Promise<void>;
 
@@ -93,6 +95,51 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         fileSize: pendingMedia.fileSize,
         name,
         parentName,
+        durationMs: pendingMedia.durationMs,
+        width: pendingMedia.width,
+        height: pendingMedia.height,
+      });
+      invalidateAssetCaches();
+    } catch {
+      Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
+    }
+    resetCapture();
+  }, [pendingMedia, invalidateAssetCaches, resetCapture, t]);
+
+  const linkMediaToVariant = useCallback(async (variantId: number, name?: string, variantName?: string, wordName?: string) => {
+    if (!pendingMedia) return;
+    try {
+      await assetService.saveAsset({
+        sourceUri: pendingMedia.uri,
+        parentType: 'variant',
+        parentId: variantId,
+        assetType: pendingMedia.type,
+        mimeType: pendingMedia.mimeType,
+        fileSize: pendingMedia.fileSize,
+        name,
+        parentName: variantName ?? wordName,
+        durationMs: pendingMedia.durationMs,
+        width: pendingMedia.width,
+        height: pendingMedia.height,
+      });
+      invalidateAssetCaches();
+    } catch {
+      Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
+    }
+    resetCapture();
+  }, [pendingMedia, invalidateAssetCaches, resetCapture, t]);
+
+  const saveWithoutLinking = useCallback(async (name?: string) => {
+    if (!pendingMedia) return;
+    try {
+      await assetService.saveAsset({
+        sourceUri: pendingMedia.uri,
+        parentType: 'profile',
+        parentId: 1,
+        assetType: pendingMedia.type,
+        mimeType: pendingMedia.mimeType,
+        fileSize: pendingMedia.fileSize,
+        name,
         durationMs: pendingMedia.durationMs,
         width: pendingMedia.width,
         height: pendingMedia.height,
@@ -262,6 +309,8 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     setCapturedMedia,
     resetCapture,
     linkMediaToWord,
+    linkMediaToVariant,
+    saveWithoutLinking,
     startCreateWord,
     onWordCreated,
     launchPhotoPicker,
@@ -269,8 +318,9 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     stopPlayback,
   }), [
     phase, pendingMedia, prefilledWordName, prefilledMediaName, playingAssetId,
-    setPhase, setCapturedMedia, resetCapture, linkMediaToWord, startCreateWord,
-    onWordCreated, launchPhotoPicker, playAssetByParent, stopPlayback,
+    setPhase, setCapturedMedia, resetCapture, linkMediaToWord, linkMediaToVariant,
+    saveWithoutLinking, startCreateWord, onWordCreated, launchPhotoPicker,
+    playAssetByParent, stopPlayback,
   ]);
 
   return (

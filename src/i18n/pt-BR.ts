@@ -348,6 +348,15 @@ export default {
     removeAsset: 'Remover midia?',
     removeAssetMsg: 'Isso nao pode ser desfeito.',
     linkFailed: 'Nao foi possivel vincular a midia. Tente novamente.',
+    linkToWord:               'Vincular a Palavra',
+    linkToVariant:            'Vincular a Variante',
+    variantSearchPlaceholder: 'Buscar variantes…',
+    variantNotFound:          'A variante "{{name}}" não existe. Salve no perfil agora e vincule depois.',
+    createVariantInline:      'Criar Variante',
+    saveWithoutLinking:       'Salvar Sem Vincular',
+    selectWord:               'Selecionar Palavra (obrigatório)',
+    noVariantResults:         'Nenhuma variante encontrada',
+    inlineVariantName:        'Nome da variante',
   },
 
   manageCategory: {

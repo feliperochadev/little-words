@@ -13,7 +13,10 @@ export const findVariantByName = (wordId: number, variant: string): Promise<Vari
 export const getAllVariants = (): Promise<Variant[]> =>
   query<Variant>(`
     SELECT v.*, w.word as main_word,
-           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id) as asset_count
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id) as asset_count,
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id AND a.asset_type = 'audio') as audio_count,
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id AND a.asset_type = 'photo') as photo_count,
+           (SELECT COUNT(*) FROM assets a WHERE a.parent_type = 'variant' AND a.parent_id = v.id AND a.asset_type = 'video') as video_count
     FROM variants v
     JOIN words w ON v.word_id = w.id
     ORDER BY v.created_at DESC

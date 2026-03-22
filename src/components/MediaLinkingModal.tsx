@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Animated, Image, PanResponder,
+  StyleSheet, ScrollView, Animated, Image, PanResponder, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useI18n, useCategoryName } from '../i18n/i18n';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useWords } from '../hooks/useWords';
+import { useAllVariants } from '../hooks/useVariants';
+import { useAddVariant } from '../hooks/useVariants';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useMediaCapture } from '../hooks/useMediaCapture';
 import { useWaveformAnimation } from '../hooks/useWaveformAnimation';
@@ -17,9 +19,10 @@ import { DatePickerField } from './DatePickerField';
 import { Button } from './UIComponents';
 import { withOpacity } from '../utils/colorHelpers';
 import { WAVEFORM } from '../utils/animationConstants';
-import type { Word } from '../types/domain';
+import type { Word, Variant } from '../types/domain';
 
 const EMPTY_WORDS: Word[] = [];
+const EMPTY_VARIANTS: Variant[] = [];
 
 export function MediaLinkingModal() {
   const { t } = useI18n();
@@ -34,6 +37,8 @@ export function MediaLinkingModal() {
     pendingMedia,
     resetCapture,
     linkMediaToWord,
+    linkMediaToVariant,
+    saveWithoutLinking,
     startCreateWord,
   } = useMediaCapture();
 
@@ -43,11 +48,19 @@ export function MediaLinkingModal() {
   });
 
   const { data: words = EMPTY_WORDS } = useWords();
+  const { data: variants = EMPTY_VARIANTS } = useAllVariants();
+  const addVariantMutation = useAddVariant();
   const audioPlayer = useAudioPlayer();
 
   const [mediaName, setMediaName] = useState('');
   const [wordSearch, setWordSearch] = useState('');
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
+  const [variantSearch, setVariantSearch] = useState('');
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [showInlineCreate, setShowInlineCreate] = useState(false);
+  const [inlineVariantName, setInlineVariantName] = useState('');
+  const [inlineWordSearch, setInlineWordSearch] = useState('');
+  const [inlineSelectedWord, setInlineSelectedWord] = useState<Word | null>(null);
   const [dateAdded, setDateAdded] = useState(today);
   const [loading, setLoading] = useState(false);
   const [photoExpanded, setPhotoExpanded] = useState(false);
@@ -62,6 +75,12 @@ export function MediaLinkingModal() {
       setMediaName('');
       setWordSearch('');
       setSelectedWord(null);
+      setVariantSearch('');
+      setSelectedVariant(null);
+      setShowInlineCreate(false);
+      setInlineVariantName('');
+      setInlineWordSearch('');
+      setInlineSelectedWord(null);
       setDateAdded(today);
       setLoading(false);
     }
@@ -84,18 +103,66 @@ export function MediaLinkingModal() {
     })
   ).current;
 
-  const filtered = wordSearch.trim()
+  const filteredWords = wordSearch.trim()
     ? words.filter(w => w.word.toLowerCase().includes(wordSearch.toLowerCase()))
     : [];
 
+  const filteredVariants = variantSearch.trim()
+    ? variants.filter(v =>
+        v.variant.toLowerCase().includes(variantSearch.toLowerCase()) ||
+        (v.main_word ?? '').toLowerCase().includes(variantSearch.toLowerCase())
+      )
+    : [];
+
+  const inlineFilteredWords = inlineWordSearch.trim()
+    ? words.filter(w => w.word.toLowerCase().includes(inlineWordSearch.toLowerCase()))
+    : [];
+
+  const variantNotFoundVisible =
+    variantSearch.trim().length > 0 && filteredVariants.length === 0;
+
   const handleLink = async () => {
-    if (!selectedWord) return;
     setLoading(true);
     try {
-      await linkMediaToWord(selectedWord.id, mediaName, selectedWord.word);
-      router.push('/(tabs)/words');
+      if (selectedVariant) {
+        await linkMediaToVariant(
+          selectedVariant.id,
+          mediaName,
+          selectedVariant.variant,
+          selectedVariant.main_word ?? undefined,
+        );
+        router.push({ pathname: '/(tabs)/variants', params: { highlightId: String(selectedVariant.id) } });
+      } else if (selectedWord) {
+        await linkMediaToWord(selectedWord.id, mediaName, selectedWord.word);
+        router.push({ pathname: '/(tabs)/words', params: { highlightId: String(selectedWord.id) } });
+      } else {
+        await saveWithoutLinking(mediaName);
+      }
     } catch {
       // Error handled by provider (shows Alert)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateInlineVariant = async () => {
+    if (!inlineSelectedWord || !inlineVariantName.trim()) return;
+    setLoading(true);
+    try {
+      const newId = await addVariantMutation.mutateAsync({
+        wordId: inlineSelectedWord.id,
+        variant: inlineVariantName.trim(),
+        dateAdded,
+      });
+      await linkMediaToVariant(
+        newId,
+        mediaName,
+        inlineVariantName.trim(),
+        inlineSelectedWord.word,
+      );
+      router.push({ pathname: '/(tabs)/variants', params: { highlightId: String(newId) } });
+    } catch {
+      Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
     } finally {
       setLoading(false);
     }
@@ -118,6 +185,7 @@ export function MediaLinkingModal() {
 
   const isAudio = pendingMedia.type === 'audio';
   const showResults = wordSearch.trim().length > 0;
+  const showVariantResults = variantSearch.trim().length > 0;
 
   return (
     <>
@@ -202,8 +270,8 @@ export function MediaLinkingModal() {
               <DatePickerField label={t('common.date')} value={dateAdded} onChange={setDateAdded} accentColor={colors.primary} />
 
               {/* ── Word search ── */}
-              <Text style={[s.label, { color: colors.textSecondary }]}>
-                {t('mediaCapture.targetWord')}
+              <Text style={[s.sectionDivider, { color: colors.textSecondary, borderBottomColor: colors.border }]}>
+                {t('mediaCapture.linkToWord')}
               </Text>
 
               {selectedWord ? (
@@ -244,12 +312,12 @@ export function MediaLinkingModal() {
 
                   {showResults && (
                     <View style={[s.resultsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                      {filtered.length === 0 ? (
+                      {filteredWords.length === 0 ? (
                         <Text style={[s.noResults, { color: colors.textSecondary }]}>
                           {t('mediaCapture.noResults')}
                         </Text>
                       ) : (
-                        filtered.slice(0, 7).map(w => (
+                        filteredWords.slice(0, 7).map(w => (
                           <TouchableOpacity
                             key={w.id}
                             style={[s.resultItem, { borderBottomColor: colors.border }]}
@@ -282,7 +350,162 @@ export function MediaLinkingModal() {
                 </>
               )}
 
+              {/* ── Variant search ── */}
+              <Text style={[s.sectionDivider, { color: colors.textSecondary, borderBottomColor: colors.border }]}>
+                {t('mediaCapture.linkToVariant')}
+              </Text>
+
+              {selectedVariant ? (
+                <TouchableOpacity
+                  style={[s.chosenChip, { backgroundColor: withOpacity(colors.primary, '15'), borderColor: colors.primary }]}
+                  onPress={() => setSelectedVariant(null)}
+                  testID="media-selected-variant"
+                >
+                  <View style={s.chosenInfo}>
+                    <Text style={[s.chosenText, { color: colors.primary }]}>
+                      {selectedVariant.main_word} / {selectedVariant.variant}
+                    </Text>
+                  </View>
+                  <Text style={[s.chosenClear, { color: colors.primary }]}>✕</Text>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <Ionicons name="search" size={16} color={colors.textMuted} style={s.searchIcon} />
+                    <TextInput
+                      style={[s.searchInput, { color: colors.text }]}
+                      value={variantSearch}
+                      onChangeText={setVariantSearch}
+                      placeholder={t('mediaCapture.variantSearchPlaceholder')}
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      testID="media-variant-search"
+                    />
+                    {variantSearch.length > 0 && (
+                      <TouchableOpacity onPress={() => setVariantSearch('')} testID="media-variant-search-clear">
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {showVariantResults && !variantNotFoundVisible && (
+                    <View style={[s.resultsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      {filteredVariants.slice(0, 7).map(v => (
+                        <TouchableOpacity
+                          key={v.id}
+                          style={[s.resultItem, { borderBottomColor: colors.border }]}
+                          onPress={() => { setSelectedVariant(v); setVariantSearch(''); }}
+                          testID={`media-variant-result-${v.variant}`}
+                        >
+                          <Text style={[s.resultText, { color: colors.text }]}>
+                            {v.main_word} / {v.variant}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {variantNotFoundVisible && (
+                    <View style={[s.variantNotFound, { backgroundColor: withOpacity(colors.primary, '08'), borderColor: withOpacity(colors.primary, '20') }]} testID="media-variant-not-found">
+                      <Text style={[s.variantNotFoundText, { color: colors.textSecondary }]}>
+                        {t('mediaCapture.variantNotFound', { name: variantSearch.trim() })}
+                      </Text>
+                      <TouchableOpacity
+                        style={[s.createVariantBtn, { backgroundColor: colors.primary }]}
+                        onPress={() => setShowInlineCreate(true)}
+                        testID="media-create-variant-btn"
+                      >
+                        <Ionicons name="add-circle" size={16} color="#fff" />
+                        <Text style={s.createVariantBtnText}>{t('mediaCapture.createVariantInline')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {showInlineCreate && (
+                    <View style={[s.inlineCreate, { backgroundColor: colors.surface, borderColor: colors.border }]} testID="media-inline-create-form">
+                      <Text style={[s.label, { color: colors.textSecondary }]}>
+                        {t('mediaCapture.inlineVariantName')}
+                      </Text>
+                      <View style={[s.searchBox, { backgroundColor: colors.background, borderColor: colors.border, marginBottom: 12 }]}>
+                        <TextInput
+                          style={[s.searchInput, { color: colors.text }]}
+                          value={inlineVariantName}
+                          onChangeText={setInlineVariantName}
+                          placeholder={t('mediaCapture.inlineVariantName')}
+                          placeholderTextColor={colors.textMuted}
+                          testID="media-inline-variant-name-input"
+                        />
+                      </View>
+                      <Text style={[s.label, { color: colors.textSecondary }]}>
+                        {t('mediaCapture.selectWord')}
+                      </Text>
+                      {inlineSelectedWord ? (
+                        <TouchableOpacity
+                          style={[s.chosenChip, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: colors.primary, marginBottom: 12 }]}
+                          onPress={() => setInlineSelectedWord(null)}
+                          testID="media-inline-word-selected"
+                        >
+                          <Text style={[s.chosenText, { color: colors.primary }]}>{inlineSelectedWord.word}</Text>
+                          <Text style={[s.chosenClear, { color: colors.primary }]}>✕</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <>
+                          <View style={[s.searchBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                            <Ionicons name="search" size={16} color={colors.textMuted} style={s.searchIcon} />
+                            <TextInput
+                              style={[s.searchInput, { color: colors.text }]}
+                              value={inlineWordSearch}
+                              onChangeText={setInlineWordSearch}
+                              placeholder={t('mediaCapture.searchPlaceholder')}
+                              placeholderTextColor={colors.textMuted}
+                              autoCapitalize="none"
+                              testID="media-inline-word-search"
+                            />
+                          </View>
+                          {inlineWordSearch.trim().length > 0 && (
+                            <View style={[s.resultsList, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                              {inlineFilteredWords.length === 0 ? (
+                                <Text style={[s.noResults, { color: colors.textSecondary }]}>
+                                  {t('mediaCapture.noResults')}
+                                </Text>
+                              ) : (
+                                inlineFilteredWords.slice(0, 5).map(w => (
+                                  <TouchableOpacity
+                                    key={w.id}
+                                    style={[s.resultItem, { borderBottomColor: colors.border }]}
+                                    onPress={() => { setInlineSelectedWord(w); setInlineWordSearch(''); }}
+                                    testID={`media-inline-word-result-${w.word}`}
+                                  >
+                                    <Text style={[s.resultText, { color: colors.text }]}>{w.word}</Text>
+                                  </TouchableOpacity>
+                                ))
+                              )}
+                            </View>
+                          )}
+                        </>
+                      )}
+                      <Button
+                        title={t('mediaCapture.createVariantInline')}
+                        onPress={handleCreateInlineVariant}
+                        loading={loading}
+                        style={[!inlineSelectedWord || !inlineVariantName.trim() ? s.btnDisabled : null]}
+                        testID="media-inline-create-save-btn"
+                      />
+                    </View>
+                  )}
+                </>
+              )}
+
               {/* ── Actions ── */}
+              <View style={s.actions}>
+                <Button
+                  title={t('mediaCapture.saveWithoutLinking')}
+                  onPress={() => void handleLink()}
+                  variant="outline"
+                  style={[s.actionBtnFull]}
+                  testID="media-save-without-linking-btn"
+                />
+              </View>
               <View style={s.actions}>
                 <Button
                   title={t('common.cancel')}
@@ -293,9 +516,9 @@ export function MediaLinkingModal() {
                 />
                 <Button
                   title={t('mediaCapture.saveButton')}
-                  onPress={handleLink}
+                  onPress={() => void handleLink()}
                   loading={loading}
-                  style={[s.actionBtn, !selectedWord && s.btnDisabled]}
+                  style={s.actionBtn}
                   testID="media-link-btn"
                 />
               </View>
@@ -381,7 +604,14 @@ const s = StyleSheet.create({
   chosenClear: { fontSize: 16, fontWeight: '600', paddingLeft: 12 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 8, paddingBottom: 16 },
   actionBtn: { flex: 1 },
+  actionBtnFull: { flex: 1 },
   btnDisabled: { opacity: 0.5 },
+  sectionDivider: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, paddingBottom: 8, marginBottom: 10, marginTop: 8, borderBottomWidth: 1 },
+  variantNotFound: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 12 },
+  variantNotFoundText: { fontSize: 13, marginBottom: 10 },
+  createVariantBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, alignSelf: 'flex-start' },
+  createVariantBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  inlineCreate: { borderRadius: 14, borderWidth: 1.5, padding: 14, marginBottom: 12 },
   // Full-screen photo
   photoFullscreenContainer: {
     flex: 1,

@@ -30,6 +30,8 @@ function buildMediaCaptureMock(overrides: Partial<ReturnType<typeof useMediaCapt
     setCapturedMedia: jest.fn(),
     resetCapture: jest.fn(),
     linkMediaToWord: jest.fn(),
+    linkMediaToVariant: jest.fn(),
+    saveWithoutLinking: jest.fn(),
     startCreateWord: jest.fn(),
     onWordCreated: jest.fn(),
     launchPhotoPicker: jest.fn(),

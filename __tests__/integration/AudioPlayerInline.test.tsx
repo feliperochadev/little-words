@@ -18,6 +18,8 @@ jest.mock('../../src/hooks/useMediaCapture', () => ({
     setCapturedMedia: jest.fn(),
     resetCapture: jest.fn(),
     linkMediaToWord: jest.fn(),
+    linkMediaToVariant: jest.fn(),
+    saveWithoutLinking: jest.fn(),
     startCreateWord: jest.fn(),
     onWordCreated: jest.fn(),
     launchPhotoPicker: jest.fn(),

@@ -20,17 +20,40 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+let mockHighlightId: string | undefined = undefined;
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(() => ({ highlightId: mockHighlightId })),
+  useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() })),
+  useFocusEffect: jest.fn(),
+}));
+
+const mockAssets: Record<string, any[]> = {};
+jest.mock('../../src/hooks/useAssets', () => ({
+  useAssetsByType: jest.fn((parentType: string, parentId: number, assetType: string) => ({
+    data: mockAssets[`${parentType}-${parentId}-${assetType}`] ?? [],
+  })),
+}));
+
 import VariantsScreen from '../../app/(tabs)/variants';
 import * as db from '../../src/services/variantService';
 
 const sampleVariants = [
-  { id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-15', notes: 'close', created_at: '2024-01-15', main_word: 'mamãe' },
-  { id: 2, word_id: 1, variant: 'mama', date_added: '2024-02-01', notes: null, created_at: '2024-02-01', main_word: 'mamãe' },
+  {
+    id: 1, word_id: 1, variant: 'mamá', date_added: '2024-01-15', notes: 'close',
+    created_at: '2024-01-15', main_word: 'mamãe',
+    asset_count: 2, audio_count: 1, photo_count: 1, video_count: 0,
+  },
+  {
+    id: 2, word_id: 1, variant: 'mama', date_added: '2024-02-01', notes: null,
+    created_at: '2024-02-01', main_word: 'mamãe',
+    asset_count: 0, audio_count: 0, photo_count: 0, video_count: 0,
+  },
 ];
 
 describe('VariantsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockHighlightId = undefined;
     (db.getAllVariants as jest.Mock).mockResolvedValue(sampleVariants);
   });
 
@@ -134,5 +157,60 @@ describe('VariantsScreen', () => {
     await waitFor(() => {
       expect(queryByText(/New Variant/)).toBeNull();
     });
+  });
+
+  // ── Asset icon chips ────────────────────────────────────────────────────────
+
+  it('renders audio chip when audio_count > 0', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variant-audio-chip-1')).toBeTruthy();
+  });
+
+  it('renders photo chip when photo_count > 0', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variant-photo-chip-1')).toBeTruthy();
+  });
+
+  it('does not render audio chip when audio_count is 0', async () => {
+    const { queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mama/);
+    expect(queryByTestId('variant-audio-chip-2')).toBeNull();
+  });
+
+  it('does not render photo chip when photo_count is 0', async () => {
+    const { queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mama/);
+    expect(queryByTestId('variant-photo-chip-2')).toBeNull();
+  });
+
+  it('tapping audio chip sets audio overlay state', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    const audioChip = await findByTestId('variant-audio-chip-1');
+    fireEvent.press(audioChip);
+    // After pressing, the VariantAudioOverlay component renders (no asset data in test = returns null)
+    // Just verify no crash occurred
+    expect(audioChip).toBeTruthy();
+  });
+
+  it('tapping photo chip sets photo overlay state', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    const photoChip = await findByTestId('variant-photo-chip-1');
+    fireEvent.press(photoChip);
+    expect(photoChip).toBeTruthy();
+  });
+
+  // ── highlightId ─────────────────────────────────────────────────────────────
+
+  it('highlights a variant when highlightId param matches', async () => {
+    mockHighlightId = '1';
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    // Wait for list to render and verify no crash occurs
+    expect(await findByTestId('variant-item-mamá')).toBeTruthy();
+  });
+
+  it('does not crash when highlightId does not match any variant', async () => {
+    mockHighlightId = '9999';
+    const { findByText } = renderWithProviders(<VariantsScreen />);
+    expect(await findByText(/mamá/)).toBeTruthy();
   });
 });

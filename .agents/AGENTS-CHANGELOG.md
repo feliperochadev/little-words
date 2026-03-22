@@ -2,7 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-22_1
+### 2026-07-14_2
+
+[feature] Asset linking to variants: `MediaLinkingModal` now shows a variant search section alongside the word section; selecting a variant links captured media to it with `parent_type='variant'`; inline variant creation form (name + word picker) added
+[feature] `MediaCaptureProvider` gains `linkMediaToVariant(variantId, name?, variantName?, wordName?)` and `saveWithoutLinking(name?)` callbacks; save priority: variant > word > profile (unlinked)
+[feature] `variants.tsx` now accepts `highlightId` nav param (scroll-to + 2 s highlight animation); asset icon chips (🎵/🖼️) replace generic count chip; tapping a chip opens `AudioPreviewOverlay` / `PhotoPreviewOverlay` for the first asset of that type
+[feature] `Variant` type and `variantRepository.getAllVariants()` SQL extended with `audio_count`, `photo_count`, `video_count` per-type subquery columns
+[feature] New i18n keys in `mediaCapture.*` namespace (9 keys, both `en-US` and `pt-BR`): `linkToWord`, `linkToVariant`, `variantSearchPlaceholder`, `variantNotFound`, `createVariantInline`, `saveWithoutLinking`, `selectWord`, `noVariantResults`, `inlineVariantName`
+[test] `__tests__/integration/MediaLinkingModal.test.tsx`: 17 new tests for variant search, inline create, and save-without-linking flows; 3 existing tests updated for new behavior
+[test] `__tests__/integration/MediaCaptureProvider.test.tsx`: 6 new tests for `linkMediaToVariant` and `saveWithoutLinking`
+[test] `__tests__/screens/variants.test.tsx`: 11 new tests for asset icon chips (audio/photo, presence/absence, tap), `highlightId` param (match and no-match)
+[test] Updated mock shape in `MediaFAB.test.tsx`, `AudioPlayerInline.test.tsx`, `tabLayout.integration.test.tsx`, `tabLayout.test.tsx` to include new context callbacks
+
 
 [feature] Add `colors` (🎨, `#E17055`) and `toys` (🎠, `#FDCB6E`) as new default categories, inserted before `others` in `DEFAULT_CATEGORIES`
 [feature] EN translations: Colors, Toys — PT-BR translations: Cores, Brinquedos — added to `en-US.ts`, `pt-BR.ts`, and both label maps in `categoryKeys.ts`

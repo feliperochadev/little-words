@@ -39,6 +39,9 @@ export interface Variant {
   created_at: string;
   main_word?: string;
   asset_count?: number;
+  audio_count?: number;
+  photo_count?: number;
+  video_count?: number;
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────

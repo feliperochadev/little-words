@@ -348,6 +348,15 @@ export default {
     removeAsset: 'Remove media?',
     removeAssetMsg: 'This cannot be undone.',
     linkFailed: 'Could not link media. Please try again.',
+    linkToWord:               'Link to Word',
+    linkToVariant:            'Link to Variant',
+    variantSearchPlaceholder: 'Search variants…',
+    variantNotFound:          'Variant "{{name}}" doesn\'t exist. You can save to your profile now and link it later.',
+    createVariantInline:      'Create Variant',
+    saveWithoutLinking:       'Save Without Linking',
+    selectWord:               'Select Word (required)',
+    noVariantResults:         'No variants found',
+    inlineVariantName:        'Variant name',
   },
 
   manageCategory: {
