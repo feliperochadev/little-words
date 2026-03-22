@@ -63,7 +63,7 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
 
 9. **Wait for CI** — The GitHub Actions pre-push hook will run `npm run ci` automatically. Inform the user to wait for CI to complete.
 
-10. **Final Sonar Check** — After CI passes, wait 40-50 seconds for SonarCloud to reprocess, then re-fetch data:
+10. **Final Sonar Check** — After CI passes, wait **3 minutes** (180 seconds) for SonarCloud to reprocess, then re-fetch data:
     - Check issues: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | grep -o '"total":[0-9]*'`
     - Check quality gates: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | grep -o '"status":"[^"]*"'`
     - **MANDATORY: BOTH must show success:**

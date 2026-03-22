@@ -387,7 +387,7 @@ interface WordLinkSectionProps {
 function WordLinkSection({
   words, wordSearch, selectedWord, categoryName,
   onModeCancel, onWordSelect, onWordSearchChange, onWordDeselect, onCreateWord,
-}: WordLinkSectionProps) {
+}: Readonly<WordLinkSectionProps>) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const filteredWords = wordSearch.trim()
@@ -515,7 +515,7 @@ function VariantLinkSection({
   onModeCancel, onVariantSelect, onVariantSearchChange, onVariantDeselect,
   onShowInlineCreate, onInlineVariantNameChange, onInlineWordSearchChange,
   onInlineWordSelect, onInlineWordDeselect, onCreateInlineVariant,
-}: VariantLinkSectionProps) {
+}: Readonly<VariantLinkSectionProps>) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const filteredVariants = variantSearch.trim()
@@ -644,7 +644,7 @@ function InlineVariantCreateForm({
   inlineVariantName, inlineWordSearch, inlineSelectedWord, inlineFilteredWords, loading,
   onInlineVariantNameChange, onInlineWordSearchChange, onInlineWordSelect,
   onInlineWordDeselect, onCreateInlineVariant,
-}: InlineVariantCreateFormProps) {
+}: Readonly<InlineVariantCreateFormProps>) {
   const { colors } = useTheme();
   const { t } = useI18n();
 
