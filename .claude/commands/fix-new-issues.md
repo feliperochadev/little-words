@@ -63,14 +63,17 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
 
 9. **Wait for CI** — The GitHub Actions pre-push hook will run `npm run ci` automatically. Inform the user to wait for CI to complete.
 
-10. **Final Sonar Check** — After CI passes, wait **3 minutes** (180 seconds) for SonarCloud to reprocess, then re-fetch data:
-    - Check issues: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | grep -o '"total":[0-9]*'`
-    - Check quality gates: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | grep -o '"status":"[^"]*"'`
-    - **MANDATORY: BOTH must show success:**
+10. **Final Sonar Check** — After CI passes, poll SonarCloud with exponential backoff (up to 3 attempts):
+    - **Attempt 1**: wait 1 minute (60s), then fetch
+    - **Attempt 2**: wait 2 minutes (120s) more, then fetch
+    - **Attempt 3**: wait 4 minutes (240s) more, then fetch
+    - Each attempt: `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=feliperochadev_little-words&resolved=false&pullRequest=<PR>" | grep -o '"total":[0-9]*'`
+    - Each attempt: `curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=feliperochadev_little-words&pullRequest=<PR>" | grep -o '"status":"[^"]*"'`
+    - **Stop as soon as BOTH show success** — do not wait for remaining attempts:
       - Zero issues remaining (total: 0)
       - Quality gate status: OK
-    - If **any issues remain**, iterate: go back to Step 3 and repeat until all issues are resolved (max 3 iterations)
-    - **Failure to resolve ALL issues = skill failure. No exceptions.**
+    - If all 3 attempts pass and issues remain, go back to Step 3 and fix the new issues (max 3 fix iterations total)
+    - **Failure to resolve ALL issues after 3 fix iterations = skill failure. Escalate to the user.**
 
 ## Critical Definition of Done
 
