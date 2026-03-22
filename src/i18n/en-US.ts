@@ -8,8 +8,10 @@ export default {
     actions: 'Actions',
     nature:  'Nature',
     body:    'Body',
-    others:  'Others',
     places:  'Places',
+    colors:  'Colors',
+    toys:    'Toys',
+    others:  'Others',
   },
 
   // ── Brand Header ─────────────────────────────────────────────────────────────

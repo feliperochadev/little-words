@@ -23,7 +23,9 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { key: 'actions',  color: '#6C5CE7', emoji: '🏃' },
   { key: 'nature',   color: '#55EFC4', emoji: '🌿' },
   { key: 'body',     color: '#FD79A8', emoji: '👶' },
-  { key: 'places',   color: '#74B9FF', emoji: '📍' },  
+  { key: 'places',   color: '#74B9FF', emoji: '📍' },
+  { key: 'colors',   color: '#E17055', emoji: '🎨' },
+  { key: 'toys',     color: '#FDCB6E', emoji: '🎠' },
   { key: 'others',   color: '#B2BEC3', emoji: '✨' },
 ];
 
@@ -43,8 +45,10 @@ const EN_CATEGORY_LABELS: Record<string, string> = {
   actions: 'Actions',
   nature: 'Nature',
   body: 'Body',
-  others: 'Others',
   places: 'Places',
+  colors: 'Colors',
+  toys: 'Toys',
+  others: 'Others',
 };
 
 const PT_CATEGORY_LABELS: Record<string, string> = {
@@ -55,8 +59,10 @@ const PT_CATEGORY_LABELS: Record<string, string> = {
   actions: 'Ações',
   nature: 'Natureza',
   body: 'Corpo',
-  others: 'Outros',
   places: 'Lugares',
+  colors: 'Cores',
+  toys: 'Brinquedos',
+  others: 'Outros',
 };
 
 const defaultLabelToKey = new Map<string, string>();

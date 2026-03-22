@@ -7,8 +7,8 @@ import {
 
 describe('categoryKeys', () => {
   describe('DEFAULT_CATEGORIES', () => {
-    it('has 9 default categories', () => {
-      expect(DEFAULT_CATEGORIES).toHaveLength(9);
+    it('has 11 default categories', () => {
+      expect(DEFAULT_CATEGORIES).toHaveLength(11);
     });
 
     it('each category has key, color, and emoji', () => {
