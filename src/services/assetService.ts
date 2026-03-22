@@ -6,6 +6,9 @@ import {
   updateAssetMeta,
   getProfilePhoto as getProfilePhotoFromRepo,
   getAssetsByParentAndType as getAssetsByParentAndTypeFromRepo,
+  updateAssetParent,
+  updateAssetName as updateAssetNameInRepo,
+  updateAssetDate as updateAssetDateInRepo,
 } from '../repositories/assetRepository';
 import {
   saveAssetFile,
@@ -14,11 +17,16 @@ import {
   deleteAllMedia,
   buildAssetFilename,
   getAssetFileUri,
+  moveAssetFile,
 } from '../utils/assetStorage';
 import { validateMimeType, validateFileSize } from '../types/asset';
 import type { Asset, ParentType, AssetType } from '../types/asset';
 
 export type { Asset, NewAsset, ParentType, AssetType } from '../types/asset';
+
+// Re-export for convenience
+export type { AssetWithLink } from '../types/asset';
+export { getAllAssets } from '../repositories/assetRepository';
 
 export { getAssetsByParent, getAssetsByParentAndType } from '../repositories/assetRepository';
 export { getProfilePhoto } from '../repositories/assetRepository';
@@ -152,4 +160,38 @@ export async function deleteProfilePhoto(): Promise<void> {
   if (existing) {
     await removeAsset(existing);
   }
+}
+
+export async function renameAsset(id: number, name: string): Promise<void> {
+  await updateAssetNameInRepo(id, name);
+}
+
+export async function updateAssetDate(id: number, date: string): Promise<void> {
+  await updateAssetDateInRepo(id, date);
+}
+
+export async function relinkAsset(
+  asset: Asset,
+  newParentType: ParentType,
+  newParentId: number,
+): Promise<Asset> {
+  if (asset.parent_type === newParentType && asset.parent_id === newParentId) {
+    return asset;
+  }
+  moveAssetFile(
+    asset.parent_type, asset.parent_id,
+    newParentType, newParentId,
+    asset.asset_type, asset.filename,
+  );
+  try {
+    await updateAssetParent(asset.id, newParentType, newParentId);
+  } catch (err) {
+    try {
+      moveAssetFile(newParentType, newParentId, asset.parent_type, asset.parent_id, asset.asset_type, asset.filename);
+    } catch { /* best-effort */ }
+    throw err;
+  }
+  const updated = await getAssetById(asset.id);
+  if (!updated) throw new Error(`Asset ${asset.id} not found after relink`);
+  return updated;
 }

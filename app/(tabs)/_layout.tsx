@@ -1,5 +1,5 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../src/theme';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -8,7 +8,9 @@ import { MediaCaptureProvider } from '../../src/providers/MediaCaptureProvider';
 import { MediaFAB } from '../../src/components/MediaFAB';
 import { MediaLinkingModal } from '../../src/components/MediaLinkingModal';
 import { AddWordModal } from '../../src/components/AddWordModal';
+import { MoreTabButton } from '../../src/components/MoreTabButton';
 import { useMediaCapture } from '../../src/hooks/useMediaCapture';
+import { Ionicons } from '@expo/vector-icons';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -33,8 +35,11 @@ const WordsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =
   <TabIcon name="book" color={color} focused={focused} />;
 const VariantsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
   <TabIcon name="chatbubble-ellipses" color={color} focused={focused} />;
-const SettingsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
-  <TabIcon name="settings-sharp" color={color} focused={focused} />;
+
+function MoreTabButtonTab() {
+  return <MoreTabButton />;
+}
+
 
 export default function TabLayout() {
   const { t } = useI18n();
@@ -83,11 +88,15 @@ export default function TabLayout() {
             tabBarIcon: VariantsTabIcon,
           }}
         />
+        {/* Media and Settings are routable but hidden from the tab bar */}
+        <Tabs.Screen name="media" options={{ href: null }} />
+        <Tabs.Screen name="settings" options={{ href: null }} />
+        {/* More: custom button that expands a floating popup */}
         <Tabs.Screen
-          name="settings"
+          name="more"
           options={{
-            title: t('tabs.settings'),
-            tabBarIcon: SettingsTabIcon,
+            title: t('tabs.more'),
+            tabBarButton: MoreTabButtonTab,
           }}
         />
       </Tabs>

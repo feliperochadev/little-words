@@ -52,6 +52,7 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
 
   const dateStr = formatDateDMY(createdAt.split(/[T ]/)[0]);
   const duration = durationMs ?? 0;
+  const position = audioPlayer.positionMs;
 
   return (
     <Modal
@@ -94,6 +95,10 @@ export function AudioPreviewOverlay({ visible, uri, name, createdAt, durationMs,
                 color={colors.primary}
               />
             </TouchableOpacity>
+
+            <Text style={[s.position, { color: colors.textSecondary }]} testID="audio-preview-position">
+              {formatDuration(position)}
+            </Text>
 
             <View style={s.waveformContainer} testID="audio-preview-waveform">
               {barHeights.map((bar, i) => (
@@ -158,10 +163,10 @@ const s = StyleSheet.create({
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   playBtn: {
     padding: 2,
+    marginRight: 10,
   },
   waveformContainer: {
     flex: 1,
@@ -177,7 +182,14 @@ const s = StyleSheet.create({
   },
   duration: {
     fontSize: 13,
-    minWidth: 36,
+    minWidth: 30,
     textAlign: 'right',
+    marginLeft: 4,
+  },
+  position: {
+    fontSize: 13,
+    minWidth: 30,
+    textAlign: 'left',
+    marginRight: 4,
   },
 });

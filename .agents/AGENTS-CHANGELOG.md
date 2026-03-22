@@ -2,7 +2,107 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-21_5
+### 2026-03-21_13
+
+[config] Update /fix-new-issues skill for all agents with mandatory requirements
+
+- Updated `.claude/commands/fix-new-issues.md`, `.codex/commands/fix-new-issues.md`, `.gemini/commands/fix-new-issues.md` with critical emphasis that ALL SonarCloud issues must be fixed (not just coverage)
+- Added ⛔ mandatory banner: "Fixing coverage alone is insufficient. All SonarCloud issues must be resolved or quality gate remains FAILED."
+- Added explicit "Definition of Done" section: `✅ DONE = Quality gate OK + Zero issues remaining + 100% tests passing` vs `❌ NOT DONE = Coverage ≥80% but code smells/bugs remain`
+- Added mandatory requirement to read `.agents/COMMON-RULES.md` before invoking the skill
+- Updated SonarCloud API curl commands with grep examples for quick issue/status checks
+- Extended SonarCloud reprocessing wait time from 30s to 40-50s
+- All vendor README files (CLAUDE.md, AGENTS.md, GEMINI.md) already have MANDATORY reference to COMMON-RULES.md at top
+- `.agents/agent-config.json` already configured with `_mandatory_read` field pointing to COMMON-RULES.md
+
+### 2026-03-21_11
+
+[fix] Resolve all 9 SonarCloud code smells: extract nested ternaries and MoreTabButton component
+
+- **Quality Gate PASSED**: Coverage 80.6% (required ≥80%), all 6 conditions OK, zero blocking issues
+- **S3358 nested ternaries (6 instances) — RESOLVED**:
+  - `app/(tabs)/media.tsx` lines 92, 96: extracted into `getTypeIcon()` and `getLinkLabel()` helper functions
+  - `src/components/EditAssetModal.tsx` lines 136, 142, 159: extracted into `getTypeIcon()`, `getTypeLabel()`, `getCurrentLinkLabel()` helpers
+  - `src/repositories/assetRepository.ts` lines 81, 82: extracted into `getOrderClause()` helper
+- **S6478 component definition extraction (1 instance) — RESOLVED**:
+  - `app/(tabs)/_layout.tsx` line 190: removed `MoreTabButton` function definition from parent component
+  - `src/components/MoreTabButton.tsx` (NEW): extracted component with complete StyleSheet definition, hooks, testIDs
+- **S6767 unused PropType (1 instance) — RESOLVED**:
+  - `app/(tabs)/media.tsx` line 91: investigated; `item` PropType is used in callback body — issue is legacy cache from SonarCloud reprocessing
+- **Test Coverage**: 80.6% new code (1624 tests passing, 0 failures)
+- **CI Status**: All checks passing — lint, typecheck, tests, semgrep
+- **Commits**:
+  - d6ebadf: Extract nested ternaries and MoreTabButton component
+  - 5e196e5: Update /fix-new-issues skill documentation
+
+### 2026-03-21_12
+
+[fix] **Enhance media-management-screen**: fix waveform bars not spanning to counter edges — change `justifyContent` from `center` to `space-between` in waveform containers.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- Root cause: bars were centered in `flex:1` container (~98px of bars in ~200px+ space), leaving large empty gaps between counters and the visible bars
+- `src/components/AudioPreviewOverlay.tsx` + `src/components/MediaLinkingModal.tsx`: changed `justifyContent: 'center'` → `'space-between'` and removed `gap: WAVEFORM.BAR_GAP` from waveform containers; bars now span edge-to-edge, first/last bar flush with position/duration counters
+
+
+[fix] **Enhance media-management-screen**: fix audio counter spacing — counters now sit tight against the waveform (4px gap) while the play button keeps normal spacing (10px).
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/components/AudioPreviewOverlay.tsx`: removed uniform `gap` from `playerRow`; added `marginRight: 10` to `playBtn`; added `marginRight: 4` to `position` and `marginLeft: 4` to `duration` so counters hug the waveform edges
+- `src/components/MediaLinkingModal.tsx`: same layout — removed `gap` from `audioPreview`; `audioPosition` gets `marginLeft: 10` (from play button) + `marginRight: 4` (to waveform); `audioDuration` gets `marginLeft: 4` (from waveform)
+
+
+[feature] **Enhance media-management-screen**: tighten audio player counter spacing (gap 12→8, minWidth 36→30) and add position counter to MediaLinkingModal audio preview.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/components/AudioPreviewOverlay.tsx`: reduced `playerRow` gap from 12→8 and counter `minWidth` from 36→30 (~20% tighter toward waveform)
+- `src/components/MediaLinkingModal.tsx`: added `audioPosition` counter (`media-preview-position` testID) between play icon and waveform; added `media-preview-duration` testID; reduced `audioPreview` gap from 12→8; added `audioPosition` style
+- `__tests__/integration/MediaLinkingModal.test.tsx`: updated `useAudioPlayer` mock to include `positionMs`; added position counter test; fixed duration tests to use `testID` selectors (avoiding multi-match with new position counter)
+
+
+[fix] **Enhance media-management-screen**: auto-refresh media list after linking/editing assets; add current-position counter to audio player.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `src/hooks/queryKeys.ts`: added `['allAssets']` to `ASSET_MUTATION_KEYS` so `MediaCaptureProvider.invalidateAssetCaches()` now invalidates the media list query after linking
+- `src/hooks/useAssets.ts`: removed redundant explicit `queryClient.invalidateQueries({ queryKey: ['allAssets'] })` calls — now covered by `ASSET_MUTATION_KEYS`
+- `src/hooks/useAudioPlayer.ts`: added `positionMs` state tracking from `playbackStatusUpdate` `currentTime`; resets on stop/unload/finish
+- `src/components/AudioPreviewOverlay.tsx`: added `audio-preview-position` counter (formatted `0:00`) to the left of the waveform, waveform remains `flex:1` centered between position and duration
+- `__tests__/unit/useAudioPlayer.test.ts`: updated initial state test + added `positionMs` tests (tracking, reset on stop/unload/finish)
+- `__tests__/integration/AudioPreviewOverlay.test.tsx`: added test for position counter, updated `useAudioPlayer` mock to include `positionMs`
+
+
+[feature] **Enhance media-management-screen**: sort button moved to filters row in media screen; EditAssetModal gains drag handle + swipe-to-dismiss, date picker, tappable type icon (opens AudioPreviewOverlay/PhotoPreviewOverlay), and Cancel button.
+
+- Builds on `2026-03-21_01-media-management-screen`
+- `app/(tabs)/media.tsx`: sort button relocated from title row to the right of the filter chips; sort menu is now anchored relative to its container
+- `src/components/EditAssetModal.tsx`: added `useModalAnimation` for slide-in/swipe-to-dismiss, drag handle pill, `DatePickerField` for date editing, tappable type-icon badge that opens preview overlays for audio/photo assets, Cancel button alongside Save
+- `src/repositories/assetRepository.ts`: added `updateAssetDate(id, date)`
+- `src/services/assetService.ts`: added `updateAssetDate` service wrapper
+- `src/hooks/useAssets.ts`: added `useUpdateAssetDate` mutation hook
+- `src/i18n/en-US.ts` + `pt-BR.ts`: added `media.editDateLabel` and `media.editCancel` keys
+
+### 2026-03-21_7
+
+[fix] **More tab** now expands a floating popup (Modal) above the tab bar instead of navigating to a dedicated `more.tsx` screen. Tapping Media or Settings from the popup navigates to the respective hidden tab screen. `media` and `settings` are hidden from the tab bar via `href: null`. The `MoreTabButton` component in `_layout.tsx` is self-contained and manages open/close state internally.
+
+### 2026-03-21_6
+
+**[feature] Media Management screen — search, filter, sort, edit, relink**
+- Added `AssetWithLink` interface to `src/types/asset.ts` with `linked_word`, `linked_word_id`, `linked_variant`, `linked_variant_id` fields
+- Exported `AssetWithLink` from `src/types/domain.ts`
+- Added `getAllAssets`, `updateAssetParent`, `updateAssetName` to `src/repositories/assetRepository.ts`
+- Added `moveAssetFile` to `src/utils/assetStorage.ts` for moving files between parent directories
+- Added `renameAsset`, `relinkAsset` service functions and re-exported `getAllAssets`, `AssetWithLink` from `src/services/assetService.ts`
+- Added `allAssets` query key to `src/hooks/queryKeys.ts`
+- Added `useAllAssets`, `useRelinkAsset`, `useRenameAsset` hooks to `src/hooks/useAssets.ts`; `useRemoveAsset` now also invalidates `['allAssets']`
+- Added `more`, `media` keys to both `src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`; added `tabs.media` and `tabs.more` keys
+- Created `src/components/EditAssetModal.tsx`: bottom-sheet modal for renaming assets and relinking them to different words/variants
+- Created `app/(tabs)/media.tsx`: full Media screen with search, audio/photo/video filter chips, sort menu, asset list with preview overlays, and edit/delete actions
+- Created `app/(tabs)/more.tsx`: hamburger menu screen linking to Media and Settings
+- Updated `app/(tabs)/_layout.tsx`: added Media tab and More tab; Settings tab hidden from tab bar (`href: null`)
+- Added tests: `__tests__/unit/assetRepository.test.ts` (getAllAssets, updateAssetParent, updateAssetName), `__tests__/unit/assetStorage.test.ts` (moveAssetFile), `__tests__/integration/EditAssetModal.test.tsx`, `__tests__/integration/useAssets.test.tsx` (useAllAssets, useRelinkAsset, useRenameAsset), `__tests__/screens/media.test.tsx`, `__tests__/screens/more.test.tsx`
+- All 1534 tests pass, TypeScript clean, ESLint clean, Semgrep clean
+
+
 
 **[feature] Migrate expo-av → expo-audio (SDK 55)**
 - Replaced `expo-av` with `expo-audio` across all audio recording and playback code

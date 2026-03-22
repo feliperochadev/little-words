@@ -8,8 +8,12 @@ import {
   updateAssetFilename,
   getProfilePhoto,
   deleteProfilePhotoAsset,
+  getAllAssets,
+  updateAssetParent,
+  updateAssetName,
+  updateAssetDate,
 } from '../../src/repositories/assetRepository';
-import type { NewAsset } from '../../src/types/asset';
+import type { NewAsset, AssetWithLink } from '../../src/types/asset';
 
 const mockDb = (globalThis as any).__mockDb;
 
@@ -224,6 +228,114 @@ describe('assetRepository', () => {
 
     it('resolves to undefined', async () => {
       const result = await deleteProfilePhotoAsset();
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getAllAssets', () => {
+    const asset: AssetWithLink = {
+      id: 1, parent_type: 'word', parent_id: 10, asset_type: 'audio',
+      filename: 'asset_1.m4a', name: 'test audio', mime_type: 'audio/mp4',
+      file_size: 1024, duration_ms: 5000, width: null, height: null, created_at: '2024-01-01',
+      linked_word: 'baby', linked_word_id: 10, linked_variant: null, linked_variant_id: null,
+    };
+
+    it('fetches all non-profile assets', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      const result = await getAllAssets();
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+        expect.stringContaining("parent_type != 'profile'"),
+        [],
+      );
+      expect(result).toEqual([asset]);
+    });
+
+    it('filters by asset type', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets(undefined, 'audio');
+      const [sql, params] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('a.asset_type = ?');
+      expect(params).toContain('audio');
+    });
+
+    it('filters by search term', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets('baby');
+      const [sql, params] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('LIKE LOWER(?)');
+      expect(params).toContain('%baby%');
+    });
+
+    it('sorts by name_asc', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets(undefined, null, 'name_asc');
+      const [sql] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('ORDER BY LOWER(COALESCE(a.name, a.filename)) ASC');
+    });
+
+    it('sorts by name_desc', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets(undefined, null, 'name_desc');
+      const [sql] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('ORDER BY LOWER(COALESCE(a.name, a.filename)) DESC');
+    });
+
+    it('sorts by date_asc', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets(undefined, null, 'date_asc');
+      const [sql] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('ORDER BY a.created_at ASC');
+    });
+
+    it('defaults to date_desc sort', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([asset]);
+      await getAllAssets();
+      const [sql] = mockDb.getAllAsync.mock.calls[0];
+      expect(sql).toContain('ORDER BY a.created_at DESC');
+    });
+  });
+
+  describe('updateAssetParent', () => {
+    it('updates parent_type and parent_id', async () => {
+      await updateAssetParent(1, 'variant', 5);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET parent_type = ?, parent_id = ?'),
+        ['variant', 5, 1],
+      );
+    });
+
+    it('resolves to undefined', async () => {
+      const result = await updateAssetParent(1, 'word', 2);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('updateAssetName', () => {
+    it('updates asset name', async () => {
+      await updateAssetName(1, 'new name');
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET name = ?'),
+        ['new name', 1],
+      );
+    });
+
+    it('resolves to undefined', async () => {
+      const result = await updateAssetName(1, 'name');
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('updateAssetDate', () => {
+    it('updates asset created_at date', async () => {
+      await updateAssetDate(1, '2025-06-01');
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE assets SET created_at = ?'),
+        ['2025-06-01', 1],
+      );
+    });
+
+    it('resolves to undefined', async () => {
+      const result = await updateAssetDate(1, '2025-06-01');
       expect(result).toBeUndefined();
     });
   });

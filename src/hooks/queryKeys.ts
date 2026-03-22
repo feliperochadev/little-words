@@ -11,6 +11,8 @@ export const QUERY_KEYS = {
     ['assets', parentType, parentId] as const,
   assetsByType: (parentType: ParentType, parentId: number, assetType: AssetType) =>
     ['assets', parentType, parentId, assetType] as const,
+  allAssets: (search?: string, assetType?: AssetType | null, sortKey?: string) =>
+    ['allAssets', { search: search ?? '', assetType: assetType ?? null, sortKey: sortKey ?? 'date_desc' }] as const,
 } as const;
 
 // Keys to invalidate after word mutations (word count + variant count affect dashboard)
@@ -36,6 +38,7 @@ export const CATEGORY_MUTATION_KEYS = [
 // Keys to invalidate after asset mutations
 export const ASSET_MUTATION_KEYS = [
   ['assets'],
+  ['allAssets'],
   ['words'],
   ['variants'],
   ['dashboard'],

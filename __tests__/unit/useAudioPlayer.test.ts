@@ -23,11 +23,12 @@ beforeEach(() => {
 
 describe('useAudioPlayer', () => {
   describe('initial state', () => {
-    it('returns isPlaying false and durationMs 0', () => {
+    it('returns isPlaying false, durationMs 0, and positionMs 0', () => {
       const { result } = renderHook(() => useAudioPlayer());
 
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.durationMs).toBe(0);
+      expect(result.current.positionMs).toBe(0);
     });
 
     it('exposes play, stop, and unload functions', () => {
@@ -71,6 +72,38 @@ describe('useAudioPlayer', () => {
       });
 
       expect(result.current.durationMs).toBe(5000);
+    });
+
+    it('sets positionMs when listener fires with currentTime', async () => {
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play('file:///audio.m4a');
+      });
+
+      const [, listenerCallback] = mockPlayer.addListener.mock.calls[0];
+
+      await act(async () => {
+        listenerCallback({ isLoaded: true, currentTime: 2.5, didJustFinish: false });
+      });
+
+      expect(result.current.positionMs).toBe(2500);
+    });
+
+    it('does not update positionMs when currentTime is undefined', async () => {
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play('file:///audio.m4a');
+      });
+
+      const [, listenerCallback] = mockPlayer.addListener.mock.calls[0];
+
+      await act(async () => {
+        listenerCallback({ isLoaded: true, didJustFinish: false });
+      });
+
+      expect(result.current.positionMs).toBe(0);
     });
 
     it('does not set durationMs when duration is falsy', async () => {
@@ -141,7 +174,7 @@ describe('useAudioPlayer', () => {
   });
 
   describe('playback status callback', () => {
-    it('sets isPlaying to false and removes player when playback finishes', async () => {
+    it('sets isPlaying to false, resets positionMs, and removes player when playback finishes', async () => {
       const { result } = renderHook(() => useAudioPlayer());
 
       await act(async () => {
@@ -152,11 +185,18 @@ describe('useAudioPlayer', () => {
 
       const [, listenerCallback] = mockPlayer.addListener.mock.calls[0];
 
+      // Simulate position update
+      await act(async () => {
+        listenerCallback({ isLoaded: true, currentTime: 3, didJustFinish: false });
+      });
+      expect(result.current.positionMs).toBe(3000);
+
       await act(async () => {
         listenerCallback({ isLoaded: true, didJustFinish: true });
       });
 
       expect(result.current.isPlaying).toBe(false);
+      expect(result.current.positionMs).toBe(0);
       expect(mockPlayer.remove).toHaveBeenCalled();
     });
 
@@ -218,6 +258,7 @@ describe('useAudioPlayer', () => {
       expect(mockPlayer.remove).toHaveBeenCalled();
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.durationMs).toBe(0);
+      expect(result.current.positionMs).toBe(0);
     });
 
     it('is a no-op when nothing is playing', async () => {
@@ -275,6 +316,7 @@ describe('useAudioPlayer', () => {
       expect(mockPlayer.remove).toHaveBeenCalled();
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.durationMs).toBe(0);
+      expect(result.current.positionMs).toBe(0);
     });
 
     it('is safe to call when no player is loaded', async () => {
@@ -287,6 +329,7 @@ describe('useAudioPlayer', () => {
       expect(mockPlayer.remove).not.toHaveBeenCalled();
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.durationMs).toBe(0);
+      expect(result.current.positionMs).toBe(0);
     });
 
     it('swallows error when remove throws', async () => {

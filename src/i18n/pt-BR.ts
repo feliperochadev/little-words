@@ -8,8 +8,10 @@ export default {
     actions: 'Ações',
     nature:  'Natureza',
     body:    'Corpo',
-    others:  'Outros',
     places:  'Lugares',
+    colors:  'Cores',
+    toys:    'Brinquedos',
+    others:  'Outros',
   },
 
   // ── Brand Header ─────────────────────────────────────────────────────────────
@@ -53,6 +55,8 @@ export default {
     words: 'Palavras',
     variants: 'Variantes',
     settings: 'Config.',
+    more: 'Mais',
+    media: 'Mídia',
   },
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
@@ -353,5 +357,47 @@ export default {
     deleteMessageWithWords: 'Excluir "{{name}}" removerá a categoria de {{count}} palavra(s). As palavras ficarão sem categoria.',
     deleteMessage: 'Tem certeza que deseja excluir "{{name}}"?',
     deleteFailed: 'Falha ao excluir categoria. Tente novamente.',
+  },
+
+  more: {
+    title: 'Mais',
+    media: 'Mídia',
+    settings: 'Configurações',
+  },
+
+  media: {
+    title: 'Mídia',
+    searchPlaceholder: 'Buscar mídia...',
+    emptyTitle: 'Nenhum arquivo de mídia',
+    emptySubtitle: 'Grave áudios ou adicione fotos às suas palavras',
+    filterAll: 'Todos',
+    filterAudio: 'Áudio',
+    filterPhoto: 'Fotos',
+    filterVideo: 'Vídeos',
+    sortDate: 'Data',
+    sortName: 'Nome',
+    linkedWord: 'Palavra: {{name}}',
+    linkedVariant: 'Variante: {{name}}',
+    editTitle: 'Editar Mídia',
+    editNameLabel: 'Nome',
+    editNamePlaceholder: 'Digite um nome...',
+    editLinkedLabel: 'Vinculado a',
+    editDateLabel: 'Data',
+    editSave: 'Salvar',
+    editCancel: 'Cancelar',
+    editRemove: 'Remover',
+    removeConfirmTitle: 'Remover mídia?',
+    removeConfirmMessage: 'Isso irá excluir o arquivo permanentemente.',
+    removeConfirmOk: 'Remover',
+    removeConfirmCancel: 'Cancelar',
+    typeAudio: 'Áudio',
+    typePhoto: 'Foto',
+    typeVideo: 'Vídeo',
+    sortOptions: {
+      dateDesc: 'Mais recentes',
+      dateAsc: 'Mais antigos',
+      nameAsc: 'Nome A–Z',
+      nameDesc: 'Nome Z–A',
+    },
   },
 };

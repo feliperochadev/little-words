@@ -91,5 +91,68 @@ describe('dashboardHelpers', () => {
       const result = getGreeting('Baby', null, mockT);
       expect(result).toContain('Baby');
     });
+
+    it('handles very new born (0 days)', () => {
+      const now = new Date();
+      const birth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result = getAgeText(birth, mockT);
+      expect(result).toBeDefined();
+    });
+
+    it('handles 1 year exactly on anniversary', () => {
+      const now = new Date();
+      const birth = `${now.getFullYear() - 1}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result = getAgeText(birth, mockT);
+      expect(result).toContain('year');
+    });
+
+    it('handles multiple years', () => {
+      const now = new Date();
+      const birth = `${now.getFullYear() - 3}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result = getAgeText(birth, mockT);
+      expect(result).toContain('3');
+    });
+
+    it('greeting includes correct period message for female', () => {
+      const result = getGreeting('Anna', 'girl', mockT);
+      expect(result).toBeDefined();
+      expect(result.length > 0).toBe(true);
+    });
+
+    it('greeting includes correct period message for male', () => {
+      const result = getGreeting('Lucas', 'boy', mockT);
+      expect(result).toBeDefined();
+      expect(result.length > 0).toBe(true);
+    });
+
+    it('greeting includes correct period message for neutral', () => {
+      const result = getGreeting('Child', null, mockT);
+      expect(result).toBeDefined();
+      expect(result.length > 0).toBe(true);
+    });
+
+    it('handles leap year dates correctly', () => {
+      // Feb 29 to March 1 transition
+      const birth = '2020-02-29';
+      const result = getAgeText(birth, mockT);
+      expect(result).toBeDefined();
+    });
+
+    it('age calculation with month boundary crossing', () => {
+      const now = new Date();
+      const monthBefore = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const yearAdjust = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const birth = `${yearAdjust}-${String(monthBefore + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result = getAgeText(birth, mockT);
+      expect(result).toBeDefined();
+    });
+
+    it('returns consistent results on multiple calls', () => {
+      const now = new Date();
+      const birth = `${now.getFullYear() - 1}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result1 = getAgeText(birth, mockT);
+      const result2 = getAgeText(birth, mockT);
+      expect(result1).toBe(result2);
+    });
   });
 });

@@ -13,6 +13,7 @@ jest.mock('../../src/hooks/useAudioPlayer', () => ({
   useAudioPlayer: () => ({
     isPlaying: mockIsPlaying,
     durationMs: 0,
+    positionMs: 0,
     play: mockPlay,
     stop: mockStop,
     unload: jest.fn(),
@@ -99,6 +100,11 @@ describe('AudioPreviewOverlay', () => {
     it('hides duration when durationMs is undefined', () => {
       const { queryByTestId } = renderOverlay({ durationMs: undefined });
       expect(queryByTestId('audio-preview-duration')).toBeNull();
+    });
+
+    it('renders position counter with 0:00 initially', () => {
+      const { getByTestId } = renderOverlay();
+      expect(getByTestId('audio-preview-position').props.children).toBe('0:00');
     });
 
     it('renders waveform container', () => {

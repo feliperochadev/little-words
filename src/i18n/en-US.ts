@@ -8,8 +8,10 @@ export default {
     actions: 'Actions',
     nature:  'Nature',
     body:    'Body',
-    others:  'Others',
     places:  'Places',
+    colors:  'Colors',
+    toys:    'Toys',
+    others:  'Others',
   },
 
   // ── Brand Header ─────────────────────────────────────────────────────────────
@@ -53,6 +55,8 @@ export default {
     words: 'Words',
     variants: 'Variants',
     settings: 'Settings',
+    more: 'More',
+    media: 'Media',
   },
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
@@ -353,5 +357,47 @@ export default {
     deleteMessageWithWords: 'Deleting "{{name}}" will remove the category from {{count}} word(s). The words will remain uncategorized.',
     deleteMessage: 'Are you sure you want to delete "{{name}}"?',
     deleteFailed: 'Failed to delete category. Please try again.',
+  },
+
+  more: {
+    title: 'More',
+    media: 'Media',
+    settings: 'Settings',
+  },
+
+  media: {
+    title: 'Media',
+    searchPlaceholder: 'Search media...',
+    emptyTitle: 'No media files',
+    emptySubtitle: 'Record audio or add photos to your words',
+    filterAll: 'All',
+    filterAudio: 'Audio',
+    filterPhoto: 'Photos',
+    filterVideo: 'Videos',
+    sortDate: 'Date',
+    sortName: 'Name',
+    linkedWord: 'Word: {{name}}',
+    linkedVariant: 'Variant: {{name}}',
+    editTitle: 'Edit Media',
+    editNameLabel: 'Name',
+    editNamePlaceholder: 'Enter name...',
+    editLinkedLabel: 'Linked to',
+    editDateLabel: 'Date',
+    editSave: 'Save',
+    editCancel: 'Cancel',
+    editRemove: 'Remove',
+    removeConfirmTitle: 'Remove media?',
+    removeConfirmMessage: 'This will permanently delete the file.',
+    removeConfirmOk: 'Remove',
+    removeConfirmCancel: 'Cancel',
+    typeAudio: 'Audio',
+    typePhoto: 'Photo',
+    typeVideo: 'Video',
+    sortOptions: {
+      dateDesc: 'Newest first',
+      dateAsc: 'Oldest first',
+      nameAsc: 'Name A–Z',
+      nameDesc: 'Name Z–A',
+    },
   },
 };
