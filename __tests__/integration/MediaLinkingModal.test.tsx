@@ -916,6 +916,16 @@ describe('MediaLinkingModal', () => {
         expect(mockSaveWithoutLinking).toHaveBeenCalled();
       });
     });
+
+    it('navigates to media screen after saving without linking', async () => {
+      const { getByTestId } = renderModal();
+      await act(async () => {
+        fireEvent.press(getByTestId('media-link-btn'));
+      });
+      await waitFor(() => {
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/media' });
+      });
+    });
   });
 
   // ── Inline Variant Create ──────────────────────────────────────────────────

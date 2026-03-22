@@ -2,7 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-07-14_4
+### 2026-03-22_5
+
+[feature] `MediaLinkingModal` + `EditAssetModal`: link buttons (word/variant) now stack vertically (2 lines) instead of side-by-side
+[feature] `MediaLinkingModal`: after saving without a word/variant link, navigates to the media screen (`/(tabs)/media`)
+[test] Added "navigates to media screen after saving without linking" test in `MediaLinkingModal.test.tsx`
+
+
 
 [feature] `EditAssetModal` redesigned with button-driven word/variant linking UX: two mode buttons ("Link to Word" / "Link to Variant") replace single combined search input; pressing a button reveals its search section with a cancel X; existing link shown as chip with ✕ to clear and return to button mode
 [fix] `assetRepository.getAllAssets` now excludes only `(parent_type='profile' AND asset_type='photo')` instead of all profile-parented assets, making unlinked media visible in the media screen

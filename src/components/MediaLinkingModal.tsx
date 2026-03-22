@@ -139,6 +139,7 @@ export function MediaLinkingModal() {
         router.push({ pathname: '/(tabs)/words', params: { highlightId: String(selectedWord.id) } });
       } else {
         await saveWithoutLinking(mediaName);
+        router.push({ pathname: '/(tabs)/media' });
       }
     } catch {
       // Error handled by provider (shows Alert)
@@ -659,7 +660,7 @@ const s = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 8 },
   sectionLabel: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 },
   sectionCancelBtn: { padding: 4 },
-  linkBtnRow: { flexDirection: 'row', gap: 12, marginBottom: 16, marginTop: 8 },
+  linkBtnRow: { flexDirection: 'column', gap: 12, marginBottom: 16, marginTop: 8 },
   linkBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 14, borderWidth: 1.5 },
   linkBtnText: { fontSize: 13, fontWeight: '700' },
   variantNotFound: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 12 },

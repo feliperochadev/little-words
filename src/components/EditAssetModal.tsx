@@ -403,7 +403,7 @@ const s = StyleSheet.create({
   selectedChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, marginBottom: 4 },
   selectedChipText: { flex: 1, fontSize: 14, fontWeight: '600' },
   selectedChipClear: { fontSize: 14, fontWeight: '700' },
-  linkBtnRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+  linkBtnRow: { flexDirection: 'column', gap: 8, marginBottom: 4 },
   linkBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
   linkBtnText: { fontSize: 13, fontWeight: '600' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 4 },
