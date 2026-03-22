@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_11
+
+[feature] Add `/upgrade-version` and `/release-version` skills for all agent vendors
+[feature] `/upgrade-version`: updates app version across all configuration files (package.json, app.json, package-lock.json); validates with npm run ci before committing; safely prevents pushes to main/master branches
+[feature] `/release-version`: gets current version from package.json, checks if git release exists, extracts changelog entries from .agents/AGENTS-CHANGELOG.md between versions, creates GitHub release with organized changelog notes by category
+[feature] Commands created for all three vendor agents: Claude (.claude/commands/), Codex (.codex/commands/), and Gemini (.gemini/commands/)
+
 ### 2026-03-22_8
 
 [config] Bump version to 0.7.0-beta; update fix-new-issues Sonar polling strategy with exponential backoff
