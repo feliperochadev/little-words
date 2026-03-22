@@ -36,6 +36,10 @@ const WordsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =
 const VariantsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
   <TabIcon name="chatbubble-ellipses" color={color} focused={focused} />;
 
+function MoreTabButtonTab() {
+  return <MoreTabButton />;
+}
+
 
 export default function TabLayout() {
   const { t } = useI18n();
@@ -92,7 +96,7 @@ export default function TabLayout() {
           name="more"
           options={{
             title: t('tabs.more'),
-            tabBarButton: () => <MoreTabButton />,
+            tabBarButton: MoreTabButtonTab,
           }}
         />
       </Tabs>

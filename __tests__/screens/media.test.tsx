@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, FlatList } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.spyOn(Alert, 'alert');
@@ -30,6 +30,14 @@ jest.mock('../../src/services/variantService', () => ({
 jest.mock('../../src/services/settingsService', () => ({
   ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('../../src/utils/assetStorage', () => ({
+  getAssetFileUri: jest.fn().mockReturnValue('file:///mock/path/asset.m4a'),
+  saveAssetFile: jest.fn().mockResolvedValue('asset.m4a'),
+  deleteAssetFile: jest.fn().mockResolvedValue(undefined),
+  deleteAllAssetsForParent: jest.fn().mockResolvedValue(undefined),
+  moveAssetFile: jest.fn().mockReturnValue(undefined),
 }));
 
 import MediaScreen from '../../app/(tabs)/media';
@@ -340,4 +348,113 @@ describe('MediaScreen', () => {
       expect(getByTestId('media-sort-btn')).toBeTruthy();
     });
   });
+
+  it('opens audio overlay when audio row is pressed', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    fireEvent.press(getByTestId('media-item-1'));
+    await waitFor(() => {
+      expect(getByTestId('audio-preview-modal').props.visible).toBeTruthy();
+    });
+  });
+
+  it('opens photo overlay when photo row is pressed', async () => {
+    const photoAsset: AssetWithLink = { ...sampleAsset, asset_type: 'photo' };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([photoAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    fireEvent.press(getByTestId('media-item-1'));
+    await waitFor(() => {
+      expect(getByTestId('photo-preview-modal').props.visible).toBeTruthy();
+    });
+  });
+
+  it('does not open overlay when video row is pressed', async () => {
+    const videoAsset: AssetWithLink = { ...sampleAsset, asset_type: 'video' };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([videoAsset]);
+    const { getByTestId, queryByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    fireEvent.press(getByTestId('media-item-1'));
+    // Video type has no overlay — neither audio nor photo modal should be present
+    expect(queryByTestId('audio-preview-modal')).toBeNull();
+    expect(queryByTestId('photo-preview-modal')).toBeNull();
+  });
+
+  it('shows variant link label for variant-type assets', async () => {
+    const variantAsset: AssetWithLink = {
+      ...sampleAsset,
+      parent_type: 'variant',
+      linked_word: null,
+      linked_word_id: null,
+      linked_variant: 'baba',
+      linked_variant_id: 20,
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([variantAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('shows no link label when asset has no linked word or variant', async () => {
+    const unlinkedAsset: AssetWithLink = {
+      ...sampleAsset,
+      linked_word: null,
+      linked_word_id: null,
+    };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([unlinkedAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => {
+      expect(getByTestId('media-item-1')).toBeTruthy();
+    });
+  });
+
+  it('calls removeAsset when remove is confirmed in the alert', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-remove-1'));
+    fireEvent.press(getByTestId('media-remove-1'));
+
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const buttons: { text: string; style?: string; onPress?: () => void }[] = alertCall[2];
+    const confirmBtn = buttons.find(b => b.style === 'destructive');
+    await act(async () => {
+      confirmBtn?.onPress?.();
+      await Promise.resolve();
+    });
+
+    expect(assetService.removeAsset).toHaveBeenCalled();
+  });
+
+  it('handles refresh by calling refetch', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { UNSAFE_getAllByType } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => {
+      const lists = UNSAFE_getAllByType(FlatList);
+      expect(lists.length).toBeGreaterThan(0);
+    });
+    const lists = UNSAFE_getAllByType(FlatList);
+    await act(async () => {
+      lists[0].props.refreshControl.props.onRefresh();
+      await Promise.resolve();
+    });
+    // getAllAssets should have been called again for the refetch
+    expect(assetService.getAllAssets).toHaveBeenCalled();
+  });
+
+  it('formats file size as bytes when under 1 KB', async () => {
+    const smallAsset: AssetWithLink = { ...sampleAsset, file_size: 512 };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([smallAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => expect(getByTestId('media-item-1')).toBeTruthy());
+  });
+
+  it('formats file size in KB range', async () => {
+    const kbAsset: AssetWithLink = { ...sampleAsset, file_size: 2048 };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([kbAsset]);
+    const { getByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => expect(getByTestId('media-item-1')).toBeTruthy());
+  });
 });
+

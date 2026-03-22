@@ -88,7 +88,8 @@ export default function MediaScreen() {
     { key: 'video', label: t('media.filterVideo'), icon: 'videocam' },
   ];
 
-  const renderAsset = useCallback(({ item }: { item: AssetWithLink }) => {
+  const renderAsset = useCallback((info: { item: AssetWithLink }) => {
+    const { item } = info;
     const getTypeIcon = (): React.ComponentProps<typeof Ionicons>['name'] => {
       if (item.asset_type === 'audio') return 'musical-notes';
       if (item.asset_type === 'photo') return 'image';
