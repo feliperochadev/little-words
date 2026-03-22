@@ -23,6 +23,19 @@ export default function MoreScreen() {
       <View style={s.list}>
         <TouchableOpacity
           style={[s.row, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+          onPress={() => router.push('/(tabs)/progress')}
+          testID="more-progress-btn"
+          activeOpacity={0.7}
+        >
+          <View style={[s.iconWrap, { backgroundColor: withOpacity(colors.primary, '1A') }]}>
+            <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+          </View>
+          <Text style={[s.rowLabel, { color: theme.colors.text }]}>{t('more.progress')}</Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.row, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
           onPress={() => router.push('/(tabs)/media')}
           testID="more-media-btn"
           activeOpacity={0.7}

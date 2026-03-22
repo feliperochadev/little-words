@@ -288,11 +288,13 @@ interface StatCardProps {
 export function StatCard({ emoji, icon, value, label, color, testID }: Readonly<StatCardProps>) {
   return (
     <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
-      <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
-        {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
+      <View style={statStyles.topRow}>
+        <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
+          {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
+        </View>
+        <Text style={statStyles.label}>{label}</Text>
       </View>
       <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
     </View>
   );
 }
@@ -302,8 +304,7 @@ const statStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.shape.xl,
-    padding: theme.spacing['4'],
-    alignItems: 'center',
+    padding: theme.spacing['3'],
     borderWidth: 1.5,
     shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
@@ -312,15 +313,20 @@ const statStyles = StyleSheet.create({
     elevation: 2,
     margin: 4,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   iconBg: {
-    width: 48,
-    height: 48,
+    width: 32,
+    height: 32,
     borderRadius: theme.shape.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing['2'],
+    marginRight: 6,
   },
-  emoji: { fontSize: 22 },
-  value: { fontSize: 28, fontWeight: theme.typography.fontWeight.heavy, marginBottom: 2 },
-  label: { fontSize: theme.typography.fontSize.xs, color: theme.colors.textSecondary, textAlign: 'center', fontWeight: theme.typography.fontWeight.medium },
+  emoji: { fontSize: 16 },
+  value: { fontSize: 26, fontWeight: theme.typography.fontWeight.heavy, textAlign: 'center' },
+  label: { flex: 1, fontSize: theme.typography.fontSize.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.fontWeight.medium },
 });

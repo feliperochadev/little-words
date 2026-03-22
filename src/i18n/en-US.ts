@@ -126,6 +126,10 @@ export default {
       May: 'May', Jun: 'Jun', Jul: 'Jul', Aug: 'Aug',
       Sep: 'Sep', Oct: 'Oct', Nov: 'Nov', Dec: 'Dec',
     },
+    seeProgress: 'See the Progress',
+    progressTitle: 'Progress',
+    comingSoonTitle: 'More Detailed Metrics Coming Soon',
+    comingSoonDesc: 'Percentile rankings, vocabulary milestones, pronunciation accuracy, and speaking milestones will be available in a future update.',
   },
 
   // ── Words screen ────────────────────────────────────────────────────────────
@@ -370,6 +374,7 @@ export default {
 
   more: {
     title: 'More',
+    progress: 'Progress',
     media: 'Media',
     settings: 'Settings',
   },

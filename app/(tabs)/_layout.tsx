@@ -88,9 +88,10 @@ export default function TabLayout() {
             tabBarIcon: VariantsTabIcon,
           }}
         />
-        {/* Media and Settings are routable but hidden from the tab bar */}
+        {/* Media, Settings, and Progress are routable but hidden from the tab bar */}
         <Tabs.Screen name="media" options={{ href: null }} />
         <Tabs.Screen name="settings" options={{ href: null }} />
+        <Tabs.Screen name="progress" options={{ href: null }} />
         {/* More: custom button that expands a floating popup */}
         <Tabs.Screen
           name="more"

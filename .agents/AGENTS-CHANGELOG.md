@@ -2,6 +2,38 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_16
+
+[fix] Add "Progress" option to `MoreTabButton` floating popup (`src/components/MoreTabButton.tsx`) with `trending-up-outline` icon, navigating to `/(tabs)/progress` — the popup is the actual UI shown when tapping "More" on the tab bar
+[test] Add 2 tests to `__tests__/integration/MoreTabButton.test.tsx` for progress navigation and menu-close behavior; update existing "shows menu card" test to include progress option
+
+### 2026-03-22_15
+
+[feature] Add "Progress" entry to More screen (`app/(tabs)/more.tsx`) with `trending-up-outline` icon, navigating to `/(tabs)/progress`; add `more.progress` i18n key to `en-US.ts` and `pt-BR.ts`
+[test] Add progress button tests to `__tests__/screens/more.test.tsx`
+
+### 2026-03-22_14
+
+[feature] Add summary stat counters (totalWords, totalVariants, wordsToday, wordsThisWeek, wordsThisMonth) as the first card in `app/(tabs)/progress.tsx`, mirroring the home screen frame
+[test] Add 2 tests to `__tests__/screens/progress.test.tsx` covering stat values and zero-state rendering of the new stats section
+
+### 2026-03-22_13
+
+[feature] Replace "See the Progress" button on home with a tappable `Card` frame (design system) wrapping all stat cards; frame shows "Progress" title top-left and chevron, navigates to `/(tabs)/progress` on tap, only visible when `totalWords > 0`
+[test] Update `__tests__/screens/home.test.tsx`: rename see-progress-btn tests to home-progress-frame tests
+
+### 2026-03-22_12
+
+[feature] Create progress analytics screen: move monthly chart, category breakdown, and recent words from home to new `app/(tabs)/progress.tsx` hidden tab screen
+[feature] Refactor `StatCard` in `UIComponents.tsx` from vertical centered layout to compact two-row layout (icon+label on top row, value centered below)
+[feature] Add "See the Progress" button on home screen below stat cards, visible when `totalWords > 0`, navigates to `/(tabs)/progress`
+[feature] Extract `formatMonth` and `MONTH_KEYS` from `home.tsx` into `src/utils/dashboardHelpers.ts` for reuse in progress screen
+[feature] Add i18n keys `dashboard.seeProgress`, `dashboard.progressTitle`, `dashboard.comingSoonTitle`, `dashboard.comingSoonDesc` to `en-US.ts` and `pt-BR.ts`
+[test] Add `__tests__/screens/progress.test.tsx` (16 tests covering all sections, back button, coming soon, cross-year labels)
+[test] Update `__tests__/screens/home.test.tsx`: remove chart/category/recent-words tests (moved to progress), add see-progress button tests
+[test] Update `__tests__/unit/dashboardHelpers.test.ts`: add `formatMonth` and `MONTH_KEYS` tests
+[test] Update `__tests__/integration/UIComponents.test.tsx`: add compact horizontal layout test for `StatCard`
+
 ### 2026-03-22_11
 
 [feature] Add `/upgrade-version` and `/release-version` skills for all agent vendors

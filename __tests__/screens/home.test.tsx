@@ -114,19 +114,6 @@ describe('DashboardScreen', () => {
     const { findByText } = renderWithProviders(<DashboardScreen />);
     expect(await findByText('Luna')).toBeTruthy();
     expect(await findByText('10')).toBeTruthy();
-    expect(await findByText('Animals')).toBeTruthy();
-    expect(await findByText('mamãe')).toBeTruthy();
-  });
-
-  it('renders semantic section icons for monthly/category/recent blocks', async () => {
-    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { findByTestId } = renderWithProviders(<DashboardScreen />);
-    const monthlyIcon = await findByTestId('home-monthly-progress-icon');
-    const categoryIcon = await findByTestId('home-category-icon');
-    const recentIcon = await findByTestId('home-recent-words-icon');
-    expect(monthlyIcon.props.name).toBe('bar-chart-outline');
-    expect(categoryIcon.props.name).toBe('pricetags-outline');
-    expect(recentIcon.props.name).toBe('sparkles-outline');
   });
 
   it('renders boy profile', async () => {
@@ -156,40 +143,6 @@ describe('DashboardScreen', () => {
     });
   });
 
-  it('renders monthly progress chart without year when all months are in same year', async () => {
-    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { getByText, queryByText } = renderWithProviders(<DashboardScreen />);
-    await waitFor(() => {
-      expect(getByText('Jan')).toBeTruthy();
-      expect(getByText('Feb')).toBeTruthy();
-      // Year suffix should NOT appear when all months are in the same year
-      expect(queryByText(/Jan '24/)).toBeNull();
-      expect(queryByText(/Feb '24/)).toBeNull();
-    });
-  });
-
-  it('renders monthly progress chart with year suffix when months span two years', async () => {
-    const crossYearStats = {
-      ...fullStats,
-      monthlyProgress: [
-        { month: '2024-10', count: 3 },
-        { month: '2024-11', count: 5 },
-        { month: '2024-12', count: 7 },
-        { month: '2025-01', count: 2 },
-        { month: '2025-02', count: 4 },
-        { month: '2025-03', count: 6 },
-      ],
-    };
-    (db.getDashboardStats as jest.Mock).mockResolvedValue(crossYearStats);
-    const { getByText } = renderWithProviders(<DashboardScreen />);
-    await waitFor(() => {
-      // When years differ, labels should include the 2-digit year
-      expect(getByText("Dec '24")).toBeTruthy();
-      expect(getByText("Jan '25")).toBeTruthy();
-      expect(getByText("Mar '25")).toBeTruthy();
-    });
-  });
-
   it('renders stat cards with testIDs', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
     const { getByTestId } = renderWithProviders(<DashboardScreen />);
@@ -202,39 +155,26 @@ describe('DashboardScreen', () => {
     });
   });
 
-  it('renders bar chart with testIDs for month values', async () => {
+  it('shows progress frame when totalWords > 0', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { getByTestId } = renderWithProviders(<DashboardScreen />);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('home-progress-frame')).toBeTruthy();
+  });
+
+  it('does not show progress frame when totalWords is 0', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    const { queryByTestId } = renderWithProviders(<DashboardScreen />);
     await waitFor(() => {
-      expect(getByTestId('bar-value-2024-01').props.children).toBe(5);
-      expect(getByTestId('bar-value-2024-02').props.children).toBe(8);
+      expect(queryByTestId('home-progress-frame')).toBeNull();
     });
   });
 
-  it('renders category count with testID using category name key', async () => {
+  it('pressing progress frame navigates without error', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
-    const { getByTestId } = renderWithProviders(<DashboardScreen />);
-    await waitFor(() => {
-      expect(getByTestId('cat-count-animals').props.children).toBe(3);
-    });
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const frame = await findByTestId('home-progress-frame');
+    expect(() => fireEvent.press(frame)).not.toThrow();
   });
-
-  it('renders recent word chips with position-indexed testIDs', async () => {
-    (db.getDashboardStats as jest.Mock).mockResolvedValue({
-      ...fullStats,
-      recentWords: [
-        { id: 1, word: 'apple', category_color: '#FF6B9D' },
-        { id: 2, word: 'ball', category_color: null },
-      ],
-    });
-    const { getByTestId } = renderWithProviders(<DashboardScreen />);
-    await waitFor(() => {
-      expect(getByTestId('recent-words-section')).toBeTruthy();
-      expect(getByTestId('recent-word-0-apple')).toBeTruthy();
-      expect(getByTestId('recent-word-1-ball')).toBeTruthy();
-    });
-  });
-
 
   it('does not show add-word button when totalWords is 0', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
@@ -257,27 +197,6 @@ describe('DashboardScreen', () => {
     expect(btn).toBeTruthy();
     fireEvent.press(btn);
     expect(await findByTestId('modal-title-new-word')).toBeTruthy();
-  });
-
-  it('does not show year suffix for single-year 6-month window', async () => {
-    const singleYearStats = {
-      ...fullStats,
-      monthlyProgress: [
-        { month: '2025-01', count: 1 },
-        { month: '2025-02', count: 2 },
-        { month: '2025-03', count: 3 },
-        { month: '2025-04', count: 4 },
-        { month: '2025-05', count: 5 },
-        { month: '2025-06', count: 6 },
-      ],
-    };
-    (db.getDashboardStats as jest.Mock).mockResolvedValue(singleYearStats);
-    const { getByText, queryByText } = renderWithProviders(<DashboardScreen />);
-    await waitFor(() => {
-      expect(getByText('Jan')).toBeTruthy();
-      expect(getByText('Jun')).toBeTruthy();
-      expect(queryByText(/'25/)).toBeNull();
-    });
   });
 
   it('renders ProfileAvatar with testID when name is set', async () => {

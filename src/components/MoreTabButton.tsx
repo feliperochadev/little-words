@@ -20,6 +20,11 @@ export function MoreTabButton() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 62 + insets.bottom;
 
+  const handleProgress = () => {
+    setOpen(false);
+    router.push('/(tabs)/progress');
+  };
+
   const handleMedia = () => {
     setOpen(false);
     router.push('/(tabs)/media');
@@ -76,6 +81,17 @@ export function MoreTabButton() {
           ]}
           testID="more-menu-card"
         >
+          {/* Progress option */}
+          <TouchableOpacity style={ms.menuItem} onPress={handleProgress} testID="more-progress-option">
+            <View style={[ms.iconWrap, { backgroundColor: withOpacity(colors.primary, '1F') }]}>
+              <Ionicons name="trending-up-outline" size={18} color={colors.primary} />
+            </View>
+            <Text style={[ms.menuLabel, { color: theme.colors.text }]}>{t('more.progress')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={[ms.divider, { backgroundColor: theme.colors.border }]} />
+
           {/* Media option */}
           <TouchableOpacity style={ms.menuItem} onPress={handleMedia} testID="more-media-option">
             <View style={[ms.iconWrap, { backgroundColor: withOpacity(colors.primary, '1F') }]}>

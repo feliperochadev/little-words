@@ -246,5 +246,13 @@ describe('UIComponents', () => {
       );
       expect(getByText('🎯')).toBeTruthy();
     });
+
+    it('renders label and value in compact horizontal layout', () => {
+      const { getByText, getByTestId } = render(
+        <StatCard emoji="📝" value={42} label="Total words" color="#D2694B" testID="stat-compact" />
+      );
+      expect(getByText('Total words')).toBeTruthy();
+      expect(getByTestId('stat-compact').props.children).toBe(42);
+    });
   });
 });

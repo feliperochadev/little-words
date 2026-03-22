@@ -1,4 +1,4 @@
-import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
+import { getAgeText, getGreeting, formatMonth, MONTH_KEYS } from '../../src/utils/dashboardHelpers';
 
 describe('dashboardHelpers', () => {
   const mockT = (key: string, params?: Record<string, string | number>): string => {
@@ -154,5 +154,46 @@ describe('dashboardHelpers', () => {
       const result2 = getAgeText(birth, mockT);
       expect(result1).toBe(result2);
     });
+  });
+});
+
+describe('formatMonth', () => {
+  const mockT = (key: string): string => {
+    const map: Record<string, string> = {
+      'dashboard.months.Jan': 'Jan',
+      'dashboard.months.Feb': 'Feb',
+      'dashboard.months.Mar': 'Mar',
+      'dashboard.months.Dec': 'Dec',
+    };
+    return map[key] ?? key;
+  };
+
+  it('returns short month label without year when showYear is false', () => {
+    expect(formatMonth('2024-01', false, mockT)).toBe('Jan');
+    expect(formatMonth('2024-03', false, mockT)).toBe('Mar');
+    expect(formatMonth('2024-12', false, mockT)).toBe('Dec');
+  });
+
+  it('returns month label with 2-digit year when showYear is true', () => {
+    expect(formatMonth('2024-01', true, mockT)).toBe("Jan '24");
+    expect(formatMonth('2025-02', true, mockT)).toBe("Feb '25");
+  });
+
+  it('handles all 12 months via MONTH_KEYS', () => {
+    expect(MONTH_KEYS).toHaveLength(12);
+    expect(MONTH_KEYS[0]).toBe('Jan');
+    expect(MONTH_KEYS[11]).toBe('Dec');
+  });
+
+  it('uses translated label from t function', () => {
+    const tPtBR = (key: string): string => {
+      const map: Record<string, string> = {
+        'dashboard.months.Jan': 'Jan',
+        'dashboard.months.Feb': 'Fev',
+      };
+      return map[key] ?? key;
+    };
+    expect(formatMonth('2024-02', false, tPtBR)).toBe('Fev');
+    expect(formatMonth('2024-02', true, tPtBR)).toBe("Fev '24");
   });
 });
