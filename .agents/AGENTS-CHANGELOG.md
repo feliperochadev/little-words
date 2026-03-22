@@ -2,6 +2,19 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_1
+
+[feature] Add `colors` (🎨, `#E17055`) and `toys` (🎠, `#FDCB6E`) as new default categories, inserted before `others` in `DEFAULT_CATEGORIES`
+[feature] EN translations: Colors, Toys — PT-BR translations: Cores, Brinquedos — added to `en-US.ts`, `pt-BR.ts`, and both label maps in `categoryKeys.ts`
+[test] Updated `categoryKeys.test.ts` length assertion from 9 → 11
+
+### 2026-07-14_1
+
+[fix] SonarCloud S6478 (`_layout.tsx`): extracted `MoreTabButtonTab` to module level, replacing inline `() => <MoreTabButton />` arrow component in `tabBarButton` prop
+[fix] SonarCloud S6767 (`media.tsx`): changed `renderAsset` parameter from destructured `{ item }` to `info: { item: AssetWithLink }` to prevent Sonar detecting it as a React component with an unused prop
+[test] New `__tests__/integration/MoreTabButton.test.tsx` — 11 tests covering render, open/close modal, navigate to Media, navigate to Settings, and backdrop dismiss
+[test] Extended `__tests__/screens/media.test.tsx` — 10 new tests covering `onRefresh`, audio/photo row press overlays, video row (no overlay), variant link label, remove confirm callback, and file size display
+
 ### 2026-03-21_13
 
 [config] Update /fix-new-issues skill for all agents with mandatory requirements

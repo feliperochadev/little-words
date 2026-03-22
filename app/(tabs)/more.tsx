@@ -30,8 +30,7 @@ export default function MoreScreen() {
           <View style={[s.iconWrap, { backgroundColor: withOpacity(colors.primary, '1A') }]}>
             <View style={s.mediaIcons}>
               <Ionicons name="musical-notes" size={12} color={colors.primary} />
-              <Ionicons name="image" size={12} color={colors.primary} />
-              <Ionicons name="videocam" size={12} color={colors.primary} />
+              <Ionicons name="camera" size={12} color={colors.primary} />
             </View>
           </View>
           <Text style={[s.rowLabel, { color: theme.colors.text }]}>{t('more.media')}</Text>

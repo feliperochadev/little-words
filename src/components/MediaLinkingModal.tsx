@@ -354,8 +354,7 @@ const s = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: WAVEFORM.BAR_GAP,
+    justifyContent: 'space-between',
     height: WAVEFORM.PLAYBACK_MAX_HEIGHT,
   },
   audioWaveformBar: {

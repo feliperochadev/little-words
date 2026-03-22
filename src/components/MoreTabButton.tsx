@@ -80,8 +80,7 @@ export function MoreTabButton() {
           <TouchableOpacity style={ms.menuItem} onPress={handleMedia} testID="more-media-option">
             <View style={[ms.iconWrap, { backgroundColor: withOpacity(colors.primary, '1F') }]}>
               <Ionicons name="musical-notes" size={12} color={colors.primary} />
-              <Ionicons name="image" size={12} color={colors.primary} />
-              <Ionicons name="videocam" size={12} color={colors.primary} />
+              <Ionicons name="camera" size={12} color={colors.primary} />
             </View>
             <Text style={[ms.menuLabel, { color: theme.colors.text }]}>{t('more.media')}</Text>
             <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
@@ -121,7 +120,7 @@ const ms = StyleSheet.create({
   menuCard: {
     position: 'absolute',
     right: 12,
-    width: 180,
+    width: 190,
     borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
