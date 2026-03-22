@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_6
+
+[fix] Introduce `parent_type='unlinked'` as a distinct `ParentType` so assets saved without a word/variant link no longer share the `'profile'` parent type with the profile photo singleton; fixes unlinked photos/audio disappearing from the media screen and profile avatar showing wrong photo
+[fix] `getAllAssets` WHERE reverted to simple `WHERE a.parent_type != 'profile'` — correct now that `'profile'` is exclusively the profile photo
+[feature] Migration `0004_add-unlinked-parent-type`: recreates `assets` table with updated CHECK constraint; migrates existing `parent_type='profile'` records — keeps the most-recent profile photo, moves all others to `'unlinked'`
+[test] Updated `migrator.test.ts` to include version 4 in "all applied" fixture; updated `assetRepository.test.ts`, `MediaCaptureProvider.test.tsx`, and `EditAssetModal.test.tsx` for new `'unlinked'` parent type
+
 ### 2026-03-22_5
 
 [feature] `MediaLinkingModal` + `EditAssetModal`: link buttons (word/variant) now stack vertically (2 lines) instead of side-by-side

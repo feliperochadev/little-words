@@ -6,6 +6,7 @@ const PARENT_DIRS: Record<ParentType, string> = {
   word: 'words',
   variant: 'variants',
   profile: 'profile',
+  unlinked: 'unlinked',
 };
 
 const ASSET_TYPE_DIRS: Record<AssetType, string> = {

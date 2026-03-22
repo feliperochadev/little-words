@@ -1007,7 +1007,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
   // ── saveWithoutLinking ────────────────────────────────────────────────────
 
   describe('saveWithoutLinking', () => {
-    it('calls saveAsset with parent_type=profile and resets', async () => {
+    it('calls saveAsset with parent_type=unlinked and resets', async () => {
       const queryClient = createQueryClient();
       const { result } = renderHook(() => useMediaCapture(), {
         wrapper: createWrapper(queryClient),
@@ -1023,7 +1023,7 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
 
       expect(mockSaveAsset).toHaveBeenCalledWith({
         sourceUri: SAMPLE_MEDIA.uri,
-        parentType: 'profile',
+        parentType: 'unlinked',
         parentId: 1,
         assetType: 'audio',
         mimeType: 'audio/mp4',

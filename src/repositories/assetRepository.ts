@@ -90,7 +90,7 @@ export const getAllAssets = (
     FROM assets a
     LEFT JOIN words w ON a.parent_type = 'word' AND a.parent_id = w.id
     LEFT JOIN variants v ON a.parent_type = 'variant' AND a.parent_id = v.id
-    WHERE NOT (a.parent_type = 'profile' AND a.asset_type = 'photo')
+    WHERE a.parent_type != 'profile'
   `;
   const params: (string | number)[] = [];
   let extra = '';

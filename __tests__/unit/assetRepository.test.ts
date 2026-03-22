@@ -244,7 +244,7 @@ describe('assetRepository', () => {
       mockDb.getAllAsync.mockResolvedValueOnce([asset]);
       const result = await getAllAssets();
       expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-        expect.stringContaining("NOT (a.parent_type = 'profile' AND a.asset_type = 'photo')"),
+        expect.stringContaining("parent_type != 'profile'"),
         [],
       );
       expect(result).toEqual([asset]);

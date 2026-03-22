@@ -134,12 +134,12 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
     try {
       let assetName = name;
       if (!assetName) {
-        const count = await countAssetsByParentType('profile', pendingMedia.type);
+        const count = await countAssetsByParentType('unlinked', pendingMedia.type);
         assetName = `${pendingMedia.type}-${count + 1}`;
       }
       await assetService.saveAsset({
         sourceUri: pendingMedia.uri,
-        parentType: 'profile',
+        parentType: 'unlinked',
         parentId: 1,
         assetType: pendingMedia.type,
         mimeType: pendingMedia.mimeType,

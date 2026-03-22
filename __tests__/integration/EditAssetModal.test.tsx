@@ -67,7 +67,7 @@ const mockVideoAsset: AssetWithLink = {
 
 const unlinkedAsset: AssetWithLink = {
   ...mockAsset,
-  parent_type: 'profile', parent_id: 1,
+  parent_type: 'unlinked', parent_id: 1,
   linked_word: null, linked_word_id: null,
 };
 
