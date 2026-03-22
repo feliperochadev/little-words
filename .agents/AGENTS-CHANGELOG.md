@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-22_7
+
+[fix] `variants.tsx`: remove visual focus highlight — `highlightedId` state and the border/background highlight on the Card are removed entirely; scroll-to behavior is preserved using `scrolledHighlightRef` to prevent re-triggering on re-renders
+[feature] `variants.tsx`: asset chips now use `WordAssetChips` (same component and icons as `words.tsx`) instead of manual count-based chips; `VariantAudioOverlay`, `VariantPhotoOverlay` and manual `assetCountChip` logic removed
+[refactor] `WordAssetChips`: `wordId` prop renamed to `parentId`; new optional `parentType` prop (defaults to `'word'`) allows reuse for both words and variants
+[test] `screens/variants.test.tsx`: updated mock from `useAssetsByType` → `useAssetsByParent`; added `useAudioPlayer` and `assetStorage` mocks; replaced old chip testID tests with `word-asset-chip-*` tests; added `mockAssets` clear in `beforeEach`
+[test] `integration/WordAssetChips.test.tsx`: updated all `wordId={10}` → `parentId={10}`
+
 ### 2026-03-22_6
 
 [fix] Introduce `parent_type='unlinked'` as a distinct `ParentType` so assets saved without a word/variant link no longer share the `'profile'` parent type with the profile photo singleton; fixes unlinked photos/audio disappearing from the media screen and profile avatar showing wrong photo

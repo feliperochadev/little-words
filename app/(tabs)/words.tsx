@@ -117,7 +117,7 @@ export default function WordsScreen() {
                 </View>
               ))}
               {(item.asset_count ?? 0) > 0 && (
-                <WordAssetChips wordId={item.id} />
+                <WordAssetChips parentId={item.id} />
               )}
             </View>
             {item.notes && (

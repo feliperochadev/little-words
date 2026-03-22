@@ -17,49 +17,10 @@ import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useAllVariants } from '../../src/hooks/useVariants';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useAssetsByType } from '../../src/hooks/useAssets';
-import { getAssetFileUri } from '../../src/utils/assetStorage';
-import { AudioPlayerInline } from '../../src/components/AudioPlayerInline';
-import { AudioPreviewOverlay } from '../../src/components/AudioPreviewOverlay';
-import { PhotoPreviewOverlay } from '../../src/components/PhotoPreviewOverlay';
+import { WordAssetChips } from '../../src/components/WordAssetChips';
 
 const EMPTY_VARIANTS: Variant[] = [];
 const EMPTY_WORDS: Word[] = [];
-
-// Fetches first audio asset for a variant and renders AudioPreviewOverlay
-function VariantAudioOverlay({ variantId, onClose }: { variantId: number; onClose: () => void }) {
-  const { data: assets = [] } = useAssetsByType('variant', variantId, 'audio');
-  const first = assets[0];
-  if (!first) return null;
-  const uri = getAssetFileUri('variant', first.parent_id, 'audio', first.filename);
-  return (
-    <AudioPreviewOverlay
-      visible
-      uri={uri}
-      name={first.name ?? first.filename}
-      createdAt={first.created_at}
-      durationMs={first.duration_ms}
-      onClose={onClose}
-    />
-  );
-}
-
-// Fetches first photo asset for a variant and renders PhotoPreviewOverlay
-function VariantPhotoOverlay({ variantId, onClose }: { variantId: number; onClose: () => void }) {
-  const { data: assets = [] } = useAssetsByType('variant', variantId, 'photo');
-  const first = assets[0];
-  if (!first) return null;
-  const uri = getAssetFileUri('variant', first.parent_id, 'photo', first.filename);
-  return (
-    <PhotoPreviewOverlay
-      visible
-      uri={uri}
-      name={first.name ?? first.filename}
-      createdAt={first.created_at}
-      onClose={onClose}
-    />
-  );
-}
 
 export default function VariantsScreen() {
   const { t, tc } = useI18n();
@@ -78,11 +39,9 @@ export default function VariantsScreen() {
   const [showAddVariant, setShowAddVariant] = useState(false);
   const [editVariant, setEditVariant] = useState<Variant | null>(null);
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
-  const [highlightedId, setHighlightedId] = useState<number | null>(null);
-  const [audioOverlayVariantId, setAudioOverlayVariantId] = useState<number | null>(null);
-  const [photoOverlayVariantId, setPhotoOverlayVariantId] = useState<number | null>(null);
 
   const flatListRef = useRef<FlatList<Variant>>(null);
+  const scrolledHighlightRef = useRef<number | null>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetchVariants(); } finally { setRefreshing(false); } };
 
@@ -104,30 +63,22 @@ export default function VariantsScreen() {
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
   const sorted = sortVariants(filtered, sort);
 
-  // Scroll to and highlight a variant when navigated with highlightId
+  // Scroll to a variant when navigated with highlightId (no visual highlight)
   useEffect(() => {
     if (!highlightId) return;
     const id = Number(highlightId);
+    if (scrolledHighlightRef.current === id) return;
     const idx = sorted.findIndex(v => v.id === id);
-    if (idx >= 0) {
+    if (idx < 0) return;
+    scrolledHighlightRef.current = id;
+    setTimeout(() => {
       flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
-      setHighlightedId(id);
-      const timer = setTimeout(() => setHighlightedId(null), 2000);
-      return () => clearTimeout(timer);
-    }
+    }, 150);
   }, [highlightId, sorted]);
 
-  const renderVariant = ({ item, index }: { item: Variant; index: number }) => {
-    const isHighlighted = item.id === highlightedId;
-    const audioCount = item.audio_count ?? 0;
-    const photoCount = item.photo_count ?? 0;
-
-    return (
+  const renderVariant = ({ item, index }: { item: Variant; index: number }) => (
       <Card
-        style={[
-          styles.variantCard,
-          isHighlighted && { borderColor: colors.primary, borderWidth: 2, backgroundColor: withOpacity(colors.primary, '08') },
-        ]}
+        style={styles.variantCard}
         testID={`variant-pos-${index}-${item.variant}`}
       >
         <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
@@ -139,33 +90,8 @@ export default function VariantsScreen() {
               <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
               <Text style={[styles.mainWord, { color: colors.text }]}>{item.main_word}</Text>
               <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
-              {audioCount > 0 && (
-                <TouchableOpacity
-                  style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.secondary, '16') }]}
-                  onPress={() => setAudioOverlayVariantId(item.id)}
-                  testID={`variant-audio-chip-${item.id}`}
-                >
-                  <Ionicons name="musical-notes-outline" size={13} color={colors.secondary} />
-                  <Text style={[styles.assetCountText, { color: colors.secondary }]}>{audioCount}</Text>
-                </TouchableOpacity>
-              )}
-              {photoCount > 0 && (
-                <TouchableOpacity
-                  style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.primary, '12') }]}
-                  onPress={() => setPhotoOverlayVariantId(item.id)}
-                  testID={`variant-photo-chip-${item.id}`}
-                >
-                  <Ionicons name="image-outline" size={13} color={colors.primary} />
-                  <Text style={[styles.assetCountText, { color: colors.primary }]}>{photoCount}</Text>
-                </TouchableOpacity>
-              )}
-              {audioCount === 0 && photoCount === 0 && (item.asset_count ?? 0) > 0 && (
-                <View style={[styles.assetCountChip, { backgroundColor: withOpacity(colors.secondary, '16') }]} testID={`variant-asset-count-${item.id}`}>
-                  <AudioPlayerInline parentType="variant" parentId={item.id} />
-                  <Text style={[styles.assetCountText, { color: colors.secondary }]}>
-                    {item.asset_count}
-                  </Text>
-                </View>
+              {(item.asset_count ?? 0) > 0 && (
+                <WordAssetChips parentType="variant" parentId={item.id} />
               )}
             </View>
           </View>
@@ -177,8 +103,7 @@ export default function VariantsScreen() {
           )}
         </TouchableOpacity>
       </Card>
-    );
-  };
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -247,20 +172,6 @@ export default function VariantsScreen() {
         word={selectedWord}
         editVariant={editVariant}
       />
-
-      {audioOverlayVariantId !== null && (
-        <VariantAudioOverlay
-          variantId={audioOverlayVariantId}
-          onClose={() => setAudioOverlayVariantId(null)}
-        />
-      )}
-
-      {photoOverlayVariantId !== null && (
-        <VariantPhotoOverlay
-          variantId={photoOverlayVariantId}
-          onClose={() => setPhotoOverlayVariantId(null)}
-        />
-      )}
     </SafeAreaView>
   );
 }
@@ -284,6 +195,4 @@ const styles = StyleSheet.create({
   date: { fontSize: 12, flex: 1, textAlign: 'right' },
   notesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   notes: { fontSize: 12, flex: 1, lineHeight: 16 },
-  assetCountChip: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
-  assetCountText: { fontSize: 11, fontWeight: '700' },
 });
