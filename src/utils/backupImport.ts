@@ -1,6 +1,10 @@
 import { unzipSync } from 'fflate';
 import { File as FSFile } from 'expo-file-system';
-import { query, run, withTransaction } from '../db/client';
+import { withTransaction } from '../db/client';
+import { findCategoryByName, importCategory } from '../repositories/categoryRepository';
+import { findWordByName, importWord } from '../repositories/wordRepository';
+import { findVariantByName, importVariant } from '../repositories/variantRepository';
+import { importAsset, updateAssetFilename, deleteAsset } from '../repositories/assetRepository';
 import { ensureAssetDirTree, getAssetFileUri } from './assetStorage';
 import { validateManifestBytes, validateDataBytes, validateMediaPaths } from './backupValidation';
 import type { BackupData, BackupImportResult } from '../types/backup';
@@ -18,18 +22,11 @@ async function importCategories(
 ): Promise<number> {
   let added = 0;
   for (const cat of data.categories) {
-    const existing = await query<{ id: number }>(
-      'SELECT id FROM categories WHERE LOWER(name) = LOWER(?) LIMIT 1',
-      [cat.name]
-    );
-    if (existing.length > 0) {
-      idMap.categories.set(cat.id, existing[0].id);
+    const existing = await findCategoryByName(cat.name);
+    if (existing) {
+      idMap.categories.set(cat.id, existing.id);
     } else {
-      const result = await run(
-        'INSERT INTO categories (name, color, emoji, created_at) VALUES (?, ?, ?, ?)',
-        [cat.name, cat.color, cat.emoji, cat.created_at]
-      );
-      const newId = result.insertId ?? 0;
+      const newId = await importCategory(cat.name, cat.color, cat.emoji, cat.created_at);
       idMap.categories.set(cat.id, newId);
       added++;
     }
@@ -44,22 +41,15 @@ async function importWords(
   let added = 0;
   let skipped = 0;
   for (const word of data.words) {
-    const existing = await query<{ id: number }>(
-      'SELECT id FROM words WHERE LOWER(word) = LOWER(?) LIMIT 1',
-      [word.word]
-    );
-    if (existing.length > 0) {
-      idMap.words.set(word.id, existing[0].id);
+    const existing = await findWordByName(word.word);
+    if (existing) {
+      idMap.words.set(word.id, existing.id);
       skipped++;
     } else {
       const newCategoryId = word.category_id === null
         ? null
         : (idMap.categories.get(word.category_id) ?? null);
-      const result = await run(
-        'INSERT INTO words (word, category_id, date_added, notes, created_at) VALUES (?, ?, ?, ?, ?)',
-        [word.word, newCategoryId, word.date_added, word.notes, word.created_at]
-      );
-      const newId = result.insertId ?? 0;
+      const newId = await importWord(word.word, newCategoryId, word.date_added, word.notes, word.created_at);
       idMap.words.set(word.id, newId);
       added++;
     }
@@ -76,18 +66,11 @@ async function importVariants(
     const newWordId = idMap.words.get(variant.word_id);
     if (newWordId === undefined) continue; // orphaned variant, skip
 
-    const existing = await query<{ id: number }>(
-      'SELECT id FROM variants WHERE word_id = ? AND LOWER(variant) = LOWER(?) LIMIT 1',
-      [newWordId, variant.variant]
-    );
-    if (existing.length > 0) {
-      idMap.variants.set(variant.id, existing[0].id);
+    const existing = await findVariantByName(newWordId, variant.variant);
+    if (existing) {
+      idMap.variants.set(variant.id, existing.id);
     } else {
-      const result = await run(
-        'INSERT INTO variants (word_id, variant, date_added, notes, created_at) VALUES (?, ?, ?, ?, ?)',
-        [newWordId, variant.variant, variant.date_added, variant.notes, variant.created_at]
-      );
-      const newId = result.insertId ?? 0;
+      const newId = await importVariant(newWordId, variant.variant, variant.date_added, variant.notes, variant.created_at);
       idMap.variants.set(variant.id, newId);
       added++;
     }
@@ -119,19 +102,22 @@ async function insertAndWriteAsset(
   counters: AssetCounters,
   warnings: string[],
 ): Promise<void> {
+  const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
   let newAssetId: number;
   try {
-    const result = await run(
-      `INSERT INTO assets (parent_type, parent_id, asset_type, filename, name, mime_type, file_size, duration_ms, width, height, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        asset.parent_type === 'unlinked' ? 'word' : asset.parent_type,
-        newParentId, asset.asset_type, asset.filename,
-        asset.name, asset.mime_type, asset.file_size,
-        asset.duration_ms, asset.width, asset.height, asset.created_at,
-      ]
-    );
-    newAssetId = result.insertId ?? 0;
+    newAssetId = await importAsset({
+      parentType: resolvedParentType,
+      parentId: newParentId,
+      assetType: asset.asset_type,
+      filename: asset.filename,
+      name: asset.name,
+      mimeType: asset.mime_type,
+      fileSize: asset.file_size,
+      durationMs: asset.duration_ms,
+      width: asset.width,
+      height: asset.height,
+      createdAt: asset.created_at,
+    });
   } catch (e: unknown) {
     warnings.push(`Asset ${asset.id}: DB insert failed — ${e instanceof Error ? e.message : String(e)}`);
     return;
@@ -139,18 +125,17 @@ async function insertAndWriteAsset(
 
   const ext = /\.\w+$/.exec(asset.filename)?.[0] ?? '';
   const newFilename = `asset_${newAssetId}${ext}`;
-  const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
 
   try {
     ensureAssetDirTree(resolvedParentType, newParentId, asset.asset_type);
     const destUri = getAssetFileUri(resolvedParentType, newParentId, asset.asset_type, newFilename);
     new FSFile(destUri).write(fileBytes);
-    await run('UPDATE assets SET filename = ? WHERE id = ?', [newFilename, newAssetId]);
+    await updateAssetFilename(newAssetId, newFilename);
     if (asset.asset_type === 'audio') counters.audiosRestored++;
     else if (asset.asset_type === 'photo') counters.photosRestored++;
     else counters.videosRestored++;
   } catch (e: unknown) {
-    try { await run('DELETE FROM assets WHERE id = ?', [newAssetId]); } catch { /* best effort */ }
+    try { await deleteAsset(newAssetId); } catch { /* best effort */ }
     warnings.push(`Asset ${asset.id}: file write failed — ${e instanceof Error ? e.message : String(e)}`);
   }
 }

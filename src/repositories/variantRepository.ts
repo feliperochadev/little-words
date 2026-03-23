@@ -49,3 +49,18 @@ export const deleteVariant = (id: number): Promise<void> =>
     );
     await run('DELETE FROM variants WHERE id = ?', [id]);
   });
+
+/** Inserts a variant preserving the original created_at timestamp from a backup. */
+export const importVariant = async (
+  wordId: number,
+  variant: string,
+  dateAdded: string,
+  notes: string | null,
+  createdAt: string,
+): Promise<number> => {
+  const result = await run(
+    'INSERT INTO variants (word_id, variant, date_added, notes, created_at) VALUES (?, ?, ?, ?, ?)',
+    [wordId, variant, dateAdded, notes, createdAt],
+  );
+  return result.insertId ?? 0;
+};

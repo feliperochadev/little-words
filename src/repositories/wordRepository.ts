@@ -74,6 +74,21 @@ export const deleteWord = (id: number): Promise<void> =>
     await run('DELETE FROM words WHERE id = ?', [id]);
   });
 
+/** Inserts a word preserving the original created_at timestamp from a backup. */
+export const importWord = async (
+  word: string,
+  categoryId: number | null,
+  dateAdded: string,
+  notes: string | null,
+  createdAt: string,
+): Promise<number> => {
+  const result = await run(
+    'INSERT INTO words (word, category_id, date_added, notes, created_at) VALUES (?, ?, ?, ?, ?)',
+    [word, categoryId, dateAdded, notes, createdAt],
+  );
+  return result.insertId ?? 0;
+};
+
 export const getVariantsByWord = (wordId: number) =>
   query<import('../types/domain').Variant>(
     'SELECT * FROM variants WHERE word_id=? ORDER BY created_at DESC',

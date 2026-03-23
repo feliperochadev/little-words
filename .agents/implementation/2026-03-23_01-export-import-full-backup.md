@@ -33,6 +33,12 @@ Implemented full ZIP backup/restore: export mode selector in Settings (CSV vs ZI
 
 ## Enhancements
 
+### 2026-03-23 — Data-Layer Responsibility Fix (SQL to Repositories)
+
+- **Description:** Moved all raw SQL queries out of `src/utils/backupImport.ts` into their respective repository files, fixing a data-layer architecture violation. Added `importCategory`, `importWord`, `importVariant`, and `importAsset` repository functions that preserve `created_at` from backup data. `backupImport.ts` now calls only repository functions; `withTransaction` is kept as permitted service-level orchestration.
+- **Files Modified:** `src/repositories/categoryRepository.ts`, `src/repositories/wordRepository.ts`, `src/repositories/variantRepository.ts`, `src/repositories/assetRepository.ts`, `src/utils/backupImport.ts`, `__tests__/unit/backupImport.test.ts`, `__tests__/unit/categoryRepository.test.ts`, `__tests__/unit/wordRepository.test.ts`, `__tests__/unit/variantRepository.test.ts`, `__tests__/unit/assetRepository.test.ts`
+- **Plan Updates:** None — architectural correction, no design doc changes needed.
+
 ### 2026-03-23 — UI Polish, Media Bug Fix, and Per-Type Import Reporting
 
 - **Description:** Fixed media files not being written to disk during ZIP import (root cause: `ensureDir` cannot create intermediate directories). Split `BackupImportResult.assetsRestored` into `audiosRestored`, `photosRestored`, `videosRestored`. Renamed "media" → "audios, photos and videos" throughout UI. Changed default export mode to ZIP and default import tab to ZIP (Full Backup first). Reduced import tab font size ~21%. Changed Import modal title to "Import Data". Added "Export first" button to delete-all confirmation dialog.

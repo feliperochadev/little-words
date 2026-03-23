@@ -2,15 +2,47 @@ import { zipSync, strToU8 } from 'fflate';
 import { openBackupZip, importFullBackup } from '../../src/utils/backupImport';
 import type { BackupData } from '../../src/types/backup';
 
-// --- DB mock ---
+// --- Repository mocks ---
+jest.mock('../../src/repositories/categoryRepository', () => ({
+  findCategoryByName: jest.fn(),
+  importCategory: jest.fn(),
+}));
+jest.mock('../../src/repositories/wordRepository', () => ({
+  findWordByName: jest.fn(),
+  importWord: jest.fn(),
+}));
+jest.mock('../../src/repositories/variantRepository', () => ({
+  findVariantByName: jest.fn(),
+  importVariant: jest.fn(),
+}));
+jest.mock('../../src/repositories/assetRepository', () => ({
+  importAsset: jest.fn(),
+  updateAssetFilename: jest.fn(),
+  deleteAsset: jest.fn(),
+}));
+
+import * as categoryRepo from '../../src/repositories/categoryRepository';
+import * as wordRepo from '../../src/repositories/wordRepository';
+import * as variantRepo from '../../src/repositories/variantRepository';
+import * as assetRepo from '../../src/repositories/assetRepository';
+
 const mockDb = (globalThis as any).__mockDb;
+
+const mockFindCategory = categoryRepo.findCategoryByName as jest.Mock;
+const mockImportCategory = categoryRepo.importCategory as jest.Mock;
+const mockFindWord = wordRepo.findWordByName as jest.Mock;
+const mockImportWord = wordRepo.importWord as jest.Mock;
+const mockFindVariant = variantRepo.findVariantByName as jest.Mock;
+const mockImportVariant = variantRepo.importVariant as jest.Mock;
+const mockImportAsset = assetRepo.importAsset as jest.Mock;
+const mockUpdateAssetFilename = assetRepo.updateAssetFilename as jest.Mock;
+const mockDeleteAsset = assetRepo.deleteAsset as jest.Mock;
 
 // --- File system mock ---
 const mockFileWrite = jest.fn();
-const mockFileExists = true;
 jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
-    exists: mockFileExists,
+    exists: true,
     write: mockFileWrite,
     uri: 'file:///media/test.m4a',
   })),
@@ -27,7 +59,11 @@ jest.mock('../../src/utils/assetStorage', () => ({
 }));
 
 // --- Helpers ---
-function makeValidZip(data: BackupData, manifest = { version: '1.0', word_count: 0, variant_count: 0, category_count: 0, asset_count: 0, locale: 'en-US', exported_at: '2026-01-01T00:00:00Z', app_version: '0.8.0' }, extraFiles: Record<string, Uint8Array> = {}): Uint8Array {
+function makeValidZip(
+  data: BackupData,
+  manifest = { version: '1.0', word_count: 0, variant_count: 0, category_count: 0, asset_count: 0, locale: 'en-US', exported_at: '2026-01-01T00:00:00Z', app_version: '0.8.0' },
+  extraFiles: Record<string, Uint8Array> = {},
+): Uint8Array {
   return zipSync({
     'manifest.json': strToU8(JSON.stringify(manifest)),
     'data.json': strToU8(JSON.stringify(data)),
@@ -49,10 +85,18 @@ describe('backupImport', () => {
     jest.clearAllMocks();
     mockFileWrite.mockReset();
     mockEnsureAssetDirTree.mockReset();
-    // Default: DB operations succeed
-    mockDb.getAllAsync.mockResolvedValue([]);
-    mockDb.runAsync.mockResolvedValue({ lastInsertRowId: 42, changes: 1 });
     mockDb.withTransactionAsync.mockImplementation(async (fn: () => Promise<void>) => fn());
+
+    // Default repository responses
+    mockFindCategory.mockResolvedValue(null);
+    mockImportCategory.mockResolvedValue(1);
+    mockFindWord.mockResolvedValue(null);
+    mockImportWord.mockResolvedValue(1);
+    mockFindVariant.mockResolvedValue(null);
+    mockImportVariant.mockResolvedValue(1);
+    mockImportAsset.mockResolvedValue(42);
+    mockUpdateAssetFilename.mockResolvedValue(undefined);
+    mockDeleteAsset.mockResolvedValue(undefined);
   });
 
   describe('openBackupZip', () => {
@@ -117,33 +161,46 @@ describe('backupImport', () => {
     });
 
     it('imports a new category', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // findCategory check
-        .mockResolvedValue([]);
+      mockFindCategory.mockResolvedValueOnce(null);
+      mockImportCategory.mockResolvedValueOnce(7);
       const data: BackupData = {
         ...emptyData,
         categories: [{ id: 1, name: 'food', color: '#f00', emoji: '🍕', created_at: '2024-01-01' }],
       };
       const result = await importFullBackup(data, {});
       expect(result.categoriesAdded).toBe(1);
+      expect(mockImportCategory).toHaveBeenCalledWith('food', '#f00', '🍕', '2024-01-01');
     });
 
     it('skips existing category (matched by name)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([{ id: 99 }]) // category already exists
-        .mockResolvedValue([]);
+      mockFindCategory.mockResolvedValueOnce({ id: 99, name: 'food', color: '#f00', emoji: '🍕', created_at: '2024-01-01' });
       const data: BackupData = {
         ...emptyData,
         categories: [{ id: 1, name: 'food', color: '#f00', emoji: '🍕', created_at: '2024-01-01' }],
       };
       const result = await importFullBackup(data, {});
       expect(result.categoriesAdded).toBe(0);
+      expect(mockImportCategory).not.toHaveBeenCalled();
+    });
+
+    it('maps old category id to new id for imported words', async () => {
+      mockFindCategory.mockResolvedValueOnce(null);
+      mockImportCategory.mockResolvedValueOnce(99);
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      const data: BackupData = {
+        ...emptyData,
+        categories: [{ id: 1, name: 'food', color: '#f00', emoji: '🍕', created_at: '2024-01-01' }],
+        words: [{ id: 1, word: 'pizza', category_id: 1, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+      };
+      const result = await importFullBackup(data, {});
+      expect(result.wordsAdded).toBe(1);
+      expect(mockImportWord).toHaveBeenCalledWith('pizza', 99, '2024-01-01', null, '2024-01-01');
     });
 
     it('imports a new word', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found
-        .mockResolvedValue([]);
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -154,9 +211,7 @@ describe('backupImport', () => {
     });
 
     it('skips existing word (case-insensitive match)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([{ id: 77 }]) // word exists
-        .mockResolvedValue([]);
+      mockFindWord.mockResolvedValueOnce({ id: 77, word: 'Mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01', variant_count: 0 });
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'Mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -164,13 +219,26 @@ describe('backupImport', () => {
       const result = await importFullBackup(data, {});
       expect(result.wordsAdded).toBe(0);
       expect(result.wordsSkipped).toBe(1);
+      expect(mockImportWord).not.toHaveBeenCalled();
+    });
+
+    it('imports word with non-null category_id not in idMap (maps to null)', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 1, word: 'mama', category_id: 5, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+      };
+      const result = await importFullBackup(data, {});
+      expect(result.wordsAdded).toBe(1);
+      expect(mockImportWord).toHaveBeenCalledWith('mama', null, '2024-01-01', null, '2024-01-01');
     });
 
     it('imports a new variant', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found → will insert
-        .mockResolvedValueOnce([]) // variant not found → will insert
-        .mockResolvedValue([]);
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockFindVariant.mockResolvedValueOnce(null);
+      mockImportVariant.mockResolvedValueOnce(20);
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -178,10 +246,24 @@ describe('backupImport', () => {
       };
       const result = await importFullBackup(data, {});
       expect(result.variantsAdded).toBe(1);
+      expect(mockImportVariant).toHaveBeenCalledWith(10, 'maa', '2024-01-01', null, '2024-01-01');
+    });
+
+    it('skips existing variants (matched by word + variant name)', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockFindVariant.mockResolvedValueOnce({ id: 55, word_id: 10, variant: 'maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' });
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+        variants: [{ id: 1, word_id: 1, variant: 'maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+      };
+      const result = await importFullBackup(data, {});
+      expect(result.variantsAdded).toBe(0);
+      expect(mockImportVariant).not.toHaveBeenCalled();
     });
 
     it('skips orphaned variants whose word_id has no mapping', async () => {
-      mockDb.getAllAsync.mockResolvedValue([]);
       const data: BackupData = {
         ...emptyData,
         words: [],
@@ -191,13 +273,13 @@ describe('backupImport', () => {
       expect(result.variantsAdded).toBe(0);
     });
 
-    it('restores an asset when the file exists in the ZIP', async () => {
+    it('restores an audio asset when the file exists in the ZIP', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockResolvedValueOnce(42);
       const fileMap: Record<string, Uint8Array> = {
         'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]),
       };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -212,12 +294,80 @@ describe('backupImport', () => {
       expect(result.audiosRestored).toBe(1);
       expect(result.assetWarnings).toHaveLength(0);
       expect(mockFileWrite).toHaveBeenCalled();
+      expect(mockUpdateAssetFilename).toHaveBeenCalledWith(42, 'asset_42.m4a');
+    });
+
+    it('restores a photo asset', async () => {
+      mockImportAsset.mockResolvedValueOnce(5);
+      const fileMap = { 'media/profile/1/photos/asset_1.jpg': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        assets: [{
+          id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
+          filename: 'asset_1.jpg', name: null, mime_type: 'image/jpeg',
+          file_size: 2048, duration_ms: null, width: 100, height: 100, created_at: '2024-01-01',
+          media_path: 'profile/1/photos/asset_1.jpg',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.photosRestored).toBe(1);
+    });
+
+    it('restores a video asset', async () => {
+      mockImportAsset.mockResolvedValueOnce(6);
+      const fileMap = { 'media/words/1/videos/asset_1.mp4': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+        assets: [{
+          id: 1, parent_type: 'word', parent_id: 1, asset_type: 'video',
+          filename: 'asset_1.mp4', name: null, mime_type: 'video/mp4',
+          file_size: 5000, duration_ms: 3000, width: 1920, height: 1080, created_at: '2024-01-01',
+          media_path: 'words/1/videos/asset_1.mp4',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.videosRestored).toBe(1);
+    });
+
+    it('handles profile assets (parent_id = 1)', async () => {
+      mockImportAsset.mockResolvedValueOnce(3);
+      const fileMap = { 'media/profile/1/photos/asset_1.jpg': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        assets: [{
+          id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
+          filename: 'asset_1.jpg', name: null, mime_type: 'image/jpeg',
+          file_size: 2048, duration_ms: null, width: 100, height: 100, created_at: '2024-01-01',
+          media_path: 'profile/1/photos/asset_1.jpg',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.photosRestored).toBe(1);
+    });
+
+    it('handles unlinked assets (parent_id as-is, stored as word type)', async () => {
+      mockImportAsset.mockResolvedValueOnce(9);
+      const fileMap = { 'media/unlinked/5/audio/asset_9.m4a': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        assets: [{
+          id: 9, parent_type: 'unlinked', parent_id: 5, asset_type: 'audio',
+          filename: 'asset_9.m4a', name: null, mime_type: 'audio/mp4',
+          file_size: 512, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
+          media_path: 'unlinked/5/audio/asset_9.m4a',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.audiosRestored).toBe(1);
+      expect(mockImportAsset).toHaveBeenCalledWith(
+        expect.objectContaining({ parentType: 'word', parentId: 5 })
+      );
     });
 
     it('warns when asset file is missing from ZIP', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -228,43 +378,13 @@ describe('backupImport', () => {
           media_path: 'words/1/audio/asset_1.m4a',
         }],
       };
-      // No file in fileMap
       const result = await importFullBackup(data, {});
       expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
       expect(result.assetWarnings).toHaveLength(1);
       expect(result.assetWarnings[0]).toContain('file not found in backup');
     });
 
-    it('warns and rolls back DB record when file write fails', async () => {
-      mockFileWrite.mockImplementationOnce(() => { throw new Error('disk full'); });
-      const fileMap: Record<string, Uint8Array> = {
-        'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]),
-      };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-        assets: [{
-          id: 1, parent_type: 'word', parent_id: 1, asset_type: 'audio',
-          filename: 'asset_1.m4a', name: null, mime_type: 'audio/mp4',
-          file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
-          media_path: 'words/1/audio/asset_1.m4a',
-        }],
-      };
-      const result = await importFullBackup(data, fileMap);
-      expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
-      expect(result.assetWarnings[0]).toContain('disk full');
-      // Should attempt to delete orphaned DB record
-      const deleteCalls = mockDb.runAsync.mock.calls.filter(
-        (c: string[]) => c[0].includes('DELETE FROM assets')
-      );
-      expect(deleteCalls.length).toBeGreaterThan(0);
-    });
-
     it('warns for assets whose parent word mapping is missing', async () => {
-      mockDb.getAllAsync.mockResolvedValue([]);
       const data: BackupData = {
         ...emptyData,
         words: [],
@@ -280,55 +400,8 @@ describe('backupImport', () => {
       expect(result.assetWarnings[0]).toContain('parent');
     });
 
-    it('handles profile assets (parent_id = 1)', async () => {
-      const fileMap = { 'media/profile/1/photos/asset_1.jpg': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync.mockResolvedValue([]);
-      const data: BackupData = {
-        ...emptyData,
-        assets: [{
-          id: 1, parent_type: 'profile', parent_id: 1, asset_type: 'photo',
-          filename: 'asset_1.jpg', name: null, mime_type: 'image/jpeg',
-          file_size: 2048, duration_ms: null, width: 100, height: 100, created_at: '2024-01-01',
-          media_path: 'profile/1/photos/asset_1.jpg',
-        }],
-      };
-      const result = await importFullBackup(data, fileMap);
-      expect(result.photosRestored).toBe(1);
-    });
-
-    it('handles unlinked assets (parent_id as-is)', async () => {
-      const fileMap = { 'media/unlinked/5/audio/asset_9.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync.mockResolvedValue([]);
-      const data: BackupData = {
-        ...emptyData,
-        assets: [{
-          id: 9, parent_type: 'unlinked', parent_id: 5, asset_type: 'audio',
-          filename: 'asset_9.m4a', name: null, mime_type: 'audio/mp4',
-          file_size: 512, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
-          media_path: 'unlinked/5/audio/asset_9.m4a',
-        }],
-      };
-      const result = await importFullBackup(data, fileMap);
-      expect(result.audiosRestored).toBe(1);
-    });
-
-    it('skips existing variants (matched by word + variant name)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found → insert
-        .mockResolvedValueOnce([{ id: 55 }]) // variant already exists
-        .mockResolvedValue([]);
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-        variants: [{ id: 1, word_id: 1, variant: 'maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-      };
-      const result = await importFullBackup(data, {});
-      expect(result.variantsAdded).toBe(0);
-    });
-
     it('warns for variant asset when variant mapping is missing', async () => {
       const fileMap = { 'media/variants/999/audio/asset_1.m4a': new Uint8Array([1]) };
-      mockDb.getAllAsync.mockResolvedValue([]);
       const data: BackupData = {
         ...emptyData,
         assets: [{
@@ -343,78 +416,57 @@ describe('backupImport', () => {
       expect(result.assetWarnings[0]).toContain('parent');
     });
 
-    it('handles null insertId from DB for category (uses 0 as ID)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // category not found
-        .mockResolvedValue([]);
-      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
-      const data: BackupData = {
-        ...emptyData,
-        categories: [{ id: 1, name: 'test', color: '#f00', emoji: '🧪', created_at: '2024-01-01' }],
+    it('warns and rolls back DB record when file write fails', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockResolvedValueOnce(42);
+      mockFileWrite.mockImplementationOnce(() => { throw new Error('disk full'); });
+      const fileMap: Record<string, Uint8Array> = {
+        'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]),
       };
-      const result = await importFullBackup(data, {});
-      expect(result.categoriesAdded).toBe(1);
-    });
-
-    it('handles null insertId from DB for word (uses 0 as ID)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found
-        .mockResolvedValue([]);
-      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-      };
-      const result = await importFullBackup(data, {});
-      expect(result.wordsAdded).toBe(1);
-    });
-
-    it('handles null insertId from DB for variant (uses 0 as ID)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found
-        .mockResolvedValueOnce([]) // variant not found
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 }); // variant insert with null id
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-        variants: [{ id: 1, word_id: 1, variant: 'maa', date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-      };
-      const result = await importFullBackup(data, {});
-      expect(result.variantsAdded).toBe(1);
-    });
-
-    it('handles asset filename without extension', async () => {
-      const fileMap = { 'media/words/1/audio/asset_1': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
         assets: [{
           id: 1, parent_type: 'word', parent_id: 1, asset_type: 'audio',
-          filename: 'asset_1', name: null, mime_type: 'audio/mp4',
+          filename: 'asset_1.m4a', name: null, mime_type: 'audio/mp4',
           file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
-          media_path: 'words/1/audio/asset_1',
+          media_path: 'words/1/audio/asset_1.m4a',
         }],
       };
       const result = await importFullBackup(data, fileMap);
-      // Should still try to restore with no extension
-      expect(result.audiosRestored + result.photosRestored + result.videosRestored + result.assetWarnings.length).toBeGreaterThan(0);
+      expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
+      expect(result.assetWarnings[0]).toContain('disk full');
+      expect(mockDeleteAsset).toHaveBeenCalledWith(42);
+    });
+
+    it('handles DELETE failure gracefully when file write fails', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockResolvedValueOnce(42);
+      mockFileWrite.mockImplementationOnce(() => { throw new Error('disk full'); });
+      mockDeleteAsset.mockRejectedValueOnce(new Error('delete failed'));
+      const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+        assets: [{
+          id: 1, parent_type: 'word', parent_id: 1, asset_type: 'audio',
+          filename: 'asset_1.m4a', name: null, mime_type: 'audio/mp4',
+          file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
+          media_path: 'words/1/audio/asset_1.m4a',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
+      expect(result.assetWarnings[0]).toContain('disk full');
     });
 
     it('warns when asset DB insert throws', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockRejectedValueOnce(new Error('constraint error'));
       const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found → insert
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockRejectedValueOnce(new Error('constraint error')) // asset DB insert fails
-        .mockResolvedValue({ lastInsertRowId: 0, changes: 0 });
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -431,14 +483,10 @@ describe('backupImport', () => {
     });
 
     it('warns when asset DB insert throws a non-Error value', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockRejectedValueOnce('string error');
       const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found → insert
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockRejectedValueOnce('string error') // non-Error thrown for asset insert
-        .mockResolvedValue({ lastInsertRowId: 0, changes: 0 });
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
@@ -454,78 +502,33 @@ describe('backupImport', () => {
       expect(result.assetWarnings[0]).toContain('DB insert failed');
     });
 
-    it('imports word with non-null category_id not in idMap (maps to null)', async () => {
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word not found → insert
-        .mockResolvedValue([]);
-      // No categories in backup, but word has category_id=5 (not in map)
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: 5, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-      };
-      const result = await importFullBackup(data, {});
-      expect(result.wordsAdded).toBe(1);
-    });
-
-    it('handles null insertId from DB for asset (uses 0 as ID)', async () => {
-      const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 }) // asset insert returns null id
-        .mockResolvedValue({ lastInsertRowId: 0, changes: 1 }); // UPDATE filename
+    it('handles asset filename without extension', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockResolvedValueOnce(42);
+      const fileMap = { 'media/words/1/audio/asset_1': new Uint8Array([1, 2, 3]) };
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
         assets: [{
           id: 1, parent_type: 'word', parent_id: 1, asset_type: 'audio',
-          filename: 'asset_1.m4a', name: null, mime_type: 'audio/mp4',
+          filename: 'asset_1', name: null, mime_type: 'audio/mp4',
           file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
-          media_path: 'words/1/audio/asset_1.m4a',
+          media_path: 'words/1/audio/asset_1',
         }],
       };
       const result = await importFullBackup(data, fileMap);
-      expect(result.audiosRestored).toBe(1);
-    });
-
-    it('handles DELETE failure gracefully when file write fails', async () => {
-      mockFileWrite.mockImplementationOnce(() => { throw new Error('disk full'); });
-      const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockResolvedValueOnce({ lastInsertRowId: 42, changes: 1 }) // asset insert
-        .mockRejectedValueOnce(new Error('delete failed')) // DELETE throws
-        .mockResolvedValue({ lastInsertRowId: 0, changes: 0 });
-      const data: BackupData = {
-        ...emptyData,
-        words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
-        assets: [{
-          id: 1, parent_type: 'word', parent_id: 1, asset_type: 'audio',
-          filename: 'asset_1.m4a', name: null, mime_type: 'audio/mp4',
-          file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
-          media_path: 'words/1/audio/asset_1.m4a',
-        }],
-      };
-      const result = await importFullBackup(data, fileMap);
-      expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
-      expect(result.assetWarnings[0]).toContain('disk full');
+      expect(result.audiosRestored + result.photosRestored + result.videosRestored + result.assetWarnings.length).toBeGreaterThan(0);
+      // No extension — filename should be asset_42 (no dot)
+      expect(mockUpdateAssetFilename).toHaveBeenCalledWith(42, 'asset_42');
     });
 
     it('warns with String() when file write throws a non-Error value', async () => {
+      mockFindWord.mockResolvedValueOnce(null);
+      mockImportWord.mockResolvedValueOnce(10);
+      mockImportAsset.mockResolvedValueOnce(42);
       mockFileWrite.mockImplementationOnce(() => { throw 'non-error-string'; });
       const fileMap = { 'media/words/1/audio/asset_1.m4a': new Uint8Array([1, 2, 3]) };
-      mockDb.getAllAsync
-        .mockResolvedValueOnce([]) // word check
-        .mockResolvedValue([]);
-      mockDb.runAsync
-        .mockResolvedValueOnce({ lastInsertRowId: 10, changes: 1 }) // word insert
-        .mockResolvedValueOnce({ lastInsertRowId: 42, changes: 1 }) // asset insert
-        .mockResolvedValue({ lastInsertRowId: 0, changes: 1 }); // DELETE
       const data: BackupData = {
         ...emptyData,
         words: [{ id: 1, word: 'mama', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
