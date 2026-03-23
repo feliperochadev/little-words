@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_04
+
+[fix] Fix SonarCloud issues on PR #54: use `replaceAll` over `replace` with global regex in `backupExport.ts`; remove unnecessary `as` assertion on `sex` field; flip negated condition in `backupImport.ts`; use `RegExp.exec()` instead of `String.match()` for asset filename extension; remove redundant `String()` wrapper in `backupValidation.ts` template literal
+[refactor] Reduce `ImportModal` cognitive complexity from 25 to ~13 by extracting `buildZipResultMessage` (module-level helper for ZIP result formatting) and `renderActiveTabContent` (inline renderer replacing nested ternary) — also fixes SonarCloud S3358 nested ternary rule
+[test] Add 9 new integration tests for ZIP backup flow covering: valid ZIP pick, invalid ZIP error, picker crash, remove file, import success with/without profile restore, import error, result with media counts; add `bytes` mock to `jest.setup.js`; coverage for `ImportModal.tsx` rises from 75% to 95.97% lines / 91.08% branches
+
 ### 2026-03-23_03
 
 [fix] Translate hardcoded Portuguese example lines and placeholder text in ImportModal text tab: add `importModal.example1/2/3` and `importModal.placeholder` i18n keys to `en-US.ts` and `pt-BR.ts`, replace hardcoded strings in `ImportModal.tsx`

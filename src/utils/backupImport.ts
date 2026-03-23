@@ -52,9 +52,9 @@ async function importWords(
       idMap.words.set(word.id, existing[0].id);
       skipped++;
     } else {
-      const newCategoryId = word.category_id !== null
-        ? (idMap.categories.get(word.category_id) ?? null)
-        : null;
+      const newCategoryId = word.category_id === null
+        ? null
+        : (idMap.categories.get(word.category_id) ?? null);
       const result = await run(
         'INSERT INTO words (word, category_id, date_added, notes, created_at) VALUES (?, ?, ?, ?, ?)',
         [word.word, newCategoryId, word.date_added, word.notes, word.created_at]
@@ -158,7 +158,7 @@ async function importAssets(
     }
 
     // Build new filename with new asset ID
-    const ext = asset.filename.match(/\.\w+$/)?.[0] ?? '';
+    const ext = /\.\w+$/.exec(asset.filename)?.[0] ?? '';
     const newFilename = `asset_${newAssetId}${ext}`;
     const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
 

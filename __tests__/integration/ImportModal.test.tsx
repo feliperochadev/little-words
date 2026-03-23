@@ -4,7 +4,9 @@ import { Alert, PanResponder } from 'react-native';
 import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import * as backupImport from '../../src/utils/backupImport';
 const mockTextFn: jest.Mock = (FileSystem as any)._fileMock?.text;
+const mockBytesFn: jest.Mock = (FileSystem as any)._fileMock?.bytes;
 import * as categoryService from '../../src/services/categoryService';
 import * as wordService from '../../src/services/wordService';
 import * as variantService from '../../src/services/variantService';
@@ -37,12 +39,19 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../src/utils/backupImport', () => ({
+  openBackupZip: jest.fn(),
+  importFullBackup: jest.fn(),
+}));
+
 const mockGetCategories = categoryService.getCategories as jest.MockedFunction<typeof categoryService.getCategories>;
 const mockAddCategory = categoryService.addCategory as jest.MockedFunction<typeof categoryService.addCategory>;
 const mockFindWordByName = wordService.findWordByName as jest.MockedFunction<typeof wordService.findWordByName>;
 const mockAddWord = wordService.addWord as jest.MockedFunction<typeof wordService.addWord>;
 const mockAddVariant = variantService.addVariant as jest.MockedFunction<typeof variantService.addVariant>;
 const mockGetDocumentAsync = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof DocumentPicker.getDocumentAsync>;
+const mockOpenBackupZip = backupImport.openBackupZip as jest.MockedFunction<typeof backupImport.openBackupZip>;
+const mockImportFullBackup = backupImport.importFullBackup as jest.MockedFunction<typeof backupImport.importFullBackup>;
 
 function renderWithProvider(ui: React.ReactElement) {
   return renderWithProviders(ui);
@@ -52,6 +61,26 @@ function flattenStyle(style: unknown): Record<string, unknown> {
   return Array.isArray(style) ? Object.assign({}, ...style) : (style as Record<string, unknown> ?? {});
 }
 
+const MOCK_BACKUP_DATA = {
+  version: '1.0' as const,
+  settings: { name: 'TestBaby', sex: 'girl' as const, birth: '2024-01-01', locale: 'en-US' },
+  categories: [],
+  words: [{ id: 1, word: 'hello', category_id: null, date_added: '2024-01-01', notes: null, created_at: '2024-01-01' }],
+  variants: [],
+  assets: [],
+};
+
+const MOCK_IMPORT_RESULT = {
+  categoriesAdded: 0,
+  wordsAdded: 1,
+  wordsSkipped: 0,
+  variantsAdded: 0,
+  audiosRestored: 0,
+  photosRestored: 0,
+  videosRestored: 0,
+  assetWarnings: [],
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
@@ -59,6 +88,8 @@ beforeEach(() => {
   mockAddCategory.mockResolvedValue(1);
   mockFindWordByName.mockResolvedValue(null);
   mockAddWord.mockResolvedValue(1);
+  mockOpenBackupZip.mockReturnValue({ fileMap: {}, data: MOCK_BACKUP_DATA, manifest: { version: '1.0', exported_at: '', app_version: '1.0', word_count: 1, variant_count: 0, category_count: 0, asset_count: 0, locale: 'en-US' } });
+  mockImportFullBackup.mockResolvedValue(MOCK_IMPORT_RESULT);
   mockAddVariant.mockResolvedValue(1);
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 });
@@ -635,8 +666,147 @@ describe('ImportModal', () => {
     );
     await act(async () => { fireEvent.press(await findByTestId('import-tab-zip')); });
     await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
-    // No crash and picker is reset
     expect(mockGetDocumentAsync).toHaveBeenCalled();
+  });
+
+  it('picks a valid ZIP file and shows preview', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const { findByTestId, findByText } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    expect(await findByTestId('import-zip-preview-title')).toBeTruthy();
+    expect(await findByText(/1 word/i)).toBeTruthy();
+  });
+
+  it('shows error alert when ZIP is invalid', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/bad.zip', name: 'bad.zip' }],
+    } as any);
+    mockOpenBackupZip.mockImplementationOnce(() => { throw new Error('Not a valid ZIP file'); });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(expect.any(String), 'Not a valid ZIP file');
+    });
+  });
+
+  it('shows error alert when document picker throws on ZIP tab', async () => {
+    mockGetDocumentAsync.mockRejectedValueOnce(new Error('picker crashed'));
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+    });
+  });
+
+  it('removes selected ZIP file when remove button is pressed', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const { findByTestId, findByText, queryByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    const removeBtn = await findByText(/✕/);
+    await act(async () => { fireEvent.press(removeBtn); });
+    expect(queryByTestId('import-zip-preview-title')).toBeNull();
+  });
+
+  it('imports a ZIP backup successfully with profile restore', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const onImported = jest.fn();
+    const onClose = jest.fn();
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={onClose} onImported={onImported} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => {
+      expect(mockImportFullBackup).toHaveBeenCalled();
+      expect(onImported).toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+    });
+  });
+
+  it('imports a ZIP backup with restoreProfile toggle off', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const onImported = jest.fn();
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={onImported} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    // Toggle off restore profile
+    await act(async () => {
+      fireEvent(await findByTestId('import-zip-restore-profile-toggle'), 'valueChange', false);
+    });
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => {
+      expect(mockImportFullBackup).toHaveBeenCalled();
+      expect(onImported).toHaveBeenCalled();
+    });
+  });
+
+  it('shows error alert when ZIP import fails', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    mockImportFullBackup.mockRejectedValueOnce(new Error('DB write failed'));
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(expect.any(String), 'DB write failed');
+    });
+  });
+
+  it('shows result with restored media counts', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    mockImportFullBackup.mockResolvedValueOnce({
+      ...MOCK_IMPORT_RESULT,
+      audiosRestored: 2,
+      photosRestored: 3,
+      videosRestored: 1,
+      assetWarnings: ['warn1'],
+    });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('audio'),
+      );
+    });
   });
 });
 

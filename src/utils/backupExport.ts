@@ -46,7 +46,7 @@ function buildBackupFilename(t: (key: string) => string): string {
   const hh = pad(now.getHours());
   const min = pad(now.getMinutes());
   // Sanitize app name for use in filename (replace spaces with hyphens)
-  const appName = t('brandHeader.appName').replace(/\s+/g, '-');
+  const appName = t('brandHeader.appName').replaceAll(/\s+/g, '-');
   return `${appName}-export-${dd}-${mm}-${yyyy}_${hh}-${min}.zip`;
 }
 
@@ -90,7 +90,7 @@ export async function buildBackupZip(
     version: '1.0',
     settings: {
       name: name ?? '',
-      sex: sex as ('girl' | 'boy' | null),
+      sex,
       birth: birth ?? '',
       locale,
     },

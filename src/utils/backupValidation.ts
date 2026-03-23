@@ -23,7 +23,7 @@ export function validateManifestBytes(bytes: Uint8Array): BackupManifest {
   if (typeof manifest !== 'object' || manifest === null) throw new Error('manifest.json is malformed');
   const m = manifest as Record<string, unknown>;
   if (m['version'] !== SUPPORTED_VERSION) {
-    throw new Error(`Unsupported backup version: ${String(m['version'] ?? 'unknown')}`);
+    throw new Error(`Unsupported backup version: ${m['version'] ?? 'unknown'}`);
   }
   return m as unknown as BackupManifest;
 }
