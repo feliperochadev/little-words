@@ -51,7 +51,7 @@ export function ensureDir(dirUri: string): void {
   }
 }
 
-function ensureAssetDirTree(
+export function ensureAssetDirTree(
   parentType: ParentType,
   parentId: number,
   assetType: AssetType,

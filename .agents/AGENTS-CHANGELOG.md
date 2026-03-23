@@ -2,6 +2,28 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_03
+
+[fix] Translate hardcoded Portuguese example lines and placeholder text in ImportModal text tab: add `importModal.example1/2/3` and `importModal.placeholder` i18n keys to `en-US.ts` and `pt-BR.ts`, replace hardcoded strings in `ImportModal.tsx`
+[test] Replace `findByPlaceholderText(/mamãe/)` with `findByTestId('import-text-input')` in `ImportModal.test.tsx` and `settings.test.tsx` to work correctly with the default en-US test locale
+
+### 2026-03-23_02
+
+[fix] Fix media files not restored during ZIP import: export `ensureAssetDirTree` from `assetStorage.ts` and use it in `backupImport.ts` instead of `ensureDir`, creating the full directory tree before writing each asset file
+[feature] Enhance export/import UI: rename "media" → "audios, photos and videos" throughout all i18n keys; change Import modal title to "Import Data"; add full-backup as default selected tab in both ImportModal (zip first) and Settings export (zip first); split import success result into per-type lines (audios/photos/videos separately); reduce import tab font size ~21% to fit text on one line; add "Export first" button to delete-all confirmation dialog; reorder export cards (ZIP card first)
+[fix] Split `BackupImportResult.assetsRestored` into three typed fields `audiosRestored`, `photosRestored`, `videosRestored` for per-type reporting in import success message
+[test] Update all affected tests: settings screen (switch to CSV mode before CSV-specific tests, rename defaults-to-CSV test to defaults-to-ZIP, update opens-import-modal to check ZIP tab); ImportModal (switch to text tab before text-tab assertions); backupImport unit tests (use new per-type fields, add branch coverage for null insertId, non-Error catches, word with unmapped category)
+
+### 2026-03-23_01
+
+[feature] Add full ZIP backup/restore: export mode selector in Settings (CSV vs ZIP cards), ZIP archive builder (`backupExport.ts`) with manifest.json + data.json + media/ directory using fflate, and ZIP import tab in ImportModal with merge strategy (skip existing words, add new), profile restore toggle, and path traversal protection
+[feature] Add `backupRepository.ts` with bulk DB queries for export (categories, words, variants, assets including unlinked)
+[feature] Add `backupValidation.ts` with manifest/data byte validation and path traversal protection (regex-based safe path check)
+[feature] Add `src/types/backup.ts` with all backup TypeScript interfaces (BackupManifest, BackupData, BackupSettings, BackupCategory, BackupWord, BackupVariant, BackupAsset, BackupImportResult)
+[feature] Add i18n keys for full backup flow (~40 keys per locale) in `en-US.ts` and `pt-BR.ts`
+[test] Add 22 unit tests for backupValidation, 7 for backupRepository, 17 for backupExport, 33 for backupImport — all at 100% coverage across all metrics
+[test] Add 5 tests to ImportModal integration tests for ZIP tab; add 7 tests to settings screen tests for export mode selector
+
 ### 2026-03-22_16
 
 [fix] Add "Progress" option to `MoreTabButton` floating popup (`src/components/MoreTabButton.tsx`) with `trending-up-outline` icon, navigating to `/(tabs)/progress` — the popup is the actual UI shown when tapping "More" on the tab bar

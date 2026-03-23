@@ -137,7 +137,12 @@ The app supports audio, photo, and video attachments on words and variants:
 
 12. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
-12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+13. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
+14. **Refined Prompt Convention (`/refine` and `/plan`).** See `.agents/standards/refined-prompt-convention.md` for the full standard. In brief:
+    - **When using `/refine`:** Save the output to a `.md` file with a YAML frontmatter marker: `---` `refined: true` `refined_at: YYYY-MM-DD HH:MM:SS UTC` `refined_by: Gemini` `---`
+    - **When using `/plan` on a `.md` file:** Check for `refined: true` in the frontmatter; if present, skip the `/refine` phase and proceed directly to architecture planning. This avoids re-analyzing already-refined prompts.
+    - This convention ensures clarity and efficiency across all agents.
 
 ## Commands
 

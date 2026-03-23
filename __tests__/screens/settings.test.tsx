@@ -34,8 +34,14 @@ jest.mock('../../src/utils/csvExport', () => ({
   saveCSVToDevice: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('../../src/utils/backupExport', () => ({
+  shareFullBackup: jest.fn().mockResolvedValue({ success: true }),
+  saveFullBackupToDevice: jest.fn().mockResolvedValue({ success: true }),
+}));
+
 import SettingsScreen from '../../app/(tabs)/settings';
 import * as csvExport from '../../src/utils/csvExport';
+import * as backupExport from '../../src/utils/backupExport';
 import * as settingsService from '../../src/services/settingsService';
 import * as categoryService from '../../src/services/categoryService';
 import { getThemeForSex } from '../../src/theme/getThemeForSex';
@@ -115,9 +121,9 @@ describe('SettingsScreen', () => {
   });
 
   it('handles share CSV', async () => {
-    const { findAllByText } = renderWithProviders(<SettingsScreen />);
-    const shareButtons = await findAllByText(/Share/);
-    fireEvent.press(shareButtons[0]);
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-csv')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
     await waitFor(() => {
       expect(csvExport.shareCSV).toHaveBeenCalled();
     });
@@ -125,17 +131,18 @@ describe('SettingsScreen', () => {
 
   it('shows alert when share fails', async () => {
     (csvExport.shareCSV as jest.Mock).mockResolvedValue({ success: false, error: 'share failed' });
-    const { findAllByText } = renderWithProviders(<SettingsScreen />);
-    const shareButtons = await findAllByText(/Share/);
-    fireEvent.press(shareButtons[0]);
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-csv')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalled();
     });
   });
 
   it('handles save to device success', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Save/));
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-csv')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
     await waitFor(() => {
       expect(csvExport.saveCSVToDevice).toHaveBeenCalled();
       expect(Alert.alert).toHaveBeenCalled();
@@ -144,8 +151,9 @@ describe('SettingsScreen', () => {
 
   it('does not alert when save to device is cancelled', async () => {
     (csvExport.saveCSVToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
-    const { findByText } = renderWithProviders(<SettingsScreen />);
-    fireEvent.press(await findByText(/Save/));
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-csv')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
     await waitFor(() => {
       expect(csvExport.saveCSVToDevice).toHaveBeenCalled();
     });
@@ -162,18 +170,18 @@ describe('SettingsScreen', () => {
   });
 
   it('opens import modal', async () => {
-    const { findByTestId, findByPlaceholderText } = renderWithProviders(<SettingsScreen />);
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-import-btn'));
-    expect(await findByPlaceholderText(/mamãe/)).toBeTruthy();
+    expect(await findByTestId('import-zip-pick-btn')).toBeTruthy();
   });
 
   it('closes import modal via onClose', async () => {
-    const { findByTestId, queryByPlaceholderText } = renderWithProviders(<SettingsScreen />);
+    const { findByTestId, queryByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-import-btn'));
     const closeBtn = await findByTestId('import-close-btn');
     fireEvent.press(closeBtn);
     await waitFor(() => {
-      expect(queryByPlaceholderText(/mamãe/)).toBeNull();
+      expect(queryByTestId('import-text-input')).toBeNull();
     });
   });
 
@@ -268,6 +276,77 @@ describe('SettingsScreen', () => {
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-edit-profile-btn'));
     expect(await findByTestId('edit-profile-title')).toBeTruthy();
+  });
+
+  // ── Export mode selector ────────────────────────────────────────────────────
+  it('renders export mode selector cards', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-export-mode-csv')).toBeTruthy();
+    expect(await findByTestId('settings-export-mode-zip')).toBeTruthy();
+  });
+
+  it('defaults to ZIP export mode', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
+    await waitFor(() => {
+      expect(backupExport.shareFullBackup).toHaveBeenCalled();
+      expect(csvExport.shareCSV).not.toHaveBeenCalled();
+    });
+  });
+
+  it('switches to ZIP mode and calls shareFullBackup on share', async () => {
+    (backupExport.shareFullBackup as jest.Mock).mockResolvedValue({ success: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
+    await waitFor(() => {
+      expect(backupExport.shareFullBackup).toHaveBeenCalled();
+      expect(csvExport.shareCSV).not.toHaveBeenCalled();
+    });
+  });
+
+  it('switches to ZIP mode and calls saveFullBackupToDevice on save', async () => {
+    (backupExport.saveFullBackupToDevice as jest.Mock).mockResolvedValue({ success: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
+    await waitFor(() => {
+      expect(backupExport.saveFullBackupToDevice).toHaveBeenCalled();
+      expect(csvExport.saveCSVToDevice).not.toHaveBeenCalled();
+    });
+  });
+
+  it('shows alert when ZIP share fails', async () => {
+    (backupExport.shareFullBackup as jest.Mock).mockResolvedValue({ success: false, error: 'zip error' });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('zip error'));
+    });
+  });
+
+  it('shows success alert when ZIP saved to device', async () => {
+    (backupExport.saveFullBackupToDevice as jest.Mock).mockResolvedValue({ success: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        expect.stringContaining('✅'),
+        expect.any(String),
+      );
+    });
+  });
+
+  it('does not alert when ZIP save is cancelled', async () => {
+    (backupExport.saveFullBackupToDevice as jest.Mock).mockResolvedValue({ success: false, error: 'cancelled' });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-export-mode-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
+    await waitFor(() => {
+      expect(Alert.alert).not.toHaveBeenCalled();
+    });
   });
 
   it('handles clear data double confirmation', async () => {

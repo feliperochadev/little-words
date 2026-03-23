@@ -72,7 +72,7 @@ describe('ImportModal', () => {
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
       );
       await waitFor(() => {
-        expect(getByText(/Import words/)).toBeTruthy();
+        expect(getByText(/Import Data/)).toBeTruthy();
       });
       const icon = await findByTestId('import-title-icon');
       expect(icon.props.name).toBe('download-outline');
@@ -81,10 +81,12 @@ describe('ImportModal', () => {
   );
 
   it('uses breeze primary on enabled import button when sex is boy', async () => {
-    const { findByPlaceholderText, findByTestId } = renderWithProvider(
+    const { findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    // Switch to text tab (ZIP is now the default)
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
     const submit = await findByTestId('import-submit-btn');
     const style = flattenStyle(submit.props.style);
@@ -100,7 +102,7 @@ describe('ImportModal', () => {
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
 
-    expect(await view.findByText(/Import words/)).toBeTruthy();
+    expect(await view.findByText(/Import Data/)).toBeTruthy();
   });
 
   it('renders text and csv tabs', async () => {
@@ -112,23 +114,26 @@ describe('ImportModal', () => {
   });
 
   it('renders text hint on text tab', async () => {
-    const { findByText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
     expect(await findByText(/One word per line/)).toBeTruthy();
   });
 
   it('renders examples box on text tab', async () => {
-    const { findByText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
     expect(await findByText(/Examples/)).toBeTruthy();
   });
 
   it('shows import 0 words button when no input', async () => {
-    const { findByText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
     expect(await findByText(/Import 0 words/)).toBeTruthy();
   });
 
@@ -171,10 +176,11 @@ describe('ImportModal', () => {
 
   // ── Text input and preview ─────────────────────────────────────────────
   it('shows preview when text is entered', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello\nworld');
     expect(await findByText('hello')).toBeTruthy();
     expect(await findByText('world')).toBeTruthy();
@@ -183,10 +189,11 @@ describe('ImportModal', () => {
   });
 
   it('shows preview with category and date', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'dog, Animals, 15/03/2025');
     expect(await findByText('dog')).toBeTruthy();
     expect(await findByText('Animals')).toBeTruthy();
@@ -194,30 +201,33 @@ describe('ImportModal', () => {
   });
 
   it('clears preview when text is emptied', async () => {
-    const { queryByText, findByPlaceholderText } = renderWithProvider(
+    const { queryByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
     fireEvent.changeText(input, '');
     expect(queryByText('hello')).toBeNull();
   });
 
   it('limits preview to 5 items and shows "and more"', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'a\nb\nc\nd\ne\nf\ng');
     expect(await findByText(/and 2 more/)).toBeTruthy();
     expect(await findByText(/Import 7 words/)).toBeTruthy();
   });
 
   it('shows singular "Import 1 word" for single word', async () => {
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
     expect(await findByText(/Import 1 word\b/)).toBeTruthy();
   });
@@ -307,10 +317,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -332,10 +343,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'dog, MyCategory');
 
     await act(async () => {
@@ -353,10 +365,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -376,10 +389,11 @@ describe('ImportModal', () => {
     mockGetCategories.mockRejectedValueOnce(new Error('DB error'));
     const onImported = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'hello');
 
     await act(async () => {
@@ -414,9 +428,11 @@ describe('ImportModal', () => {
   });
 
   it('alerts noWordsFound when text parses to empty rows', async () => {
-    const { findByText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
     );
+    // Switch to text tab (ZIP is now the default)
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
     // Note: the button is disabled when wordCount=0, so this path is technically
     // unreachable through the UI, but we verify the initial state handles it
     expect(await findByText(/Import 0 words/)).toBeTruthy();
@@ -495,10 +511,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'badword');
 
     await act(async () => {
@@ -520,10 +537,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'dog, Animals');
 
     await act(async () => {
@@ -547,10 +565,11 @@ describe('ImportModal', () => {
     const onImported = jest.fn();
     const onClose = jest.fn();
 
-    const { findByText, findByPlaceholderText } = renderWithProvider(
+    const { findByText, findByTestId } = renderWithProvider(
       <ImportModal visible={true} onClose={onClose} onImported={onImported} />
     );
-    const input = await findByPlaceholderText(/mamãe/);
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
     fireEvent.changeText(input, 'a\nb\nc\nd');
 
     await act(async () => {
@@ -572,6 +591,52 @@ describe('ImportModal', () => {
     // Modal with visible=false may or may not render children depending on RN version
     // This just ensures no crash
     expect(true).toBeTruthy();
+  });
+
+  // ── ZIP Backup tab ──────────────────────────────────────────────────────────
+  it('renders the ZIP backup tab', async () => {
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    const zipTab = await findByTestId('import-tab-zip');
+    expect(zipTab).toBeTruthy();
+  });
+
+  it('shows zip hint when ZIP tab is selected', async () => {
+    const { findByTestId, findByText } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-zip')); });
+    expect(await findByText(/Select a .zip backup file/i)).toBeTruthy();
+  });
+
+  it('shows pick zip file button on ZIP tab', async () => {
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-zip')); });
+    const pickBtn = await findByTestId('import-zip-pick-btn');
+    expect(pickBtn).toBeTruthy();
+  });
+
+  it('shows disabled restore button when no ZIP is selected', async () => {
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-zip')); });
+    const btn = await findByTestId('import-zip-submit-btn');
+    expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBeTruthy();
+  });
+
+  it('shows cancel when document picker is cancelled on ZIP tab', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({ canceled: true, assets: [] } as any);
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-zip')); });
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    // No crash and picker is reset
+    expect(mockGetDocumentAsync).toHaveBeenCalled();
   });
 });
 

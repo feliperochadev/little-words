@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated,
+  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -17,6 +17,9 @@ import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES, canonicalizeCategoryName, categoryLookupKey } from '../utils/categoryKeys';
 import { parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
+import { openBackupZip, importFullBackup } from '../utils/backupImport';
+import { useSettingsStore } from '../stores/settingsStore';
+import type { BackupData } from '../types/backup';
 
 interface ImportModalProps {
   visible: boolean;
@@ -99,15 +102,23 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const setProfile = useSettingsStore(s => s.setProfile);
 
-  const [tab, setTab]               = useState<'text' | 'csv'>('text');
+  const [tab, setTab]               = useState<'text' | 'csv' | 'zip'>('zip');
   const [textInput, setTextInput]   = useState('');
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [loading, setLoading]       = useState(false);
   const [preview, setPreview]       = useState<ParsedRow[]>([]);
 
-  const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); };
+  // ZIP backup state
+  const [zipFileName, setZipFileName] = useState<string | null>(null);
+  const [zipData, setZipData] = useState<BackupData | null>(null);
+  const [zipFileMap, setZipFileMap] = useState<Record<string, Uint8Array> | null>(null);
+  const [restoreProfile, setRestoreProfile] = useState(true);
+
+  const resetZip = () => { setZipFileName(null); setZipData(null); setZipFileMap(null); setRestoreProfile(true); };
+  const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); resetZip(); };
   const handleClose = () => { reset(); onClose(); };
 
   // Modal animation and gesture handling
@@ -133,6 +144,69 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : t('common.error');
       Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: message }));
+    }
+  };
+
+  const handlePickZip = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/zip', 'application/octet-stream', '*/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      const bytes = await new FSFile(file.uri).bytes();
+      try {
+        const { fileMap, data } = openBackupZip(bytes);
+        setZipFileName(file.name);
+        setZipData(data);
+        setZipFileMap(fileMap);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : t('common.error');
+        Alert.alert(t('common.error'), message);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('common.error');
+      Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: message }));
+    }
+  };
+
+  const handleImportZip = async () => {
+    if (!zipData || !zipFileMap) {
+      Alert.alert(t('common.attention'), t('backup.pickZipFile'));
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await importFullBackup(zipData, zipFileMap);
+
+      if (restoreProfile && zipData.settings?.name) {
+        await setProfile({
+          name: zipData.settings.name,
+          sex: zipData.settings.sex,
+          birth: zipData.settings.birth,
+        });
+      }
+
+      setLoading(false);
+      [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard(), QUERY_KEYS.allAssets()].forEach(
+        key => queryClient.invalidateQueries({ queryKey: key })
+      );
+      reset(); onImported(); onClose();
+
+      const lines: string[] = [];
+      if (result.wordsAdded > 0) lines.push(t('backup.resultWords', { count: result.wordsAdded }));
+      if (result.wordsSkipped > 0) lines.push(t('backup.resultSkipped', { count: result.wordsSkipped }));
+      if (result.variantsAdded > 0) lines.push(t('backup.resultVariants', { count: result.variantsAdded }));
+      if (result.audiosRestored > 0) lines.push(t('backup.resultAudios', { count: result.audiosRestored }));
+      if (result.photosRestored > 0) lines.push(t('backup.resultPhotos', { count: result.photosRestored }));
+      if (result.videosRestored > 0) lines.push(t('backup.resultVideos', { count: result.videosRestored }));
+      if (result.assetWarnings.length > 0) lines.push(t('backup.resultWarnings', { count: result.assetWarnings.length }));
+      Alert.alert(t('backup.resultTitle'), lines.join('\n') || t('backup.resultSkipped', { count: result.wordsSkipped }));
+    } catch (e: unknown) {
+      setLoading(false);
+      const message = e instanceof Error ? e.message : t('common.error');
+      Alert.alert(t('common.error'), message);
     }
   };
 
@@ -203,11 +277,11 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
 
           <View style={[styles.tabs, { backgroundColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.tab, tab === 'text' && styles.tabActive, tab === 'text' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
-              onPress={() => { setTab('text'); setPreview([]); }}
-              testID="import-tab-text"
+              style={[styles.tab, tab === 'zip' && styles.tabActive, tab === 'zip' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              onPress={() => { setTab('zip'); setPreview([]); }}
+              testID="import-tab-zip"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'text' && styles.tabTextActive, tab === 'text' && { color: colors.text }]}>{t('importModal.tabText')}</Text>
+              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'zip' && styles.tabTextActive, tab === 'zip' && { color: colors.text }]}>{t('backup.tabZip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, tab === 'csv' && styles.tabActive, tab === 'csv' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
@@ -215,6 +289,13 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
               testID="import-tab-csv"
             >
               <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'csv' && styles.tabTextActive, tab === 'csv' && { color: colors.text }]}>{t('importModal.tabCSV')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, tab === 'text' && styles.tabActive, tab === 'text' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              onPress={() => { setTab('text'); setPreview([]); }}
+              testID="import-tab-text"
+            >
+              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'text' && styles.tabTextActive, tab === 'text' && { color: colors.text }]}>{t('importModal.tabText')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -224,21 +305,21 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
                 <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.textHint')}</Text>
                 <View style={[styles.exampleBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Text style={[styles.exampleLabel, { color: colors.textSecondary }]}>{t('importModal.examplesLabel')}</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>mamãe</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>água, Comida</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>cachorro, Animais, 15/03/2025</Text>
+                  <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example1')}</Text>
+                  <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example2')}</Text>
+                  <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example3')}</Text>
                 </View>
                 <TextInput
                   testID="import-text-input"
                   style={[styles.textBox, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                   value={textInput}
                   onChangeText={updateTextPreview}
-                  placeholder={'mamãe\nágua, Comida\ncachorro, Animais, 15/03/2025'}
+                  placeholder={t('importModal.placeholder')}
                   placeholderTextColor={colors.textMuted}
                   multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false}
                 />
               </>
-            ) : (
+            ) : tab === 'csv' ? (
               <>
                 <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.csvHint')}</Text>
                 <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickCSV} testID="import-csv-pick-btn">
@@ -251,9 +332,52 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
                   </TouchableOpacity>
                 )}
               </>
+            ) : (
+              /* ZIP tab */
+              <>
+                <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('backup.zipHint')}</Text>
+                <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickZip} testID="import-zip-pick-btn">
+                  <Ionicons name="archive-outline" size={22} color={colors.primary} style={styles.filePickerIcon} />
+                  <Text style={[styles.filePickerText, { color: colors.textSecondary }]}>{zipFileName || t('backup.pickZipFile')}</Text>
+                </TouchableOpacity>
+                {zipFileName && (
+                  <TouchableOpacity onPress={resetZip}>
+                    <Text style={[styles.clearFile, { color: colors.error }]}>{t('importModal.removeFile')}</Text>
+                  </TouchableOpacity>
+                )}
+                {zipData && (
+                  <View style={[styles.previewBox, { backgroundColor: colors.surface, borderColor: colors.primaryLight }]}>
+                    <Text style={[styles.previewTitle, { color: colors.primary }]} testID="import-zip-preview-title">
+                      {t('backup.zipPreviewTitle')}
+                    </Text>
+                    <Text style={[styles.previewWord, { color: colors.text }]} testID="import-zip-preview-words">
+                      {tc('backup.zipPreviewWords', zipData.words.length)}
+                    </Text>
+                    <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-variants">
+                      {tc('backup.zipPreviewVariants', zipData.variants.length)}
+                    </Text>
+                    <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-assets">
+                      {tc('backup.zipPreviewAssets', zipData.assets.length)}
+                    </Text>
+                    <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-categories">
+                      {tc('backup.zipPreviewCategories', zipData.categories.length)}
+                    </Text>
+                  </View>
+                )}
+                {zipData && (
+                  <View style={styles.profileToggleRow}>
+                    <Text style={[styles.profileToggleLabel, { color: colors.text }]}>{t('backup.restoreProfileToggle')}</Text>
+                    <Switch
+                      value={restoreProfile}
+                      onValueChange={setRestoreProfile}
+                      testID="import-zip-restore-profile-toggle"
+                    />
+                  </View>
+                )}
+              </>
             )}
 
-            {preview.length > 0 && (
+            {tab !== 'zip' && preview.length > 0 && (
               <View style={[styles.previewBox, { backgroundColor: colors.surface, borderColor: colors.primaryLight }]}>
                 <Text style={[styles.previewTitle, { color: colors.primary }]} testID="import-preview-title">
                   {tc('importModal.previewTitle', wordCount)}
@@ -272,22 +396,41 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
               </View>
             )}
 
-            <TouchableOpacity
-              style={[
-                styles.importBtn,
-                { backgroundColor: colors.primary, shadowColor: colors.primary },
-                (loading || wordCount === 0) && styles.importBtnDisabled,
-                (loading || wordCount === 0) && { backgroundColor: colors.primaryLight },
-              ]}
-              onPress={handleImport}
-              disabled={loading || wordCount === 0}
-              testID="import-submit-btn"
-            >
-              {loading
-                ? <ActivityIndicator color={colors.textOnPrimary} />
-                : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{importBtnLabel}</Text>
-              }
-            </TouchableOpacity>
+            {tab === 'zip' ? (
+              <TouchableOpacity
+                style={[
+                  styles.importBtn,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (loading || !zipData) && styles.importBtnDisabled,
+                  (loading || !zipData) && { backgroundColor: colors.primaryLight },
+                ]}
+                onPress={handleImportZip}
+                disabled={loading || !zipData}
+                testID="import-zip-submit-btn"
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnPrimary} />
+                  : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{t('backup.importBtn')}</Text>
+                }
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.importBtn,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (loading || wordCount === 0) && styles.importBtnDisabled,
+                  (loading || wordCount === 0) && { backgroundColor: colors.primaryLight },
+                ]}
+                onPress={handleImport}
+                disabled={loading || wordCount === 0}
+                testID="import-submit-btn"
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnPrimary} />
+                  : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{importBtnLabel}</Text>
+                }
+              </TouchableOpacity>
+            )}
 
             <View style={styles.bottomSpacer} />
           </ScrollView>
@@ -310,7 +453,7 @@ const styles = StyleSheet.create({
   tabs:              { flexDirection: 'row', borderRadius: 12, padding: 3, marginBottom: 18 },
   tab:               { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   tabActive:         { shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  tabText:           { fontSize: 14, fontWeight: '600' },
+  tabText:           { fontSize: 11, fontWeight: '600' },
   tabTextActive:     { fontWeight: '700' },
   hint:              { fontSize: 13, lineHeight: 18, marginBottom: 12 },
   exampleBox:        { borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1 },
@@ -332,4 +475,6 @@ const styles = StyleSheet.create({
   importBtnDisabled: { shadowOpacity: 0, elevation: 0 },
   importBtnText:     { fontSize: 16, fontWeight: '700' },
   bottomSpacer:      { height: 20 },
+  profileToggleRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, marginBottom: 16 },
+  profileToggleLabel: { fontSize: 14, fontWeight: '600', flex: 1, paddingRight: 12 },
 });
