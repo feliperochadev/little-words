@@ -27,12 +27,20 @@ describe('MoreScreen', () => {
     });
   });
 
-  it('renders media and settings options', async () => {
+  it('renders progress, media and settings options', async () => {
     const { getByTestId } = renderWithProviders(<MoreScreen />);
     await waitFor(() => {
+      expect(getByTestId('more-progress-btn')).toBeTruthy();
       expect(getByTestId('more-media-btn')).toBeTruthy();
       expect(getByTestId('more-settings-btn')).toBeTruthy();
     });
+  });
+
+  it('navigates to progress screen when progress button pressed', async () => {
+    const { getByTestId } = renderWithProviders(<MoreScreen />);
+    await waitFor(() => getByTestId('more-progress-btn'));
+    fireEvent.press(getByTestId('more-progress-btn'));
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/progress');
   });
 
   it('navigates to media screen when media button pressed', async () => {

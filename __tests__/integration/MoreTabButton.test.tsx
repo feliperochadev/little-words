@@ -63,6 +63,24 @@ describe('MoreTabButton', () => {
     });
   });
 
+  it('navigates to progress screen when progress option is pressed', async () => {
+    const { getByTestId } = renderWithProviders(<MoreTabButton />);
+    fireEvent.press(getByTestId('more-tab-btn'));
+    await waitFor(() => getByTestId('more-progress-option'));
+    fireEvent.press(getByTestId('more-progress-option'));
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/progress');
+  });
+
+  it('closes menu when progress option is pressed', async () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<MoreTabButton />);
+    fireEvent.press(getByTestId('more-tab-btn'));
+    await waitFor(() => getByTestId('more-progress-option'));
+    fireEvent.press(getByTestId('more-progress-option'));
+    await waitFor(() => {
+      expect(queryByTestId('more-menu-modal')).toBeNull();
+    });
+  });
+
   it('navigates to media screen when media option is pressed', async () => {
     const { getByTestId } = renderWithProviders(<MoreTabButton />);
     fireEvent.press(getByTestId('more-tab-btn'));
@@ -99,11 +117,12 @@ describe('MoreTabButton', () => {
     });
   });
 
-  it('shows menu card with media and settings options when open', async () => {
+  it('shows menu card with progress, media and settings options when open', async () => {
     const { getByTestId } = renderWithProviders(<MoreTabButton />);
     fireEvent.press(getByTestId('more-tab-btn'));
     await waitFor(() => {
       expect(getByTestId('more-menu-card')).toBeTruthy();
+      expect(getByTestId('more-progress-option')).toBeTruthy();
       expect(getByTestId('more-media-option')).toBeTruthy();
       expect(getByTestId('more-settings-option')).toBeTruthy();
     });

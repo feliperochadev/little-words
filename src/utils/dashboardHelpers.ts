@@ -1,8 +1,21 @@
 /**
- * Dashboard helper functions (age calculation, greetings).
+ * Dashboard helper functions (age calculation, greetings, month formatting).
  */
 
 import { formatAgeText } from './dateHelpers';
+
+export const MONTH_KEYS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
+
+export function formatMonth(
+  monthStr: string,
+  showYear: boolean,
+  t: (key: string) => string,
+): string {
+  const [year, month] = monthStr.split('-');
+  const key = MONTH_KEYS[Number.parseInt(month, 10) - 1];
+  const label = t(`dashboard.months.${key}`);
+  return showYear ? `${label} '${year.slice(2)}` : label;
+}
 
 export function getAgeText(
   birth: string,

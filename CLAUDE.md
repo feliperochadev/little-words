@@ -204,7 +204,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 - `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates `useSettingsStore`, then routes to `/(tabs)/home` or `/onboarding`.
 - `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>` and `<I18nProvider>`.
-- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `media.tsx` (global media browser with search/filter/sort), `more.tsx` (hamburger menu linking to Settings and Media), `settings.tsx` (categories, CSV export — hidden from tab bar, accessible via More screen).
+- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats with compact StatCards and "See the Progress" CTA), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `media.tsx` (global media browser with search/filter/sort), `more.tsx` (hamburger menu linking to Settings and Media), `settings.tsx` (categories, CSV export — hidden from tab bar, accessible via More screen), `progress.tsx` (analytics — monthly chart, category breakdown, recent words, coming soon placeholder — hidden from tab bar, accessible via "See the Progress" button on home).
 - `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
 
 ### State Management
@@ -339,7 +339,8 @@ src/theme/
 - `src/theme/layout.ts` — Shared layout constants (`textAreaHeight`, `highlightBorderRadius`, etc.) used by reusable form/date components.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
 - `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
-- `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.).
+- `src/utils/dashboardHelpers.ts` — Dashboard utility functions: `getAgeText(birth, t)`, `getGreeting(name, sex, t)`, `formatMonth(monthStr, showYear, t)` (returns localized short month label, optionally with 2-digit year suffix), and `MONTH_KEYS` constant.
+- `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.). `StatCard` uses a compact horizontal layout: icon-bg (36×36) + label (flex:1) + value right-aligned.
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
 
 ## Permanently Allowed Commands

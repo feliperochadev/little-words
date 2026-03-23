@@ -126,6 +126,10 @@ export default {
       May: 'Mai', Jun: 'Jun', Jul: 'Jul', Aug: 'Ago',
       Sep: 'Set', Oct: 'Out', Nov: 'Nov', Dec: 'Dez',
     },
+    seeProgress: 'Ver o Progresso',
+    progressTitle: 'Progresso',
+    comingSoonTitle: 'Métricas Mais Detalhadas em Breve',
+    comingSoonDesc: 'Rankings de percentil, marcos de vocabulário, precisão de pronúncia e marcos de fala estarão disponíveis em uma atualização futura.',
   },
 
   // ── Words screen ────────────────────────────────────────────────────────────
@@ -370,6 +374,7 @@ export default {
 
   more: {
     title: 'Mais',
+    progress: 'Progresso',
     media: 'Mídia',
     settings: 'Configurações',
   },
