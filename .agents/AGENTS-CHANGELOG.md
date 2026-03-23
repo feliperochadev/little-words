@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_05
+
+[fix] Fix SonarCloud S3776 on `ImportModal.tsx`: extract `handleImport` body to module-level `runTextCsvImport` with `TextCsvImportDeps` interface, reducing component cognitive complexity from 22 to ≤15
+[fix] Fix SonarCloud S3776 on `backupImport.ts`: extract `resolveParentId` and `insertAndWriteAsset` helper functions from `importAssets` loop, reducing function cognitive complexity from 31 to ≤15
+[fix] Fix SonarCloud S6551 on `backupValidation.ts`: replace `m['version'] ?? 'unknown'` in template literal with `typeof` type guard to avoid `[object Object]` stringification of unknown values
+
 ### 2026-03-23_04
 
 [fix] Fix SonarCloud issues on PR #54: use `replaceAll` over `replace` with global regex in `backupExport.ts`; remove unnecessary `as` assertion on `sex` field; flip negated condition in `backupImport.ts`; use `RegExp.exec()` instead of `String.match()` for asset filename extension; remove redundant `String()` wrapper in `backupValidation.ts` template literal

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useTheme } from '../hooks/useTheme';
 import { getCategories, addCategory } from '../services/categoryService';
 import { findWordByName, addWord } from '../services/wordService';
@@ -77,6 +77,53 @@ async function processGroup(
   if (existing) { wordId = existing.id; result.skipped.push(firstRow.word); }
   else { wordId = await addWord(firstRow.word, categoryId, dateAdded); result.wordsAdded++; }
   result.variantsAdded += await addVariantsForWord(wordId, group.rows, today);
+}
+
+interface TextCsvImportDeps {
+  tab: 'text' | 'csv';
+  textInput: string;
+  csvContent: string | null;
+  setLoading: (v: boolean) => void;
+  queryClient: QueryClient;
+  reset: () => void;
+  onImported: () => void;
+  onClose: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+async function runTextCsvImport(deps: TextCsvImportDeps): Promise<void> {
+  const { tab, textInput, csvContent, setLoading, queryClient, reset, onImported, onClose, t } = deps;
+  let rows: ParsedRow[] = [];
+  if (tab === 'text') {
+    rows = parseTextInput(textInput);
+  } else {
+    if (!csvContent) { Alert.alert(t('common.attention'), t('importModal.selectFileFirst')); return; }
+    rows = parseCSV(csvContent);
+  }
+  if (!rows.length) { Alert.alert(t('common.attention'), t('importModal.noWordsFound')); return; }
+
+  setLoading(true);
+  try {
+    const result = await importRows(rows);
+    setLoading(false);
+    [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
+      key => queryClient.invalidateQueries({ queryKey: key })
+    );
+    reset(); onImported(); onClose();
+
+    const lines = [t('importModal.resultWords', { count: result.wordsAdded })];
+    if (result.variantsAdded > 0) lines.push(t('importModal.resultVariants', { count: result.variantsAdded }));
+    if (result.skipped.length > 0) {
+      const wordList = result.skipped.slice(0, 3).join(', ') + (result.skipped.length > 3 ? '...' : '');
+      lines.push(t('importModal.resultSkipped', { count: result.skipped.length, words: wordList }));
+    }
+    if (result.errors.length > 0) lines.push(t('importModal.resultErrors', { count: result.errors.length }));
+    Alert.alert(t('importModal.resultTitle'), lines.join('\n'));
+  } catch (e: unknown) {
+    setLoading(false);
+    const message = e instanceof Error ? e.message : t('common.error');
+    Alert.alert(t('common.error'), message);
+  }
 }
 
 async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
@@ -209,39 +256,10 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     }
   };
 
-  const handleImport = async () => {
-    let rows: ParsedRow[] = [];
-    if (tab === 'text') {
-      rows = parseTextInput(textInput);
-    } else {
-      if (!csvContent) { Alert.alert(t('common.attention'), t('importModal.selectFileFirst')); return; }
-      rows = parseCSV(csvContent);
-    }
-    if (!rows.length) { Alert.alert(t('common.attention'), t('importModal.noWordsFound')); return; }
-
-    setLoading(true);
-    try {
-      const result = await importRows(rows);
-      setLoading(false);
-      [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
-        key => queryClient.invalidateQueries({ queryKey: key })
-      );
-      reset(); onImported(); onClose();
-
-      const lines = [t('importModal.resultWords', { count: result.wordsAdded })];
-      if (result.variantsAdded > 0) lines.push(t('importModal.resultVariants', { count: result.variantsAdded }));
-      if (result.skipped.length > 0) {
-        const wordList = result.skipped.slice(0, 3).join(', ') + (result.skipped.length > 3 ? '...' : '');
-        lines.push(t('importModal.resultSkipped', { count: result.skipped.length, words: wordList }));
-      }
-      if (result.errors.length > 0) lines.push(t('importModal.resultErrors', { count: result.errors.length }));
-      Alert.alert(t('importModal.resultTitle'), lines.join('\n'));
-    } catch (e: unknown) {
-      setLoading(false);
-      const message = e instanceof Error ? e.message : t('common.error');
-      Alert.alert(t('common.error'), message);
-    }
-  };
+  const handleImport = () => runTextCsvImport({
+    tab: tab as 'text' | 'csv',
+    textInput, csvContent, setLoading, queryClient, reset, onImported, onClose, t,
+  });
 
   const wordCount = (() => {
     if (tab === 'text') return parseTextInput(textInput).length;

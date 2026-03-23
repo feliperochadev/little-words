@@ -95,93 +95,89 @@ async function importVariants(
   return added;
 }
 
+interface AssetCounters {
+  audiosRestored: number;
+  photosRestored: number;
+  videosRestored: number;
+}
+
+function resolveParentId(
+  asset: BackupData['assets'][number],
+  idMap: IdMap,
+): number | undefined {
+  if (asset.parent_type === 'word') return idMap.words.get(asset.parent_id);
+  if (asset.parent_type === 'variant') return idMap.variants.get(asset.parent_id);
+  if (asset.parent_type === 'profile') return 1;
+  // unlinked — use parent_id as-is (design decision #1)
+  return asset.parent_id;
+}
+
+async function insertAndWriteAsset(
+  asset: BackupData['assets'][number],
+  newParentId: number,
+  fileBytes: Uint8Array,
+  counters: AssetCounters,
+  warnings: string[],
+): Promise<void> {
+  let newAssetId: number;
+  try {
+    const result = await run(
+      `INSERT INTO assets (parent_type, parent_id, asset_type, filename, name, mime_type, file_size, duration_ms, width, height, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        asset.parent_type === 'unlinked' ? 'word' : asset.parent_type,
+        newParentId, asset.asset_type, asset.filename,
+        asset.name, asset.mime_type, asset.file_size,
+        asset.duration_ms, asset.width, asset.height, asset.created_at,
+      ]
+    );
+    newAssetId = result.insertId ?? 0;
+  } catch (e: unknown) {
+    warnings.push(`Asset ${asset.id}: DB insert failed — ${e instanceof Error ? e.message : String(e)}`);
+    return;
+  }
+
+  const ext = /\.\w+$/.exec(asset.filename)?.[0] ?? '';
+  const newFilename = `asset_${newAssetId}${ext}`;
+  const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
+
+  try {
+    ensureAssetDirTree(resolvedParentType, newParentId, asset.asset_type);
+    const destUri = getAssetFileUri(resolvedParentType, newParentId, asset.asset_type, newFilename);
+    new FSFile(destUri).write(fileBytes);
+    await run('UPDATE assets SET filename = ? WHERE id = ?', [newFilename, newAssetId]);
+    if (asset.asset_type === 'audio') counters.audiosRestored++;
+    else if (asset.asset_type === 'photo') counters.photosRestored++;
+    else counters.videosRestored++;
+  } catch (e: unknown) {
+    try { await run('DELETE FROM assets WHERE id = ?', [newAssetId]); } catch { /* best effort */ }
+    warnings.push(`Asset ${asset.id}: file write failed — ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 async function importAssets(
   data: BackupData,
   idMap: IdMap,
   fileMap: Record<string, Uint8Array>,
 ): Promise<{ audiosRestored: number; photosRestored: number; videosRestored: number; warnings: string[] }> {
-  let audiosRestored = 0;
-  let photosRestored = 0;
-  let videosRestored = 0;
+  const counters: AssetCounters = { audiosRestored: 0, photosRestored: 0, videosRestored: 0 };
   const warnings: string[] = [];
 
   for (const asset of data.assets) {
-    // Resolve new parent ID
-    let newParentId: number | undefined;
-    if (asset.parent_type === 'word') {
-      newParentId = idMap.words.get(asset.parent_id);
-    } else if (asset.parent_type === 'variant') {
-      newParentId = idMap.variants.get(asset.parent_id);
-    } else if (asset.parent_type === 'profile') {
-      newParentId = 1;
-    } else {
-      // unlinked — use parent_id as-is (these are stored under profile in design decision #1)
-      newParentId = asset.parent_id;
-    }
-
+    const newParentId = resolveParentId(asset, idMap);
     if (newParentId === undefined) {
       warnings.push(`Asset ${asset.id}: parent ${asset.parent_type}/${asset.parent_id} not found`);
       continue;
     }
-
-    const zipKey = `media/${asset.media_path}`;
-    const fileBytes = fileMap[zipKey];
+    const fileBytes = fileMap[`media/${asset.media_path}`];
     if (!fileBytes) {
       warnings.push(`Asset ${asset.id}: file not found in backup (${asset.media_path})`);
       continue;
     }
-
-    // Insert asset DB record with a placeholder filename
-    let newAssetId: number;
-    try {
-      const result = await run(
-        `INSERT INTO assets (parent_type, parent_id, asset_type, filename, name, mime_type, file_size, duration_ms, width, height, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          asset.parent_type === 'unlinked' ? 'word' : asset.parent_type,
-          newParentId,
-          asset.asset_type,
-          asset.filename, // temporary; updated after we know the new ID
-          asset.name,
-          asset.mime_type,
-          asset.file_size,
-          asset.duration_ms,
-          asset.width,
-          asset.height,
-          asset.created_at,
-        ]
-      );
-      newAssetId = result.insertId ?? 0;
-    } catch (e: unknown) {
-      warnings.push(`Asset ${asset.id}: DB insert failed — ${e instanceof Error ? e.message : String(e)}`);
-      continue;
-    }
-
-    // Build new filename with new asset ID
-    const ext = /\.\w+$/.exec(asset.filename)?.[0] ?? '';
-    const newFilename = `asset_${newAssetId}${ext}`;
-    const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
-
-    // Write file bytes to storage
-    try {
-      ensureAssetDirTree(resolvedParentType, newParentId, asset.asset_type);
-      const destUri = getAssetFileUri(resolvedParentType, newParentId, asset.asset_type, newFilename);
-      const destFile = new FSFile(destUri);
-      destFile.write(fileBytes);
-
-      // Update filename in DB
-      await run('UPDATE assets SET filename = ? WHERE id = ?', [newFilename, newAssetId]);
-      if (asset.asset_type === 'audio') audiosRestored++;
-      else if (asset.asset_type === 'photo') photosRestored++;
-      else videosRestored++;
-    } catch (e: unknown) {
-      // File write failed — remove the orphaned DB record
-      try { await run('DELETE FROM assets WHERE id = ?', [newAssetId]); } catch { /* best effort */ }
-      warnings.push(`Asset ${asset.id}: file write failed — ${e instanceof Error ? e.message : String(e)}`);
-    }
+    await insertAndWriteAsset(asset, newParentId, fileBytes, counters, warnings);
   }
 
-  return { audiosRestored, photosRestored, videosRestored, warnings };
+  return { ...counters, warnings };
 }
 
 export interface FullBackupFileMap {
