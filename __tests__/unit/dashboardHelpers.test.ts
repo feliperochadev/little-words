@@ -1,4 +1,4 @@
-import { getAgeText, getGreeting, formatMonth, MONTH_KEYS } from '../../src/utils/dashboardHelpers';
+import { getAgeText, getGreeting, formatMonth, MONTH_KEYS, getChildLabel, getChildLabelWithArticle } from '../../src/utils/dashboardHelpers';
 
 describe('dashboardHelpers', () => {
   const mockT = (key: string, params?: Record<string, string | number>): string => {
@@ -154,6 +154,135 @@ describe('dashboardHelpers', () => {
       const result2 = getAgeText(birth, mockT);
       expect(result1).toBe(result2);
     });
+  });
+});
+
+describe('getChildLabel', () => {
+  const tEN = (key: string): string => {
+    const map: Record<string, string> = {
+      'childLabel.baby': 'baby', 'childLabel.toddler': 'toddler', 'childLabel.child': 'child',
+    };
+    return map[key] ?? key;
+  };
+  const tPT = (key: string): string => {
+    const map: Record<string, string> = {
+      'childLabel.bebe': 'bebê', 'childLabel.crianca': 'criança',
+    };
+    return map[key] ?? key;
+  };
+
+  const birthYearsAgo = (years: number, extraMonths = 0): string => {
+    const now = new Date();
+    const d = new Date(now.getFullYear() - years, now.getMonth() - extraMonths, now.getDate());
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  it('returns baby for null birth (EN)', () => {
+    expect(getChildLabel(null, 'en-US', tEN)).toBe('baby');
+  });
+
+  it('returns bebê for null birth (PT)', () => {
+    expect(getChildLabel(null, 'pt-BR', tPT)).toBe('bebê');
+  });
+
+  it('returns baby for child under 1 year (EN)', () => {
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    const birth = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}-${String(sixMonthsAgo.getDate()).padStart(2, '0')}`;
+    expect(getChildLabel(birth, 'en-US', tEN)).toBe('baby');
+  });
+
+  it('returns toddler for child aged 1 year (EN)', () => {
+    expect(getChildLabel(birthYearsAgo(1), 'en-US', tEN)).toBe('toddler');
+  });
+
+  it('returns toddler for child aged 2 years (EN)', () => {
+    expect(getChildLabel(birthYearsAgo(2), 'en-US', tEN)).toBe('toddler');
+  });
+
+  it('returns child for child aged 3 years (EN)', () => {
+    expect(getChildLabel(birthYearsAgo(3), 'en-US', tEN)).toBe('child');
+  });
+
+  it('returns child for child aged 5 years (EN)', () => {
+    expect(getChildLabel(birthYearsAgo(5), 'en-US', tEN)).toBe('child');
+  });
+
+  it('returns bebê for child under 2 years (PT)', () => {
+    expect(getChildLabel(birthYearsAgo(1), 'pt-BR', tPT)).toBe('bebê');
+  });
+
+  it('returns criança for child aged 2 years (PT)', () => {
+    expect(getChildLabel(birthYearsAgo(2), 'pt-BR', tPT)).toBe('criança');
+  });
+
+  it('returns criança for child aged 4 years (PT)', () => {
+    expect(getChildLabel(birthYearsAgo(4), 'pt-BR', tPT)).toBe('criança');
+  });
+});
+
+describe('getChildLabelWithArticle', () => {
+  const tEN = (key: string): string => {
+    const map: Record<string, string> = {
+      'childLabel.baby': 'baby', 'childLabel.toddler': 'toddler', 'childLabel.child': 'child',
+    };
+    return map[key] ?? key;
+  };
+  const tPT = (key: string): string => {
+    const map: Record<string, string> = {
+      'childLabel.bebe': 'bebê', 'childLabel.crianca': 'criança',
+      'childLabel.articleMaleBebe': 'do bebê', 'childLabel.articleFemaleBebe': 'da bebê',
+      'childLabel.articleCrianca': 'da criança',
+    };
+    return map[key] ?? key;
+  };
+
+  const birthYearsAgo = (years: number): string => {
+    const now = new Date();
+    const d = new Date(now.getFullYear() - years, now.getMonth(), now.getDate());
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  it('returns capitalised label for EN (baby)', () => {
+    expect(getChildLabelWithArticle(null, null, 'en-US', tEN)).toBe('Baby');
+  });
+
+  it('returns capitalised label for EN (toddler, 1y)', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(1), 'girl', 'en-US', tEN)).toBe('Toddler');
+  });
+
+  it('returns capitalised label for EN (child, 3y)', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(3), 'boy', 'en-US', tEN)).toBe('Child');
+  });
+
+  it('returns "do bebê" for PT male bebê (null birth)', () => {
+    expect(getChildLabelWithArticle(null, 'boy', 'pt-BR', tPT)).toBe('do bebê');
+  });
+
+  it('returns "da bebê" for PT female bebê (null birth)', () => {
+    expect(getChildLabelWithArticle(null, 'girl', 'pt-BR', tPT)).toBe('da bebê');
+  });
+
+  it('defaults to "da bebê" for PT unknown sex (null birth)', () => {
+    expect(getChildLabelWithArticle(null, null, 'pt-BR', tPT)).toBe('da bebê');
+  });
+
+  it('returns "do bebê" for PT male child under 2y', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(1), 'boy', 'pt-BR', tPT)).toBe('do bebê');
+  });
+
+  it('returns "da bebê" for PT female child under 2y', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(1), 'girl', 'pt-BR', tPT)).toBe('da bebê');
+  });
+
+  it('returns "da criança" for PT child aged 2y regardless of sex', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(2), 'boy', 'pt-BR', tPT)).toBe('da criança');
+    expect(getChildLabelWithArticle(birthYearsAgo(2), 'girl', 'pt-BR', tPT)).toBe('da criança');
+    expect(getChildLabelWithArticle(birthYearsAgo(2), null, 'pt-BR', tPT)).toBe('da criança');
+  });
+
+  it('returns "da criança" for PT child aged 5y', () => {
+    expect(getChildLabelWithArticle(birthYearsAgo(5), 'boy', 'pt-BR', tPT)).toBe('da criança');
   });
 });
 

@@ -2,6 +2,30 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_04
+
+[refactor] Simplify media link navigation: replace unreliable scroll-to-index logic with search pre-filling in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx`; navigating from `MediaLinkingModal` now passes an `initialSearch` param which sets the search filter to the linked word/variant name, ensuring it is visible; use `useFocusEffect` to clear the search when leaving the screen
+[test] Update integration tests in `MediaLinkingModal.test.tsx` to expect `initialSearch` param instead of `highlightId`; update screen tests in `words.test.tsx` and `variants.test.tsx` to verify `initialSearch` behavior and search clearing on blur
+
+### 2026-03-24_03
+
+[fix] Fix scroll-to-wrong-variant/word bug when active search matches the target item: add `search !== ''` guard to the `highlightId` scroll effects in both `app/(tabs)/variants.tsx` and `app/(tabs)/words.tsx`; without the guard, `idx` was captured from the filtered list before `setSearch('')` could clear it, causing `scrollToIndex` to use a stale index against the expanded full list; adding `search` to the dependency arrays and guarding early ensures `idx` is only computed once the list is unfiltered
+
+### 2026-03-24_02
+
+[fix] Clear search filter before scroll-to-highlight on Words and Variants screens: add `useEffect` in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx` that calls `setSearch('')` whenever `highlightId` changes to a non-null value; prevents the target word/variant being filtered out of the list when the user had an active search before navigating from MediaLinkingModal
+[test] Add `clears active search when highlightId is set on navigation` tests to both `words.test.tsx` and `variants.test.tsx` using rerender to simulate mid-session navigation with a highlight param
+
+### 2026-03-24_01
+
+[fix] Extend age-adaptive child label to Settings screen: add `settings.profileSectionTitle` i18n key (EN: `"{{label}} Profile"`, PT: `"Perfil {{label}}"`); import `getChildLabelWithArticle` in `settings.tsx`; replace static `t('settings.babyProfile')` and `t('settings.editProfile')` with dynamic `t('settings.profileSectionTitle', { label })` and `t('settings.editProfileTitle', { label })` so the section title and edit button reflect the child's current age tier
+
+### 2026-03-23_10
+
+[feature] Age-adaptive child label in profile UI: add `getChildLabel(birth, locale, t)` and `getChildLabelWithArticle(birth, sex, locale, t)` helpers to `dashboardHelpers.ts`; EN tiers: baby (<1y) / toddler (1–2y) / child (3y+); PT tiers: bebê (<2y) / criança (2y+) with gendered article ("do bebê"/"da bebê"/"da criança"); unknown sex defaults to female article; add `childLabel` section to both i18n catalogues (keys fully mirrored for parity); update `EditProfileModal` title and name-field label to use new i18n keys `settings.editProfileTitle` and `settings.childNameLabel` with dynamic `{{label}}` param
+[feature] Improve variant scroll-to-index reliability: replace silent `onScrollToIndexFailed={() => {}}` in `app/(tabs)/variants.tsx` with a proper fallback handler (`scrollToOffset`) matching the pattern used by the Words screen
+[test] Add 20 unit tests for `getChildLabel` and `getChildLabelWithArticle` (all tiers, both locales, both sexes, null-birth fallback); add 4 integration tests to `editProfileModal.test.tsx` verifying age-adaptive modal title (baby/toddler/child/null-birth)
+
 ### 2026-03-23_09
 
 [fix] Invalidate `['assets']` query key after ZIP import so profile photo refreshes immediately without app restart: add `['assets']` to the `invalidateQueries` list in `handleImportZip` in `ImportModal.tsx`

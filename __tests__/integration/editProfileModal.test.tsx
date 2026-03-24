@@ -50,6 +50,41 @@ describe('EditProfileModal', () => {
     expect(await findByTestId('edit-profile-title')).toBeTruthy();
   });
 
+  it('shows age-adaptive title — toddler for 2-year-old girl', async () => {
+    const now = new Date();
+    const twoYearsAgo = `${now.getFullYear() - 2}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: twoYearsAgo, isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderModal();
+    const title = await findByTestId('edit-profile-title');
+    expect(title.props.children).toMatch(/Toddler/i);
+  });
+
+  it('shows age-adaptive title — baby for infant under 1 year', async () => {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    const birth = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth() + 1).padStart(2, '0')}-${String(threeMonthsAgo.getDate()).padStart(2, '0')}`;
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth, isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderModal();
+    const title = await findByTestId('edit-profile-title');
+    expect(title.props.children).toMatch(/Baby/i);
+  });
+
+  it('shows age-adaptive title — child for 4-year-old', async () => {
+    const now = new Date();
+    const fourYearsAgo = `${now.getFullYear() - 4}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: fourYearsAgo, isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderModal();
+    const title = await findByTestId('edit-profile-title');
+    expect(title.props.children).toMatch(/Child/i);
+  });
+
+  it('shows age-adaptive title — falls back to Baby when birth is empty', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: 'girl', birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderModal();
+    const title = await findByTestId('edit-profile-title');
+    expect(title.props.children).toMatch(/Baby/i);
+  });
+
   it('pre-fills name from store', async () => {
     const { findByTestId } = renderModal();
     const input = await findByTestId('edit-profile-name-input');

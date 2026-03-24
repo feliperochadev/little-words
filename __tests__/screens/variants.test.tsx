@@ -23,7 +23,7 @@ jest.mock('../../src/services/settingsService', () => ({
 let mockHighlightId: string | undefined = undefined;
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(() => ({ highlightId: mockHighlightId })),
-  useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() })),
+  useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() })),
   useFocusEffect: jest.fn(),
 }));
 
@@ -192,17 +192,23 @@ describe('VariantsScreen', () => {
     expect(queryByTestId('word-asset-chip-10')).toBeNull();
   });
 
-  // ── highlightId (scroll only, no visual focus) ───────────────────────────
 
-  it('does not crash when highlightId param matches', async () => {
-    mockHighlightId = '1';
-    const { findByTestId } = renderWithProviders(<VariantsScreen />);
-    expect(await findByTestId('variant-item-mamá')).toBeTruthy();
-  });
 
-  it('does not crash when highlightId does not match any variant', async () => {
-    mockHighlightId = '9999';
-    const { findByText } = renderWithProviders(<VariantsScreen />);
-    expect(await findByText(/mamá/)).toBeTruthy();
+  it('sets active search when initialSearch is set on navigation', async () => {
+    mockHighlightId = undefined;
+    const { useLocalSearchParams, useRouter } = require('expo-router');
+    const { findByPlaceholderText, rerender } = renderWithProviders(<VariantsScreen />);
+    const searchInput = await findByPlaceholderText(/Search variants/);
+    
+    // Simulate arriving on this screen via media-link navigation
+    useLocalSearchParams.mockImplementation(() => ({ initialSearch: 'mama' }));
+    // Ensure setParams is mocked for the hook
+    useRouter.mockReturnValue({ setParams: jest.fn(), push: jest.fn(), replace: jest.fn(), back: jest.fn() });
+    
+    rerender(<VariantsScreen />);
+    await waitFor(() => {
+      expect(searchInput.props.value).toBe('mama');
+    });
+    useLocalSearchParams.mockImplementation(() => ({}));
   });
 });

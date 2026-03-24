@@ -114,10 +114,10 @@ export function MediaLinkingModal() {
           selectedVariant.variant,
           selectedVariant.main_word ?? undefined,
         );
-        router.push({ pathname: '/(tabs)/variants', params: { highlightId: String(selectedVariant.id) } });
+        router.push({ pathname: '/(tabs)/variants', params: { initialSearch: selectedVariant.variant } });
       } else if (selectedWord) {
         await linkMediaToWord(selectedWord.id, mediaName, selectedWord.word);
-        router.push({ pathname: '/(tabs)/words', params: { highlightId: String(selectedWord.id) } });
+        router.push({ pathname: '/(tabs)/words', params: { initialSearch: selectedWord.word } });
       } else {
         await saveWithoutLinking(mediaName);
         router.push({ pathname: '/(tabs)/media' });
@@ -144,7 +144,7 @@ export function MediaLinkingModal() {
         inlineVariantName.trim(),
         inlineSelectedWord.word,
       );
-      router.push({ pathname: '/(tabs)/variants', params: { highlightId: String(newId) } });
+      router.push({ pathname: '/(tabs)/variants', params: { initialSearch: inlineVariantName.trim() } });
     } catch {
       Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
     } finally {

@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
 import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
+import { getChildLabelWithArticle } from '../../src/utils/dashboardHelpers';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { withOpacity } from '../../src/utils/colorHelpers';
@@ -124,6 +125,7 @@ export default function SettingsScreen() {
   };
 
   const sexLabel = getSexDisplay(childSex, t);
+  const childLabel = getChildLabelWithArticle(childBirth ?? null, childSex, locale, t);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
@@ -137,10 +139,10 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {t('settings.babyProfile')}
+                {t('settings.profileSectionTitle', { label: childLabel })}
               </Text>
             <TouchableOpacity testID="settings-edit-profile-btn" onPress={() => setShowEditProfile(true)} style={[styles.editProfileBtn, { backgroundColor: withOpacity(colors.primary, '15') }]}>
-              <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfile')}</Text>
+              <Text style={[styles.editProfileText, { color: colors.primary }]}>{t('settings.editProfileTitle', { label: childLabel })}</Text>
             </TouchableOpacity>
           </View>
           {childName ? (
