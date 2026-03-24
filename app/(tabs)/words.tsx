@@ -54,6 +54,11 @@ export default function WordsScreen() {
   const sortedWords = sortWords(words, sort);
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
 
+  // Clear search when navigating with highlightId so the target word is never filtered out
+  useEffect(() => {
+    if (highlightWordId) setSearch('');
+  }, [highlightWordId]);
+
   // Scroll to the word referenced by highlightId (set when navigating from AddWordModal)
   const handleScrollToIndexFailed = useCallback((info: { index: number; averageItemLength: number }) => {
     listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });

@@ -205,4 +205,18 @@ describe('VariantsScreen', () => {
     const { findByText } = renderWithProviders(<VariantsScreen />);
     expect(await findByText(/mamá/)).toBeTruthy();
   });
+
+  it('clears active search when highlightId is set on navigation', async () => {
+    mockHighlightId = undefined;
+    const { findByPlaceholderText, rerender } = renderWithProviders(<VariantsScreen />);
+    const searchInput = await findByPlaceholderText(/Search variants/);
+    fireEvent.changeText(searchInput, 'xyz');
+    expect(searchInput.props.value).toBe('xyz');
+    // Simulate arriving on this screen via media-link navigation
+    mockHighlightId = '1';
+    rerender(<VariantsScreen />);
+    await waitFor(() => {
+      expect(searchInput.props.value).toBe('');
+    });
+  });
 });

@@ -288,4 +288,20 @@ describe('WordsScreen', () => {
       expect(categoryService.deleteCategoryWithUnlink as jest.Mock).toHaveBeenCalled();
     });
   });
+
+  it('clears active search when highlightId is set on navigation', async () => {
+    const { useLocalSearchParams } = require('expo-router') as { useLocalSearchParams: jest.Mock };
+    useLocalSearchParams.mockImplementation(() => ({}));
+    const { findByPlaceholderText, rerender } = renderWithProviders(<WordsScreen />);
+    const searchInput = await findByPlaceholderText('Search words...');
+    fireEvent.changeText(searchInput, 'test');
+    expect(searchInput.props.value).toBe('test');
+    // Simulate arriving via media-link navigation
+    useLocalSearchParams.mockImplementation(() => ({ highlightId: '1' }));
+    rerender(<WordsScreen />);
+    await waitFor(() => {
+      expect(searchInput.props.value).toBe('');
+    });
+    useLocalSearchParams.mockImplementation(() => ({}));
+  });
 });

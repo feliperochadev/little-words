@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_02
+
+[fix] Clear search filter before scroll-to-highlight on Words and Variants screens: add `useEffect` in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx` that calls `setSearch('')` whenever `highlightId` changes to a non-null value; prevents the target word/variant being filtered out of the list when the user had an active search before navigating from MediaLinkingModal
+[test] Add `clears active search when highlightId is set on navigation` tests to both `words.test.tsx` and `variants.test.tsx` using rerender to simulate mid-session navigation with a highlight param
+
 ### 2026-03-24_01
 
 [fix] Extend age-adaptive child label to Settings screen: add `settings.profileSectionTitle` i18n key (EN: `"{{label}} Profile"`, PT: `"Perfil {{label}}"`); import `getChildLabelWithArticle` in `settings.tsx`; replace static `t('settings.babyProfile')` and `t('settings.editProfile')` with dynamic `t('settings.profileSectionTitle', { label })` and `t('settings.editProfileTitle', { label })` so the section title and edit button reflect the child's current age tier

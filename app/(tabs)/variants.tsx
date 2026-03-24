@@ -67,6 +67,11 @@ export default function VariantsScreen() {
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
   const sorted = sortVariants(filtered, sort);
 
+  // Clear search when navigating with highlightId so the target variant is never filtered out
+  useEffect(() => {
+    if (highlightId) setSearch('');
+  }, [highlightId]);
+
   // Scroll to a variant when navigated with highlightId (no visual highlight)
   useEffect(() => {
     if (!highlightId) return;
