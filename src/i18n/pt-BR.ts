@@ -206,6 +206,7 @@ export default {
     editProfile: 'Editar Perfil do Bebê',
     editProfileTitle: 'Editar Perfil {{label}}',
     childNameLabel: 'Nome {{label}}',
+    profileSectionTitle: 'Perfil {{label}}',
     girl: 'Menina',
     boy: 'Menino',
     importWords: 'Importar Dados',

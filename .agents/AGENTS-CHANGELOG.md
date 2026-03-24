@@ -2,6 +2,10 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_01
+
+[fix] Extend age-adaptive child label to Settings screen: add `settings.profileSectionTitle` i18n key (EN: `"{{label}} Profile"`, PT: `"Perfil {{label}}"`); import `getChildLabelWithArticle` in `settings.tsx`; replace static `t('settings.babyProfile')` and `t('settings.editProfile')` with dynamic `t('settings.profileSectionTitle', { label })` and `t('settings.editProfileTitle', { label })` so the section title and edit button reflect the child's current age tier
+
 ### 2026-03-23_10
 
 [feature] Age-adaptive child label in profile UI: add `getChildLabel(birth, locale, t)` and `getChildLabelWithArticle(birth, sex, locale, t)` helpers to `dashboardHelpers.ts`; EN tiers: baby (<1y) / toddler (1–2y) / child (3y+); PT tiers: bebê (<2y) / criança (2y+) with gendered article ("do bebê"/"da bebê"/"da criança"); unknown sex defaults to female article; add `childLabel` section to both i18n catalogues (keys fully mirrored for parity); update `EditProfileModal` title and name-field label to use new i18n keys `settings.editProfileTitle` and `settings.childNameLabel` with dynamic `{{label}}` param
