@@ -103,10 +103,10 @@ export default function SettingsScreen() {
   const handleNotificationsToggle = useCallback(async (value: boolean) => {
     setNotificationsEnabled(value);
     await setNotificationState('notifications_enabled', value ? '1' : '0');
-    if (!value) {
-      await cancelAllNotifications();
-    } else {
+    if (value) {
       void scheduleAll();
+    } else {
+      await cancelAllNotifications();
     }
   }, []);
 

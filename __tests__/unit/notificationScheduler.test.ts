@@ -160,6 +160,21 @@ describe('buildSchedule — nostalgia', () => {
     expect(nostalgiaItems).toHaveLength(1);
   });
 
+  it('picks nostalgia deterministically for the same day', () => {
+    const oneMonthAgo = new Date(NOW);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const dateStr = oneMonthAgo.toISOString().split('T')[0];
+    const manyWords = Array.from({ length: 4 }, (_, i) => ({
+      id: i + 1, word: `word-${i}`, date_added: dateStr,
+    }));
+
+    const first = buildSchedule({ ...BASE_CTX, nostalgiaWords: manyWords }, NOW)
+      .find(i => i.identifier.startsWith('nostalgia-'))!;
+    const second = buildSchedule({ ...BASE_CTX, nostalgiaWords: manyWords }, NOW)
+      .find(i => i.identifier.startsWith('nostalgia-'))!;
+    expect(first.identifier).toBe(second.identifier);
+  });
+
   it('skips nostalgia when no upcoming anniversaries', () => {
     const items = buildSchedule({ ...BASE_CTX, nostalgiaWords: [] }, NOW);
     expect(items.find(i => i.identifier.startsWith('nostalgia-'))).toBeUndefined();
@@ -230,6 +245,13 @@ describe('buildSchedule — category explorer', () => {
       NOW,
     );
     expect(items.find(i => i.identifier.startsWith('category-'))).toBeUndefined();
+  });
+
+  it('picks category explorer deterministically for the same day', () => {
+    const ctx = { ...BASE_CTX, wordsLast7Days: 0, emptyCategoryNames: ['animals', 'food', 'toys'] };
+    const first = buildSchedule(ctx, NOW).find(i => i.identifier.startsWith('category-'))!;
+    const second = buildSchedule(ctx, NOW).find(i => i.identifier.startsWith('category-'))!;
+    expect(first.identifier).toBe(second.identifier);
   });
 });
 

@@ -177,7 +177,7 @@ function pickNostalgiaWord(
   }
 
   if (candidates.length === 0) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  return candidates[getDeterministicDayIndex(candidates.length, now)];
 }
 
 // ─── Month name helpers ────────────────────────────────────────────────────────
@@ -193,6 +193,12 @@ function monthName(date: Date, locale: string): string {
 // ─── Main scheduler ────────────────────────────────────────────────────────────
 
 const DEDUP_MINUTES = 5;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getDeterministicDayIndex(length: number, now: Date): number {
+  const daySeed = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / DAY_MS);
+  return daySeed % length;
+}
 
 /** Returns true if last scheduling run was within DEDUP_MINUTES. */
 export function isTooSoonToReschedule(lastScheduleRun: string | null, now: Date): boolean {
@@ -207,27 +213,29 @@ export function buildSchedule(ctx: SchedulerContext, now: Date = new Date()): Sc
   const name = ctx.childName || 'your baby';
 
   // ── 1. Gentle Nudge (retention) ──────────────────────────────────────────────
-  items.push({
-    identifier: 'nudge-3d',
-    title: s.nudge3dTitle,
-    body: interpolate(s.nudge3dBody, { childName: name }),
-    route: '/(tabs)/home?action=add-word',
-    triggerDate: atHour(addDays(now, 3), 10),
-  });
-  items.push({
-    identifier: 'nudge-7d',
-    title: s.nudge7dTitle,
-    body: interpolate(s.nudge7dBody, { childName: name }),
-    route: '/(tabs)/home?action=add-word',
-    triggerDate: atHour(addDays(now, 7), 10),
-  });
-  items.push({
-    identifier: 'nudge-15d',
-    title: s.nudge15dTitle,
-    body: interpolate(s.nudge15dBody, { childName: name }),
-    route: '/(tabs)/home?action=add-word',
-    triggerDate: atHour(addDays(now, 15), 10),
-  });
+  items.push(
+    {
+      identifier: 'nudge-3d',
+      title: s.nudge3dTitle,
+      body: interpolate(s.nudge3dBody, { childName: name }),
+      route: '/(tabs)/home?action=add-word',
+      triggerDate: atHour(addDays(now, 3), 10),
+    },
+    {
+      identifier: 'nudge-7d',
+      title: s.nudge7dTitle,
+      body: interpolate(s.nudge7dBody, { childName: name }),
+      route: '/(tabs)/home?action=add-word',
+      triggerDate: atHour(addDays(now, 7), 10),
+    },
+    {
+      identifier: 'nudge-15d',
+      title: s.nudge15dTitle,
+      body: interpolate(s.nudge15dBody, { childName: name }),
+      route: '/(tabs)/home?action=add-word',
+      triggerDate: atHour(addDays(now, 15), 10),
+    },
+  );
 
   // ── 2. Weekly Win ─────────────────────────────────────────────────────────────
   if (ctx.wordsThisWeek > 0) {
@@ -288,9 +296,8 @@ export function buildSchedule(ctx: SchedulerContext, now: Date = new Date()): Sc
 
   // ── 7. Category Explorer ──────────────────────────────────────────────────────
   if (ctx.wordsLast7Days === 0 && ctx.emptyCategoryNames.length > 0) {
-    const randomCategory = ctx.emptyCategoryNames[
-      Math.floor(Math.random() * ctx.emptyCategoryNames.length)
-    ];
+    const categoryIndex = getDeterministicDayIndex(ctx.emptyCategoryNames.length, now);
+    const randomCategory = ctx.emptyCategoryNames[categoryIndex];
     items.push({
       identifier: `category-${randomCategory}`,
       title: s.categoryExplorerTitle,
@@ -330,9 +337,12 @@ export function buildMilestoneContent(
 ): { title: string; body: string } {
   const name = childName || 'your baby';
   const isFirst = count === 1;
-  const tpl = locale === 'pt-BR'
-    ? (isFirst ? MILESTONE_PT_FIRST : MILESTONE_PT)
-    : (isFirst ? MILESTONE_EN_FIRST : MILESTONE_EN);
+  let tpl: { title: string; body: string };
+  if (locale === 'pt-BR') {
+    tpl = isFirst ? MILESTONE_PT_FIRST : MILESTONE_PT;
+  } else {
+    tpl = isFirst ? MILESTONE_EN_FIRST : MILESTONE_EN;
+  }
   return {
     title: tpl.title,
     body: interpolate(tpl.body, { childName: name, count }),

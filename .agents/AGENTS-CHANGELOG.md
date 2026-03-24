@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_06
+
+[fix] Resolve SonarCloud issues on PR #56: refactor `handleNotificationsToggle` in `app/(tabs)/settings.tsx` to avoid negated-condition smell (S7735); refactor `src/services/notificationScheduler.ts` to remove repeated sequential `items.push(...)` calls (S7778) and replace nested ternary milestone template selection with `if/else` (S3358)
+[fix] Remove SonarCloud security hotspot pattern (S2245) by replacing `Math.random()` selection in nostalgia/category scheduling with deterministic day-seeded selection helper (`getDeterministicDayIndex`)
+[test] Extend `__tests__/unit/notificationScheduler.test.ts` with deterministic-selection assertions for nostalgia and category scheduling; scheduler file remains at 100% lines/branches/functions under `npm run test:coverage`
+[config] Update `.agents/standards/quality.md` with new Sonar prevention sections for S7778, S3358, and S2245 plus checklist items
+
 ### 2026-03-24_05
 
 [feature] Add local push notification system using expo-notifications: 8 notification types (Gentle Nudge 3/7/15d, Weekly Win, Monthly Recap, Nostalgia Trip, Milestone, Feature Discovery, Category Explorer, Backup Reminder); Reset Sequence strategy (cancel on foreground, batch-schedule on background); pure scheduler (`notificationScheduler.ts`) separated from orchestration (`notificationService.ts`); permission priming modal (`NotificationPrimingModal`) shown after first word is added; notifications toggle in Settings with permission-denied hint; `notification_state` SQLite table (migration 0005); deep-link routing via `data.route` on notification tap; backup date tracking in settings.tsx call sites; scroll-to-export via `scrollTo=export` URL param; bilingual content (en-US / pt-BR) embedded at schedule time
