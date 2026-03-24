@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_04
+
+[refactor] Simplify media link navigation: replace unreliable scroll-to-index logic with search pre-filling in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx`; navigating from `MediaLinkingModal` now passes an `initialSearch` param which sets the search filter to the linked word/variant name, ensuring it is visible; use `useFocusEffect` to clear the search when leaving the screen
+[test] Update integration tests in `MediaLinkingModal.test.tsx` to expect `initialSearch` param instead of `highlightId`; update screen tests in `words.test.tsx` and `variants.test.tsx` to verify `initialSearch` behavior and search clearing on blur
+
+### 2026-03-24_03
+
+[fix] Fix scroll-to-wrong-variant/word bug when active search matches the target item: add `search !== ''` guard to the `highlightId` scroll effects in both `app/(tabs)/variants.tsx` and `app/(tabs)/words.tsx`; without the guard, `idx` was captured from the filtered list before `setSearch('')` could clear it, causing `scrollToIndex` to use a stale index against the expanded full list; adding `search` to the dependency arrays and guarding early ensures `idx` is only computed once the list is unfiltered
+
 ### 2026-03-24_02
 
 [fix] Clear search filter before scroll-to-highlight on Words and Variants screens: add `useEffect` in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx` that calls `setSearch('')` whenever `highlightId` changes to a non-null value; prevents the target word/variant being filtered out of the list when the user had an active search before navigating from MediaLinkingModal

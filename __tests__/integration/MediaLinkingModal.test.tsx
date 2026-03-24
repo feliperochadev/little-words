@@ -606,7 +606,7 @@ describe('MediaLinkingModal', () => {
         fireEvent.press(getByTestId('media-link-btn'));
       });
       await waitFor(() => {
-        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/words', params: { highlightId: '1' } });
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/words', params: { initialSearch: 'mama' } });
       });
     });
 
@@ -894,7 +894,7 @@ describe('MediaLinkingModal', () => {
       });
       await waitFor(() => {
         expect(mockLinkMediaToVariant).toHaveBeenCalledWith(10, '', 'mah', 'mama');
-        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { highlightId: '10' } });
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { initialSearch: 'mah' } });
       });
     });
   });
@@ -969,7 +969,7 @@ describe('MediaLinkingModal', () => {
       await waitFor(() => {
         expect(mockAddVariantMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ wordId: 1, variant: 'zee' }));
         expect(mockLinkMediaToVariant).toHaveBeenCalledWith(99, '', 'zee', 'mama');
-        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { highlightId: '99' } });
+        expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/(tabs)/variants', params: { initialSearch: 'zee' } });
       });
     });
   });

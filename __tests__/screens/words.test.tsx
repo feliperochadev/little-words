@@ -289,18 +289,18 @@ describe('WordsScreen', () => {
     });
   });
 
-  it('clears active search when highlightId is set on navigation', async () => {
-    const { useLocalSearchParams } = require('expo-router') as { useLocalSearchParams: jest.Mock };
+  it('sets active search when initialSearch is set on navigation', async () => {
+    const { useLocalSearchParams, useRouter } = require('expo-router') as { useLocalSearchParams: jest.Mock, useRouter: jest.Mock };
     useLocalSearchParams.mockImplementation(() => ({}));
+    useRouter.mockReturnValue({ setParams: jest.fn() });
     const { findByPlaceholderText, rerender } = renderWithProviders(<WordsScreen />);
     const searchInput = await findByPlaceholderText('Search words...');
-    fireEvent.changeText(searchInput, 'test');
-    expect(searchInput.props.value).toBe('test');
-    // Simulate arriving via media-link navigation
-    useLocalSearchParams.mockImplementation(() => ({ highlightId: '1' }));
+    
+    // Simulate arriving via media-link navigation with a search term
+    useLocalSearchParams.mockImplementation(() => ({ initialSearch: 'mama' }));
     rerender(<WordsScreen />);
     await waitFor(() => {
-      expect(searchInput.props.value).toBe('');
+      expect(searchInput.props.value).toBe('mama');
     });
     useLocalSearchParams.mockImplementation(() => ({}));
   });

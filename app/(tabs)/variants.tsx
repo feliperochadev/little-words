@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import type { Variant, Word } from '../../src/types/domain';
 import { Card, EmptyState } from '../../src/components/UIComponents';
 import { ListScreenControls } from '../../src/components/ListScreenControls';
@@ -25,9 +25,10 @@ const EMPTY_WORDS: Word[] = [];
 export default function VariantsScreen() {
   const { t, tc } = useI18n();
   const { colors } = useTheme();
-  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
+  const router = useRouter();
 
   const sortOptions = buildDefaultSortOptions(t);
+  const { initialSearch } = useLocalSearchParams<{ initialSearch?: string }>();
 
   const { data: variants = EMPTY_VARIANTS, refetch: refetchVariants } = useAllVariants();
   const { data: words = EMPTY_WORDS } = useWords();
@@ -41,13 +42,23 @@ export default function VariantsScreen() {
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
 
   const flatListRef = useRef<FlatList<Variant>>(null);
-  const scrolledHighlightRef = useRef<number | null>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetchVariants(); } finally { setRefreshing(false); } };
 
-  const handleScrollToIndexFailed = useCallback((info: { index: number; averageItemLength: number }) => {
-    flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
-  }, []);
+  // Set search from params
+  useEffect(() => {
+    if (initialSearch) {
+      setSearch(initialSearch);
+      router.setParams({ initialSearch: undefined });
+    }
+  }, [initialSearch, router]);
+
+  // Clear search when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => setSearch('');
+    }, [])
+  );
 
   const handleSearch = (text: string) => setSearch(text);
 
@@ -66,24 +77,6 @@ export default function VariantsScreen() {
 
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
   const sorted = sortVariants(filtered, sort);
-
-  // Clear search when navigating with highlightId so the target variant is never filtered out
-  useEffect(() => {
-    if (highlightId) setSearch('');
-  }, [highlightId]);
-
-  // Scroll to a variant when navigated with highlightId (no visual highlight)
-  useEffect(() => {
-    if (!highlightId) return;
-    const id = Number(highlightId);
-    if (scrolledHighlightRef.current === id) return;
-    const idx = sorted.findIndex(v => v.id === id);
-    if (idx < 0) return;
-    scrolledHighlightRef.current = id;
-    setTimeout(() => {
-      flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
-    }, 150);
-  }, [highlightId, sorted]);
 
   const renderVariant = ({ item, index }: { item: Variant; index: number }) => (
       <Card
@@ -154,12 +147,12 @@ export default function VariantsScreen() {
 
       <FlatList
         ref={flatListRef}
+        testID="variants-flatlist"
         data={sorted}
         keyExtractor={item => item.id.toString()}
         renderItem={renderVariant}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.secondary} />}
-        onScrollToIndexFailed={handleScrollToIndexFailed}
         ListHeaderComponent={
           <View style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15') }]}>
             <Ionicons name="bulb-outline" size={14} color={colors.secondary} style={styles.hintIcon} testID="variants-hint-icon" />

@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { ListScreenControls } from '../../src/components/ListScreenControls';
 import { AddWordModal } from '../../src/components/AddWordModal';
@@ -27,14 +27,12 @@ export default function WordsScreen() {
   const { t, tc } = useI18n();
   const categoryName = useCategoryName();
   const { colors } = useTheme();
+  const router = useRouter();
 
   const sortOptions = buildDefaultSortOptions(t);
 
-  // Highlight word navigated from AddWordModal
-  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
-  const highlightWordId = highlightId ? Number(highlightId) : null;
+  const { initialSearch } = useLocalSearchParams<{ initialSearch?: string }>();
   const listRef = useRef<FlatList<Word>>(null);
-  const scrolledHighlightRef = useRef<number | null>(null);
 
   // Local UI state only — no server state managed here
   const [search, setSearch] = useState('');
@@ -54,26 +52,20 @@ export default function WordsScreen() {
   const sortedWords = sortWords(words, sort);
   const currentSortLabel = sortOptions.find(o => o.key === sort)?.label ?? '';
 
-  // Clear search when navigating with highlightId so the target word is never filtered out
+  // Set search from params
   useEffect(() => {
-    if (highlightWordId) setSearch('');
-  }, [highlightWordId]);
+    if (initialSearch) {
+      setSearch(initialSearch);
+      router.setParams({ initialSearch: undefined });
+    }
+  }, [initialSearch, router]);
 
-  // Scroll to the word referenced by highlightId (set when navigating from AddWordModal)
-  const handleScrollToIndexFailed = useCallback((info: { index: number; averageItemLength: number }) => {
-    listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
-  }, []);
-
-  useEffect(() => {
-    if (!highlightWordId || sortedWords.length === 0) return;
-    if (scrolledHighlightRef.current === highlightWordId) return;
-    const idx = sortedWords.findIndex(w => w.id === highlightWordId);
-    if (idx < 0) return;
-    scrolledHighlightRef.current = highlightWordId;
-    setTimeout(() => {
-      listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
-    }, 150);
-  }, [highlightWordId, sortedWords]);
+  // Clear search when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => setSearch('');
+    }, [])
+  );
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 
@@ -172,11 +164,11 @@ export default function WordsScreen() {
 
       <FlatList
         ref={listRef}
+        testID="words-flatlist"
         data={sortedWords}
         keyExtractor={item => item.id.toString()}
         renderItem={renderWord}
         contentContainerStyle={styles.list}
-        onScrollToIndexFailed={handleScrollToIndexFailed}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <EmptyState
