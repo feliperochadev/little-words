@@ -8,6 +8,7 @@ import {
   formatDateDMY,
   computeAge,
   formatAgeText,
+  formatTimelineDate,
 } from '../../src/utils/dateHelpers';
 
 describe('dateHelpers', () => {
@@ -209,6 +210,32 @@ describe('dateHelpers', () => {
 
     it('uses custom separator', () => {
       expect(formatAgeText(new Date(2025, 0, 17), mockT, ' and ', NOW)).toBe('1 year and 2 months');
+    });
+  });
+
+  describe('formatTimelineDate', () => {
+    it('formats english timeline date with ordinal suffix', () => {
+      expect(formatTimelineDate('2025-03-03', 'en-US')).toBe('3rd Mar, 2025');
+    });
+
+    it('formats english timeline date with 11th suffix exception', () => {
+      expect(formatTimelineDate('2025-03-11', 'en-US')).toBe('11th Mar, 2025');
+    });
+
+    it('formats portuguese timeline date', () => {
+      expect(formatTimelineDate('2025-03-03', 'pt-BR')).toBe('3 de Mar, 2025');
+    });
+
+    it('supports ISO datetime input by truncating date part', () => {
+      expect(formatTimelineDate('2025-03-03T10:00:00.000Z', 'en-US')).toBe('3rd Mar, 2025');
+    });
+
+    it('returns empty string for empty input', () => {
+      expect(formatTimelineDate('', 'en-US')).toBe('');
+    });
+
+    it('returns original value for invalid input', () => {
+      expect(formatTimelineDate('not-a-date', 'en-US')).toBe('not-a-date');
     });
   });
 });

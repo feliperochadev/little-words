@@ -138,6 +138,16 @@ describe('TabLayout', () => {
     expect(activeIcon).toBeTruthy();
   });
 
+  it('registers memories tab icon', async () => {
+    const { toJSON } = render(
+      <I18nProvider><TabLayout /></I18nProvider>
+    );
+    await act(async () => { await Promise.resolve(); });
+    const icons = findAllByTypeName(toJSON(), 'Ionicons');
+    const memoriesIcon = icons.find((el: any) => el.props.name === 'gift-outline');
+    expect(memoriesIcon).toBeTruthy();
+  });
+
   // ── GlobalAddWordModal ─────────────────────────────────────────────────────
 
   describe('GlobalAddWordModal', () => {

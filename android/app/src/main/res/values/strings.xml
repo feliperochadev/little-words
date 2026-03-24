@@ -1,6 +1,6 @@
 <resources>
   <string name="app_name">Little Words</string>
+  <string name="crop_image_menu_crop">Save</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_system_ui_user_interface_style" translatable="false">light</string>
-  <string name="crop_image_menu_crop">Save</string>
 </resources>
