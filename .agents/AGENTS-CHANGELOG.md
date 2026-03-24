@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_08
+
+[fix] Fix ZIP import losing unlinked/orphaned assets: remove `unlinked→word` type conversion in `insertAndWriteAsset`; pass `newParentType` as an explicit parameter so unlinked assets stay as `parent_type='unlinked'`; rescue orphaned word/variant assets (parent not found in idMap) as `parent_type='unlinked', parent_id=1` instead of silently skipping them
+[test] Update `backupImport.test.ts`: fix unlinked asset test to expect `parentType:'unlinked'`; replace two "warns for orphaned" tests with "rescues orphaned word/variant as unlinked when file exists" tests; add test for orphaned asset with missing file (warns file not found)
+
 ### 2026-03-23_07
 
 [fix] Fix SonarCloud S3776 on `ImportModal.tsx`: extract `tabButtonStyle` and `tabTextStyle` module-level helpers to move `&&` style conditions out of `ImportModal` function scope, reducing cognitive complexity from 22 to ≤15

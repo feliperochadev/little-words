@@ -346,7 +346,7 @@ describe('backupImport', () => {
       expect(result.photosRestored).toBe(1);
     });
 
-    it('handles unlinked assets (parent_id as-is, stored as word type)', async () => {
+    it('handles unlinked assets (stored as unlinked type, parent_id preserved)', async () => {
       mockImportAsset.mockResolvedValueOnce(9);
       const fileMap = { 'media/unlinked/5/audio/asset_9.m4a': new Uint8Array([1, 2, 3]) };
       const data: BackupData = {
@@ -360,8 +360,9 @@ describe('backupImport', () => {
       };
       const result = await importFullBackup(data, fileMap);
       expect(result.audiosRestored).toBe(1);
+      expect(result.assetWarnings).toHaveLength(0);
       expect(mockImportAsset).toHaveBeenCalledWith(
-        expect.objectContaining({ parentType: 'word', parentId: 5 })
+        expect.objectContaining({ parentType: 'unlinked', parentId: 5 })
       );
     });
 
@@ -384,7 +385,8 @@ describe('backupImport', () => {
       expect(result.assetWarnings[0]).toContain('file not found in backup');
     });
 
-    it('warns for assets whose parent word mapping is missing', async () => {
+    it('rescues orphaned word asset as unlinked when file is missing from ZIP', async () => {
+      // No file in fileMap → still warns for missing file, but does not drop asset silently
       const data: BackupData = {
         ...emptyData,
         words: [],
@@ -397,10 +399,32 @@ describe('backupImport', () => {
       };
       const result = await importFullBackup(data, {});
       expect(result.assetWarnings).toHaveLength(1);
-      expect(result.assetWarnings[0]).toContain('parent');
+      expect(result.assetWarnings[0]).toContain('file not found in backup');
     });
 
-    it('warns for variant asset when variant mapping is missing', async () => {
+    it('rescues orphaned word asset as unlinked when file exists in ZIP', async () => {
+      mockImportAsset.mockResolvedValueOnce(18);
+      const fileMap = { 'media/words/1/audio/asset_18.m4a': new Uint8Array([1, 2, 3]) };
+      const data: BackupData = {
+        ...emptyData,
+        // No word with id=1 in backup → orphaned asset
+        assets: [{
+          id: 18, parent_type: 'word', parent_id: 1, asset_type: 'audio',
+          filename: 'asset_18.m4a', name: null, mime_type: 'audio/mp4',
+          file_size: 1024, duration_ms: null, width: null, height: null, created_at: '2024-01-01',
+          media_path: 'words/1/audio/asset_18.m4a',
+        }],
+      };
+      const result = await importFullBackup(data, fileMap);
+      expect(result.audiosRestored).toBe(1);
+      expect(result.assetWarnings).toHaveLength(0);
+      expect(mockImportAsset).toHaveBeenCalledWith(
+        expect.objectContaining({ parentType: 'unlinked', parentId: 1 })
+      );
+    });
+
+    it('rescues orphaned variant asset as unlinked when file exists in ZIP', async () => {
+      mockImportAsset.mockResolvedValueOnce(9);
       const fileMap = { 'media/variants/999/audio/asset_1.m4a': new Uint8Array([1]) };
       const data: BackupData = {
         ...emptyData,
@@ -412,8 +436,11 @@ describe('backupImport', () => {
         }],
       };
       const result = await importFullBackup(data, fileMap);
-      expect(result.assetWarnings).toHaveLength(1);
-      expect(result.assetWarnings[0]).toContain('parent');
+      expect(result.audiosRestored).toBe(1);
+      expect(result.assetWarnings).toHaveLength(0);
+      expect(mockImportAsset).toHaveBeenCalledWith(
+        expect.objectContaining({ parentType: 'unlinked', parentId: 1 })
+      );
     });
 
     it('warns and rolls back DB record when file write fails', async () => {

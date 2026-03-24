@@ -91,22 +91,22 @@ function resolveParentId(
   if (asset.parent_type === 'word') return idMap.words.get(asset.parent_id);
   if (asset.parent_type === 'variant') return idMap.variants.get(asset.parent_id);
   if (asset.parent_type === 'profile') return 1;
-  // unlinked — use parent_id as-is (design decision #1)
+  // unlinked — use parent_id as stored in the backup
   return asset.parent_id;
 }
 
 async function insertAndWriteAsset(
   asset: BackupData['assets'][number],
   newParentId: number,
+  newParentType: ParentType,
   fileBytes: Uint8Array,
   counters: AssetCounters,
   warnings: string[],
 ): Promise<void> {
-  const resolvedParentType = (asset.parent_type === 'unlinked' ? 'word' : asset.parent_type) as ParentType;
   let newAssetId: number;
   try {
     newAssetId = await importAsset({
-      parentType: resolvedParentType,
+      parentType: newParentType,
       parentId: newParentId,
       assetType: asset.asset_type,
       filename: asset.filename,
@@ -127,8 +127,8 @@ async function insertAndWriteAsset(
   const newFilename = `asset_${newAssetId}${ext}`;
 
   try {
-    ensureAssetDirTree(resolvedParentType, newParentId, asset.asset_type);
-    const destUri = getAssetFileUri(resolvedParentType, newParentId, asset.asset_type, newFilename);
+    ensureAssetDirTree(newParentType, newParentId, asset.asset_type);
+    const destUri = getAssetFileUri(newParentType, newParentId, asset.asset_type, newFilename);
     new FSFile(destUri).write(fileBytes);
     await updateAssetFilename(newAssetId, newFilename);
     if (asset.asset_type === 'audio') counters.audiosRestored++;
@@ -149,17 +149,19 @@ async function importAssets(
   const warnings: string[] = [];
 
   for (const asset of data.assets) {
-    const newParentId = resolveParentId(asset, idMap);
-    if (newParentId === undefined) {
-      warnings.push(`Asset ${asset.id}: parent ${asset.parent_type}/${asset.parent_id} not found`);
-      continue;
-    }
+    const resolvedId = resolveParentId(asset, idMap);
+    // Rescue orphaned assets (parent word/variant not in backup) as unlinked
+    const newParentId = resolvedId ?? 1;
+    const effectiveParentType: ParentType = resolvedId === undefined
+      ? 'unlinked'
+      : asset.parent_type as ParentType;
+
     const fileBytes = fileMap[`media/${asset.media_path}`];
     if (!fileBytes) {
       warnings.push(`Asset ${asset.id}: file not found in backup (${asset.media_path})`);
       continue;
     }
-    await insertAndWriteAsset(asset, newParentId, fileBytes, counters, warnings);
+    await insertAndWriteAsset(asset, newParentId, effectiveParentType, fileBytes, counters, warnings);
   }
 
   return { ...counters, warnings };
