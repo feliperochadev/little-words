@@ -239,10 +239,12 @@ The app uses a three-tier state strategy:
 - `useProfilePhoto()` / `useSaveProfilePhoto()` / `useRemoveProfilePhoto()` — profile photo singleton hooks; `useProfilePhoto` returns `ProfilePhotoAsset | null` (includes computed `uri` field via `select`)
 - `useProfilePhotoPicker({ onPhotoSelected, onPhotoRemoved? })` — shared photo picker UX hook; encapsulates `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Callers provide callbacks for what to do after select/remove. Used in `home.tsx`, `onboarding.tsx`, and `EditProfileModal.tsx`.
 - `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
+- `useNotifications()` — registers AppState + notification response listeners; implements the Reset Sequence (cancel on foreground, schedule on background), deep-links via `router.push(route)` on notification tap. Must be called inside `expo-router` context (rendered in `app/_layout.tsx` via a `NotificationHandler` wrapper component).
 - `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
 
 **Stores** (`src/stores/`):
 - `useSettingsStore` — `name`, `sex`, `birth`, `isOnboardingDone`; `hydrate()`, `setProfile()`, `setOnboardingDone()`
+- `useNotificationStore` — `primingVisible`, `setPrimingVisible(visible)` — controls the permission priming modal visibility. `handleWordAdded()` in `notificationService` sets `primingVisible: true` when count===1 and permission not yet requested.
 
 The settings store calls `hydrate()` during app startup in `app/index.tsx`.
 
@@ -266,9 +268,9 @@ components/hooks → services → repositories → db/client
 
 **Migrations** (`src/db/migrator.ts`): Lightweight schema version runner using a `schema_migrations` table. Uses sync methods since it runs at startup. Migration files in `src/db/migrations/` export `{ version, name, up(db), down(db) }`.
 
-**Repositories** (`src/repositories/`): Per-entity SQL modules — `categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`. No React, hooks, or Zustand. All SQL uses `?` placeholders — never string interpolation.
+**Repositories** (`src/repositories/`): Per-entity SQL modules — `categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`, `notificationRepository.ts`. No React, hooks, or Zustand. All SQL uses `?` placeholders — never string interpolation.
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `schema_migrations`.
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `notification_state` (key/value store for notification bookkeeping), `schema_migrations`.
 
 **Assets table:** Stores metadata for audio/photo/video files. Uses `parent_type` (`word`|`variant`|`profile`) + `parent_id` as a polymorphic foreign key. Profile photos use `parent_type='profile'`, `parent_id=1` as a singleton. Files live in `Documents/media/{words|variants|profile}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
 
@@ -286,7 +288,7 @@ components/hooks → services → repositories → db/client
 
 **Photo picker pattern:** Camera + gallery are both supported via an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard). `launchPicker(source)` is async: requests the appropriate permission (`requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`), then launches the picker. Used consistently in `EditProfileModal` and `app/onboarding.tsx`.
 
-**Dependencies:** `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
+**Dependencies:** `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage), `expo-notifications` (local notification scheduling and permission management).
 
 ### Media Capture & Linking Layer
 
@@ -298,6 +300,36 @@ Media capture is orchestrated globally at tab level:
 - `src/components/MediaChips.tsx` displays pending/saved media chips in edit contexts with remove and preview/play interactions.
 - `src/components/AudioPlayerInline.tsx` provides compact audio playback triggers used in word/variant list metadata rows.
 - `src/components/EditAssetModal.tsx` — bottom-sheet modal to rename assets and relink them to different words/variants; used by `app/(tabs)/media.tsx`.
+
+### Local Notification System
+
+**Strategy:** Reset Sequence — cancel all managed notifications on app foreground, batch-schedule on background. No server dependency; all notifications are local (expo-notifications).
+
+**Notification types (8 total):**
+1. Gentle Nudge (retention) — 3d / 7d / 15d after last use
+2. Weekly Win — next Sunday if words added this week
+3. Monthly Recap — last day of month if total words > 0
+4. Nostalgia Trip — 1-month and 1-year word anniversaries (1 random per run)
+5. Milestone — immediate notification at counts 1, 10, 30, 50, 100, 200, 500, 1000
+6. Feature Discovery — one-shot after 5+ words with no media assets
+7. Category Explorer — when inactive 7 days with empty categories
+8. Backup Reminder — when last backup > 30 days ago
+
+**Architecture:**
+- `src/services/notificationScheduler.ts` — pure, side-effect-free function `buildSchedule(ctx, now) → ScheduleItem[]`. No expo-notifications import. Fully testable without mocking.
+- `src/services/notificationService.ts` — orchestration layer: `initNotifications()`, `requestPermissions()`, `cancelRetentionNotifications()`, `cancelAllNotifications()`, `scheduleAll()`, `handleWordAdded()`.
+- `src/repositories/notificationRepository.ts` — CRUD for `notification_state` table + query helpers (`getWordsWithUpcomingAnniversaries`, `getEmptyCategoryNames`, `getTotalNonProfileAssetCount`).
+- `src/stores/notificationStore.ts` — Zustand store with `primingVisible` flag.
+- `src/hooks/useNotifications.ts` — AppState listener + notification response deep-link router. Mounted as `NotificationHandler` in `app/_layout.tsx` inside `Stack`.
+- `src/components/NotificationPrimingModal.tsx` — permission priming bottom-sheet shown after first word is added (testIDs: `notification-priming-modal`, `priming-title`, `priming-body`, `priming-enable-btn`, `priming-not-now-btn`).
+
+**notification_state keys:** `notifications_enabled`, `permission_requested`, `permission_granted`, `last_schedule_run`, `last_backup_date`, `feature_discovery_sent`, `milestone_{count}`.
+
+**Deep-link routing:** Notification `data.route` is an expo-router path (e.g. `/(tabs)/progress`, `/(tabs)/settings?scrollTo=export`, `/(tabs)/home?action=add-word`). The hook calls `router.push(route)` on tap.
+
+**Backup date tracking:** `last_backup_date` is written to `notification_state` inside `settings.tsx` call sites (`handleShare` / `handleSaveToDevice`) when backup succeeds. `backupExport.ts` remains pure.
+
+**Scroll-to-export:** `settings.tsx` reads `scrollTo=export` URL param, captures export section `y` via `onLayout`, and scrolls with a 300ms delay after mount.
 
 ### Internationalization (`src/i18n/`)
 

@@ -209,5 +209,21 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));
 
+// Mock expo-notifications
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: false, canAskAgain: true, status: 'undetermined' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: false, status: 'granted' })),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-id')),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  AndroidImportance: { DEFAULT: 3 },
+  SchedulableTriggerInputTypes: { DATE: 'date', TIME_INTERVAL: 'timeInterval' },
+}));
+
 // Suppress console warnings in tests
 jest.spyOn(console, 'warn').mockImplementation(() => {});

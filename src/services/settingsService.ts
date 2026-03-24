@@ -4,6 +4,7 @@ import {
   clearAllData as dbClearAllData,
 } from '../repositories/settingsRepository';
 import { deleteAllMedia } from '../utils/assetStorage';
+import { cancelAllNotifications } from './notificationService';
 
 export { getSetting, setSetting } from '../repositories/settingsRepository';
 
@@ -11,6 +12,8 @@ export async function clearAllData(): Promise<void> {
   await dbClearAllData();
   // Best-effort file cleanup after DB purge
   deleteAllMedia();
+  // Cancel all scheduled notifications (notification_state already cleared in DB)
+  void cancelAllNotifications();
 }
 
 export interface ChildProfile {

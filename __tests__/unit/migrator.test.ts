@@ -40,7 +40,7 @@ describe('migrator', () => {
     });
 
     it('skips migrations that are already applied', async () => {
-      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]); // all applied
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }, { version: 5 }]); // all applied
       await runMigrations();
       // withTransactionSync should NOT have been called since all migrations are already applied
       expect(mockDb.withTransactionSync).not.toHaveBeenCalled();
@@ -101,6 +101,19 @@ describe('migrator', () => {
     it('rejects when getAllSync throws', async () => {
       mockDb.getAllSync.mockImplementationOnce(() => { throw new Error('read error'); });
       await expect(rollbackMigration(0)).rejects.toThrow('read error');
+    });
+
+    it('rolls back migration v5 (add-notification-state) to target version 4', async () => {
+      mockDb.getAllSync.mockReturnValueOnce([{ version: 5 }]);
+      mockDb.withTransactionSync.mockImplementationOnce((fn: () => void) => fn());
+      await rollbackMigration(4);
+      expect(mockDb.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('DROP TABLE IF EXISTS notification_state'),
+      );
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM schema_migrations WHERE version = ?'),
+        expect.arrayContaining([5]),
+      );
     });
   });
 

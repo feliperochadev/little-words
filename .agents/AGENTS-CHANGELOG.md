@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_05
+
+[feature] Add local push notification system using expo-notifications: 8 notification types (Gentle Nudge 3/7/15d, Weekly Win, Monthly Recap, Nostalgia Trip, Milestone, Feature Discovery, Category Explorer, Backup Reminder); Reset Sequence strategy (cancel on foreground, batch-schedule on background); pure scheduler (`notificationScheduler.ts`) separated from orchestration (`notificationService.ts`); permission priming modal (`NotificationPrimingModal`) shown after first word is added; notifications toggle in Settings with permission-denied hint; `notification_state` SQLite table (migration 0005); deep-link routing via `data.route` on notification tap; backup date tracking in settings.tsx call sites; scroll-to-export via `scrollTo=export` URL param; bilingual content (en-US / pt-BR) embedded at schedule time
+[test] Add 5 new test files and update 7 existing files: 100% coverage across all 6 notification modules (notificationRepository, notificationScheduler, notificationService, useNotifications, NotificationPrimingModal, notificationStore); fix renderHook/act pattern to use renderHook outside act; add migration v5 rollback test
+
 ### 2026-03-24_04
 
 [refactor] Simplify media link navigation: replace unreliable scroll-to-index logic with search pre-filling in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx`; navigating from `MediaLinkingModal` now passes an `initialSearch` param which sets the search filter to the linked word/variant name, ensuring it is visible; use `useFocusEffect` to clear the search when leaving the screen

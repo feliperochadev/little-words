@@ -8,6 +8,10 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../src/hooks/useNotifications', () => ({
+  useNotifications: jest.fn(),
+}));
+
 describe('RootLayout', () => {
   it('renders without crashing', async () => {
     const { toJSON } = render(<RootLayout />);

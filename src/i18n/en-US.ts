@@ -481,4 +481,16 @@ export default {
     errorUnsafeFile: 'Unsafe file paths detected in backup.',
     errorImport: 'Restore failed. Please try again.',
   },
+
+  // ── Notifications ─────────────────────────────────────────────────────────────
+  notifications: {
+    sectionTitle: 'Notifications',
+    enableToggle: 'Enable notifications',
+    disabledHint: "You won't receive reminders or milestone celebrations.",
+    permissionDeniedHint: 'Notifications are blocked. Enable them in your device Settings.',
+    primingTitle: 'Stay in the loop! 🔔',
+    primingBody: "Get reminders to capture new words, celebrate milestones, and protect your backup — all without any tracking.",
+    primingEnable: 'Enable Notifications',
+    primingNotNow: 'Not now',
+  },
 };

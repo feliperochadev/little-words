@@ -3,6 +3,7 @@ import { useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { QUERY_KEYS, WORD_MUTATION_KEYS } from './queryKeys';
 import * as wordService from '../services/wordService';
+import { handleWordAdded } from '../services/notificationService';
 
 export function useWords(search?: string) {
   const query = useQuery({
@@ -42,6 +43,7 @@ export function useAddWord() {
       WORD_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
+      void handleWordAdded();
     },
   });
 }

@@ -481,4 +481,16 @@ export default {
     errorUnsafeFile: 'Caminhos de arquivo inseguros detectados.',
     errorImport: 'Restauração falhou. Tente novamente.',
   },
+
+  // ── Notifications ─────────────────────────────────────────────────────────────
+  notifications: {
+    sectionTitle: 'Notificações',
+    enableToggle: 'Ativar notificações',
+    disabledHint: 'Você não receberá lembretes nem comemorações de marcos.',
+    permissionDeniedHint: 'Notificações bloqueadas. Ative nas configurações do dispositivo.',
+    primingTitle: 'Fique por dentro! 🔔',
+    primingBody: 'Receba lembretes para registrar novas palavras, celebrar marcos e proteger seu backup — sem rastreamento.',
+    primingEnable: 'Ativar Notificações',
+    primingNotNow: 'Agora não',
+  },
 };

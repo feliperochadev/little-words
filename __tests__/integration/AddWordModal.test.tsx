@@ -31,6 +31,13 @@ jest.mock('expo-router', () => {
   };
 });
 
+jest.mock('../../src/services/notificationService', () => ({
+  handleWordAdded: jest.fn(() => Promise.resolve()),
+  initNotifications: jest.fn(() => Promise.resolve()),
+  scheduleAll: jest.fn(() => Promise.resolve()),
+  cancelRetentionNotifications: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../../src/services/categoryService', () => ({
   ...jest.requireActual('../../src/services/categoryService'),
   getCategories: jest.fn().mockResolvedValue([]),
