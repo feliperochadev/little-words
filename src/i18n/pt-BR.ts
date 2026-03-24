@@ -14,6 +14,19 @@ export default {
     others:  'Outros',
   },
 
+  // ── Child Label ──────────────────────────────────────────────────────────────
+  childLabel: {
+    bebe:              'bebê',
+    crianca:           'criança',
+    articleMaleBebe:   'do bebê',
+    articleFemaleBebe: 'da bebê',
+    articleCrianca:    'da criança',
+    // EN alias keys kept for catalogue parity (not used by PT logic)
+    baby:              'bebê',
+    toddler:           'bebê',
+    child:             'criança',
+  },
+
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Palavrinhas',
@@ -191,6 +204,8 @@ export default {
     babyProfile: 'Perfil do Bebê',
     noProfile: 'Nenhum perfil configurado.',
     editProfile: 'Editar Perfil do Bebê',
+    editProfileTitle: 'Editar Perfil {{label}}',
+    childNameLabel: 'Nome {{label}}',
     girl: 'Menina',
     boy: 'Menino',
     importWords: 'Importar Dados',

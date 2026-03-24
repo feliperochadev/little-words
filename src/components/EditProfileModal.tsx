@@ -12,6 +12,7 @@ import { useModalAnimation } from '../hooks/useModalAnimation';
 import { Button } from './UIComponents';
 import { WheelDatePickerModal } from './WheelDatePickerModal';
 import { useI18n } from '../i18n/i18n';
+import { getChildLabelWithArticle } from '../utils/dashboardHelpers';
 import { formatDisplayDate, toStorageDate } from '../utils/dateHelpers';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfilePhoto, useSaveProfilePhoto } from '../hooks/useAssets';
@@ -23,7 +24,7 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditProfileModalProps>) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const insets = useSafeAreaInsets();
   const { name: storedName, sex: storedSex, birth: storedBirth } = useSettingsStore();
   const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, onClose);
@@ -49,6 +50,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
     onPhotoRemoved: () => setPhotoUri(null),
   });
 
+  const childLabel = getChildLabelWithArticle(storedBirth ?? null, storedSex, locale, t);
   const accentColor = getThemeForSex(sex).colors.primary;
   const isBoy = sex === 'boy';
   const isGirl = sex === 'girl';
@@ -95,7 +97,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
             </View>
 
             <Text style={[s.title, { color: THEME_COLORS.text }]} testID="edit-profile-title">
-              {t('settings.editProfile')}
+              {t('settings.editProfileTitle', { label: childLabel })}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -125,7 +127,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
               </View>
 
               {/* Name */}
-              <Text style={[s.label, { color: THEME_COLORS.textSecondary }]}>{t('onboarding.babyName').toUpperCase()}</Text>
+              <Text style={[s.label, { color: THEME_COLORS.textSecondary }]}>{t('settings.childNameLabel', { label: childLabel }).toUpperCase()}</Text>
               <TextInput
                 style={[s.input, { borderColor: name ? accentColor : THEME_COLORS.border }]}
                 value={name}

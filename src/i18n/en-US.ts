@@ -14,6 +14,19 @@ export default {
     others:  'Others',
   },
 
+  // ── Child Label ──────────────────────────────────────────────────────────────
+  childLabel: {
+    baby:               'baby',
+    toddler:            'toddler',
+    child:              'child',
+    // PT alias keys kept for catalogue parity (not used by EN logic)
+    bebe:               'baby',
+    crianca:            'child',
+    articleMaleBebe:    'Baby',
+    articleFemaleBebe:  'Baby',
+    articleCrianca:     'Child',
+  },
+
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Little Words',
@@ -191,6 +204,8 @@ export default {
     babyProfile: 'Baby Profile',
     noProfile: 'No profile configured.',
     editProfile: 'Edit Baby Profile',
+    editProfileTitle: "Edit {{label}}'s Profile",
+    childNameLabel: "{{label}}'s name",
     girl: 'Girl',
     boy: 'Boy',
     importWords: 'Import Data',

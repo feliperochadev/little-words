@@ -1,5 +1,5 @@
 import { withOpacity } from '../../src/utils/colorHelpers';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native';
@@ -44,6 +44,10 @@ export default function VariantsScreen() {
   const scrolledHighlightRef = useRef<number | null>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetchVariants(); } finally { setRefreshing(false); } };
+
+  const handleScrollToIndexFailed = useCallback((info: { index: number; averageItemLength: number }) => {
+    flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+  }, []);
 
   const handleSearch = (text: string) => setSearch(text);
 
@@ -150,7 +154,7 @@ export default function VariantsScreen() {
         renderItem={renderVariant}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.secondary} />}
-        onScrollToIndexFailed={() => {}}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
         ListHeaderComponent={
           <View style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15') }]}>
             <Ionicons name="bulb-outline" size={14} color={colors.secondary} style={styles.hintIcon} testID="variants-hint-icon" />

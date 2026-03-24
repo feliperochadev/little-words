@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_10
+
+[feature] Age-adaptive child label in profile UI: add `getChildLabel(birth, locale, t)` and `getChildLabelWithArticle(birth, sex, locale, t)` helpers to `dashboardHelpers.ts`; EN tiers: baby (<1y) / toddler (1–2y) / child (3y+); PT tiers: bebê (<2y) / criança (2y+) with gendered article ("do bebê"/"da bebê"/"da criança"); unknown sex defaults to female article; add `childLabel` section to both i18n catalogues (keys fully mirrored for parity); update `EditProfileModal` title and name-field label to use new i18n keys `settings.editProfileTitle` and `settings.childNameLabel` with dynamic `{{label}}` param
+[feature] Improve variant scroll-to-index reliability: replace silent `onScrollToIndexFailed={() => {}}` in `app/(tabs)/variants.tsx` with a proper fallback handler (`scrollToOffset`) matching the pattern used by the Words screen
+[test] Add 20 unit tests for `getChildLabel` and `getChildLabelWithArticle` (all tiers, both locales, both sexes, null-birth fallback); add 4 integration tests to `editProfileModal.test.tsx` verifying age-adaptive modal title (baby/toddler/child/null-birth)
+
 ### 2026-03-23_09
 
 [fix] Invalidate `['assets']` query key after ZIP import so profile photo refreshes immediately without app restart: add `['assets']` to the `invalidateQueries` list in `handleImportZip` in `ImportModal.tsx`
