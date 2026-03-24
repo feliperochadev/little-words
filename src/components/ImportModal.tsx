@@ -253,7 +253,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
         await setProfile({ name: zipData.settings.name, sex: zipData.settings.sex, birth: zipData.settings.birth });
       }
       setLoading(false);
-      [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard(), QUERY_KEYS.allAssets()].forEach(
+      [['words'], ['assets'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard(), QUERY_KEYS.allAssets()].forEach(
         key => queryClient.invalidateQueries({ queryKey: key })
       );
       reset(); onImported(); onClose();

@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_09
+
+[fix] Invalidate `['assets']` query key after ZIP import so profile photo refreshes immediately without app restart: add `['assets']` to the `invalidateQueries` list in `handleImportZip` in `ImportModal.tsx`
+[test] Add test asserting `['assets']` is in invalidated keys after successful ZIP import
+
 ### 2026-03-23_08
 
 [fix] Fix ZIP import losing unlinked/orphaned assets: remove `unlinked→word` type conversion in `insertAndWriteAsset`; pass `newParentType` as an explicit parameter so unlinked assets stay as `parent_type='unlinked'`; rescue orphaned word/variant assets (parent not found in idMap) as `parent_type='unlinked', parent_id=1` instead of silently skipping them

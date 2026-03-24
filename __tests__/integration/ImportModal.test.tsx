@@ -783,6 +783,26 @@ describe('ImportModal', () => {
     });
   });
 
+  it('invalidates assets query key after ZIP import so profile photo refreshes', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const { createTestQueryClient } = require('../helpers/renderWithProviders');
+    const queryClient = createTestQueryClient();
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+    const { findByTestId } = renderWithProviders(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />,
+      { queryClient }
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => expect(mockImportFullBackup).toHaveBeenCalled());
+    const invalidatedKeys = invalidateSpy.mock.calls.map(c => (c[0] as any)?.queryKey);
+    expect(invalidatedKeys).toContainEqual(['assets']);
+  });
+
   it('shows result with restored media counts', async () => {
     mockGetDocumentAsync.mockResolvedValueOnce({
       canceled: false,
