@@ -2,6 +2,10 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_07
+
+[fix] Fix SonarCloud S3776 on `ImportModal.tsx`: extract `tabButtonStyle` and `tabTextStyle` module-level helpers to move `&&` style conditions out of `ImportModal` function scope, reducing cognitive complexity from 22 to ≤15
+
 ### 2026-03-23_06
 
 [refactor] Fix data-layer responsibility violation: move all raw SQL from `src/utils/backupImport.ts` to repositories; add `importCategory` to `categoryRepository.ts`, `importWord` to `wordRepository.ts`, `importVariant` to `variantRepository.ts`, and `importAsset` (with `ImportAssetRecord` interface) to `assetRepository.ts`; `backupImport.ts` now calls only repository functions — no direct `query`/`run` usage; `withTransaction` kept as service-level orchestration (permitted per data-layer.md)

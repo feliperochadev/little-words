@@ -51,6 +51,14 @@ interface ImportResult {
 
 const DEFAULT_IMPORT_CATEGORY_COLOR = DEFAULT_CATEGORIES.find(({ key }) => key === 'others')?.color ?? '#9CA3AF';
 
+function tabButtonStyle(isActive: boolean, surface: string, textColor: string) {
+  return [styles.tab, isActive && styles.tabActive, isActive && { backgroundColor: surface, shadowColor: textColor }];
+}
+
+function tabTextStyle(isActive: boolean, secondary: string, textColor: string) {
+  return [styles.tabText, { color: secondary }, isActive && styles.tabTextActive, isActive && { color: textColor }];
+}
+
 async function addVariantsForWord(wordId: number, rows: ParsedRow[], today: string): Promise<number> {
   let count = 0;
   for (const row of rows) {
@@ -378,25 +386,25 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
 
           <View style={[styles.tabs, { backgroundColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.tab, tab === 'zip' && styles.tabActive, tab === 'zip' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              style={tabButtonStyle(tab === 'zip', colors.surface, colors.text)}
               onPress={() => { setTab('zip'); setPreview([]); }}
               testID="import-tab-zip"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'zip' && styles.tabTextActive, tab === 'zip' && { color: colors.text }]}>{t('backup.tabZip')}</Text>
+              <Text style={tabTextStyle(tab === 'zip', colors.textSecondary, colors.text)}>{t('backup.tabZip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tab, tab === 'csv' && styles.tabActive, tab === 'csv' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              style={tabButtonStyle(tab === 'csv', colors.surface, colors.text)}
               onPress={() => { setTab('csv'); setPreview([]); }}
               testID="import-tab-csv"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'csv' && styles.tabTextActive, tab === 'csv' && { color: colors.text }]}>{t('importModal.tabCSV')}</Text>
+              <Text style={tabTextStyle(tab === 'csv', colors.textSecondary, colors.text)}>{t('importModal.tabCSV')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tab, tab === 'text' && styles.tabActive, tab === 'text' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              style={tabButtonStyle(tab === 'text', colors.surface, colors.text)}
               onPress={() => { setTab('text'); setPreview([]); }}
               testID="import-tab-text"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'text' && styles.tabTextActive, tab === 'text' && { color: colors.text }]}>{t('importModal.tabText')}</Text>
+              <Text style={tabTextStyle(tab === 'text', colors.textSecondary, colors.text)}>{t('importModal.tabText')}</Text>
             </TouchableOpacity>
           </View>
 
