@@ -5,6 +5,7 @@ import {
   addVariant,
   updateVariant,
   deleteVariant,
+  importVariant,
 } from '../../src/repositories/variantRepository';
 
 const mockDb = (globalThis as any).__mockDb;
@@ -189,6 +190,35 @@ describe('variantRepository', () => {
     it('rejects when transaction throws', async () => {
       mockDb.withTransactionAsync.mockRejectedValueOnce(new Error('tx error'));
       await expect(deleteVariant(1)).rejects.toThrow('tx error');
+    });
+  });
+
+  describe('importVariant', () => {
+    it('inserts variant with created_at and returns the new id', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 25, changes: 1 });
+      const id = await importVariant(10, 'maa', '2024-01-01', null, '2024-01-01');
+      expect(id).toBe(25);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO variants'),
+        [10, 'maa', '2024-01-01', null, '2024-01-01'],
+      );
+      expect(mockDb.runAsync.mock.calls[0][0]).toContain('created_at');
+    });
+
+    it('inserts variant with non-null notes', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 26, changes: 1 });
+      const id = await importVariant(10, 'mama', '2024-02-01', 'soft pronunciation', '2024-02-01');
+      expect(id).toBe(26);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO variants'),
+        [10, 'mama', '2024-02-01', 'soft pronunciation', '2024-02-01'],
+      );
+    });
+
+    it('returns 0 when lastInsertRowId is null', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
+      const id = await importVariant(10, 'maa', '2024-01-01', null, '2024-01-01');
+      expect(id).toBe(0);
     });
   });
 });

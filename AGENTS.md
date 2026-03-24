@@ -37,6 +37,11 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 
 12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
 
+13. **Refined Prompt Convention (`/refine` and `/plan`).** See `.agents/standards/refined-prompt-convention.md` for the full standard. In brief:
+    - **When using `/refine`:** Save the output to a `.md` file with a YAML frontmatter marker: `---` `refined: true` `refined_at: YYYY-MM-DD HH:MM:SS UTC` `refined_by: Codex` `---`
+    - **When using `/plan` on a `.md` file:** Check for `refined: true` in the frontmatter; if present, skip the `/refine` phase and proceed directly to architecture planning. This avoids re-analyzing already-refined prompts.
+    - This convention ensures clarity and efficiency across all agents.
+
 ## Coding Style & Naming Conventions
 Write concise TypeScript. Design tokens live in `src/theme/` — import from there directly. `src/utils/theme.ts` has been removed. Use `useTheme()` from `src/hooks/useTheme.ts` for runtime sex-adaptive colors in components; use `getThemeForSex(sex)` from `src/theme/getThemeForSex.ts` for non-React contexts (e.g. onboarding). Category constants live in `src/theme/category.ts` and shared layout constants in `src/theme/layout.ts`. Use Ionicons from `@expo/vector-icons` for all UI chrome icons — never emoji as icons. Preserve existing naming patterns: Expo Router files stay lowercase, React components use PascalCase, and helper modules use camelCase. Prefer `testID`-based selectors over visible text for app UI. Treat lint warnings as real work, not noise.
 

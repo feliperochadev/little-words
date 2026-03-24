@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Track pronunciation variants per word
 - Bilingual UI: English (`en-US`) and Brazilian Portuguese (`pt-BR`), locale persisted to SQLite
 - CSV export (share or save to device) and text/CSV import with preview
+- Full ZIP backup/restore: exports words, variants, categories, and media files into a ZIP archive; imports via merge strategy (add new, skip existing)
 - Swipeable bottom-sheet modals with pan gesture dismiss
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
@@ -91,6 +92,11 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
 11. **Reviewer shipping + cleanup.** External reviewers may run `/commit` and `/ship` themselves only after the review is approved and required approvals are met, and when `features.automatic_commit` or `features.automatic_ship` permit it. Always delete the review file after the code is committed.
 
 12. **All commands must run within the project root only.** Every shell command — whether from `allowed_commands` or approved ad-hoc during a session — must execute inside this repository's root directory. Never `cd` to, create files in, or target paths outside the project root. This is enforced by `command_scope: "project_root_only"` in `.agents/agent-config.json`.
+
+13. **Refined Prompt Convention (`/refine` and `/plan`).** See `.agents/standards/refined-prompt-convention.md` for the full standard. In brief:
+    - **When using `/refine`:** Save the output to a `.md` file with a YAML frontmatter marker: `---` `refined: true` `refined_at: YYYY-MM-DD HH:MM:SS UTC` `refined_by: Claude` `---`
+    - **When using `/plan` on a `.md` file:** Check for `refined: true` in the frontmatter; if present, skip the `/refine` phase and proceed directly to architecture planning. This avoids re-analyzing already-refined prompts.
+    - This convention ensures clarity and efficiency across all agents.
 
 ## Commands
 
@@ -339,6 +345,11 @@ src/theme/
 - `src/theme/layout.ts` — Shared layout constants (`textAreaHeight`, `highlightBorderRadius`, etc.) used by reusable form/date components.
 - `src/utils/categoryKeys.ts` — `DEFAULT_CATEGORIES` array and `DEFAULT_CATEGORY_KEY_SET` (for O(1) lookup). Source of truth for built-in category keys.
 - `src/utils/csvExport.ts` — CSV generation helpers. `buildCSVHeader(t)` returns locale-aware column headers; `buildCategoryResolver(t)` translates built-in category keys. Both `saveCSVToDevice` and `shareCSV` require a pre-built `headerRow` string.
+- `src/utils/backupExport.ts` — ZIP backup builder and share/save helpers. `buildBackupZip(t, locale)` assembles `manifest.json` + `data.json` + `media/` into a `Uint8Array` ZIP using fflate's `zipSync`. `shareFullBackup` and `saveFullBackupToDevice` wrap it with expo-sharing and expo-file-system SAF. Locale is passed as a parameter (not from settingsStore). ZIP filename format: `{AppName-in-locale}-export-DD-MM-YYYY_HH-MM.zip`.
+- `src/utils/backupImport.ts` — ZIP import: `openBackupZip(bytes)` unzips and validates; `importFullBackup(data, fileMap)` runs a two-phase merge (atomic DB transaction then file I/O). Merge strategy: skip existing words (case-insensitive), add new. Unlinked assets are stored as `parent_type='word'` in DB on import.
+- `src/utils/backupValidation.ts` — Path traversal protection and manifest/data byte validation. Safe media path regex: `^(words|variants|profile|unlinked)\/\d+\/(audio|photos|videos)\/asset_\d+\.\w+$`.
+- `src/repositories/backupRepository.ts` — Bulk SELECT queries for backup export: `getAllCategoriesForBackup`, `getAllWordsForBackup`, `getAllVariantsForBackup`, `getAllAssetsForBackup` (no parent_type filter — includes unlinked assets).
+- `src/types/backup.ts` — TypeScript interfaces for the backup format: `BackupManifest`, `BackupData`, `BackupSettings`, `BackupCategory`, `BackupWord`, `BackupVariant`, `BackupAsset`, `BackupImportResult`.
 - `src/utils/dashboardHelpers.ts` — Dashboard utility functions: `getAgeText(birth, t)`, `getGreeting(name, sex, t)`, `formatMonth(monthStr, showYear, t)` (returns localized short month label, optionally with 2-digit year suffix), and `MONTH_KEYS` constant.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.). `StatCard` uses a compact horizontal layout: icon-bg (36×36) + label (flex:1) + value right-aligned.
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
@@ -387,6 +398,7 @@ Authoritative coding standards live in `.agents/standards/`. Read the relevant f
 | SonarQube Rules | `.agents/standards/sonar.md` |
 | Data Layer | `.agents/standards/data-layer.md` |
 | Design System | `.agents/standards/design-system.md` |
+| Refined Prompt Convention | `.agents/standards/refined-prompt-convention.md` |
 
 ## Additional Documentation
 

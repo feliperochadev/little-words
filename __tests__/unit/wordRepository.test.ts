@@ -5,6 +5,7 @@ import {
   updateWord,
   deleteWord,
   getVariantsByWord,
+  importWord,
 } from '../../src/repositories/wordRepository';
 
 const mockDb = (globalThis as any).__mockDb;
@@ -231,6 +232,35 @@ describe('wordRepository', () => {
       mockDb.getAllAsync.mockResolvedValueOnce([]);
       const result = await getVariantsByWord(99);
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('importWord', () => {
+    it('inserts word with created_at and returns the new id', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 15, changes: 1 });
+      const id = await importWord('mama', null, '2024-01-01', 'first word', '2024-01-01');
+      expect(id).toBe(15);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO words'),
+        ['mama', null, '2024-01-01', 'first word', '2024-01-01'],
+      );
+      expect(mockDb.runAsync.mock.calls[0][0]).toContain('created_at');
+    });
+
+    it('inserts word with null notes', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 16, changes: 1 });
+      const id = await importWord('dada', 3, '2024-02-01', null, '2024-02-01');
+      expect(id).toBe(16);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO words'),
+        ['dada', 3, '2024-02-01', null, '2024-02-01'],
+      );
+    });
+
+    it('returns 0 when lastInsertRowId is null', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
+      const id = await importWord('mama', null, '2024-01-01', null, '2024-01-01');
+      expect(id).toBe(0);
     });
   });
 });

@@ -120,3 +120,31 @@ export const updateAssetName = (id: number, name: string): Promise<void> =>
 
 export const updateAssetDate = (id: number, date: string): Promise<void> =>
   run('UPDATE assets SET created_at = ? WHERE id = ?', [date, id]).then(() => undefined);
+
+interface ImportAssetRecord {
+  parentType: string;
+  parentId: number;
+  assetType: string;
+  filename: string;
+  name: string | null;
+  mimeType: string;
+  fileSize: number;
+  durationMs: number | null;
+  width: number | null;
+  height: number | null;
+  createdAt: string;
+}
+
+/** Inserts an asset preserving the original created_at timestamp from a backup. */
+export const importAsset = async (record: ImportAssetRecord): Promise<number> => {
+  const result = await run(
+    `INSERT INTO assets (parent_type, parent_id, asset_type, filename, name, mime_type, file_size, duration_ms, width, height, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      record.parentType, record.parentId, record.assetType, record.filename,
+      record.name, record.mimeType, record.fileSize,
+      record.durationMs, record.width, record.height, record.createdAt,
+    ],
+  );
+  return result.insertId ?? 0;
+};

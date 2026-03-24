@@ -7,6 +7,7 @@ import {
   deleteCategoryWithUnlink,
   unlinkWordsFromCategory,
   getWordCountByCategory,
+  importCategory,
 } from '../../src/repositories/categoryRepository';
 
 const mockDb = (globalThis as any).__mockDb;
@@ -157,6 +158,25 @@ describe('categoryRepository', () => {
       mockDb.getAllAsync.mockResolvedValueOnce([{}]);
       const count = await getWordCountByCategory(1);
       expect(count).toBe(0);
+    });
+  });
+
+  describe('importCategory', () => {
+    it('inserts category with created_at and returns the new id', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 7, changes: 1 });
+      const id = await importCategory('Food', '#ff0000', '🍕', '2024-01-01');
+      expect(id).toBe(7);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO categories'),
+        ['Food', '#ff0000', '🍕', '2024-01-01'],
+      );
+      expect(mockDb.runAsync.mock.calls[0][0]).toContain('created_at');
+    });
+
+    it('returns 0 when lastInsertRowId is null', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
+      const id = await importCategory('Food', '#ff0000', '🍕', '2024-01-01');
+      expect(id).toBe(0);
     });
   });
 });

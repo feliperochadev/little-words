@@ -2,6 +2,59 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-23_09
+
+[fix] Invalidate `['assets']` query key after ZIP import so profile photo refreshes immediately without app restart: add `['assets']` to the `invalidateQueries` list in `handleImportZip` in `ImportModal.tsx`
+[test] Add test asserting `['assets']` is in invalidated keys after successful ZIP import
+
+### 2026-03-23_08
+
+[fix] Fix ZIP import losing unlinked/orphaned assets: remove `unlinked→word` type conversion in `insertAndWriteAsset`; pass `newParentType` as an explicit parameter so unlinked assets stay as `parent_type='unlinked'`; rescue orphaned word/variant assets (parent not found in idMap) as `parent_type='unlinked', parent_id=1` instead of silently skipping them
+[test] Update `backupImport.test.ts`: fix unlinked asset test to expect `parentType:'unlinked'`; replace two "warns for orphaned" tests with "rescues orphaned word/variant as unlinked when file exists" tests; add test for orphaned asset with missing file (warns file not found)
+
+### 2026-03-23_07
+
+[fix] Fix SonarCloud S3776 on `ImportModal.tsx`: extract `tabButtonStyle` and `tabTextStyle` module-level helpers to move `&&` style conditions out of `ImportModal` function scope, reducing cognitive complexity from 22 to ≤15
+
+### 2026-03-23_06
+
+[refactor] Fix data-layer responsibility violation: move all raw SQL from `src/utils/backupImport.ts` to repositories; add `importCategory` to `categoryRepository.ts`, `importWord` to `wordRepository.ts`, `importVariant` to `variantRepository.ts`, and `importAsset` (with `ImportAssetRecord` interface) to `assetRepository.ts`; `backupImport.ts` now calls only repository functions — no direct `query`/`run` usage; `withTransaction` kept as service-level orchestration (permitted per data-layer.md)
+[test] Rewrite `backupImport.test.ts` to mock repository modules instead of `mockDb` DB calls; add 10 new repository tests (2 per new function) covering insert success and null insertId fallback
+
+### 2026-03-23_05
+
+[fix] Fix SonarCloud S3776 on `ImportModal.tsx`: extract `handleImport` body to module-level `runTextCsvImport` with `TextCsvImportDeps` interface, reducing component cognitive complexity from 22 to ≤15
+[fix] Fix SonarCloud S3776 on `backupImport.ts`: extract `resolveParentId` and `insertAndWriteAsset` helper functions from `importAssets` loop, reducing function cognitive complexity from 31 to ≤15
+[fix] Fix SonarCloud S6551 on `backupValidation.ts`: replace `m['version'] ?? 'unknown'` in template literal with `typeof` type guard to avoid `[object Object]` stringification of unknown values
+
+### 2026-03-23_04
+
+[fix] Fix SonarCloud issues on PR #54: use `replaceAll` over `replace` with global regex in `backupExport.ts`; remove unnecessary `as` assertion on `sex` field; flip negated condition in `backupImport.ts`; use `RegExp.exec()` instead of `String.match()` for asset filename extension; remove redundant `String()` wrapper in `backupValidation.ts` template literal
+[refactor] Reduce `ImportModal` cognitive complexity from 25 to ~13 by extracting `buildZipResultMessage` (module-level helper for ZIP result formatting) and `renderActiveTabContent` (inline renderer replacing nested ternary) — also fixes SonarCloud S3358 nested ternary rule
+[test] Add 9 new integration tests for ZIP backup flow covering: valid ZIP pick, invalid ZIP error, picker crash, remove file, import success with/without profile restore, import error, result with media counts; add `bytes` mock to `jest.setup.js`; coverage for `ImportModal.tsx` rises from 75% to 95.97% lines / 91.08% branches
+
+### 2026-03-23_03
+
+[fix] Translate hardcoded Portuguese example lines and placeholder text in ImportModal text tab: add `importModal.example1/2/3` and `importModal.placeholder` i18n keys to `en-US.ts` and `pt-BR.ts`, replace hardcoded strings in `ImportModal.tsx`
+[test] Replace `findByPlaceholderText(/mamãe/)` with `findByTestId('import-text-input')` in `ImportModal.test.tsx` and `settings.test.tsx` to work correctly with the default en-US test locale
+
+### 2026-03-23_02
+
+[fix] Fix media files not restored during ZIP import: export `ensureAssetDirTree` from `assetStorage.ts` and use it in `backupImport.ts` instead of `ensureDir`, creating the full directory tree before writing each asset file
+[feature] Enhance export/import UI: rename "media" → "audios, photos and videos" throughout all i18n keys; change Import modal title to "Import Data"; add full-backup as default selected tab in both ImportModal (zip first) and Settings export (zip first); split import success result into per-type lines (audios/photos/videos separately); reduce import tab font size ~21% to fit text on one line; add "Export first" button to delete-all confirmation dialog; reorder export cards (ZIP card first)
+[fix] Split `BackupImportResult.assetsRestored` into three typed fields `audiosRestored`, `photosRestored`, `videosRestored` for per-type reporting in import success message
+[test] Update all affected tests: settings screen (switch to CSV mode before CSV-specific tests, rename defaults-to-CSV test to defaults-to-ZIP, update opens-import-modal to check ZIP tab); ImportModal (switch to text tab before text-tab assertions); backupImport unit tests (use new per-type fields, add branch coverage for null insertId, non-Error catches, word with unmapped category)
+
+### 2026-03-23_01
+
+[feature] Add full ZIP backup/restore: export mode selector in Settings (CSV vs ZIP cards), ZIP archive builder (`backupExport.ts`) with manifest.json + data.json + media/ directory using fflate, and ZIP import tab in ImportModal with merge strategy (skip existing words, add new), profile restore toggle, and path traversal protection
+[feature] Add `backupRepository.ts` with bulk DB queries for export (categories, words, variants, assets including unlinked)
+[feature] Add `backupValidation.ts` with manifest/data byte validation and path traversal protection (regex-based safe path check)
+[feature] Add `src/types/backup.ts` with all backup TypeScript interfaces (BackupManifest, BackupData, BackupSettings, BackupCategory, BackupWord, BackupVariant, BackupAsset, BackupImportResult)
+[feature] Add i18n keys for full backup flow (~40 keys per locale) in `en-US.ts` and `pt-BR.ts`
+[test] Add 22 unit tests for backupValidation, 7 for backupRepository, 17 for backupExport, 33 for backupImport — all at 100% coverage across all metrics
+[test] Add 5 tests to ImportModal integration tests for ZIP tab; add 7 tests to settings screen tests for export mode selector
+
 ### 2026-03-22_16
 
 [fix] Add "Progress" option to `MoreTabButton` floating popup (`src/components/MoreTabButton.tsx`) with `trending-up-outline` icon, navigating to `/(tabs)/progress` — the popup is the actual UI shown when tapping "More" on the tab bar

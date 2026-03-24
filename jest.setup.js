@@ -39,11 +39,13 @@ globalThis.__mockDb = mockDbInstance;
 // Mock expo-file-system (new API)
 jest.mock('expo-file-system', () => {
   const _textMock = jest.fn(() => Promise.resolve(''));
+  const _bytesMock = jest.fn(() => Promise.resolve(new Uint8Array()));
   const _writeMock = jest.fn();
   const _copyMock = jest.fn();
   const _deleteMock = jest.fn();
   const _fileMock = {
     text: _textMock,
+    bytes: _bytesMock,
     write: _writeMock,
     copy: _copyMock,
     delete: _deleteMock,

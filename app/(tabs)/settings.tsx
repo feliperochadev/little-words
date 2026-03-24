@@ -11,6 +11,7 @@ import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCatego
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
+import { shareFullBackup, saveFullBackupToDevice } from '../../src/utils/backupExport';
 import { Card, Button } from '../../src/components/UIComponents';
 import Constants from 'expo-constants';
 import { ImportModal } from '../../src/components/ImportModal';
@@ -49,25 +50,42 @@ export default function SettingsScreen() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
 
+  const [exportMode, setExportMode] = useState<'csv' | 'zip'>('zip');
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
   const handleShare = async () => {
     setExporting(true);
-    const result = await shareCSV(categoryResolver, csvHeader, t);
-    setExporting(false);
-    if (!result.success) Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
+    if (exportMode === 'zip') {
+      const result = await shareFullBackup(t, locale);
+      setExporting(false);
+      if (!result.success) Alert.alert(t('common.error'), result.error || t('backup.errorShare'));
+    } else {
+      const result = await shareCSV(categoryResolver, csvHeader, t);
+      setExporting(false);
+      if (!result.success) Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
+    }
   };
 
   const handleSaveToDevice = async () => {
     setSaving(true);
-    const result = await saveCSVToDevice(categoryResolver, csvHeader, t);
-    setSaving(false);
-    if (result.success) {
-      Alert.alert(t('settings.saveCsvSuccess'), t('settings.saveCsvMsg'));
-    } else if (result.error !== 'cancelled') {
-      Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
+    if (exportMode === 'zip') {
+      const result = await saveFullBackupToDevice(t, locale);
+      setSaving(false);
+      if (result.success) {
+        Alert.alert(t('backup.saveSuccess'), t('backup.saveMsg'));
+      } else if (result.error !== 'cancelled') {
+        Alert.alert(t('common.error'), result.error || t('backup.errorShare'));
+      }
+    } else {
+      const result = await saveCSVToDevice(categoryResolver, csvHeader, t);
+      setSaving(false);
+      if (result.success) {
+        Alert.alert(t('settings.saveCsvSuccess'), t('settings.saveCsvMsg'));
+      } else if (result.error !== 'cancelled') {
+        Alert.alert(t('common.error'), result.error || t('settings.errorShare'));
+      }
     }
   };
 
@@ -81,6 +99,10 @@ export default function SettingsScreen() {
       t('settings.deleteAllMsg'),
       [
         { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.deleteAllExportFirst'),
+          onPress: () => { void shareFullBackup(t, locale); },
+        },
         {
           text: t('settings.deleteAll'), style: 'destructive',
           onPress: () => {
@@ -232,9 +254,42 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-export-title">{t('settings.exportData')}</Text>
           </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.exportDesc')}</Text>
+
+          {/* Export format selector */}
+          <View style={styles.exportModeRow}>
+            <TouchableOpacity
+              style={[
+                styles.exportModeCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                exportMode === 'zip' && { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '10') },
+              ]}
+              onPress={() => setExportMode('zip')}
+              testID="settings-export-mode-zip"
+            >
+              <Text style={styles.exportModeIcon}>📦</Text>
+              <Text style={[styles.exportModeTitle, { color: exportMode === 'zip' ? colors.primary : colors.text }]}>{t('backup.zipCardTitle')}</Text>
+              <Text style={[styles.exportModeDesc, { color: colors.textSecondary }]}>{t('backup.zipCardDesc')}</Text>
+              {exportMode === 'zip' && <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={styles.exportModeCheck} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.exportModeCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                exportMode === 'csv' && { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '10') },
+              ]}
+              onPress={() => setExportMode('csv')}
+              testID="settings-export-mode-csv"
+            >
+              <Text style={styles.exportModeIcon}>📄</Text>
+              <Text style={[styles.exportModeTitle, { color: exportMode === 'csv' ? colors.primary : colors.text }]}>{t('backup.csvCardTitle')}</Text>
+              <Text style={[styles.exportModeDesc, { color: colors.textSecondary }]}>{t('backup.csvCardDesc')}</Text>
+              {exportMode === 'csv' && <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={styles.exportModeCheck} />}
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.buttonRow}>
             <Button
-              title={saving ? t('settings.saving') : t('settings.saveToDrive')}
+              title={saving ? t('backup.saving') : t('settings.saveToDrive')}
               onPress={handleSaveToDevice}
               loading={saving}
               icon={<Ionicons name="save-outline" size={16} color={colors.textOnPrimary} testID="settings-save-btn-icon" />}
@@ -243,7 +298,7 @@ export default function SettingsScreen() {
               testID="settings-save-btn"
             />
             <Button
-              title={exporting ? t('settings.sharing') : t('settings.shareExport')}
+              title={exporting ? t('backup.sharing') : t('settings.shareExport')}
               onPress={handleShare}
               loading={exporting}
               variant="outline"
@@ -347,4 +402,13 @@ const styles = StyleSheet.create({
   langLabel: { fontSize: 14, fontWeight: '600' },
   langLabelActive: { fontWeight: '800' },
   bottomSpacer: { height: 40 },
+  exportModeRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  exportModeCard: {
+    flex: 1, borderRadius: 14, borderWidth: 2, padding: 12,
+    alignItems: 'flex-start', gap: 4, position: 'relative',
+  },
+  exportModeIcon: { fontSize: 22, marginBottom: 2 },
+  exportModeTitle: { fontSize: 13, fontWeight: '800' },
+  exportModeDesc: { fontSize: 11, lineHeight: 15 },
+  exportModeCheck: { position: 'absolute', top: 8, right: 8 },
 });

@@ -12,6 +12,7 @@ import {
   updateAssetParent,
   updateAssetName,
   updateAssetDate,
+  importAsset,
 } from '../../src/repositories/assetRepository';
 import type { NewAsset, AssetWithLink } from '../../src/types/asset';
 
@@ -337,6 +338,49 @@ describe('assetRepository', () => {
     it('resolves to undefined', async () => {
       const result = await updateAssetDate(1, '2025-06-01');
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('importAsset', () => {
+    const record = {
+      parentType: 'word',
+      parentId: 10,
+      assetType: 'audio',
+      filename: 'asset_1.m4a',
+      name: null,
+      mimeType: 'audio/mp4',
+      fileSize: 1024,
+      durationMs: 5000,
+      width: null,
+      height: null,
+      createdAt: '2024-01-01',
+    };
+
+    it('inserts asset with created_at and returns the new id', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 99, changes: 1 });
+      const id = await importAsset(record);
+      expect(id).toBe(99);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO assets'),
+        ['word', 10, 'audio', 'asset_1.m4a', null, 'audio/mp4', 1024, 5000, null, null, '2024-01-01'],
+      );
+      expect(mockDb.runAsync.mock.calls[0][0]).toContain('created_at');
+    });
+
+    it('inserts asset with name and dimensions', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: 100, changes: 1 });
+      const id = await importAsset({ ...record, assetType: 'photo', name: 'My Photo', mimeType: 'image/jpeg', width: 1920, height: 1080, durationMs: null });
+      expect(id).toBe(100);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO assets'),
+        ['word', 10, 'photo', 'asset_1.m4a', 'My Photo', 'image/jpeg', 1024, null, 1920, 1080, '2024-01-01'],
+      );
+    });
+
+    it('returns 0 when lastInsertRowId is null', async () => {
+      mockDb.runAsync.mockResolvedValueOnce({ lastInsertRowId: null, changes: 1 });
+      const id = await importAsset(record);
+      expect(id).toBe(0);
     });
   });
 });

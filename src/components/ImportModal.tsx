@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated,
+  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useTheme } from '../hooks/useTheme';
 import { getCategories, addCategory } from '../services/categoryService';
 import { findWordByName, addWord } from '../services/wordService';
@@ -17,6 +17,24 @@ import { useModalAnimation } from '../hooks/useModalAnimation';
 import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES, canonicalizeCategoryName, categoryLookupKey } from '../utils/categoryKeys';
 import { parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
+import { openBackupZip, importFullBackup } from '../utils/backupImport';
+import { useSettingsStore } from '../stores/settingsStore';
+import type { BackupData, BackupImportResult } from '../types/backup';
+
+function buildZipResultMessage(
+  result: BackupImportResult,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  const lines: string[] = [];
+  if (result.wordsAdded > 0) lines.push(t('backup.resultWords', { count: result.wordsAdded }));
+  if (result.wordsSkipped > 0) lines.push(t('backup.resultSkipped', { count: result.wordsSkipped }));
+  if (result.variantsAdded > 0) lines.push(t('backup.resultVariants', { count: result.variantsAdded }));
+  if (result.audiosRestored > 0) lines.push(t('backup.resultAudios', { count: result.audiosRestored }));
+  if (result.photosRestored > 0) lines.push(t('backup.resultPhotos', { count: result.photosRestored }));
+  if (result.videosRestored > 0) lines.push(t('backup.resultVideos', { count: result.videosRestored }));
+  if (result.assetWarnings.length > 0) lines.push(t('backup.resultWarnings', { count: result.assetWarnings.length }));
+  return lines.join('\n') || t('backup.resultSkipped', { count: result.wordsSkipped });
+}
 
 interface ImportModalProps {
   visible: boolean;
@@ -32,6 +50,14 @@ interface ImportResult {
 }
 
 const DEFAULT_IMPORT_CATEGORY_COLOR = DEFAULT_CATEGORIES.find(({ key }) => key === 'others')?.color ?? '#9CA3AF';
+
+function tabButtonStyle(isActive: boolean, surface: string, textColor: string) {
+  return [styles.tab, isActive && styles.tabActive, isActive && { backgroundColor: surface, shadowColor: textColor }];
+}
+
+function tabTextStyle(isActive: boolean, secondary: string, textColor: string) {
+  return [styles.tabText, { color: secondary }, isActive && styles.tabTextActive, isActive && { color: textColor }];
+}
 
 async function addVariantsForWord(wordId: number, rows: ParsedRow[], today: string): Promise<number> {
   let count = 0;
@@ -59,6 +85,53 @@ async function processGroup(
   if (existing) { wordId = existing.id; result.skipped.push(firstRow.word); }
   else { wordId = await addWord(firstRow.word, categoryId, dateAdded); result.wordsAdded++; }
   result.variantsAdded += await addVariantsForWord(wordId, group.rows, today);
+}
+
+interface TextCsvImportDeps {
+  tab: 'text' | 'csv';
+  textInput: string;
+  csvContent: string | null;
+  setLoading: (v: boolean) => void;
+  queryClient: QueryClient;
+  reset: () => void;
+  onImported: () => void;
+  onClose: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+async function runTextCsvImport(deps: TextCsvImportDeps): Promise<void> {
+  const { tab, textInput, csvContent, setLoading, queryClient, reset, onImported, onClose, t } = deps;
+  let rows: ParsedRow[] = [];
+  if (tab === 'text') {
+    rows = parseTextInput(textInput);
+  } else {
+    if (!csvContent) { Alert.alert(t('common.attention'), t('importModal.selectFileFirst')); return; }
+    rows = parseCSV(csvContent);
+  }
+  if (!rows.length) { Alert.alert(t('common.attention'), t('importModal.noWordsFound')); return; }
+
+  setLoading(true);
+  try {
+    const result = await importRows(rows);
+    setLoading(false);
+    [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
+      key => queryClient.invalidateQueries({ queryKey: key })
+    );
+    reset(); onImported(); onClose();
+
+    const lines = [t('importModal.resultWords', { count: result.wordsAdded })];
+    if (result.variantsAdded > 0) lines.push(t('importModal.resultVariants', { count: result.variantsAdded }));
+    if (result.skipped.length > 0) {
+      const wordList = result.skipped.slice(0, 3).join(', ') + (result.skipped.length > 3 ? '...' : '');
+      lines.push(t('importModal.resultSkipped', { count: result.skipped.length, words: wordList }));
+    }
+    if (result.errors.length > 0) lines.push(t('importModal.resultErrors', { count: result.errors.length }));
+    Alert.alert(t('importModal.resultTitle'), lines.join('\n'));
+  } catch (e: unknown) {
+    setLoading(false);
+    const message = e instanceof Error ? e.message : t('common.error');
+    Alert.alert(t('common.error'), message);
+  }
 }
 
 async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
@@ -99,15 +172,23 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const setProfile = useSettingsStore(s => s.setProfile);
 
-  const [tab, setTab]               = useState<'text' | 'csv'>('text');
+  const [tab, setTab]               = useState<'text' | 'csv' | 'zip'>('zip');
   const [textInput, setTextInput]   = useState('');
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [loading, setLoading]       = useState(false);
   const [preview, setPreview]       = useState<ParsedRow[]>([]);
 
-  const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); };
+  // ZIP backup state
+  const [zipFileName, setZipFileName] = useState<string | null>(null);
+  const [zipData, setZipData] = useState<BackupData | null>(null);
+  const [zipFileMap, setZipFileMap] = useState<Record<string, Uint8Array> | null>(null);
+  const [restoreProfile, setRestoreProfile] = useState(true);
+
+  const resetZip = () => { setZipFileName(null); setZipData(null); setZipFileMap(null); setRestoreProfile(true); };
+  const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); resetZip(); };
   const handleClose = () => { reset(); onClose(); };
 
   // Modal animation and gesture handling
@@ -136,39 +217,57 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     }
   };
 
-  const handleImport = async () => {
-    let rows: ParsedRow[] = [];
-    if (tab === 'text') {
-      rows = parseTextInput(textInput);
-    } else {
-      if (!csvContent) { Alert.alert(t('common.attention'), t('importModal.selectFileFirst')); return; }
-      rows = parseCSV(csvContent);
+  const handlePickZip = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/zip', 'application/octet-stream', '*/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      const bytes = await new FSFile(file.uri).bytes();
+      try {
+        const { fileMap, data } = openBackupZip(bytes);
+        setZipFileName(file.name);
+        setZipData(data);
+        setZipFileMap(fileMap);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : t('common.error');
+        Alert.alert(t('common.error'), message);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('common.error');
+      Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: message }));
     }
-    if (!rows.length) { Alert.alert(t('common.attention'), t('importModal.noWordsFound')); return; }
+  };
 
+  const handleImportZip = async () => {
+    if (!zipData || !zipFileMap) {
+      Alert.alert(t('common.attention'), t('backup.pickZipFile'));
+      return;
+    }
     setLoading(true);
     try {
-      const result = await importRows(rows);
+      const result = await importFullBackup(zipData, zipFileMap);
+      if (restoreProfile && zipData.settings?.name) {
+        await setProfile({ name: zipData.settings.name, sex: zipData.settings.sex, birth: zipData.settings.birth });
+      }
       setLoading(false);
-      [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
+      [['words'], ['assets'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard(), QUERY_KEYS.allAssets()].forEach(
         key => queryClient.invalidateQueries({ queryKey: key })
       );
       reset(); onImported(); onClose();
-
-      const lines = [t('importModal.resultWords', { count: result.wordsAdded })];
-      if (result.variantsAdded > 0) lines.push(t('importModal.resultVariants', { count: result.variantsAdded }));
-      if (result.skipped.length > 0) {
-        const wordList = result.skipped.slice(0, 3).join(', ') + (result.skipped.length > 3 ? '...' : '');
-        lines.push(t('importModal.resultSkipped', { count: result.skipped.length, words: wordList }));
-      }
-      if (result.errors.length > 0) lines.push(t('importModal.resultErrors', { count: result.errors.length }));
-      Alert.alert(t('importModal.resultTitle'), lines.join('\n'));
+      Alert.alert(t('backup.resultTitle'), buildZipResultMessage(result, t));
     } catch (e: unknown) {
       setLoading(false);
-      const message = e instanceof Error ? e.message : t('common.error');
-      Alert.alert(t('common.error'), message);
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
     }
   };
+
+  const handleImport = () => runTextCsvImport({
+    tab: tab as 'text' | 'csv',
+    textInput, csvContent, setLoading, queryClient, reset, onImported, onClose, t,
+  });
 
   const wordCount = (() => {
     if (tab === 'text') return parseTextInput(textInput).length;
@@ -179,6 +278,90 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const importBtnLabel = wordCount > 0
     ? tc('importModal.importBtn', wordCount)
     : t('importModal.importZero');
+
+  const renderActiveTabContent = () => {
+    if (tab === 'text') {
+      return (
+        <>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.textHint')}</Text>
+          <View style={[styles.exampleBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.exampleLabel, { color: colors.textSecondary }]}>{t('importModal.examplesLabel')}</Text>
+            <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example1')}</Text>
+            <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example2')}</Text>
+            <Text style={[styles.example, { color: colors.primary }]}>{t('importModal.example3')}</Text>
+          </View>
+          <TextInput
+            testID="import-text-input"
+            style={[styles.textBox, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+            value={textInput}
+            onChangeText={updateTextPreview}
+            placeholder={t('importModal.placeholder')}
+            placeholderTextColor={colors.textMuted}
+            multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false}
+          />
+        </>
+      );
+    }
+    if (tab === 'csv') {
+      return (
+        <>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.csvHint')}</Text>
+          <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickCSV} testID="import-csv-pick-btn">
+            <Ionicons name="folder-open-outline" size={22} color={colors.primary} style={styles.filePickerIcon} />
+            <Text style={[styles.filePickerText, { color: colors.textSecondary }]}>{csvFileName || t('importModal.pickFile')}</Text>
+          </TouchableOpacity>
+          {csvFileName && (
+            <TouchableOpacity onPress={() => { setCsvFileName(null); setCsvContent(null); setPreview([]); }}>
+              <Text style={[styles.clearFile, { color: colors.error }]}>{t('importModal.removeFile')}</Text>
+            </TouchableOpacity>
+          )}
+        </>
+      );
+    }
+    return (
+      <>
+        <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('backup.zipHint')}</Text>
+        <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickZip} testID="import-zip-pick-btn">
+          <Ionicons name="archive-outline" size={22} color={colors.primary} style={styles.filePickerIcon} />
+          <Text style={[styles.filePickerText, { color: colors.textSecondary }]}>{zipFileName || t('backup.pickZipFile')}</Text>
+        </TouchableOpacity>
+        {zipFileName && (
+          <TouchableOpacity onPress={resetZip}>
+            <Text style={[styles.clearFile, { color: colors.error }]}>{t('importModal.removeFile')}</Text>
+          </TouchableOpacity>
+        )}
+        {zipData && (
+          <View style={[styles.previewBox, { backgroundColor: colors.surface, borderColor: colors.primaryLight }]}>
+            <Text style={[styles.previewTitle, { color: colors.primary }]} testID="import-zip-preview-title">
+              {t('backup.zipPreviewTitle')}
+            </Text>
+            <Text style={[styles.previewWord, { color: colors.text }]} testID="import-zip-preview-words">
+              {tc('backup.zipPreviewWords', zipData.words.length)}
+            </Text>
+            <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-variants">
+              {tc('backup.zipPreviewVariants', zipData.variants.length)}
+            </Text>
+            <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-assets">
+              {tc('backup.zipPreviewAssets', zipData.assets.length)}
+            </Text>
+            <Text style={[styles.previewMeta, { color: colors.textSecondary }]} testID="import-zip-preview-categories">
+              {tc('backup.zipPreviewCategories', zipData.categories.length)}
+            </Text>
+          </View>
+        )}
+        {zipData && (
+          <View style={styles.profileToggleRow}>
+            <Text style={[styles.profileToggleLabel, { color: colors.text }]}>{t('backup.restoreProfileToggle')}</Text>
+            <Switch
+              value={restoreProfile}
+              onValueChange={setRestoreProfile}
+              testID="import-zip-restore-profile-toggle"
+            />
+          </View>
+        )}
+      </>
+    );
+  };
 
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
@@ -203,57 +386,32 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
 
           <View style={[styles.tabs, { backgroundColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.tab, tab === 'text' && styles.tabActive, tab === 'text' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
-              onPress={() => { setTab('text'); setPreview([]); }}
-              testID="import-tab-text"
+              style={tabButtonStyle(tab === 'zip', colors.surface, colors.text)}
+              onPress={() => { setTab('zip'); setPreview([]); }}
+              testID="import-tab-zip"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'text' && styles.tabTextActive, tab === 'text' && { color: colors.text }]}>{t('importModal.tabText')}</Text>
+              <Text style={tabTextStyle(tab === 'zip', colors.textSecondary, colors.text)}>{t('backup.tabZip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tab, tab === 'csv' && styles.tabActive, tab === 'csv' && { backgroundColor: colors.surface, shadowColor: colors.text }]}
+              style={tabButtonStyle(tab === 'csv', colors.surface, colors.text)}
               onPress={() => { setTab('csv'); setPreview([]); }}
               testID="import-tab-csv"
             >
-              <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'csv' && styles.tabTextActive, tab === 'csv' && { color: colors.text }]}>{t('importModal.tabCSV')}</Text>
+              <Text style={tabTextStyle(tab === 'csv', colors.textSecondary, colors.text)}>{t('importModal.tabCSV')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tabButtonStyle(tab === 'text', colors.surface, colors.text)}
+              onPress={() => { setTab('text'); setPreview([]); }}
+              testID="import-tab-text"
+            >
+              <Text style={tabTextStyle(tab === 'text', colors.textSecondary, colors.text)}>{t('importModal.tabText')}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {tab === 'text' ? (
-              <>
-                <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.textHint')}</Text>
-                <View style={[styles.exampleBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Text style={[styles.exampleLabel, { color: colors.textSecondary }]}>{t('importModal.examplesLabel')}</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>mamãe</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>água, Comida</Text>
-                  <Text style={[styles.example, { color: colors.primary }]}>cachorro, Animais, 15/03/2025</Text>
-                </View>
-                <TextInput
-                  testID="import-text-input"
-                  style={[styles.textBox, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                  value={textInput}
-                  onChangeText={updateTextPreview}
-                  placeholder={'mamãe\nágua, Comida\ncachorro, Animais, 15/03/2025'}
-                  placeholderTextColor={colors.textMuted}
-                  multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false}
-                />
-              </>
-            ) : (
-              <>
-                <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('importModal.csvHint')}</Text>
-                <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickCSV} testID="import-csv-pick-btn">
-                  <Ionicons name="folder-open-outline" size={22} color={colors.primary} style={styles.filePickerIcon} />
-                  <Text style={[styles.filePickerText, { color: colors.textSecondary }]}>{csvFileName || t('importModal.pickFile')}</Text>
-                </TouchableOpacity>
-                {csvFileName && (
-                  <TouchableOpacity onPress={() => { setCsvFileName(null); setCsvContent(null); setPreview([]); }}>
-                    <Text style={[styles.clearFile, { color: colors.error }]}>{t('importModal.removeFile')}</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
+            {renderActiveTabContent()}
 
-            {preview.length > 0 && (
+            {tab !== 'zip' && preview.length > 0 && (
               <View style={[styles.previewBox, { backgroundColor: colors.surface, borderColor: colors.primaryLight }]}>
                 <Text style={[styles.previewTitle, { color: colors.primary }]} testID="import-preview-title">
                   {tc('importModal.previewTitle', wordCount)}
@@ -272,22 +430,41 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
               </View>
             )}
 
-            <TouchableOpacity
-              style={[
-                styles.importBtn,
-                { backgroundColor: colors.primary, shadowColor: colors.primary },
-                (loading || wordCount === 0) && styles.importBtnDisabled,
-                (loading || wordCount === 0) && { backgroundColor: colors.primaryLight },
-              ]}
-              onPress={handleImport}
-              disabled={loading || wordCount === 0}
-              testID="import-submit-btn"
-            >
-              {loading
-                ? <ActivityIndicator color={colors.textOnPrimary} />
-                : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{importBtnLabel}</Text>
-              }
-            </TouchableOpacity>
+            {tab === 'zip' ? (
+              <TouchableOpacity
+                style={[
+                  styles.importBtn,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (loading || !zipData) && styles.importBtnDisabled,
+                  (loading || !zipData) && { backgroundColor: colors.primaryLight },
+                ]}
+                onPress={handleImportZip}
+                disabled={loading || !zipData}
+                testID="import-zip-submit-btn"
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnPrimary} />
+                  : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{t('backup.importBtn')}</Text>
+                }
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.importBtn,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (loading || wordCount === 0) && styles.importBtnDisabled,
+                  (loading || wordCount === 0) && { backgroundColor: colors.primaryLight },
+                ]}
+                onPress={handleImport}
+                disabled={loading || wordCount === 0}
+                testID="import-submit-btn"
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnPrimary} />
+                  : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{importBtnLabel}</Text>
+                }
+              </TouchableOpacity>
+            )}
 
             <View style={styles.bottomSpacer} />
           </ScrollView>
@@ -310,7 +487,7 @@ const styles = StyleSheet.create({
   tabs:              { flexDirection: 'row', borderRadius: 12, padding: 3, marginBottom: 18 },
   tab:               { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   tabActive:         { shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  tabText:           { fontSize: 14, fontWeight: '600' },
+  tabText:           { fontSize: 11, fontWeight: '600' },
   tabTextActive:     { fontWeight: '700' },
   hint:              { fontSize: 13, lineHeight: 18, marginBottom: 12 },
   exampleBox:        { borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1 },
@@ -332,4 +509,6 @@ const styles = StyleSheet.create({
   importBtnDisabled: { shadowOpacity: 0, elevation: 0 },
   importBtnText:     { fontSize: 16, fontWeight: '700' },
   bottomSpacer:      { height: 20 },
+  profileToggleRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, marginBottom: 16 },
+  profileToggleLabel: { fontSize: 14, fontWeight: '600', flex: 1, paddingRight: 12 },
 });

@@ -51,3 +51,17 @@ export const deleteCategoryWithUnlink = (id: number): Promise<void> =>
     await run('UPDATE words SET category_id = NULL WHERE category_id = ?', [id]);
     await run('DELETE FROM categories WHERE id = ?', [id]);
   });
+
+/** Inserts a category preserving the original created_at timestamp from a backup. */
+export const importCategory = async (
+  name: string,
+  color: string,
+  emoji: string,
+  createdAt: string,
+): Promise<number> => {
+  const result = await run(
+    'INSERT INTO categories (name, color, emoji, created_at) VALUES (?, ?, ?, ?)',
+    [name, color, emoji, createdAt],
+  );
+  return result.insertId ?? 0;
+};
