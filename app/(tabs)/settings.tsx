@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
 import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
@@ -100,6 +100,15 @@ export default function SettingsScreen() {
       return () => clearTimeout(timeout);
     }
   }, [scrollTo]);
+
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
 
   const handleNotificationsToggle = useCallback(async (value: boolean) => {
     setNotificationsEnabled(value);

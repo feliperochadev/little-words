@@ -2,12 +2,13 @@ import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createTestQueryClient } from '../helpers/renderWithProviders';
-import { useMemories } from '../../src/hooks/useMemories';
+import { useMemories, useMemoriesInfinite } from '../../src/hooks/useMemories';
 import * as memoriesService from '../../src/services/memoriesService';
 import type { TimelineItem } from '../../src/types/domain';
 
 jest.mock('../../src/services/memoriesService', () => ({
   getTimelineItems: jest.fn(() => Promise.resolve([])),
+  getTimelineItemsPaginated: jest.fn(() => Promise.resolve([])),
 }));
 
 const mockedService = memoriesService as jest.Mocked<typeof memoriesService>;
@@ -61,5 +62,53 @@ describe('useMemories', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
+  });
+});
+
+describe('useMemoriesInfinite', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns flattened items from pages', async () => {
+    mockedService.getTimelineItemsPaginated.mockResolvedValue(SAMPLE);
+    const { Wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useMemoriesInfinite(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.items).toEqual(SAMPLE);
+  });
+
+  it('returns stable empty array when no pages', async () => {
+    mockedService.getTimelineItemsPaginated.mockResolvedValue([]);
+    const { Wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useMemoriesInfinite(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.items).toEqual([]);
+  });
+
+  it('has no next page when result is less than PAGE_SIZE', async () => {
+    // Less than 10 items → no next page
+    mockedService.getTimelineItemsPaginated.mockResolvedValue(SAMPLE); // SAMPLE has 1 item
+    const { Wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useMemoriesInfinite(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.hasNextPage).toBe(false);
+  });
+
+  it('has next page when result equals PAGE_SIZE (10)', async () => {
+    const page = Array.from({ length: 10 }, (_, i) => ({ ...SAMPLE[0], id: i + 1 }));
+    mockedService.getTimelineItemsPaginated.mockResolvedValue(page);
+    const { Wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useMemoriesInfinite(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.hasNextPage).toBe(true);
   });
 });

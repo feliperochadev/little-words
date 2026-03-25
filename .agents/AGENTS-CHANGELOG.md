@@ -2,6 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-25_11
+
+**[feature] Memories screen: paginated infinite scroll (10/page), back-to-top button, scroll-reset on tab leave across all screens**
+
+- Added `getTimelineItemsPaginated(limit, offset)` to `memoriesRepository.ts` and re-exported from `memoriesService.ts`.
+- Added `memoriesInfinite` query key; added it to `WORD_MUTATION_KEYS`, `VARIANT_MUTATION_KEYS`, and `ASSET_MUTATION_KEYS` for proper cache invalidation.
+- Added `useMemoriesInfinite` hook using `useInfiniteQuery` with page size 10 and offset-based pagination; exposes a flat `items` array.
+- Rewrote `memories.tsx` to use `useMemoriesInfinite`: infinite scroll via `onEndReached`/`fetchNextPage`, social-media-style bottom `ActivityIndicator` when loading more, and a floating "Latest ↑" back-to-top button (appears after 200px scroll, positioned at top center).
+- Added `memories.backToTop` i18n key (`"Latest"` / `"Mais recente"`).
+- All list/scroll tab screens now reset scroll position to top when the user leaves the screen (`useFocusEffect` cleanup): `words.tsx`, `variants.tsx`, `memories.tsx`, `media.tsx`, `home.tsx`, `settings.tsx`, `progress.tsx`.
+- Builds on implementation `2026-03-24_02-memories-timeline-screen`.
+
 ### 2026-03-25_10
 
 [fix] Restore missing historical changelog entries from `main`: recovered full history starting at `2026-03-24_07` and older while preserving this branch's newer entries from `2026-03-24_08` onward

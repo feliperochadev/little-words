@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
 } from 'react-native';
@@ -9,7 +9,7 @@ import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { formatMonth } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 export default function ProgressScreen() {
   const router = useRouter();
@@ -18,8 +18,18 @@ export default function ProgressScreen() {
   const { data: stats, refetch } = useDashboardStats();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
+
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
 
   const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
@@ -34,6 +44,7 @@ export default function ProgressScreen() {
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}

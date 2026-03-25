@@ -7,6 +7,7 @@ export const QUERY_KEYS = {
   categories: () => ['categories'] as const,
   dashboard: () => ['dashboard'] as const,
   memories: () => ['memories'] as const,
+  memoriesInfinite: () => ['memoriesInfinite'] as const,
   wordCount: (id: number) => ['wordCounts', id] as const,
   assets: (parentType: ParentType, parentId: number) =>
     ['assets', parentType, parentId] as const,
@@ -21,6 +22,7 @@ export const WORD_MUTATION_KEYS = [
   ['words'],
   ['dashboard'],
   ['memories'],
+  ['memoriesInfinite'],
   ['wordCounts'], // per-category word count (used in delete confirmation)
 ] as const;
 
@@ -30,6 +32,7 @@ export const VARIANT_MUTATION_KEYS = [
   ['words'],
   ['dashboard'],
   ['memories'],
+  ['memoriesInfinite'],
 ] as const;
 
 // Keys to invalidate after category mutations
@@ -46,4 +49,5 @@ export const ASSET_MUTATION_KEYS = [
   ['variants'],
   ['dashboard'],
   ['memories'],
+  ['memoriesInfinite'],
 ] as const;

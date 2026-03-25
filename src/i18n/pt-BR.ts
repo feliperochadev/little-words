@@ -202,6 +202,7 @@ export default {
     errorTitle: 'Não foi possível carregar memórias',
     errorSubtitle: 'Tente novamente em instantes.',
     retry: 'Tentar novamente',
+    backToTop: 'Mais recente',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

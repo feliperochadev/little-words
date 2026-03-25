@@ -202,6 +202,7 @@ export default {
     errorTitle: 'Could not load memories',
     errorSubtitle: 'Please try again in a moment.',
     retry: 'Retry',
+    backToTop: 'Latest',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

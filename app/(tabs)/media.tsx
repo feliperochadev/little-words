@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useAllAssets, useRemoveAsset } from '../../src/hooks/useAssets';
@@ -40,9 +41,19 @@ export default function MediaScreen() {
   const [audioOverlay, setAudioOverlay] = useState<{ uri: string; name: string; createdAt: string; durationMs?: number | null } | null>(null);
   const [photoOverlay, setPhotoOverlay] = useState<{ uri: string; name: string; createdAt: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const flatListRef = useRef<FlatList<AssetWithLink>>(null);
 
   const { data: assets = EMPTY_ASSETS, refetch } = useAllAssets(search, assetFilter, sort);
   const removeAsset = useRemoveAsset();
+
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      };
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -203,6 +214,7 @@ export default function MediaScreen() {
       </View>
 
       <FlatList
+        ref={flatListRef}
         data={assets}
         keyExtractor={item => String(item.id)}
         renderItem={renderAsset}

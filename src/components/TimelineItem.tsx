@@ -157,17 +157,25 @@ type PaneProps = {
   content: React.ReactNode;
   showConnector: boolean;
   isDatePane?: boolean;
+  connectorFirst?: boolean;
 };
 
-function TimelinePane({ content, showConnector, isDatePane = false }: Readonly<PaneProps>) {
+function TimelinePane({ content, showConnector, isDatePane = false, connectorFirst = false }: Readonly<PaneProps>) {
   const { colors } = useTheme();
   return (
     <View style={styles.pane}>
       {showConnector ? (
-        <>
-          <View style={styles.paneContent}>{content}</View>
-          <View style={[styles.connector, { backgroundColor: colors.border }]} />
-        </>
+        connectorFirst ? (
+          <>
+            <View style={[styles.connector, { backgroundColor: colors.border }]} />
+            <View style={styles.paneContent}>{content}</View>
+          </>
+        ) : (
+          <>
+            <View style={styles.paneContent}>{content}</View>
+            <View style={[styles.connector, { backgroundColor: colors.border }]} />
+          </>
+        )
       ) : (
         <>
           <View style={[styles.paneContent, isDatePane ? styles.datePane : null]}>{content}</View>
@@ -246,7 +254,7 @@ export function TimelineItem({
       </View>
 
       <View style={[styles.pane, { flexDirection: 'row-reverse' }]}>
-        <TimelinePane content={isLeft ? dateNode : cardNode} showConnector={!isLeft} isDatePane={isLeft} />
+        <TimelinePane content={isLeft ? dateNode : cardNode} showConnector={!isLeft} isDatePane={isLeft} connectorFirst={!isLeft} />
       </View>
     </Animated.View>
   );

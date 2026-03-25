@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
@@ -37,6 +37,7 @@ export default function HomeScreen() {
   const { action } = useLocalSearchParams<{ action?: string }>();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+  const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
 
   const {
     handlePlayAudio,
@@ -64,6 +65,15 @@ export default function HomeScreen() {
     }
   }, [action]);
 
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
+
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;
@@ -87,6 +97,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']} testID="home-safe-area">
       <ScrollView
+        ref={scrollViewRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}

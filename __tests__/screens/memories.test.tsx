@@ -4,6 +4,7 @@ import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.mock('../../src/services/memoriesService', () => ({
   getTimelineItems: jest.fn(),
+  getTimelineItemsPaginated: jest.fn(),
 }));
 
 jest.mock('../../src/services/assetService', () => ({
@@ -69,6 +70,7 @@ describe('MemoriesScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue(SAMPLE);
+    (memoriesService.getTimelineItemsPaginated as jest.Mock).mockResolvedValue(SAMPLE);
     (assetService.getAssetsByParentAndType as jest.Mock).mockResolvedValue([
       {
         id: 90,
@@ -97,7 +99,7 @@ describe('MemoriesScreen', () => {
   });
 
   it('shows empty state when there are no memories', async () => {
-    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValueOnce([]);
+    (memoriesService.getTimelineItemsPaginated as jest.Mock).mockResolvedValueOnce([]);
 
     const { findByText } = renderWithProviders(<MemoriesScreen />);
 
@@ -133,10 +135,17 @@ describe('MemoriesScreen', () => {
 
   it('shows error state when query fails', async () => {
     (memoriesService.getTimelineItems as jest.Mock).mockRejectedValueOnce(new Error('boom'));
+    (memoriesService.getTimelineItemsPaginated as jest.Mock).mockRejectedValueOnce(new Error('boom'));
 
     const { findByText } = renderWithProviders(<MemoriesScreen />);
 
     expect(await findByText('Could not load memories')).toBeTruthy();
     expect(await findByText('Retry')).toBeTruthy();
+  });
+
+  it('does not show back-to-top button initially', async () => {
+    const { queryByTestId, findByTestId } = renderWithProviders(<MemoriesScreen />);
+    await findByTestId('memories-flatlist');
+    expect(queryByTestId('memories-back-to-top')).toBeNull();
   });
 });

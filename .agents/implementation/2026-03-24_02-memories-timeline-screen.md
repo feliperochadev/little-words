@@ -84,6 +84,12 @@ Implemented a new Memories timeline tab that merges words and variants chronolog
 - **Files Modified:** `src/components/TimelineItem.tsx`, `app/(tabs)/memories.tsx`, `app/(tabs)/home.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/screens/memories.test.tsx`, `__tests__/screens/home.test.tsx`, `__tests__/integration/TimelineItem.test.tsx`
 - **Plan Updates:** None — enhancement to existing implementation.
 
+### 2026-03-25 — Paginated infinite scroll, back-to-top button, scroll-reset on tab leave
+
+- **Description:** (1) Added `getTimelineItemsPaginated(limit, offset)` repository function with `LIMIT ? OFFSET ?` appended to the same UNION ALL query. (2) Added `memoriesInfinite` query key to `queryKeys.ts` and mutation key arrays. (3) Added `useMemoriesInfinite` hook using `useInfiniteQuery` (page size 10, offset-based) exposing a flat `items` array. (4) Rewrote `memories.tsx` to use infinite scroll — `onEndReached` triggers `fetchNextPage`, a small `ActivityIndicator` footer appears when loading the next page, and a floating "Latest ↑" pill button appears at top-center when scrolled past 200px (back-to-top). (5) Added `memories.backToTop` i18n key in both locales. (6) Added `useFocusEffect` cleanup (scroll to top on leave) to all list/scroll tab screens: `words.tsx`, `variants.tsx`, `memories.tsx`, `media.tsx`, `home.tsx`, `settings.tsx`, `progress.tsx`.
+- **Files Modified:** `src/repositories/memoriesRepository.ts`, `src/services/memoriesService.ts`, `src/hooks/queryKeys.ts`, `src/hooks/useMemories.ts`, `app/(tabs)/memories.tsx`, `app/(tabs)/words.tsx`, `app/(tabs)/variants.tsx`, `app/(tabs)/home.tsx`, `app/(tabs)/media.tsx`, `app/(tabs)/settings.tsx`, `app/(tabs)/progress.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/unit/memoriesRepository.test.ts`, `__tests__/integration/useMemories.test.tsx`, `__tests__/screens/memories.test.tsx`
+- **Plan Updates:** None.
+
 ## Validation
 
 - Ran `npm run test -- __tests__/unit/appConfig.test.ts` → pass.
