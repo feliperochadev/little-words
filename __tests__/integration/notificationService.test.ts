@@ -251,7 +251,7 @@ describe('scheduleAll', () => {
     await scheduleAll();
     expect(buildSchedule).toHaveBeenCalledWith(
       expect.objectContaining({
-        locale: 'en-US',
+        strings: expect.objectContaining({ nudge3dTitle: 'New sounds today?' }),
         childName: 'Sofia',
         totalWords: 12,
         emptyCategoryNames: ['animals', 'food'],

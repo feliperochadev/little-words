@@ -2,18 +2,26 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-03-24_08
+### 2026-03-24_09
 
 [fix] Resolve remaining CI blockers in Android cropper config tests: restored `ExpoCropImageActivity` theme override in `android/app/src/main/AndroidManifest.xml`; added `ExpoCropImageThemeOverride`, `ExpoCropPopupMenuStyle`, and `ExpoCropPopupMenuItemText` in `android/app/src/main/res/values/styles.xml`; restored crop action label overrides in `android/app/src/main/res/values/strings.xml`, `values-pt/strings.xml`, and `values-pt-rBR/strings.xml`
 [test] Validation rerun after fix: `npm run test -- __tests__/unit/appConfig.test.ts` passed; full `npm run ci` passed (lint + typecheck + coverage tests + semgrep)
 
-### 2026-03-24_07
+### 2026-03-24_08
 
 [feature] Implement Memories timeline screen: added new `memories` tab between Variants and More with `gift-outline` icon; built chronological timeline UI with alternating cards around a central line; each card shows word/variant badge, localized date, and variant parent context; audio tap reuses `playAssetByParent`; photo tap opens existing `PhotoPreviewOverlay`
 [feature] Add memories data layer: new `TimelineItem` domain type, `memoriesRepository` UNION query (words + variants) with correlated audio/photo counts and first-photo metadata, `memoriesService`, `useMemories` hook with focus refetch, and `QUERY_KEYS.memories` invalidation from word/variant/asset mutations
 [feature] Add locale-aware timeline date formatter: `formatTimelineDate` now outputs English ordinal style (`3rd Mar, 2025`) and Portuguese style (`3 de Mar, 2025`)
 [test] Add comprehensive memories coverage: new unit tests for repository/date formatter, integration tests for `useMemories` and `TimelineItem`, new screen test suite for `memories` screen interactions and states, and tab-layout test update to assert memories icon registration
 [config] Validation status: `npm run ci` executed; memories implementation passes lint/typecheck/tests, but overall CI currently fails due pre-existing unrelated Android manifest/resource state expected by `__tests__/unit/appConfig.test.ts`
+
+### 2026-03-24_07
+
+[refactor] Move all hardcoded notification content strings from `notificationScheduler.ts` to i18n catalogues (`en-US.ts`, `pt-BR.ts`): 20 new keys per locale covering all 8 notification types and milestones; `SchedulerContext.locale` replaced with `SchedulerContext.strings: NotifStrings`; `buildMilestoneContent` signature updated to accept `MilestoneStrings`; `notificationService.ts` builds strings from catalogs via `getNotifStrings`/`getMilestoneStrings` helpers before passing to scheduler
+[feature] Add collapsible categories section in Settings screen: section starts collapsed by default; expand/collapse button at the bottom of the card reveals the categories list and add-category button; uses `chevron-down`/`chevron-up` Ionicons and `settings.categoriesExpand`/`settings.categoriesCollapse` i18n keys
+[config] Add mandatory i18n rule to `.agents/standards/components.md`: all user-visible strings must come from i18n catalogues; covers both React hook usage and non-React service imports
+[test] Update `notificationScheduler.test.ts` with `makeNotifStrings`/`makeMilestoneStrings` helpers using real catalog imports; update `notificationService.test.ts`; add 3 new settings tests for expand/collapse behaviour + update 3 existing category tests to expand first
+>>>>>>> main
 
 ### 2026-03-24_06
 

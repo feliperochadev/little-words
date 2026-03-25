@@ -199,13 +199,17 @@ describe('SettingsScreen', () => {
 
   it('opens add category modal', async () => {
     const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     fireEvent.press(await findByTestId('settings-add-category-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
   it('opens edit category modal when tapping a category row', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
+    const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
     await findByText(/Settings/);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     const categoryRow = await findByText('Animals');
     fireEvent.press(categoryRow);
     expect(await findByText(/Edit Category/)).toBeTruthy();
@@ -213,12 +217,37 @@ describe('SettingsScreen', () => {
 
   it('closes add category modal via onClose', async () => {
     const { findByText, queryByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     fireEvent.press(await findByTestId('settings-add-category-btn'));
     await findByText(/New Category/);
     const cancelBtn = await findByText(/Cancel/);
     fireEvent.press(cancelBtn);
     await waitFor(() => {
       expect(queryByText(/New Category/)).toBeNull();
+    });
+  });
+
+  it('categories section starts collapsed', async () => {
+    const { findByTestId, queryByTestId } = renderWithProviders(<SettingsScreen />);
+    await findByTestId('settings-categories-title');
+    expect(queryByTestId('settings-add-category-btn')).toBeNull();
+  });
+
+  it('expands categories section on expand button press', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
+    expect(await findByTestId('settings-add-category-btn')).toBeTruthy();
+  });
+
+  it('collapses categories section after expand and collapse', async () => {
+    const { findByTestId, queryByTestId } = renderWithProviders(<SettingsScreen />);
+    const expandBtn = await findByTestId('settings-categories-expand-btn');
+    fireEvent.press(expandBtn);
+    await findByTestId('settings-add-category-btn');
+    fireEvent.press(expandBtn);
+    await waitFor(() => {
+      expect(queryByTestId('settings-add-category-btn')).toBeNull();
     });
   });
 
