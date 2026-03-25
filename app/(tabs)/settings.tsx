@@ -61,6 +61,7 @@ export default function SettingsScreen() {
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
   const [exportMode, setExportMode] = useState<'csv' | 'zip'>('zip');
   const [exporting, setExporting] = useState(false);
@@ -304,24 +305,40 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-categories-title">{t('settings.categories')}</Text>
           </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.categoriesDesc')}</Text>
-          {categories.map(cat => (
-            <TouchableOpacity
-              key={cat.id}
-              style={styles.categoryRow}
-              onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
-            >
-              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-              </View>
-              <Text style={[styles.categoryRowName, { color: colors.text }]} numberOfLines={1}>
-                {categoryName(cat.name)}
-              </Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)} testID="settings-add-category-btn">
-            <Ionicons name="add" size={16} color={colors.primary} />
-            <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
+          {categoriesExpanded && (
+            <>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.categoryRow}
+                  onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
+                >
+                  <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
+                    <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                  </View>
+                  <Text style={[styles.categoryRowName, { color: colors.text }]} numberOfLines={1}>
+                    {categoryName(cat.name)}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)} testID="settings-add-category-btn">
+                <Ionicons name="add" size={16} color={colors.primary} />
+                <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={[styles.categoriesExpandBtn, { borderColor: colors.border }]}
+            onPress={() => setCategoriesExpanded(prev => !prev)}
+            testID="settings-categories-expand-btn"
+            accessibilityRole="button"
+            accessibilityLabel={categoriesExpanded ? t('settings.categoriesCollapse') : t('settings.categoriesExpand')}
+          >
+            <Text style={[styles.categoriesExpandText, { color: colors.primary }]}>
+              {categoriesExpanded ? t('settings.categoriesCollapse') : t('settings.categoriesExpand')}
+            </Text>
+            <Ionicons name={categoriesExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
           </TouchableOpacity>
         </Card>
 
@@ -498,6 +515,19 @@ const styles = StyleSheet.create({
   langLabel: { fontSize: 14, fontWeight: '600' },
   langLabelActive: { fontWeight: '800' },
   bottomSpacer: { height: 40 },
+  categoriesExpandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  categoriesExpandText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
   notifToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   notifToggleLabel: { fontSize: 15, fontWeight: '600', flex: 1 },
   exportModeRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },

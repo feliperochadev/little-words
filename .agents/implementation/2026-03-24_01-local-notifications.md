@@ -58,3 +58,11 @@ Implemented a complete local push notification system for Palavrinhas using expo
 | `__tests__/screens/tabLayout.test.tsx` | modified | Added NotificationPrimingModal mock |
 | `__tests__/integration/AddWordModal.test.tsx` | modified | Added notificationService mock |
 | `__tests__/unit/migrator.test.ts` | modified | Added v5 rollback test + updated "all applied" test |
+
+## Enhancements
+
+### 2026-03-24 — i18n migration, expandable categories, standards update
+
+- **Description:** (1) Moved all hardcoded notification content strings from `notificationScheduler.ts` to the i18n catalogues (`en-US.ts`, `pt-BR.ts`). Scheduler now receives pre-resolved `NotifStrings` and `MilestoneStrings` via context instead of doing locale selection internally. (2) Categories section in Settings is now collapsible — collapsed by default, expand button at the bottom reveals the list and add-category button. (3) Added mandatory i18n rule to `.agents/standards/components.md`.
+- **Files Modified:** `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `src/services/notificationScheduler.ts`, `src/services/notificationService.ts`, `app/(tabs)/settings.tsx`, `.agents/standards/components.md`, `__tests__/unit/notificationScheduler.test.ts`, `__tests__/screens/settings.test.tsx`, `__tests__/integration/notificationService.test.ts`
+- **Plan Updates:** None — purely enhancement to existing implementation.

@@ -3,13 +3,56 @@ import {
   buildMilestoneContent,
   isTooSoonToReschedule,
   type SchedulerContext,
+  type NotifStrings,
+  type MilestoneStrings,
 } from '../../src/services/notificationScheduler';
+import enUS from '../../src/i18n/en-US';
+import ptBR from '../../src/i18n/pt-BR';
 
 // Fixed reference date: Monday 2026-03-24 09:00:00 local
 const NOW = new Date('2026-03-24T09:00:00');
 
+function makeNotifStrings(locale: 'en-US' | 'pt-BR'): NotifStrings {
+  const cat = locale === 'pt-BR' ? ptBR : enUS;
+  const n = cat.notifications as Record<string, string>;
+  return {
+    nudge3dTitle: n.nudge3dTitle,
+    nudge3dBody: n.nudge3dBody,
+    nudge7dTitle: n.nudge7dTitle,
+    nudge7dBody: n.nudge7dBody,
+    nudge15dTitle: n.nudge15dTitle,
+    nudge15dBody: n.nudge15dBody,
+    weeklyWinTitle: n.weeklyWinTitle,
+    weeklyWinBody: n.weeklyWinBody,
+    monthlyRecapTitle: n.monthlyRecapTitle,
+    monthlyRecapBody: n.monthlyRecapBody,
+    nostalgia1mTitle: n.nostalgia1mTitle,
+    nostalgia1mBody: n.nostalgia1mBody,
+    nostalgia1yTitle: n.nostalgia1yTitle,
+    nostalgia1yBody: n.nostalgia1yBody,
+    featureDiscoveryTitle: n.featureDiscoveryTitle,
+    featureDiscoveryBody: n.featureDiscoveryBody,
+    categoryExplorerTitle: n.categoryExplorerTitle,
+    categoryExplorerBody: n.categoryExplorerBody,
+    backupReminderTitle: n.backupReminderTitle,
+    backupReminderBody: n.backupReminderBody,
+    months: cat.datePicker.months,
+  };
+}
+
+function makeMilestoneStrings(locale: 'en-US' | 'pt-BR'): MilestoneStrings {
+  const cat = locale === 'pt-BR' ? ptBR : enUS;
+  const n = cat.notifications as Record<string, string>;
+  return {
+    firstTitle: n.milestoneFirstTitle,
+    firstBody: n.milestoneFirstBody,
+    title: n.milestoneTitle,
+    body: n.milestoneBody,
+  };
+}
+
 const BASE_CTX: SchedulerContext = {
-  locale: 'en-US',
+  strings: makeNotifStrings('en-US'),
   childName: 'Sofia',
   totalWords: 10,
   wordsThisWeek: 3,
@@ -115,7 +158,6 @@ describe('buildSchedule — monthly recap', () => {
 
 describe('buildSchedule — nostalgia', () => {
   it('schedules nostalgia for upcoming 1-month anniversary', () => {
-    // word added 1 month ago (today minus ~30 days) = anniversary is today/tomorrow
     const oneMonthAgo = new Date(NOW);
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const dateStr = oneMonthAgo.toISOString().split('T')[0];
@@ -277,23 +319,30 @@ describe('buildSchedule — backup reminder', () => {
   });
 });
 
-describe('buildSchedule — locale', () => {
-  it('uses Portuguese content for pt-BR locale', () => {
-    const items = buildSchedule({ ...BASE_CTX, locale: 'pt-BR' }, NOW);
+describe('buildSchedule — strings', () => {
+  it('uses Portuguese content when Portuguese strings are passed', () => {
+    const items = buildSchedule({ ...BASE_CTX, strings: makeNotifStrings('pt-BR') }, NOW);
     const nudge = items.find(i => i.identifier === 'nudge-3d')!;
     expect(nudge.title).toBe('Novos sons hoje?');
   });
 
-  it('uses English content for en-US locale', () => {
-    const items = buildSchedule({ ...BASE_CTX, locale: 'en-US' }, NOW);
+  it('uses English content when English strings are passed', () => {
+    const items = buildSchedule({ ...BASE_CTX, strings: makeNotifStrings('en-US') }, NOW);
     const nudge = items.find(i => i.identifier === 'nudge-3d')!;
     expect(nudge.title).toBe('New sounds today?');
   });
 
-  it('falls back to English for unknown locale', () => {
-    const items = buildSchedule({ ...BASE_CTX, locale: 'fr-FR' }, NOW);
-    const nudge = items.find(i => i.identifier === 'nudge-3d')!;
-    expect(nudge.title).toBe('New sounds today?');
+  it('monthly recap title contains month name from strings', () => {
+    // NOW is March 2026 → index 2 → 'March' in en-US
+    const items = buildSchedule(BASE_CTX, NOW);
+    const recap = items.find(i => i.identifier.startsWith('monthly-recap-'))!;
+    expect(recap.title).toContain('March');
+  });
+
+  it('monthly recap title contains Portuguese month name for pt-BR strings', () => {
+    const items = buildSchedule({ ...BASE_CTX, strings: makeNotifStrings('pt-BR') }, NOW);
+    const recap = items.find(i => i.identifier.startsWith('monthly-recap-'))!;
+    expect(recap.title).toContain('Março');
   });
 });
 
@@ -307,22 +356,19 @@ describe('buildSchedule — empty childName', () => {
 
 describe('buildSchedule — edge cases', () => {
   it('uses default now when no date is passed', () => {
-    // Call without the second argument to exercise the default parameter branch
     const items = buildSchedule(BASE_CTX);
     expect(items.length).toBeGreaterThan(0);
   });
 
   it('nextSunday correctly handles a Sunday input (|| 7 branch)', () => {
-    // Sunday = 2026-03-22 → next Sunday should be 7 days later = 2026-03-29
     const sunday = new Date('2026-03-22T09:00:00');
     const items = buildSchedule({ ...BASE_CTX, wordsThisWeek: 3 }, sunday);
     const win = items.find(i => i.identifier.startsWith('weekly-win-'))!;
     expect(win).toBeDefined();
-    expect(win.triggerDate!.getDate()).toBe(29); // 7 days after the Sunday input
+    expect(win.triggerDate!.getDate()).toBe(29);
   });
 
   it('skips 1-year anniversary outside the 30-day horizon', () => {
-    // Word added 11 months ago → 1-year anniversary is 1 month away (just past horizon)
     const elevenMonthsAgo = new Date(NOW);
     elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth() - 11);
     const dateStr = elevenMonthsAgo.toISOString().split('T')[0];
@@ -336,31 +382,31 @@ describe('buildSchedule — edge cases', () => {
 
 describe('buildMilestoneContent', () => {
   it('returns first word message for count 1', () => {
-    const content = buildMilestoneContent(1, 'Sofia', 'en-US');
+    const content = buildMilestoneContent(1, 'Sofia', makeMilestoneStrings('en-US'));
     expect(content.title).toContain('First word');
     expect(content.body).toContain('Sofia');
   });
 
   it('returns milestone message for count 10', () => {
-    const content = buildMilestoneContent(10, 'Sofia', 'en-US');
+    const content = buildMilestoneContent(10, 'Sofia', makeMilestoneStrings('en-US'));
     expect(content.title).toContain('Milestone');
     expect(content.body).toContain('10');
     expect(content.body).toContain('Sofia');
   });
 
   it('returns Portuguese content for pt-BR', () => {
-    const content = buildMilestoneContent(50, 'Sofia', 'pt-BR');
+    const content = buildMilestoneContent(50, 'Sofia', makeMilestoneStrings('pt-BR'));
     expect(content.title).toContain('Marco');
     expect(content.body).toContain('50');
   });
 
   it('uses fallback name when childName is empty', () => {
-    const content = buildMilestoneContent(1, '', 'en-US');
+    const content = buildMilestoneContent(1, '', makeMilestoneStrings('en-US'));
     expect(content.body).toContain('your baby');
   });
 
   it('returns Portuguese first-word message for pt-BR count=1', () => {
-    const content = buildMilestoneContent(1, 'Sofia', 'pt-BR');
+    const content = buildMilestoneContent(1, 'Sofia', makeMilestoneStrings('pt-BR'));
     expect(content.title).toContain('Primeira');
     expect(content.body).toContain('Sofia');
   });

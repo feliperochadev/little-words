@@ -15,7 +15,51 @@ import {
   buildMilestoneContent,
   isTooSoonToReschedule,
   type ScheduleItem,
+  type NotifStrings,
+  type MilestoneStrings,
 } from './notificationScheduler';
+import enUS from '../i18n/en-US';
+import ptBR from '../i18n/pt-BR';
+
+// ─── i18n string helpers ──────────────────────────────────────────────────────
+
+function getNotifStrings(locale: string | null): NotifStrings {
+  const cat = (locale === 'pt-BR' ? ptBR : enUS).notifications as Record<string, string>;
+  const months = (locale === 'pt-BR' ? ptBR : enUS).datePicker.months;
+  return {
+    nudge3dTitle: cat.nudge3dTitle,
+    nudge3dBody: cat.nudge3dBody,
+    nudge7dTitle: cat.nudge7dTitle,
+    nudge7dBody: cat.nudge7dBody,
+    nudge15dTitle: cat.nudge15dTitle,
+    nudge15dBody: cat.nudge15dBody,
+    weeklyWinTitle: cat.weeklyWinTitle,
+    weeklyWinBody: cat.weeklyWinBody,
+    monthlyRecapTitle: cat.monthlyRecapTitle,
+    monthlyRecapBody: cat.monthlyRecapBody,
+    nostalgia1mTitle: cat.nostalgia1mTitle,
+    nostalgia1mBody: cat.nostalgia1mBody,
+    nostalgia1yTitle: cat.nostalgia1yTitle,
+    nostalgia1yBody: cat.nostalgia1yBody,
+    featureDiscoveryTitle: cat.featureDiscoveryTitle,
+    featureDiscoveryBody: cat.featureDiscoveryBody,
+    categoryExplorerTitle: cat.categoryExplorerTitle,
+    categoryExplorerBody: cat.categoryExplorerBody,
+    backupReminderTitle: cat.backupReminderTitle,
+    backupReminderBody: cat.backupReminderBody,
+    months,
+  };
+}
+
+function getMilestoneStrings(locale: string | null): MilestoneStrings {
+  const cat = (locale === 'pt-BR' ? ptBR : enUS).notifications as Record<string, string>;
+  return {
+    firstTitle: cat.milestoneFirstTitle,
+    firstBody: cat.milestoneFirstBody,
+    title: cat.milestoneTitle,
+    body: cat.milestoneBody,
+  };
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -178,7 +222,7 @@ export async function scheduleAll(): Promise<void> {
 
     const schedule = buildSchedule(
       {
-        locale: locale ?? 'en-US',
+        strings: getNotifStrings(locale),
         childName: childName ?? '',
         totalWords,
         wordsThisWeek,
@@ -241,7 +285,7 @@ export async function handleWordAdded(): Promise<void> {
     const alreadySent = await getNotificationState(milestoneKey);
     if (alreadySent) return;
 
-    const content = buildMilestoneContent(count, childName ?? '', locale ?? 'en-US');
+    const content = buildMilestoneContent(count, childName ?? '', getMilestoneStrings(locale));
     await Notifications.scheduleNotificationAsync({
       identifier: `milestone-${count}`,
       content: {

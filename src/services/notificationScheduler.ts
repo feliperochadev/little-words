@@ -11,8 +11,40 @@ export interface NostalgiaCandidate {
   date_added: string;
 }
 
+export interface NotifStrings {
+  nudge3dTitle: string;
+  nudge3dBody: string;
+  nudge7dTitle: string;
+  nudge7dBody: string;
+  nudge15dTitle: string;
+  nudge15dBody: string;
+  weeklyWinTitle: string;
+  weeklyWinBody: string;
+  monthlyRecapTitle: string;
+  monthlyRecapBody: string;
+  nostalgia1mTitle: string;
+  nostalgia1mBody: string;
+  nostalgia1yTitle: string;
+  nostalgia1yBody: string;
+  featureDiscoveryTitle: string;
+  featureDiscoveryBody: string;
+  categoryExplorerTitle: string;
+  categoryExplorerBody: string;
+  backupReminderTitle: string;
+  backupReminderBody: string;
+  /** 12 month names (Jan=0) for monthly recap interpolation */
+  months: readonly string[];
+}
+
+export interface MilestoneStrings {
+  firstTitle: string;
+  firstBody: string;
+  title: string;
+  body: string;
+}
+
 export interface SchedulerContext {
-  locale: string;
+  strings: NotifStrings;
   childName: string;
   totalWords: number;
   wordsThisWeek: number;
@@ -59,82 +91,7 @@ function lastDayOfCurrentMonth(from: Date): Date {
   return new Date(from.getFullYear(), from.getMonth() + 1, 0);
 }
 
-// ─── Locale-aware content (no React context needed) ───────────────────────────
-
-type NotifTranslations = {
-  nudge3dTitle: string;
-  nudge3dBody: string;
-  nudge7dTitle: string;
-  nudge7dBody: string;
-  nudge15dTitle: string;
-  nudge15dBody: string;
-  weeklyWinTitle: string;
-  weeklyWinBody: string;
-  monthlyRecapTitle: string;
-  monthlyRecapBody: string;
-  nostalgia1mTitle: string;
-  nostalgia1mBody: string;
-  nostalgia1yTitle: string;
-  nostalgia1yBody: string;
-  featureDiscoveryTitle: string;
-  featureDiscoveryBody: string;
-  categoryExplorerTitle: string;
-  categoryExplorerBody: string;
-  backupReminderTitle: string;
-  backupReminderBody: string;
-};
-
-const EN: NotifTranslations = {
-  nudge3dTitle:           'New sounds today?',
-  nudge3dBody:            'Has {{childName}} made any new sounds? Capture them before you forget!',
-  nudge7dTitle:           'A quiet week!',
-  nudge7dBody:            'Did {{childName}} discover a new word? Record it now.',
-  nudge15dTitle:          "Don't let the memories fade!",
-  nudge15dBody:           "Add {{childName}}'s latest words to their timeline.",
-  weeklyWinTitle:         'Weekly win! 🌟',
-  weeklyWinBody:          '{{childName}} learned {{count}} new word(s) this week! See the list.',
-  monthlyRecapTitle:      '{{month}} is over! 👋',
-  monthlyRecapBody:       '{{childName}} added {{count}} word(s) this month. See the growth chart!',
-  nostalgia1mTitle:       '1 month ago today! 😍',
-  nostalgia1mBody:        "{{childName}} said '{{word}}' for the first time 1 month ago!",
-  nostalgia1yTitle:       'Flashback! 🕰️',
-  nostalgia1yBody:        "Can you believe it? {{childName}} said '{{word}}' one year ago today!",
-  featureDiscoveryTitle:  'Did you know? 📸',
-  featureDiscoveryBody:   "You can record audio or add photos to {{childName}}'s words. Try it on your next entry!",
-  categoryExplorerTitle:  'Time for new words! 💬',
-  categoryExplorerBody:   'Does {{childName}} know any {{category}} words yet?',
-  backupReminderTitle:    'Keep memories safe! 🛡️',
-  backupReminderBody:     "It's been a while since your last backup. Tap to save a ZIP now.",
-};
-
-const PT: NotifTranslations = {
-  nudge3dTitle:           'Novos sons hoje?',
-  nudge3dBody:            '{{childName}} fez algum som novo? Registre antes de esquecer!',
-  nudge7dTitle:           'Uma semana tranquila!',
-  nudge7dBody:            '{{childName}} descobriu uma palavra nova? Registre agora.',
-  nudge15dTitle:          'Não deixe as memórias sumirem!',
-  nudge15dBody:           'Adicione as últimas palavras de {{childName}} à linha do tempo.',
-  weeklyWinTitle:         'Conquista da semana! 🌟',
-  weeklyWinBody:          '{{childName}} aprendeu {{count}} palavra(s) nova(s) esta semana! Veja a lista.',
-  monthlyRecapTitle:      'Adeus, {{month}}! 👋',
-  monthlyRecapBody:       '{{childName}} adicionou {{count}} palavra(s) este mês. Veja o gráfico de crescimento!',
-  nostalgia1mTitle:       'Há 1 mês hoje! 😍',
-  nostalgia1mBody:        "{{childName}} disse '{{word}}' pela primeira vez há 1 mês!",
-  nostalgia1yTitle:       'Flashback! 🕰️',
-  nostalgia1yBody:        "Incrível! {{childName}} disse '{{word}}' há exatamente um ano!",
-  featureDiscoveryTitle:  'Você sabia? 📸',
-  featureDiscoveryBody:   "Você pode gravar áudio ou adicionar fotos às palavras de {{childName}}. Experimente!",
-  categoryExplorerTitle:  'Hora de novas palavras! 💬',
-  categoryExplorerBody:   '{{childName}} já conhece palavras de {{category}}?',
-  backupReminderTitle:    'Proteja as memórias! 🛡️',
-  backupReminderBody:     'Faz um tempo desde seu último backup. Toque para salvar um ZIP agora.',
-};
-
-function getStrings(locale: string): NotifTranslations {
-  return locale === 'pt-BR' ? PT : EN;
-}
-
-function interpolate(template: string, params: Record<string, string | number>): string {
+export function interpolate(template: string, params: Record<string, string | number>): string {
   return Object.entries(params).reduce(
     (s, [k, v]) => s.replaceAll(`{{${k}}}`, String(v)),
     template,
@@ -180,16 +137,6 @@ function pickNostalgiaWord(
   return candidates[getDeterministicDayIndex(candidates.length, now)];
 }
 
-// ─── Month name helpers ────────────────────────────────────────────────────────
-
-const MONTH_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const MONTH_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
-function monthName(date: Date, locale: string): string {
-  const idx = date.getMonth();
-  return locale === 'pt-BR' ? MONTH_PT[idx] : MONTH_EN[idx];
-}
-
 // ─── Main scheduler ────────────────────────────────────────────────────────────
 
 const DEDUP_MINUTES = 5;
@@ -208,7 +155,7 @@ export function isTooSoonToReschedule(lastScheduleRun: string | null, now: Date)
 }
 
 export function buildSchedule(ctx: SchedulerContext, now: Date = new Date()): ScheduleItem[] {
-  const s = getStrings(ctx.locale);
+  const s = ctx.strings;
   const items: ScheduleItem[] = [];
   const name = ctx.childName || 'your baby';
 
@@ -254,12 +201,9 @@ export function buildSchedule(ctx: SchedulerContext, now: Date = new Date()): Sc
   if (ctx.totalWords > 0) {
     const lastDay = lastDayOfCurrentMonth(now);
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    // Words this month = wordsThisWeek is available, but for monthly we use wordsThisWeek as a proxy
-    // Actually we'd need words this month separately; using totalWords as fallback count
-    // The scheduler doesn't have wordsThisMonth — using totalWords is fine for the message body
     items.push({
       identifier: `monthly-recap-${monthKey}`,
-      title: interpolate(s.monthlyRecapTitle, { month: monthName(now, ctx.locale) }),
+      title: interpolate(s.monthlyRecapTitle, { month: s.months[now.getMonth()] }),
       body: interpolate(s.monthlyRecapBody, { childName: name, count: ctx.totalWords }),
       route: '/(tabs)/progress',
       triggerDate: atHour(lastDay, 19),
@@ -325,24 +269,16 @@ export function buildSchedule(ctx: SchedulerContext, now: Date = new Date()): Sc
 
 // ─── Milestone content ────────────────────────────────────────────────────────
 
-const MILESTONE_EN_FIRST = { title: 'First word! 🚨', body: "You've started {{childName}}'s journey. Keep it up!" };
-const MILESTONE_EN = { title: 'Milestone! 🎉', body: "That was {{childName}}'s {{count}}th word! The dictionary is growing!" };
-const MILESTONE_PT_FIRST = { title: 'Primeira palavra! 🚨', body: 'Você começou a jornada de {{childName}}. Continue assim!' };
-const MILESTONE_PT = { title: 'Marco alcançado! 🎉', body: "Essa foi a {{count}}ª palavra de {{childName}}! O dicionário está crescendo!" };
-
 export function buildMilestoneContent(
   count: number,
   childName: string,
-  locale: string,
+  strings: MilestoneStrings,
 ): { title: string; body: string } {
   const name = childName || 'your baby';
   const isFirst = count === 1;
-  let tpl: { title: string; body: string };
-  if (locale === 'pt-BR') {
-    tpl = isFirst ? MILESTONE_PT_FIRST : MILESTONE_PT;
-  } else {
-    tpl = isFirst ? MILESTONE_EN_FIRST : MILESTONE_EN;
-  }
+  const tpl = isFirst
+    ? { title: strings.firstTitle, body: strings.firstBody }
+    : { title: strings.title, body: strings.body };
   return {
     title: tpl.title,
     body: interpolate(tpl.body, { childName: name, count }),

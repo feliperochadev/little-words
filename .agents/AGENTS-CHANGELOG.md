@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_07
+
+[refactor] Move all hardcoded notification content strings from `notificationScheduler.ts` to i18n catalogues (`en-US.ts`, `pt-BR.ts`): 20 new keys per locale covering all 8 notification types and milestones; `SchedulerContext.locale` replaced with `SchedulerContext.strings: NotifStrings`; `buildMilestoneContent` signature updated to accept `MilestoneStrings`; `notificationService.ts` builds strings from catalogs via `getNotifStrings`/`getMilestoneStrings` helpers before passing to scheduler
+[feature] Add collapsible categories section in Settings screen: section starts collapsed by default; expand/collapse button at the bottom of the card reveals the categories list and add-category button; uses `chevron-down`/`chevron-up` Ionicons and `settings.categoriesExpand`/`settings.categoriesCollapse` i18n keys
+[config] Add mandatory i18n rule to `.agents/standards/components.md`: all user-visible strings must come from i18n catalogues; covers both React hook usage and non-React service imports
+[test] Update `notificationScheduler.test.ts` with `makeNotifStrings`/`makeMilestoneStrings` helpers using real catalog imports; update `notificationService.test.ts`; add 3 new settings tests for expand/collapse behaviour + update 3 existing category tests to expand first
+
 ### 2026-03-24_06
 
 [fix] Resolve SonarCloud issues on PR #56: refactor `handleNotificationsToggle` in `app/(tabs)/settings.tsx` to avoid negated-condition smell (S7735); refactor `src/services/notificationScheduler.ts` to remove repeated sequential `items.push(...)` calls (S7778) and replace nested ternary milestone template selection with `if/else` (S3358)
