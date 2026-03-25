@@ -41,7 +41,7 @@ import { View, StyleSheet } from 'react-native';
 type Props = { visible: boolean; onClose: () => void; };
 
 // 3. Component (named export)
-export function AddWordModal({ visible, onClose }: Props) {
+export function AddWordModal({ visible, onClose }: Readonly<Props>) {
   // a. hooks (all at top)
   // b. derived state / memos
   // c. handlers
@@ -58,10 +58,10 @@ const styles = StyleSheet.create({ ... });
 
 ```ts
 // ✅ Do — named export
-export function WordCard({ word }: Props) { ... }
+export function WordCard({ word }: Readonly<Props>) { ... }
 
 // ❌ Don't — default export for components
-export default function WordCard({ word }: Props) { ... }
+export default function WordCard({ word }: Readonly<Props>) { ... }
 ```
 
 Expo Router screen files (`app/`) must use `export default` as required by the framework. All other components use named exports.
@@ -71,9 +71,9 @@ Expo Router screen files (`app/`) must use `export default` as required by the f
 ## Props
 
 ```ts
-// ✅ Do — local type alias, destructured at signature
+// ✅ Do — local type alias, destructured at signature, wrapped in Readonly
 type Props = { word: string; date: string; onDelete: () => void; };
-export function WordCard({ word, date, onDelete }: Props) { ... }
+export function WordCard({ word, date, onDelete }: Readonly<Props>) { ... }
 
 // ❌ Don't — React.FC (hides return type, adds implicit children)
 const WordCard: React.FC<Props> = ({ word }) => { ... };

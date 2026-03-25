@@ -15,8 +15,7 @@ import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays'
 import { useI18n } from '../../src/i18n/i18n';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useMemories } from '../../src/hooks/useMemories';
-import { useAssetPreviewOverlays } from '../../src/hooks/useAssetPreviewOverlays';
-import * as assetService from '../../src/services/assetService';
+import { useTimelineHandlers } from '../../src/hooks/useTimelineHandlers';
 import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
 
 const EMPTY_MEMORIES: TimelineItemModel[] = [];
@@ -27,13 +26,13 @@ export default function MemoriesScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const {
+    handlePlayAudio,
+    handleViewPhoto,
     audioOverlay,
     photoOverlay,
-    openAudioOverlay,
-    openPhotoOverlay,
     closeAudioOverlay,
     closePhotoOverlay,
-  } = useAssetPreviewOverlays();
+  } = useTimelineHandlers();
 
   const {
     data: memories = EMPTY_MEMORIES,
@@ -42,39 +41,23 @@ export default function MemoriesScreen() {
     refetch,
   } = useMemories();
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refetch();
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refetch]);
 
-  const handlePlayAudio = useCallback(async (item: TimelineItemModel) => {
-    const audioAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'audio');
-    const firstAudio = audioAssets[0];
-    if (firstAudio) {
-      openAudioOverlay(firstAudio);
-    }
-  }, [openAudioOverlay]);
-
-  const handleViewPhoto = useCallback(async (item: TimelineItemModel) => {
-    const photoAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'photo');
-    const firstPhoto = photoAssets[0];
-    if (firstPhoto) {
-      openPhotoOverlay(firstPhoto);
-    }
-  }, [openPhotoOverlay]);
-
-  const renderItem = useCallback(({ item, index }: { item: TimelineItemModel; index: number }) => (
+  const renderItem = useCallback(({ item, index }: Readonly<{ item: TimelineItemModel; index: number }>) => (
     <TimelineItem
       item={item}
       index={index}
       isFirst={index === 0}
       isLast={index === memories.length - 1}
-      onPlayAudio={(timelineItem) => { void handlePlayAudio(timelineItem); }}
-      onViewPhoto={(timelineItem) => { void handleViewPhoto(timelineItem); }}
+      onPlayAudio={handlePlayAudio}
+      onViewPhoto={handleViewPhoto}
     />
   ), [handlePlayAudio, handleViewPhoto, memories.length]);
 

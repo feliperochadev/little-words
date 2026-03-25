@@ -288,31 +288,26 @@ interface StatCardProps {
 }
 
 export function StatCard({ emoji, icon, value, label, color, testID, variant = 'default' }: Readonly<StatCardProps>) {
+  const isIconValue = variant === 'iconValue';
+
   const iconEl = (
     <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
       {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
     </View>
   );
 
-  if (variant === 'iconValue') {
-    return (
-      <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
-        <View style={statStyles.topRowCentered}>
-          {iconEl}
-          <Text style={[statStyles.valueInline, { color }]} testID={testID}>{value}</Text>
-        </View>
-        <Text style={statStyles.labelBelow}>{label}</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
-      <View style={statStyles.topRow}>
+      <View style={[isIconValue ? statStyles.topRowCentered : statStyles.topRow]}>
         {iconEl}
-        <Text style={statStyles.label}>{label}</Text>
+        {isIconValue && <Text style={[statStyles.valueInline, { color }]} testID={testID}>{value}</Text>}
+        {!isIconValue && <Text style={statStyles.label}>{label}</Text>}
       </View>
-      <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
+      {isIconValue ? (
+        <Text style={statStyles.labelBelow}>{label}</Text>
+      ) : (
+        <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
+      )}
     </View>
   );
 }

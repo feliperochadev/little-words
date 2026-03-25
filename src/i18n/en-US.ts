@@ -30,7 +30,7 @@ export default {
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Little Words',
-    tagline: 'every word, a memory',
+    tagline: 'Every word, a memory',
   },
 
   // ── Common ──────────────────────────────────────────────────────────────────

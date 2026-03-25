@@ -30,7 +30,7 @@ export default {
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Palavrinhas',
-    tagline: 'cada palavra, uma memória',
+    tagline: 'Cada palavra, uma memória',
   },
 
   // ── Common ──────────────────────────────────────────────────────────────────

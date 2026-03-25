@@ -1,67 +1,61 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
-  Modal, Image,
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  Modal,
+  Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatCard, Card } from '../../src/components/UIComponents';
-import { BrandHeader } from '../../src/components/BrandHeader';
-import { AddWordModal } from '../../src/components/AddWordModal';
-import { ProfileAvatar } from '../../src/components/ProfileAvatar';
-import { TimelineItem } from '../../src/components/TimelineItem';
-import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
-import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
+import { useTheme } from '../../src/hooks/useTheme';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useMemories } from '../../src/hooks/useMemories';
-import { useAssetPreviewOverlays } from '../../src/hooks/useAssetPreviewOverlays';
-import { useSettingsStore } from '../../src/stores/settingsStore';
-import { useTheme } from '../../src/hooks/useTheme';
 import { useProfilePhoto, useSaveProfilePhoto } from '../../src/hooks/useAssets';
 import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
-import * as assetService from '../../src/services/assetService';
+import { useTimelineHandlers } from '../../src/hooks/useTimelineHandlers';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { BrandHeader } from '../../src/components/BrandHeader';
+import { Card, StatCard } from '../../src/components/UIComponents';
+import { ProfileAvatar } from '../../src/components/ProfileAvatar';
+import { AddWordModal } from '../../src/components/AddWordModal';
+import { TimelineItem } from '../../src/components/TimelineItem';
+import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
 
 const EMPTY_MEMORIES: TimelineItemModel[] = [];
-const MAX_HOME_MEMORIES = 3;
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const { action } = useLocalSearchParams<{ action?: string }>();
-  const { t } = useI18n();
-  const { data: stats, refetch } = useDashboardStats();
-  const { data: allMemories = EMPTY_MEMORIES } = useMemories();
-  const recentMemories = allMemories.slice(0, MAX_HOME_MEMORIES);
-  const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
 
   const {
+    handlePlayAudio,
+    handleViewPhoto,
     audioOverlay,
     photoOverlay,
-    openAudioOverlay,
-    openPhotoOverlay,
     closeAudioOverlay,
     closePhotoOverlay,
-  } = useAssetPreviewOverlays();
+  } = useTimelineHandlers();
 
-  const handlePlayAudio = useCallback(async (item: TimelineItemModel) => {
-    const audioAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'audio');
-    const firstAudio = audioAssets[0];
-    if (firstAudio) {
-      openAudioOverlay(firstAudio);
-    }
-  }, [openAudioOverlay]);
+  const { data: stats, refetch: refetchStats } = useDashboardStats();
+  const { data: memories = EMPTY_MEMORIES, refetch: refetchMemories } = useMemories();
+  const recentMemories = memories.slice(0, 3);
 
-  const handleViewPhoto = useCallback(async (item: TimelineItemModel) => {
-    const photoAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'photo');
-    const firstPhoto = photoAssets[0];
-    if (firstPhoto) {
-      openPhotoOverlay(firstPhoto);
-    }
-  }, [openPhotoOverlay]);
+  const { name, sex, birth } = useSettingsStore();
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchStats(), refetchMemories()]);
+  }, [refetchStats, refetchMemories]);
 
   // Auto-open AddWordModal when deep-linked via notification (action=add-word)
   useEffect(() => {
@@ -69,6 +63,7 @@ export default function DashboardScreen() {
       setShowAddWord(true);
     }
   }, [action]);
+
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;
@@ -193,8 +188,8 @@ export default function DashboardScreen() {
                   isFirst={idx === 0}
                   isLast={idx === recentMemories.length - 1}
                   compact
-                  onPlayAudio={(ti) => { void handlePlayAudio(ti); }}
-                  onViewPhoto={(ti) => { void handleViewPhoto(ti); }}
+                  onPlayAudio={handlePlayAudio}
+                  onViewPhoto={handleViewPhoto}
                 />
               ))}
             </View>
