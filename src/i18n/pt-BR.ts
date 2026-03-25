@@ -142,6 +142,8 @@ export default {
     },
     seeProgress: 'Ver o Progresso',
     progressTitle: 'Progresso',
+    memoriesTitle: 'Memórias',
+    seeAllMemories: 'Ver todas as memórias',
     comingSoonTitle: 'Métricas Mais Detalhadas em Breve',
     comingSoonDesc: 'Rankings de percentil, marcos de vocabulário, precisão de pronúncia e marcos de fala estarão disponíveis em uma atualização futura.',
   },

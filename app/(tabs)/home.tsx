@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
   Modal, Image,
@@ -9,23 +9,59 @@ import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { ProfileAvatar } from '../../src/components/ProfileAvatar';
+import { TimelineItem } from '../../src/components/TimelineItem';
+import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
+import { useMemories } from '../../src/hooks/useMemories';
+import { useAssetPreviewOverlays } from '../../src/hooks/useAssetPreviewOverlays';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useProfilePhoto, useSaveProfilePhoto } from '../../src/hooks/useAssets';
 import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
+import * as assetService from '../../src/services/assetService';
+import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
+
+const EMPTY_MEMORIES: TimelineItemModel[] = [];
+const MAX_HOME_MEMORIES = 3;
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { action } = useLocalSearchParams<{ action?: string }>();
   const { t } = useI18n();
   const { data: stats, refetch } = useDashboardStats();
+  const { data: allMemories = EMPTY_MEMORIES } = useMemories();
+  const recentMemories = allMemories.slice(0, MAX_HOME_MEMORIES);
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+
+  const {
+    audioOverlay,
+    photoOverlay,
+    openAudioOverlay,
+    openPhotoOverlay,
+    closeAudioOverlay,
+    closePhotoOverlay,
+  } = useAssetPreviewOverlays();
+
+  const handlePlayAudio = useCallback(async (item: TimelineItemModel) => {
+    const audioAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'audio');
+    const firstAudio = audioAssets[0];
+    if (firstAudio) {
+      openAudioOverlay(firstAudio);
+    }
+  }, [openAudioOverlay]);
+
+  const handleViewPhoto = useCallback(async (item: TimelineItemModel) => {
+    const photoAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'photo');
+    const firstPhoto = photoAssets[0];
+    if (firstPhoto) {
+      openPhotoOverlay(firstPhoto);
+    }
+  }, [openPhotoOverlay]);
 
   // Auto-open AddWordModal when deep-linked via notification (action=add-word)
   useEffect(() => {
@@ -135,6 +171,44 @@ export default function DashboardScreen() {
           </Card>
         )}
 
+        {/* Memories mini-timeline — only when there are words */}
+        {stats && stats.totalWords > 0 && (
+          <Card testID="home-memories-frame">
+            <TouchableOpacity
+              style={styles.progressFrameHeader}
+              onPress={() => router.push('/(tabs)/memories')}
+              testID="home-memories-header"
+            >
+              <Text style={[styles.progressFrameTitle, { color: colors.textSecondary }]}>
+                {t('dashboard.memoriesTitle')}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+            <View style={styles.miniTimeline}>
+              {recentMemories.map((item, idx) => (
+                <TimelineItem
+                  key={`${item.item_type}-${item.id}`}
+                  item={item}
+                  index={idx}
+                  isFirst={idx === 0}
+                  isLast={idx === recentMemories.length - 1}
+                  compact
+                  onPlayAudio={(ti) => { void handlePlayAudio(ti); }}
+                  onViewPhoto={(ti) => { void handleViewPhoto(ti); }}
+                />
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.seeAllBtn, { borderTopColor: colors.border }]}
+              onPress={() => router.push('/(tabs)/memories')}
+              testID="home-memories-see-all"
+            >
+              <Ionicons name="chevron-down" size={16} color={colors.primary} />
+              <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('dashboard.seeAllMemories')}</Text>
+            </TouchableOpacity>
+          </Card>
+        )}
+
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -178,6 +252,13 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
+
+      <AssetPreviewOverlays
+        audioOverlay={audioOverlay}
+        photoOverlay={photoOverlay}
+        onCloseAudio={closeAudioOverlay}
+        onClosePhoto={closePhotoOverlay}
+      />
     </SafeAreaView>
   );
 }
@@ -211,4 +292,7 @@ const styles = StyleSheet.create({
   addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },
   addWordBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minHeight: 48 },
   addWordBtnText: { fontSize: 16, fontWeight: '700' },
+  miniTimeline: { marginTop: 8 },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, marginTop: 2, borderTopWidth: StyleSheet.hairlineWidth },
+  seeAllText: { fontSize: 13, fontWeight: '700' },
 });

@@ -7,7 +7,7 @@ describe('memoriesRepository', () => {
     jest.clearAllMocks();
   });
 
-  it('returns timeline items ordered by created_at DESC', async () => {
+  it('returns timeline items ordered by date_added DESC, created_at DESC', async () => {
     const rows = [
       {
         id: 2,
@@ -33,7 +33,9 @@ describe('memoriesRepository', () => {
     expect(sql).toContain('UNION ALL');
     expect(sql).toContain("'word' AS item_type");
     expect(sql).toContain("'variant' AS item_type");
-    expect(sql).toContain('ORDER BY created_at DESC');
+    // ORDER BY must be on the outer subquery wrapper to guarantee interleaved sorting
+    // Sorts by date_added (when word was spoken) then created_at as tiebreaker
+    expect(sql).toMatch(/\)\s*\n\s*ORDER BY date_added DESC, created_at DESC/);
   });
 
   it('uses correlated asset subqueries for audio/photo counts and thumbnail', async () => {

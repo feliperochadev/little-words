@@ -44,7 +44,7 @@ const VARIANT_ITEM: TimelineItemModel = {
 };
 
 describe('TimelineItem', () => {
-  it('renders word card content and timeline date', async () => {
+  it('renders word card content and timeline date outside the card', async () => {
     const { findByText } = renderWithProviders(
       <TimelineItem
         item={WORD_ITEM}
@@ -56,6 +56,7 @@ describe('TimelineItem', () => {
 
     expect(await findByText('mama')).toBeTruthy();
     expect(await findByText('Word')).toBeTruthy();
+    // Date is rendered outside the card
     expect(await findByText('3rd Mar, 2025')).toBeTruthy();
   });
 
@@ -90,5 +91,48 @@ describe('TimelineItem', () => {
 
     expect(onPlayAudio).toHaveBeenCalledWith(WORD_ITEM);
     expect(onViewPhoto).toHaveBeenCalledWith(WORD_ITEM);
+  });
+
+  it('does not render audio/photo controls when counts are 0', async () => {
+    const { queryByTestId } = renderWithProviders(
+      <TimelineItem
+        item={VARIANT_ITEM}
+        index={0}
+        onPlayAudio={() => {}}
+        onViewPhoto={() => {}}
+      />
+    );
+
+    expect(queryByTestId('timeline-audio-variant-11')).toBeNull();
+    expect(queryByTestId('timeline-photo-variant-11')).toBeNull();
+  });
+
+  it('renders with isFirst and isLast props without error', async () => {
+    const { findByText } = renderWithProviders(
+      <TimelineItem
+        item={WORD_ITEM}
+        index={0}
+        isFirst
+        isLast
+        onPlayAudio={() => {}}
+        onViewPhoto={() => {}}
+      />
+    );
+    expect(await findByText('mama')).toBeTruthy();
+  });
+
+  it('renders in compact mode with audio/photo controls', async () => {
+    const onPlayAudio = jest.fn();
+    const { findByTestId } = renderWithProviders(
+      <TimelineItem
+        item={WORD_ITEM}
+        index={0}
+        compact
+        onPlayAudio={onPlayAudio}
+        onViewPhoto={() => {}}
+      />
+    );
+    fireEvent.press(await findByTestId('timeline-audio-word-10'));
+    expect(onPlayAudio).toHaveBeenCalledWith(WORD_ITEM);
   });
 });

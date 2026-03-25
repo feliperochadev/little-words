@@ -15,7 +15,6 @@ import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays'
 import { useI18n } from '../../src/i18n/i18n';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useMemories } from '../../src/hooks/useMemories';
-import { useMediaCapture } from '../../src/hooks/useMediaCapture';
 import { useAssetPreviewOverlays } from '../../src/hooks/useAssetPreviewOverlays';
 import * as assetService from '../../src/services/assetService';
 import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
@@ -25,12 +24,12 @@ const EMPTY_MEMORIES: TimelineItemModel[] = [];
 export default function MemoriesScreen() {
   const { t } = useI18n();
   const { colors } = useTheme();
-  const { playAssetByParent } = useMediaCapture();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
     audioOverlay,
     photoOverlay,
+    openAudioOverlay,
     openPhotoOverlay,
     closeAudioOverlay,
     closePhotoOverlay,
@@ -52,9 +51,13 @@ export default function MemoriesScreen() {
     }
   };
 
-  const handlePlayAudio = useCallback((item: TimelineItemModel) => {
-    void playAssetByParent(item.item_type, item.id);
-  }, [playAssetByParent]);
+  const handlePlayAudio = useCallback(async (item: TimelineItemModel) => {
+    const audioAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'audio');
+    const firstAudio = audioAssets[0];
+    if (firstAudio) {
+      openAudioOverlay(firstAudio);
+    }
+  }, [openAudioOverlay]);
 
   const handleViewPhoto = useCallback(async (item: TimelineItemModel) => {
     const photoAssets = await assetService.getAssetsByParentAndType(item.item_type, item.id, 'photo');
@@ -68,10 +71,12 @@ export default function MemoriesScreen() {
     <TimelineItem
       item={item}
       index={index}
-      onPlayAudio={handlePlayAudio}
+      isFirst={index === 0}
+      isLast={index === memories.length - 1}
+      onPlayAudio={(timelineItem) => { void handlePlayAudio(timelineItem); }}
       onViewPhoto={(timelineItem) => { void handleViewPhoto(timelineItem); }}
     />
-  ), [handlePlayAudio, handleViewPhoto]);
+  ), [handlePlayAudio, handleViewPhoto, memories.length]);
 
   if (isLoading) {
     return (
@@ -113,7 +118,6 @@ export default function MemoriesScreen() {
       </View>
 
       <View style={styles.timelineContainer}>
-        <View style={[styles.centerLine, { backgroundColor: colors.border }]} />
         <FlatList
           testID="memories-flatlist"
           data={memories}
@@ -159,15 +163,6 @@ const styles = StyleSheet.create({
   },
   timelineContainer: {
     flex: 1,
-    position: 'relative',
-  },
-  centerLine: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '50%',
-    width: 2,
-    marginLeft: -1,
   },
   listContent: {
     paddingHorizontal: 10,

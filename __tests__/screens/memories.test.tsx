@@ -11,14 +11,6 @@ jest.mock('../../src/services/assetService', () => ({
   getAssetsByParentAndType: jest.fn(() => Promise.resolve([])),
 }));
 
-const mockPlayAssetByParent = jest.fn().mockResolvedValue(undefined);
-
-jest.mock('../../src/hooks/useMediaCapture', () => ({
-  useMediaCapture: () => ({
-    playAssetByParent: mockPlayAssetByParent,
-  }),
-}));
-
 jest.mock('../../src/services/settingsService', () => ({
   ...jest.requireActual('../../src/services/settingsService'),
   getSetting: jest.fn().mockResolvedValue(null),
@@ -57,6 +49,21 @@ const SAMPLE = [
     first_photo_mime: null,
   },
 ];
+
+const AUDIO_ASSET = {
+  id: 91,
+  parent_type: 'word',
+  parent_id: 1,
+  asset_type: 'audio',
+  filename: 'asset_91.m4a',
+  name: null,
+  mime_type: 'audio/m4a',
+  file_size: 200,
+  duration_ms: 1500,
+  width: null,
+  height: null,
+  created_at: '2026-03-03T10:00:00.000Z',
+};
 
 describe('MemoriesScreen', () => {
   beforeEach(() => {
@@ -97,13 +104,20 @@ describe('MemoriesScreen', () => {
     expect(await findByText('No memories yet')).toBeTruthy();
   });
 
-  it('plays audio when audio control is tapped', async () => {
+  it('fetches audio asset and opens audio overlay when audio control is tapped', async () => {
+    (assetService.getAssetsByParentAndType as jest.Mock).mockImplementation(
+      (_parentType: string, _parentId: number, assetType: string) => {
+        if (assetType === 'audio') return Promise.resolve([AUDIO_ASSET]);
+        return Promise.resolve([]);
+      }
+    );
+
     const { findByTestId } = renderWithProviders(<MemoriesScreen />);
 
     fireEvent.press(await findByTestId('timeline-audio-word-1'));
 
     await waitFor(() => {
-      expect(mockPlayAssetByParent).toHaveBeenCalledWith('word', 1);
+      expect(assetService.getAssetsByParentAndType).toHaveBeenCalledWith('word', 1, 'audio');
     });
   });
 

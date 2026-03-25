@@ -49,6 +49,10 @@ jest.mock('../../src/services/wordService', () => ({
   getWords: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('../../src/services/memoriesService', () => ({
+  getTimelineItems: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../src/services/notificationService', () => ({
   handleWordAdded: jest.fn().mockResolvedValue(undefined),
   isNotificationsEnabled: jest.fn().mockResolvedValue(false),
@@ -407,6 +411,60 @@ describe('DashboardScreen', () => {
     await waitFor(() => {
       expect(queryByTestId('home-photo-viewer-close')).toBeNull();
     });
+  });
+
+  it('shows memories frame when totalWords > 0', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue([
+      { id: 1, text: 'mama', item_type: 'word', created_at: '2026-03-03T10:00:00.000Z', date_added: '2026-03-03', main_word_text: null, word_id: null, audio_count: 0, photo_count: 0, first_photo_filename: null, first_photo_mime: null },
+    ]);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('home-memories-frame')).toBeTruthy();
+  });
+
+  it('does not show memories frame when totalWords is 0', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    const { queryByTestId } = renderWithProviders(<DashboardScreen />);
+    await waitFor(() => {
+      expect(queryByTestId('home-memories-frame')).toBeNull();
+    });
+  });
+
+  it('shows up to 5 recent memory items in memories frame', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    const manyMemories = Array.from({ length: 7 }, (_, i) => ({
+      id: i + 1,
+      text: `word${i + 1}`,
+      item_type: 'word' as const,
+      created_at: `2026-03-0${Math.min(i + 1, 9)}T10:00:00.000Z`,
+      date_added: `2026-03-0${Math.min(i + 1, 9)}`,
+      main_word_text: null,
+      word_id: null,
+      audio_count: 0,
+      photo_count: 0,
+      first_photo_filename: null,
+      first_photo_mime: null,
+    }));
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue(manyMemories);
+    const { findByTestId, queryByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('timeline-item-word-1')).toBeTruthy();
+    expect(await findByTestId('timeline-item-word-3')).toBeTruthy();
+    await waitFor(() => {
+      expect(queryByTestId('timeline-item-word-4')).toBeNull();
+    });
+  });
+
+  it('pressing see all memories navigates without error', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue([
+      { id: 1, text: 'mama', item_type: 'word', created_at: '2026-03-03T10:00:00.000Z', date_added: '2026-03-03', main_word_text: null, word_id: null, audio_count: 0, photo_count: 0, first_photo_filename: null, first_photo_mime: null },
+    ]);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const btn = await findByTestId('home-memories-see-all');
+    expect(() => fireEvent.press(btn)).not.toThrow();
   });
 
   it('AddWordModal callbacks close modal and navigate to words tab', async () => {

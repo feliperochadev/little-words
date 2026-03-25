@@ -142,6 +142,8 @@ export default {
     },
     seeProgress: 'See the Progress',
     progressTitle: 'Progress',
+    memoriesTitle: 'Memories',
+    seeAllMemories: 'See all memories',
     comingSoonTitle: 'More Detailed Metrics Coming Soon',
     comingSoonDesc: 'Percentile rankings, vocabulary milestones, pronunciation accuracy, and speaking milestones will be available in a future update.',
   },

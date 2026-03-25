@@ -2,6 +2,42 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-25_7
+
+**[fix] Fix continuous vertical timeline line: eliminate gap-bridging hacks by removing `marginBottom` from `TimelineItem` row and moving spacing to `card`'s `marginVertical: 6` — dotColumn line segments in adjacent rows are now flush with zero gap, making the line truly continuous without negative margins or overflow tricks; dot position stays consistently at 50% via symmetric flex:1 panes**
+
+### 2026-03-25_6
+
+[fix] Fix broken vertical line between timeline items: added `lineSegmentVExtend` style with `marginBottom: -12` on the bottom segment of non-last items, bridging the 12px row gap so the line appears continuous
+[fix] Increase compact font sizes: word text 12→14, badge 8→10, badge padding 5→6 — matching user request to double the compact scale
+
+### 2026-03-25_5
+
+[fix] Bound timeline vertical line to first/last dot: replaced the absolute full-height `centerLine` overlay with an inline `dotColumn` layout inside each `TimelineItem`; line segments above/below the dot are transparent when `isFirst`/`isLast` — memories screen and home mini-timeline no longer show the line beyond the first and last entries
+[fix] Scale down home mini-timeline cards: added `compact` prop to `TimelineItem` that reduces word font size to 12, badge font to 8, and photo thumbnail to 22px — prevents text overflow in the narrower home card context; home cards pass `compact` and `isFirst`/`isLast`
+
+### 2026-03-25_4
+
+[fix] Fix timeline sort key: change `ORDER BY created_at DESC` to `ORDER BY date_added DESC, created_at DESC` so the timeline orders by when the word was spoken (user-facing date), not by DB insertion time — entries entered on different days than they were spoken now appear in the correct chronological position
+
+### 2026-03-25_3
+
+[fix] Fix timeline ordering: wrap UNION ALL in a subquery so the outer `ORDER BY created_at DESC` applies to the entire interleaved result — previously SQLite applied it only to the variants half, causing words and variants to appear in separate sorted groups
+[fix] Reduce home memories card cap from 5 to 3 latest entries
+
+### 2026-03-25_2
+
+[fix] Align media controls with card text direction: left cards now use `flex-end` (right-aligned, matching right-aligned text); right cards use `flex-start` (left-aligned, matching left-aligned text) — previously they were reversed
+[fix] Improve variant badge contrast: badge text color changed from `textOnPrimary` (white) to `text` (dark) so it is readable on the light `secondary` background used in all themes
+[feature] Replace home memories compact rows with full `TimelineItem` mini-timeline: alternating cards with center line, capped at 5 entries; audio/photo overlays wired via `useAssetPreviewOverlays`; header row and see-all button navigate to `/(tabs)/memories`
+
+### 2026-03-25_1
+
+[feature] Enhance memories timeline layout: date moved outside card to opposing side (bold); left cards right-align text with badge on left and word on right in same row; right cards left-align with word on left and badge on right; media controls align left in left cards, right in right cards; `variant of` context text now also follows card alignment
+[fix] Fix audio playback in memories screen: replace `useMediaCapture.playAssetByParent` with `useAssetPreviewOverlays.openAudioOverlay`; audio asset is now fetched via `assetService.getAssetsByParentAndType` then opened through the standard `AudioPreviewOverlay` — consistent with photo handling
+[feature] Add Memories card to home dashboard: shows up to 5 latest memories as compact badge+word+date rows; card and see-all button both navigate to `/(tabs)/memories`; only shown when `totalWords > 0`; adds `dashboard.memoriesTitle` and `dashboard.seeAllMemories` i18n keys to both locales
+[test] Update test suite: `memories.test.tsx` drops `useMediaCapture` mock, replaces audio test with `getAssetsByParentAndType` spy; `home.test.tsx` adds `memoriesService` mock and 4 new memories card tests; `TimelineItem.test.tsx` updated for new layout with no-media test added
+
 ### 2026-03-24_09
 
 [fix] Resolve remaining CI blockers in Android cropper config tests: restored `ExpoCropImageActivity` theme override in `android/app/src/main/AndroidManifest.xml`; added `ExpoCropImageThemeOverride`, `ExpoCropPopupMenuStyle`, and `ExpoCropPopupMenuItemText` in `android/app/src/main/res/values/styles.xml`; restored crop action label overrides in `android/app/src/main/res/values/strings.xml`, `values-pt/strings.xml`, and `values-pt-rBR/strings.xml`
