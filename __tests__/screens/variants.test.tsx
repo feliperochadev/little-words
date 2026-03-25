@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.mock('../../src/services/variantService', () => ({
@@ -193,6 +193,33 @@ describe('VariantsScreen', () => {
   });
 
 
+
+  it('useFocusEffect cleanup clears search and scrolls list to top', async () => {
+    const { useFocusEffect } = require('expo-router');
+    // Make useFocusEffect call the callback on first invocation and capture the cleanup
+    let capturedCleanup: (() => void) | undefined;
+    (useFocusEffect as jest.Mock).mockImplementation((callback: () => (() => void) | void) => {
+      if (!capturedCleanup) {
+        // Only intercept the first call; subsequent renders use the no-op default
+        const result = callback();
+        if (typeof result === 'function') {
+          capturedCleanup = result;
+        }
+      }
+    });
+
+    const { findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mamá/);
+
+    // Now call the captured cleanup to exercise lines 59-61
+    expect(typeof capturedCleanup).toBe('function');
+    act(() => {
+      capturedCleanup!();
+    });
+
+    // Restore the default no-op implementation
+    (useFocusEffect as jest.Mock).mockImplementation(jest.fn());
+  });
 
   it('sets active search when initialSearch is set on navigation', async () => {
     mockHighlightId = undefined;

@@ -162,24 +162,28 @@ type PaneProps = {
 
 function TimelinePane({ content, showConnector, isDatePane = false, connectorFirst = false }: Readonly<PaneProps>) {
   const { colors } = useTheme();
+  const connectorBar = <View style={[styles.connector, { backgroundColor: colors.border }]} />;
+
+  if (!showConnector) {
+    return (
+      <View style={styles.pane}>
+        <View style={[styles.paneContent, isDatePane ? styles.datePane : null]}>{content}</View>
+        <View style={styles.connectorSpacer} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.pane}>
-      {showConnector ? (
-        connectorFirst ? (
-          <>
-            <View style={[styles.connector, { backgroundColor: colors.border }]} />
-            <View style={styles.paneContent}>{content}</View>
-          </>
-        ) : (
-          <>
-            <View style={styles.paneContent}>{content}</View>
-            <View style={[styles.connector, { backgroundColor: colors.border }]} />
-          </>
-        )
+      {connectorFirst ? (
+        <>
+          {connectorBar}
+          <View style={styles.paneContent}>{content}</View>
+        </>
       ) : (
         <>
-          <View style={[styles.paneContent, isDatePane ? styles.datePane : null]}>{content}</View>
-          <View style={styles.connectorSpacer} />
+          <View style={styles.paneContent}>{content}</View>
+          {connectorBar}
         </>
       )}
     </View>

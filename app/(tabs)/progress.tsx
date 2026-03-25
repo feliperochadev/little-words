@@ -18,7 +18,7 @@ export default function ProgressScreen() {
   const { data: stats, refetch } = useDashboardStats();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
 

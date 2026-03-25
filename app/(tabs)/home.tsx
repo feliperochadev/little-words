@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const { action } = useLocalSearchParams<{ action?: string }>();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
-  const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const {
     handlePlayAudio,

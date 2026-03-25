@@ -68,7 +68,7 @@ export default function MemoriesScreen() {
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offset = event.nativeEvent.contentOffset.y;
     const should = offset > SCROLL_THRESHOLD;
-    setShowBackToTop(prev => (prev !== should ? should : prev));
+    setShowBackToTop(prev => (prev === should ? prev : should));
   }, []);
 
   const scrollToTop = useCallback(() => {

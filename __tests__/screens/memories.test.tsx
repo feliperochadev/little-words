@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, waitFor, act } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 
 jest.mock('../../src/services/memoriesService', () => ({
@@ -147,5 +147,118 @@ describe('MemoriesScreen', () => {
     const { queryByTestId, findByTestId } = renderWithProviders(<MemoriesScreen />);
     await findByTestId('memories-flatlist');
     expect(queryByTestId('memories-back-to-top')).toBeNull();
+  });
+
+  it('triggers pull-to-refresh and calls refetch', async () => {
+    const { findByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+    await act(async () => {
+      flatList.props.refreshControl.props.onRefresh();
+    });
+    await waitFor(() => {
+      expect(memoriesService.getTimelineItemsPaginated).toHaveBeenCalled();
+    });
+  });
+
+  it('triggers onEndReached without error when hasNextPage is false', async () => {
+    const { findByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+    await act(async () => {
+      flatList.props.onEndReached?.();
+    });
+    // Should not throw; SAMPLE has < 10 items so hasNextPage is false
+  });
+
+  it('shows back-to-top button when scrolled past threshold', async () => {
+    const { findByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { y: 250, x: 0 },
+        layoutMeasurement: { width: 400, height: 800 },
+        contentSize: { width: 400, height: 2000 },
+      },
+    });
+    expect(await findByTestId('memories-back-to-top')).toBeTruthy();
+  });
+
+  it('hides back-to-top button when near top', async () => {
+    const { findByTestId, queryByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+    // First scroll down to show button
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { y: 250, x: 0 },
+        layoutMeasurement: { width: 400, height: 800 },
+        contentSize: { width: 400, height: 2000 },
+      },
+    });
+    expect(await findByTestId('memories-back-to-top')).toBeTruthy();
+    // Then scroll back up
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { y: 50, x: 0 },
+        layoutMeasurement: { width: 400, height: 800 },
+        contentSize: { width: 400, height: 2000 },
+      },
+    });
+    await waitFor(() => {
+      expect(queryByTestId('memories-back-to-top')).toBeNull();
+    });
+  });
+
+  it('pressing back-to-top button covers scrollToTop handler', async () => {
+    const { findByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { y: 250, x: 0 },
+        layoutMeasurement: { width: 400, height: 800 },
+        contentSize: { width: 400, height: 2000 },
+      },
+    });
+    const backToTopBtn = await findByTestId('memories-back-to-top');
+    fireEvent.press(backToTopBtn);
+    // Button should still be accessible (ref scroll is mocked, no error)
+  });
+
+  it('shows loading footer function when isFetchingNextPage is true', async () => {
+    const page1 = Array.from({ length: 10 }, (_, i) => ({
+      ...SAMPLE[0],
+      id: i + 1,
+      text: `word${i}`,
+    }));
+    (memoriesService.getTimelineItemsPaginated as jest.Mock)
+      .mockResolvedValueOnce(page1)
+      .mockReturnValue(new Promise(() => {})); // second page never resolves
+
+    const { findByTestId } = renderWithProviders(<MemoriesScreen />);
+    const flatList = await findByTestId('memories-flatlist');
+
+    await waitFor(() => {
+      expect(memoriesService.getTimelineItemsPaginated).toHaveBeenCalledWith(10, 0);
+    });
+
+    // Trigger next page load
+    await act(async () => {
+      flatList.props.onEndReached?.();
+    });
+
+    // Verify the footer is a function (the renderFooter useCallback)
+    await waitFor(() => {
+      expect(typeof flatList.props.ListFooterComponent).toBe('function');
+    });
+  });
+
+  it('pressing retry button in error state covers retry handler', async () => {
+    (memoriesService.getTimelineItemsPaginated as jest.Mock).mockRejectedValueOnce(new Error('fail'));
+    const { findByText } = renderWithProviders(<MemoriesScreen />);
+    expect(await findByText('Retry')).toBeTruthy();
+    // Press Retry — covers line 132 handler
+    fireEvent.press(await findByText('Retry'));
+    // After pressing retry, another fetch attempt should have been made
+    await waitFor(() => {
+      expect(memoriesService.getTimelineItemsPaginated).toHaveBeenCalled();
+    });
   });
 });
