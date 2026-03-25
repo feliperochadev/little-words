@@ -9,6 +9,7 @@ import { MediaFAB } from '../../src/components/MediaFAB';
 import { MediaLinkingModal } from '../../src/components/MediaLinkingModal';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { MoreTabButton } from '../../src/components/MoreTabButton';
+import { NotificationPrimingModal } from '../../src/components/NotificationPrimingModal';
 import { useMediaCapture } from '../../src/hooks/useMediaCapture';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -104,6 +105,7 @@ export default function TabLayout() {
       <MediaFAB />
       <MediaLinkingModal />
       <GlobalAddWordModal />
+      <NotificationPrimingModal />
     </MediaCaptureProvider>
   );
 }

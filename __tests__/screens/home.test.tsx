@@ -49,6 +49,16 @@ jest.mock('../../src/services/wordService', () => ({
   getWords: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('../../src/services/notificationService', () => ({
+  handleWordAdded: jest.fn().mockResolvedValue(undefined),
+  isNotificationsEnabled: jest.fn().mockResolvedValue(false),
+  cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
+  scheduleAll: jest.fn().mockResolvedValue(undefined),
+  initNotifications: jest.fn().mockResolvedValue(undefined),
+  cancelRetentionNotifications: jest.fn().mockResolvedValue(undefined),
+  getPermissionStatus: jest.fn().mockResolvedValue({ granted: false, canAskAgain: true }),
+}));
+
 import DashboardScreen from '../../app/(tabs)/home';
 import * as db from '../../src/services/dashboardService';
 import * as settingsService from '../../src/services/settingsService';

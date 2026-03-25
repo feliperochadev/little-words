@@ -64,6 +64,58 @@ const val = x === undefined ? defaultVal : parse(x);
 
 ---
 
+## Avoid Repeated `push()` Calls (S7778)
+
+When appending multiple items to the same array in sequence, prefer one `push(...)` call with all elements.
+
+```ts
+// ❌ Don't
+items.push(first);
+items.push(second);
+items.push(third);
+
+// ✅ Do
+items.push(first, second, third);
+```
+
+---
+
+## Extract Nested Ternaries (S3358)
+
+Nested ternary expressions reduce readability and should be replaced with `if/else` or helper functions.
+
+```ts
+// ❌ Don't
+const tpl = locale === 'pt-BR'
+  ? (isFirst ? ptFirst : pt)
+  : (isFirst ? enFirst : en);
+
+// ✅ Do
+let tpl;
+if (locale === 'pt-BR') {
+  tpl = isFirst ? ptFirst : pt;
+} else {
+  tpl = isFirst ? enFirst : en;
+}
+```
+
+---
+
+## Pseudorandom Generators In Security-Sensitive Paths (S2245)
+
+Avoid `Math.random()` when Sonar flags a hotspot. Use deterministic selection when true randomness is not required by product behavior.
+
+```ts
+// ❌ Don't
+const pick = list[Math.floor(Math.random() * list.length)];
+
+// ✅ Do
+const daySeed = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / DAY_MS);
+const pick = list[daySeed % list.length];
+```
+
+---
+
 ## React `useState` Naming (S6754)
 
 Always destructure `useState` into a `[value, setValue]` pair where the setter name is `set` + capitalized state name.
@@ -334,6 +386,9 @@ Before every commit, verify new code:
 - [ ] No negated conditions where a positive form is clearer
 - [ ] No duplicated block > 5 lines — extract a helper; new code duplication density **< 2 %**
 - [ ] No array index as list key (S6479) — use a stable domain ID; prefixed index string only for truly static, fixed-length arrays
+- [ ] No repeated sequential `array.push()` calls (S7778) — use one `push(a, b, c)` when appending multiple items
+- [ ] No nested ternary expressions (S3358) — use `if/else` or extracted helpers
+- [ ] No `Math.random()` in Sonar hotspot paths (S2245) — use deterministic or cryptographically secure alternatives as required
 - [ ] Optional chaining used instead of `x && x.y` guards (S6582)
 - [ ] Context provider `value` wrapped in `useMemo` (S6481)
 - [ ] `useState` destructuring follows `[value, setValue]` naming

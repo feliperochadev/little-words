@@ -16,6 +16,10 @@ jest.mock('../../src/components/MediaLinkingModal', () => ({
   MediaLinkingModal: () => null,
 }));
 
+jest.mock('../../src/components/NotificationPrimingModal', () => ({
+  NotificationPrimingModal: () => null,
+}));
+
 jest.mock('../../src/providers/MediaCaptureProvider', () => ({
   MediaCaptureProvider: ({ children }: { children: React.ReactNode }) => children,
 }));

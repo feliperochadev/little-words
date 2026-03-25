@@ -17,6 +17,7 @@ export const clearAllData = (): Promise<void> =>
     await run('DELETE FROM words');
     await run('DELETE FROM categories');
     await run('DELETE FROM settings');
+    await run('DELETE FROM notification_state');
     // Re-seed using locale-neutral keys
     for (const { key, color, emoji } of DEFAULT_CATEGORIES) {
       await run(

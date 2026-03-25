@@ -24,7 +24,7 @@ CI security tooling: GitHub Actions runs CodeQL, Dependency Review (PRs fail on 
   - `index.tsx`: Entry point, DB initialization, Zustand store hydration, and routing logic.
   - `(tabs)/`: Main application tabs (Home, Words, Variants, Media, More); Settings screen is accessible via the More tab and hidden from the tab bar.
 - `src/db/`: DB client (`client.ts` — `query`/`run`/`withTransaction` async helpers), initialization (`init.ts` — DDL at startup), migrations (`migrator.ts` + `migrations/` — schema versioning via `schema_migrations` table). Only `init.ts` and `migrator.ts` call `getDb()` directly.
-- `src/repositories/`: Per-entity SQL modules — `categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`. No React, hooks, or Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `schema_migrations`.
+- `src/repositories/`: Per-entity SQL modules — `categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`, `notificationRepository`. No React, hooks, or Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `notification_state`, `schema_migrations`.
 - `src/services/`: Thin service wrappers over repositories providing a clean import boundary for hooks (`categoryService`, `wordService`, `variantService`, `settingsService`, `dashboardService`, `assetService`).
 - `src/hooks/`: TanStack Query hooks for all SQLite data (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`.
 - `src/stores/`: Zustand store for global client state (`settingsStore` — child profile/onboarding).
@@ -62,7 +62,11 @@ The app supports audio, photo, and video attachments on words and variants:
 - **Service** (`src/services/assetService.ts`): Atomic save (DB insert → build filename → copy file → update DB; rollback on failure), remove, bulk cleanup.
 - **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
 - **DB**: `assets` table with `parent_type` discriminator + indexes, cascade deletion via `withTransactionSync`, `asset_count` subquery in word/variant queries.
-- **Dependencies**: `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage).
+- **Dependencies**: `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage), `expo-notifications` (local notification scheduling).
+
+### Local Notification System
+
+Reset Sequence strategy — cancel on foreground, batch-schedule on background. 8 notification types (nudge 3/7/15d, weekly win, monthly recap, nostalgia trip, milestone, feature discovery, category explorer, backup reminder). Pure scheduler (`notificationScheduler.ts`) separated from orchestration (`notificationService.ts`). Permission priming via `NotificationPrimingModal` shown after first word. Notification state in `notification_state` SQLite table. Deep-link routing via `data.route` field on notification tap. See `CLAUDE.md` for detailed architecture.
 
 ## Rules
 

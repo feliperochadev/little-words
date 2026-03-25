@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
 import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
@@ -22,6 +22,16 @@ import { useCategories } from '../../src/hooks/useCategories';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useProfilePhoto } from '../../src/hooks/useAssets';
+import {
+  isNotificationsEnabled,
+  cancelAllNotifications,
+  scheduleAll,
+  getPermissionStatus,
+} from '../../src/services/notificationService';
+import {
+  setNotificationState,
+  getNotificationState,
+} from '../../src/repositories/notificationRepository';
 
 function getSexDisplay(sex: string | undefined | null, t: (key: string) => string): string {
   if (sex === 'girl') return t('settings.girl');
@@ -31,6 +41,7 @@ function getSexDisplay(sex: string | undefined | null, t: (key: string) => strin
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { scrollTo } = useLocalSearchParams<{ scrollTo?: string }>();
   const { t, locale, setLocale } = useI18n();
   const { colors } = useTheme();
   const categoryName = useCategoryName();
@@ -50,18 +61,70 @@ export default function SettingsScreen() {
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
   const [exportMode, setExportMode] = useState<'csv' | 'zip'>('zip');
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  // Notifications state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
+  // Scroll-to-export support
+  const scrollRef = useRef<ScrollView>(null);
+  const exportSectionYRef = useRef<number>(0);
+
+  // Load notification toggle state on mount
+  useEffect(() => {
+    void (async () => {
+      const [enabled, permReq] = await Promise.all([
+        isNotificationsEnabled(),
+        getNotificationState('permission_requested'),
+      ]);
+      setNotificationsEnabled(enabled);
+      if (permReq === '1' && !enabled) {
+        const { canAskAgain } = await getPermissionStatus();
+        setPermissionDenied(!canAskAgain);
+      }
+    })();
+  }, []);
+
+  // Scroll to export section when deep-linked from backup reminder
+  useEffect(() => {
+    if (scrollTo === 'export' && exportSectionYRef.current > 0) {
+      const timeout = setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: exportSectionYRef.current, animated: true });
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [scrollTo]);
+
+  const handleNotificationsToggle = useCallback(async (value: boolean) => {
+    setNotificationsEnabled(value);
+    await setNotificationState('notifications_enabled', value ? '1' : '0');
+    if (value) {
+      void scheduleAll();
+    } else {
+      await cancelAllNotifications();
+    }
+  }, []);
+
+  const recordBackupDate = useCallback(async () => {
+    await setNotificationState('last_backup_date', new Date().toISOString());
+  }, []);
+
   const handleShare = async () => {
     setExporting(true);
     if (exportMode === 'zip') {
       const result = await shareFullBackup(t, locale);
       setExporting(false);
-      if (!result.success) Alert.alert(t('common.error'), result.error || t('backup.errorShare'));
+      if (result.success) {
+        void recordBackupDate();
+      } else {
+        Alert.alert(t('common.error'), result.error || t('backup.errorShare'));
+      }
     } else {
       const result = await shareCSV(categoryResolver, csvHeader, t);
       setExporting(false);
@@ -75,6 +138,7 @@ export default function SettingsScreen() {
       const result = await saveFullBackupToDevice(t, locale);
       setSaving(false);
       if (result.success) {
+        void recordBackupDate();
         Alert.alert(t('backup.saveSuccess'), t('backup.saveMsg'));
       } else if (result.error !== 'cancelled') {
         Alert.alert(t('common.error'), result.error || t('backup.errorShare'));
@@ -129,7 +193,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
         <View style={styles.pageTitleRow}>
           <Ionicons name="settings-outline" size={22} color={colors.primary} testID="settings-title-icon" />
           <Text style={[styles.pageTitle, { color: colors.text }]}>{t('settings.title')}</Text>
@@ -205,6 +269,35 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {/* Notifications */}
+        <Card style={styles.section} testID="settings-notifications-card">
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="notifications-outline" size={17} color={colors.textSecondary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-notifications-title">
+              {t('notifications.sectionTitle')}
+            </Text>
+          </View>
+          <View style={styles.notifToggleRow}>
+            <Text style={[styles.notifToggleLabel, { color: colors.text }]}>
+              {t('notifications.enableToggle')}
+            </Text>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleNotificationsToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.surface}
+              testID="settings-notifications-toggle"
+            />
+          </View>
+          {!notificationsEnabled && (
+            <Text style={[styles.sectionDesc, { color: colors.textMuted, marginBottom: 0, marginTop: 6 }]} testID="settings-notifications-hint">
+              {permissionDenied
+                ? t('notifications.permissionDeniedHint')
+                : t('notifications.disabledHint')}
+            </Text>
+          )}
+        </Card>
+
         {/* Categories */}
         <Card style={styles.section}>
           <View style={styles.sectionTitleRow}>
@@ -212,24 +305,40 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]} testID="settings-categories-title">{t('settings.categories')}</Text>
           </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t('settings.categoriesDesc')}</Text>
-          {categories.map(cat => (
-            <TouchableOpacity
-              key={cat.id}
-              style={styles.categoryRow}
-              onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
-            >
-              <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-              </View>
-              <Text style={[styles.categoryRowName, { color: colors.text }]} numberOfLines={1}>
-                {categoryName(cat.name)}
-              </Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)} testID="settings-add-category-btn">
-            <Ionicons name="add" size={16} color={colors.primary} />
-            <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
+          {categoriesExpanded && (
+            <>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.categoryRow}
+                  onPress={() => setEditCategory({ id: cat.id, name: categoryName(cat.name), color: cat.color, emoji: cat.emoji })}
+                >
+                  <View style={[styles.categoryDot, { backgroundColor: cat.color + '25' }]}>
+                    <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                  </View>
+                  <Text style={[styles.categoryRowName, { color: colors.text }]} numberOfLines={1}>
+                    {categoryName(cat.name)}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={[styles.addCategoryBtn, { borderColor: colors.primary }]} onPress={() => setShowAddCategory(true)} testID="settings-add-category-btn">
+                <Ionicons name="add" size={16} color={colors.primary} />
+                <Text style={[styles.addCategoryBtnText, { color: colors.primary }]}>{t('words.addCategory')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={[styles.categoriesExpandBtn, { borderColor: colors.border }]}
+            onPress={() => setCategoriesExpanded(prev => !prev)}
+            testID="settings-categories-expand-btn"
+            accessibilityRole="button"
+            accessibilityLabel={categoriesExpanded ? t('settings.categoriesCollapse') : t('settings.categoriesExpand')}
+          >
+            <Text style={[styles.categoriesExpandText, { color: colors.primary }]}>
+              {categoriesExpanded ? t('settings.categoriesCollapse') : t('settings.categoriesExpand')}
+            </Text>
+            <Ionicons name={categoriesExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
           </TouchableOpacity>
         </Card>
 
@@ -250,6 +359,7 @@ export default function SettingsScreen() {
         </Card>
 
         {/* Export */}
+        <View onLayout={(e) => { exportSectionYRef.current = e.nativeEvent.layout.y; }}>
         <Card style={styles.section}>
           <View style={styles.sectionTitleRow}>
             <Ionicons name="cloud-upload-outline" size={17} color={colors.textSecondary} testID="settings-export-icon" />
@@ -311,6 +421,7 @@ export default function SettingsScreen() {
             />
           </View>
         </Card>
+        </View>
 
         {/* Danger Zone */}
         <Card style={[styles.section, styles.dangerCard, { borderColor: withOpacity(colors.error, '40') }]}>
@@ -404,6 +515,21 @@ const styles = StyleSheet.create({
   langLabel: { fontSize: 14, fontWeight: '600' },
   langLabelActive: { fontWeight: '800' },
   bottomSpacer: { height: 40 },
+  categoriesExpandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  categoriesExpandText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  notifToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  notifToggleLabel: { fontSize: 15, fontWeight: '600', flex: 1 },
   exportModeRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   exportModeCard: {
     flex: 1, borderRadius: 14, borderWidth: 2, padding: 12,

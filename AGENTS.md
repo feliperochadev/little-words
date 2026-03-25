@@ -123,7 +123,7 @@ The app uses Expo Router for navigation and `expo-sqlite` for storage. Built-in 
 | Local UI state | **useState** | modals, form inputs, sort order |
 
 - `src/db/` — DB client (`client.ts`), initialization (`init.ts`), migrations (`migrator.ts`, `migrations/`)
-- `src/repositories/` — per-entity SQL modules (`categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`); no React/hooks/Zustand
+- `src/repositories/` — per-entity SQL modules (`categoryRepository`, `wordRepository`, `variantRepository`, `settingsRepository`, `assetRepository`, `dashboardRepository`, `csvRepository`, `notificationRepository`); no React/hooks/Zustand. Tables: `categories`, `words`, `variants`, `settings`, `assets`, `notification_state`, `schema_migrations`.
 - `src/services/` — thin wrappers over repositories (import boundary for hooks)
 - `src/hooks/` — TanStack Query hooks (`useWords`, `useCategories`, `useVariants`, `useDashboard`, `useAssets`) + `queryKeys.ts`
 - `src/stores/` — Zustand store (`settingsStore`); hydrated at app start in `app/index.tsx`
@@ -139,6 +139,10 @@ The app supports audio, photo, and video attachments on words and variants:
 - **Service** (`src/services/assetService.ts`): Atomic save (DB + file with rollback), remove, bulk cleanup.
 - **Hooks** (`src/hooks/useAssets.ts`): `useAssetsByParent`, `useAssetsByType`, `useSaveAsset`, `useRemoveAsset`.
 - **DB**: `assets` table with `parent_type` discriminator, cascade deletion, `asset_count` in word/variant queries.
+
+### Local Notification System
+
+Reset Sequence strategy (expo-notifications): cancel on foreground, batch-schedule on background. 8 types: nudge 3/7/15d, weekly win, monthly recap, nostalgia trip, milestone, feature discovery, category explorer, backup reminder. Pure scheduler in `notificationScheduler.ts` (no expo-notifications import, fully testable), orchestration in `notificationService.ts`. Permission priming via `NotificationPrimingModal`. Notification state in `notification_state` table. Deep-link routing via `data.route` on notification tap, handled by `useNotifications` hook in `app/_layout.tsx`.
 
 ## Code Standards
 

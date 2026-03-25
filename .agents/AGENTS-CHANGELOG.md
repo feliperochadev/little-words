@@ -2,6 +2,25 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-24_07
+
+[refactor] Move all hardcoded notification content strings from `notificationScheduler.ts` to i18n catalogues (`en-US.ts`, `pt-BR.ts`): 20 new keys per locale covering all 8 notification types and milestones; `SchedulerContext.locale` replaced with `SchedulerContext.strings: NotifStrings`; `buildMilestoneContent` signature updated to accept `MilestoneStrings`; `notificationService.ts` builds strings from catalogs via `getNotifStrings`/`getMilestoneStrings` helpers before passing to scheduler
+[feature] Add collapsible categories section in Settings screen: section starts collapsed by default; expand/collapse button at the bottom of the card reveals the categories list and add-category button; uses `chevron-down`/`chevron-up` Ionicons and `settings.categoriesExpand`/`settings.categoriesCollapse` i18n keys
+[config] Add mandatory i18n rule to `.agents/standards/components.md`: all user-visible strings must come from i18n catalogues; covers both React hook usage and non-React service imports
+[test] Update `notificationScheduler.test.ts` with `makeNotifStrings`/`makeMilestoneStrings` helpers using real catalog imports; update `notificationService.test.ts`; add 3 new settings tests for expand/collapse behaviour + update 3 existing category tests to expand first
+
+### 2026-03-24_06
+
+[fix] Resolve SonarCloud issues on PR #56: refactor `handleNotificationsToggle` in `app/(tabs)/settings.tsx` to avoid negated-condition smell (S7735); refactor `src/services/notificationScheduler.ts` to remove repeated sequential `items.push(...)` calls (S7778) and replace nested ternary milestone template selection with `if/else` (S3358)
+[fix] Remove SonarCloud security hotspot pattern (S2245) by replacing `Math.random()` selection in nostalgia/category scheduling with deterministic day-seeded selection helper (`getDeterministicDayIndex`)
+[test] Extend `__tests__/unit/notificationScheduler.test.ts` with deterministic-selection assertions for nostalgia and category scheduling; scheduler file remains at 100% lines/branches/functions under `npm run test:coverage`
+[config] Update `.agents/standards/quality.md` with new Sonar prevention sections for S7778, S3358, and S2245 plus checklist items
+
+### 2026-03-24_05
+
+[feature] Add local push notification system using expo-notifications: 8 notification types (Gentle Nudge 3/7/15d, Weekly Win, Monthly Recap, Nostalgia Trip, Milestone, Feature Discovery, Category Explorer, Backup Reminder); Reset Sequence strategy (cancel on foreground, batch-schedule on background); pure scheduler (`notificationScheduler.ts`) separated from orchestration (`notificationService.ts`); permission priming modal (`NotificationPrimingModal`) shown after first word is added; notifications toggle in Settings with permission-denied hint; `notification_state` SQLite table (migration 0005); deep-link routing via `data.route` on notification tap; backup date tracking in settings.tsx call sites; scroll-to-export via `scrollTo=export` URL param; bilingual content (en-US / pt-BR) embedded at schedule time
+[test] Add 5 new test files and update 7 existing files: 100% coverage across all 6 notification modules (notificationRepository, notificationScheduler, notificationService, useNotifications, NotificationPrimingModal, notificationStore); fix renderHook/act pattern to use renderHook outside act; add migration v5 rollback test
+
 ### 2026-03-24_04
 
 [refactor] Simplify media link navigation: replace unreliable scroll-to-index logic with search pre-filling in `app/(tabs)/words.tsx` and `app/(tabs)/variants.tsx`; navigating from `MediaLinkingModal` now passes an `initialSearch` param which sets the search filter to the linked word/variant name, ensuring it is visible; use `useFocusEffect` to clear the search when leaving the screen

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
   Modal, Image,
@@ -9,7 +9,7 @@ import { StatCard, Card } from '../../src/components/UIComponents';
 import { BrandHeader } from '../../src/components/BrandHeader';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { ProfileAvatar } from '../../src/components/ProfileAvatar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
@@ -20,11 +20,19 @@ import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { action } = useLocalSearchParams<{ action?: string }>();
   const { t } = useI18n();
   const { data: stats, refetch } = useDashboardStats();
   const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+
+  // Auto-open AddWordModal when deep-linked via notification (action=add-word)
+  useEffect(() => {
+    if (action === 'add-word') {
+      setShowAddWord(true);
+    }
+  }, [action]);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;

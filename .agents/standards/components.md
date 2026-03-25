@@ -2,6 +2,32 @@
 
 ---
 
+## Internationalisation (i18n) — Mandatory Rule
+
+**All user-visible strings must come from the i18n catalogues** (`src/i18n/en-US.ts` and `src/i18n/pt-BR.ts`). Never hardcode text that appears in the UI, notifications, or any output the user sees directly in component, service, or hook files.
+
+```ts
+// ✅ Do — get text from i18n
+const { t } = useI18n();
+return <Text>{t('notifications.nudge3dTitle')}</Text>;
+
+// ✅ Do — in a non-React service, import the catalogue directly
+import enUS from '../i18n/en-US';
+import ptBR from '../i18n/pt-BR';
+const cat = locale === 'pt-BR' ? ptBR : enUS;
+const title = cat.notifications.nudge3dTitle;
+
+// ❌ Don't — hardcode strings in component or service files
+const EN_STRINGS = { nudge3dTitle: 'New sounds today?' };
+```
+
+This rule applies to:
+- Component JSX text and props
+- Service/hook functions that produce user-visible content (notifications, alerts, etc.)
+- Any file that renders or schedules content in both supported locales
+
+---
+
 ## File Structure
 
 Every component file follows this order:

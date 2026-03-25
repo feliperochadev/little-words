@@ -39,6 +39,18 @@ jest.mock('../../src/utils/backupExport', () => ({
   saveFullBackupToDevice: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('../../src/services/notificationService', () => ({
+  isNotificationsEnabled: jest.fn().mockResolvedValue(false),
+  cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
+  scheduleAll: jest.fn().mockResolvedValue(undefined),
+  getPermissionStatus: jest.fn().mockResolvedValue({ granted: false, canAskAgain: true }),
+}));
+
+jest.mock('../../src/repositories/notificationRepository', () => ({
+  setNotificationState: jest.fn().mockResolvedValue(undefined),
+  getNotificationState: jest.fn().mockResolvedValue(null),
+}));
+
 import SettingsScreen from '../../app/(tabs)/settings';
 import * as csvExport from '../../src/utils/csvExport';
 import * as backupExport from '../../src/utils/backupExport';
@@ -187,13 +199,17 @@ describe('SettingsScreen', () => {
 
   it('opens add category modal', async () => {
     const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     fireEvent.press(await findByTestId('settings-add-category-btn'));
     expect(await findByText(/New Category/)).toBeTruthy();
   });
 
   it('opens edit category modal when tapping a category row', async () => {
-    const { findByText } = renderWithProviders(<SettingsScreen />);
+    const { findByText, findByTestId } = renderWithProviders(<SettingsScreen />);
     await findByText(/Settings/);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     const categoryRow = await findByText('Animals');
     fireEvent.press(categoryRow);
     expect(await findByText(/Edit Category/)).toBeTruthy();
@@ -201,12 +217,37 @@ describe('SettingsScreen', () => {
 
   it('closes add category modal via onClose', async () => {
     const { findByText, queryByText, findByTestId } = renderWithProviders(<SettingsScreen />);
+    // Expand categories section first
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
     fireEvent.press(await findByTestId('settings-add-category-btn'));
     await findByText(/New Category/);
     const cancelBtn = await findByText(/Cancel/);
     fireEvent.press(cancelBtn);
     await waitFor(() => {
       expect(queryByText(/New Category/)).toBeNull();
+    });
+  });
+
+  it('categories section starts collapsed', async () => {
+    const { findByTestId, queryByTestId } = renderWithProviders(<SettingsScreen />);
+    await findByTestId('settings-categories-title');
+    expect(queryByTestId('settings-add-category-btn')).toBeNull();
+  });
+
+  it('expands categories section on expand button press', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-categories-expand-btn'));
+    expect(await findByTestId('settings-add-category-btn')).toBeTruthy();
+  });
+
+  it('collapses categories section after expand and collapse', async () => {
+    const { findByTestId, queryByTestId } = renderWithProviders(<SettingsScreen />);
+    const expandBtn = await findByTestId('settings-categories-expand-btn');
+    fireEvent.press(expandBtn);
+    await findByTestId('settings-add-category-btn');
+    fireEvent.press(expandBtn);
+    await waitFor(() => {
+      expect(queryByTestId('settings-add-category-btn')).toBeNull();
     });
   });
 
@@ -347,6 +388,73 @@ describe('SettingsScreen', () => {
     await waitFor(() => {
       expect(Alert.alert).not.toHaveBeenCalled();
     });
+  });
+
+  // ── Notifications section ───────────────────────────────────────────────────
+  it('renders notifications section', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-notifications-title')).toBeTruthy();
+    expect(await findByTestId('settings-notifications-toggle')).toBeTruthy();
+  });
+
+  it('shows disabled hint when notifications are off', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    expect(await findByTestId('settings-notifications-hint')).toBeTruthy();
+  });
+
+  it('calls setNotificationState and cancelAllNotifications when toggling off', async () => {
+    const { isNotificationsEnabled } = require('../../src/services/notificationService');
+    const { setNotificationState } = require('../../src/repositories/notificationRepository');
+    const { cancelAllNotifications } = require('../../src/services/notificationService');
+    (isNotificationsEnabled as jest.Mock).mockResolvedValueOnce(true);
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const toggle = await findByTestId('settings-notifications-toggle');
+    await act(async () => { fireEvent(toggle, 'valueChange', false); });
+    await waitFor(() => {
+      expect(setNotificationState).toHaveBeenCalledWith('notifications_enabled', '0');
+      expect(cancelAllNotifications).toHaveBeenCalled();
+    });
+  });
+
+  it('calls setNotificationState and scheduleAll when toggling on', async () => {
+    const { setNotificationState } = require('../../src/repositories/notificationRepository');
+    const { scheduleAll } = require('../../src/services/notificationService');
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const toggle = await findByTestId('settings-notifications-toggle');
+    await act(async () => { fireEvent(toggle, 'valueChange', true); });
+    await waitFor(() => {
+      expect(setNotificationState).toHaveBeenCalledWith('notifications_enabled', '1');
+      expect(scheduleAll).toHaveBeenCalled();
+    });
+  });
+
+  it('records last_backup_date when ZIP share succeeds', async () => {
+    const { setNotificationState } = require('../../src/repositories/notificationRepository');
+    (require('../../src/utils/backupExport').shareFullBackup as jest.Mock).mockResolvedValue({ success: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
+    await waitFor(() => {
+      expect(setNotificationState).toHaveBeenCalledWith('last_backup_date', expect.any(String));
+    });
+  });
+
+  it('records last_backup_date when ZIP save to device succeeds', async () => {
+    const { setNotificationState } = require('../../src/repositories/notificationRepository');
+    (require('../../src/utils/backupExport').saveFullBackupToDevice as jest.Mock).mockResolvedValue({ success: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-save-btn')); });
+    await waitFor(() => {
+      expect(setNotificationState).toHaveBeenCalledWith('last_backup_date', expect.any(String));
+    });
+  });
+
+  it('does NOT record last_backup_date when ZIP share fails', async () => {
+    const { setNotificationState } = require('../../src/repositories/notificationRepository');
+    (require('../../src/utils/backupExport').shareFullBackup as jest.Mock).mockResolvedValue({ success: false, error: 'oops' });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    await act(async () => { fireEvent.press(await findByTestId('settings-share-btn')); });
+    await waitFor(() => { expect(Alert.alert).toHaveBeenCalled(); });
+    expect(setNotificationState).not.toHaveBeenCalledWith('last_backup_date', expect.any(String));
   });
 
   it('handles clear data double confirmation', async () => {
