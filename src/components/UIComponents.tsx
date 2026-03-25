@@ -283,15 +283,33 @@ interface StatCardProps {
   label: string;
   color: string;
   testID?: string;
+  /** 'default': icon+label on top, value below. 'iconValue': icon+value on top, label below. */
+  variant?: 'default' | 'iconValue';
 }
 
-export function StatCard({ emoji, icon, value, label, color, testID }: Readonly<StatCardProps>) {
+export function StatCard({ emoji, icon, value, label, color, testID, variant = 'default' }: Readonly<StatCardProps>) {
+  const iconEl = (
+    <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
+      {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
+    </View>
+  );
+
+  if (variant === 'iconValue') {
+    return (
+      <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
+        <View style={statStyles.topRowCentered}>
+          {iconEl}
+          <Text style={[statStyles.valueInline, { color }]} testID={testID}>{value}</Text>
+        </View>
+        <Text style={statStyles.labelBelow}>{label}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[statStyles.card, { borderColor: withOpacity(color, '30') }]}>
       <View style={statStyles.topRow}>
-        <View style={[statStyles.iconBg, { backgroundColor: withOpacity(color, '15') }]}>
-          {icon ?? <Text style={statStyles.emoji}>{emoji}</Text>}
-        </View>
+        {iconEl}
         <Text style={statStyles.label}>{label}</Text>
       </View>
       <Text style={[statStyles.value, { color }]} testID={testID}>{value}</Text>
@@ -318,6 +336,12 @@ const statStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
+  topRowCentered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   iconBg: {
     width: 32,
     height: 32,
@@ -328,5 +352,7 @@ const statStyles = StyleSheet.create({
   },
   emoji: { fontSize: 16 },
   value: { fontSize: 26, fontWeight: theme.typography.fontWeight.heavy, textAlign: 'center' },
+  valueInline: { fontSize: 26, fontWeight: theme.typography.fontWeight.heavy, marginLeft: 6 },
   label: { flex: 1, fontSize: theme.typography.fontSize.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.fontWeight.medium },
+  labelBelow: { fontSize: theme.typography.fontSize.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.fontWeight.medium, marginTop: 4, textAlign: 'center' },
 });

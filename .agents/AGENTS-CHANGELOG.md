@@ -2,6 +2,10 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-25_8
+
+**[feature] Add iconValue variant to StatCard: all 5 stat cards (totalWords, totalVariants, today, this week, this month) now show icon + number centered on the same row with the label text centered below — applied in home.tsx and progress.tsx**
+
 ### 2026-03-25_7
 
 **[fix] Fix continuous vertical timeline line: eliminate gap-bridging hacks by removing `marginBottom` from `TimelineItem` row and moving spacing to `card`'s `marginVertical: 6` — dotColumn line segments in adjacent rows are now flush with zero gap, making the line truly continuous without negative margins or overflow tricks; dot position stays consistently at 50% via symmetric flex:1 panes**

@@ -43,13 +43,13 @@ export default function ProgressScreen() {
         {stats && (
           <Card testID="progress-stats-section">
             <View style={styles.statsGrid}>
-              <StatCard icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="progress-stat-total-words" />
-              <StatCard icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="progress-stat-total-variants" />
+              <StatCard variant="iconValue" icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="progress-stat-total-words" />
+              <StatCard variant="iconValue" icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="progress-stat-total-variants" />
             </View>
             <View style={[styles.statsGrid, styles.statsGridLast]}>
-              <StatCard icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="progress-stat-words-today" />
-              <StatCard icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="progress-stat-words-week" />
-              <StatCard icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="progress-stat-words-month" />
+              <StatCard variant="iconValue" icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="progress-stat-words-today" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="progress-stat-words-week" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="progress-stat-words-month" />
             </View>
           </Card>
         )}
