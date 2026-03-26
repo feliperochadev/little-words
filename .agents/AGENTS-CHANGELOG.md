@@ -2,6 +2,11 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-26_03
+
+[fix] Remove ExpoCropImageActivity from AndroidManifest.xml, ExpoCropImageThemeOverride styles from styles.xml, crop_image_menu_crop string from values/strings.xml, and delete values-pt/strings.xml and values-pt-rBR/strings.xml; these crop customizations are no longer needed
+[test] Remove android cropper theme and label overrides describe block from appConfig.test.ts to match the removal of the crop activity, styles, and strings files
+
 ### 2026-03-26_02
 
 [fix] Use correct Android notification channel in all scheduled notifications: add `channelId: 'default'` to the DATE trigger in `scheduleItem` so scheduled notifications route through the configured channel instead of expo's fallback; replace `trigger: null` with `trigger: { channelId: 'default' }` in `handleWordAdded` milestone delivery for the same reason
