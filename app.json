@@ -2,7 +2,7 @@
   "expo": {
     "name": "Little Words",
     "slug": "little-words",
-    "version": "0.9.0-beta",
+    "version": "0.9.1-beta",
     "orientation": "portrait",
     "icon": "./assets/icon_1024.png",
     "userInterfaceStyle": "light",
