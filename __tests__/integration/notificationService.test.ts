@@ -301,7 +301,10 @@ describe('scheduleAll', () => {
 
     await scheduleAll();
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ identifier: 'nudge-3d' }),
+      expect.objectContaining({
+        identifier: 'nudge-3d',
+        trigger: expect.objectContaining({ channelId: 'default' }),
+      }),
     );
   });
 
@@ -404,7 +407,10 @@ describe('handleWordAdded', () => {
 
     await handleWordAdded();
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ identifier: 'milestone-10' }),
+      expect.objectContaining({
+        identifier: 'milestone-10',
+        trigger: { channelId: 'default' },
+      }),
     );
     expect(setNotificationState).toHaveBeenCalledWith('milestone_10', expect.any(String));
   });

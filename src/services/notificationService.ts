@@ -153,6 +153,7 @@ async function scheduleItem(item: ScheduleItem): Promise<void> {
     : {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: item.triggerDate,
+        channelId: 'default',
       };
 
   // Cancel existing notification with same identifier before rescheduling
@@ -293,7 +294,7 @@ export async function handleWordAdded(): Promise<void> {
         body: content.body,
         data: { route: '/(tabs)/progress' },
       },
-      trigger: null,
+      trigger: { channelId: 'default' },
     });
     await setNotificationState(milestoneKey, new Date().toISOString());
   } catch {
