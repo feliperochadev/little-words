@@ -30,7 +30,7 @@ export default {
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Little Words',
-    tagline: 'every word, a memory',
+    tagline: 'Every word, a memory',
   },
 
   // ── Common ──────────────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ export default {
     home: 'Home',
     words: 'Words',
     variants: 'Variants',
+    memories: 'Memories',
     settings: 'Settings',
     more: 'More',
     media: 'Media',
@@ -141,6 +142,8 @@ export default {
     },
     seeProgress: 'See the Progress',
     progressTitle: 'Progress',
+    memoriesTitle: 'Memories',
+    seeAllMemories: 'See all memories',
     comingSoonTitle: 'More Detailed Metrics Coming Soon',
     comingSoonDesc: 'Percentile rankings, vocabulary milestones, pronunciation accuracy, and speaking milestones will be available in a future update.',
   },
@@ -186,6 +189,20 @@ export default {
     deleteMessage: 'Remove "{{variant}}"?',
     count: '{{count}} variant',
     countPlural: '{{count}} variants',
+  },
+
+  // ── Memories screen ─────────────────────────────────────────────────────────
+  memories: {
+    title: 'Memories',
+    typeWord: 'Word',
+    typeVariant: 'Variant',
+    variantOf: 'Variant of {{word}}',
+    emptyTitle: 'No memories yet',
+    emptySubtitle: 'Start adding words to see your timeline!',
+    errorTitle: 'Could not load memories',
+    errorSubtitle: 'Please try again in a moment.',
+    retry: 'Retry',
+    backToTop: 'Latest',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

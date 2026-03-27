@@ -30,7 +30,7 @@ export default {
   // ── Brand Header ─────────────────────────────────────────────────────────────
   brandHeader: {
     appName: 'Palavrinhas',
-    tagline: 'cada palavra, uma memória',
+    tagline: 'Cada palavra, uma memória',
   },
 
   // ── Common ──────────────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ export default {
     home: 'Início',
     words: 'Palavras',
     variants: 'Variantes',
+    memories: 'Memórias',
     settings: 'Config.',
     more: 'Mais',
     media: 'Mídia',
@@ -141,6 +142,8 @@ export default {
     },
     seeProgress: 'Ver o Progresso',
     progressTitle: 'Progresso',
+    memoriesTitle: 'Memórias',
+    seeAllMemories: 'Ver todas as memórias',
     comingSoonTitle: 'Métricas Mais Detalhadas em Breve',
     comingSoonDesc: 'Rankings de percentil, marcos de vocabulário, precisão de pronúncia e marcos de fala estarão disponíveis em uma atualização futura.',
   },
@@ -186,6 +189,20 @@ export default {
     deleteMessage: 'Remover "{{variant}}"?',
     count: '{{count}} variante',
     countPlural: '{{count}} variantes',
+  },
+
+  // ── Memories screen ─────────────────────────────────────────────────────────
+  memories: {
+    title: 'Memórias',
+    typeWord: 'Palavra',
+    typeVariant: 'Variante',
+    variantOf: 'Variante de {{word}}',
+    emptyTitle: 'Nenhuma memória ainda',
+    emptySubtitle: 'Comece adicionando palavras para ver sua linha do tempo!',
+    errorTitle: 'Não foi possível carregar memórias',
+    errorSubtitle: 'Tente novamente em instantes.',
+    retry: 'Tentar novamente',
+    backToTop: 'Mais recente',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

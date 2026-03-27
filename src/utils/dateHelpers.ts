@@ -82,3 +82,42 @@ export function formatAgeText(
   if (months === 0) return `${years} ${yearStr}`;
   return `${years} ${yearStr}${separator}${months} ${monthStr}`;
 }
+
+function getOrdinalSuffix(day: number): string {
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) return 'th';
+  const mod10 = day % 10;
+  if (mod10 === 1) return 'st';
+  if (mod10 === 2) return 'nd';
+  if (mod10 === 3) return 'rd';
+  return 'th';
+}
+
+const EN_SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const PT_SHORT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'] as const;
+
+export function formatTimelineDate(dateStr: string, locale: 'pt-BR' | 'en-US'): string {
+  if (!dateStr) return '';
+
+  const baseDate = dateStr.includes('T') ? dateStr.slice(0, 10) : dateStr;
+  const [yearRaw, monthRaw, dayRaw] = baseDate.split('-').map(Number);
+
+  if (
+    Number.isNaN(yearRaw) ||
+    Number.isNaN(monthRaw) ||
+    Number.isNaN(dayRaw) ||
+    monthRaw < 1 ||
+    monthRaw > 12 ||
+    dayRaw < 1 ||
+    dayRaw > 31
+  ) {
+    return dateStr;
+  }
+
+  const monthIndex = monthRaw - 1;
+  if (locale === 'pt-BR') {
+    return `${dayRaw} de ${PT_SHORT_MONTHS[monthIndex]}, ${yearRaw}`;
+  }
+
+  return `${dayRaw}${getOrdinalSuffix(dayRaw)} ${EN_SHORT_MONTHS[monthIndex]}, ${yearRaw}`;
+}

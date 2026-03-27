@@ -44,6 +44,22 @@ export interface Variant {
   video_count?: number;
 }
 
+// ─── Memories Timeline ───────────────────────────────────────────────────────
+
+export interface TimelineItem {
+  id: number;
+  text: string;
+  item_type: 'word' | 'variant';
+  created_at: string;
+  date_added: string;
+  main_word_text: string | null;
+  word_id: number | null;
+  audio_count: number;
+  photo_count: number;
+  first_photo_filename: string | null;
+  first_photo_mime: string | null;
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export interface DashboardStats {

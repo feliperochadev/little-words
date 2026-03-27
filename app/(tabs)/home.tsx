@@ -1,31 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
-  Modal, Image,
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  Modal,
+  Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatCard, Card } from '../../src/components/UIComponents';
-import { BrandHeader } from '../../src/components/BrandHeader';
-import { AddWordModal } from '../../src/components/AddWordModal';
-import { ProfileAvatar } from '../../src/components/ProfileAvatar';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useI18n } from '../../src/i18n/i18n';
-import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
-import { useDashboardStats } from '../../src/hooks/useDashboard';
-import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useDashboardStats } from '../../src/hooks/useDashboard';
+import { useMemories } from '../../src/hooks/useMemories';
 import { useProfilePhoto, useSaveProfilePhoto } from '../../src/hooks/useAssets';
 import { useProfilePhotoPicker } from '../../src/hooks/useProfilePhotoPicker';
+import { useTimelineHandlers } from '../../src/hooks/useTimelineHandlers';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { BrandHeader } from '../../src/components/BrandHeader';
+import { Card, StatCard } from '../../src/components/UIComponents';
+import { ProfileAvatar } from '../../src/components/ProfileAvatar';
+import { AddWordModal } from '../../src/components/AddWordModal';
+import { TimelineItem } from '../../src/components/TimelineItem';
+import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
+import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
 
-export default function DashboardScreen() {
+const EMPTY_MEMORIES: TimelineItemModel[] = [];
+
+export default function HomeScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const { action } = useLocalSearchParams<{ action?: string }>();
-  const { t } = useI18n();
-  const { data: stats, refetch } = useDashboardStats();
-  const { name, sex, birth } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const {
+    handlePlayAudio,
+    handleViewPhoto,
+    audioOverlay,
+    photoOverlay,
+    closeAudioOverlay,
+    closePhotoOverlay,
+  } = useTimelineHandlers();
+
+  const { data: stats, refetch: refetchStats } = useDashboardStats();
+  const { data: memories = EMPTY_MEMORIES, refetch: refetchMemories } = useMemories();
+  const recentMemories = memories.slice(0, 3);
+
+  const { name, sex, birth } = useSettingsStore();
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchStats(), refetchMemories()]);
+  }, [refetchStats, refetchMemories]);
 
   // Auto-open AddWordModal when deep-linked via notification (action=add-word)
   useEffect(() => {
@@ -33,6 +64,16 @@ export default function DashboardScreen() {
       setShowAddWord(true);
     }
   }, [action]);
+
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
+
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const { data: profilePhoto } = useProfilePhoto();
   const profilePhotoUri = profilePhoto?.uri ?? null;
@@ -56,6 +97,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']} testID="home-safe-area">
       <ScrollView
+        ref={scrollViewRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
@@ -124,14 +166,52 @@ export default function DashboardScreen() {
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </View>
             <View style={styles.statsGrid}>
-              <StatCard icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="stat-total-words" />
-              <StatCard icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="stat-total-variants" />
+              <StatCard variant="iconValue" icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="stat-total-words" />
+              <StatCard variant="iconValue" icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="stat-total-variants" />
             </View>
             <View style={[styles.statsGrid, styles.statsGridLast]}>
-              <StatCard icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="stat-words-today" />
-              <StatCard icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="stat-words-week" />
-              <StatCard icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="stat-words-month" />
+              <StatCard variant="iconValue" icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="stat-words-today" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="stat-words-week" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="stat-words-month" />
             </View>
+          </Card>
+        )}
+
+        {/* Memories mini-timeline — only when there are words */}
+        {stats && stats.totalWords > 0 && (
+          <Card testID="home-memories-frame">
+            <TouchableOpacity
+              style={styles.progressFrameHeader}
+              onPress={() => router.push('/(tabs)/memories')}
+              testID="home-memories-header"
+            >
+              <Text style={[styles.progressFrameTitle, { color: colors.textSecondary }]}>
+                {t('dashboard.memoriesTitle')}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+            <View style={styles.miniTimeline}>
+              {recentMemories.map((item, idx) => (
+                <TimelineItem
+                  key={`${item.item_type}-${item.id}`}
+                  item={item}
+                  index={idx}
+                  isFirst={idx === 0}
+                  isLast={idx === recentMemories.length - 1}
+                  compact
+                  onPlayAudio={handlePlayAudio}
+                  onViewPhoto={handleViewPhoto}
+                />
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.seeAllBtn, { borderTopColor: colors.border }]}
+              onPress={() => router.push('/(tabs)/memories')}
+              testID="home-memories-see-all"
+            >
+              <Ionicons name="chevron-down" size={16} color={colors.primary} />
+              <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('dashboard.seeAllMemories')}</Text>
+            </TouchableOpacity>
           </Card>
         )}
 
@@ -178,6 +258,13 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
+
+      <AssetPreviewOverlays
+        audioOverlay={audioOverlay}
+        photoOverlay={photoOverlay}
+        onCloseAudio={closeAudioOverlay}
+        onClosePhoto={closePhotoOverlay}
+      />
     </SafeAreaView>
   );
 }
@@ -211,4 +298,7 @@ const styles = StyleSheet.create({
   addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },
   addWordBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minHeight: 48 },
   addWordBtnText: { fontSize: 16, fontWeight: '700' },
+  miniTimeline: { marginTop: 8 },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, marginTop: 2, borderTopWidth: StyleSheet.hairlineWidth },
+  seeAllText: { fontSize: 13, fontWeight: '700' },
 });

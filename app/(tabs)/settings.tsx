@@ -101,6 +101,15 @@ export default function SettingsScreen() {
     }
   }, [scrollTo]);
 
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
+
   const handleNotificationsToggle = useCallback(async (value: boolean) => {
     setNotificationsEnabled(value);
     await setNotificationState('notifications_enabled', value ? '1' : '0');

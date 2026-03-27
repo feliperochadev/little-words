@@ -17,31 +17,78 @@ Aligned with the **Sonar Way** quality gate active for this project. All conditi
 
 ---
 
-## Cognitive Complexity
+## Cognitive Complexity (S3776)
 
 SonarCloud rule **S3776** — max allowed: **15** per function.
 
-- Extract helper functions when a function exceeds 15 cognitive complexity points.
+- **Extract sub-components in React**: When a component's JSX or logic becomes too complex, extract parts into smaller, focused sub-components. This is preferred over extracting just helper functions that return JSX, as sub-components have their own lifecycle and are easier to test and memoize.
+- **Use Readonly for props**: Always wrap component props with `Readonly<Props>` to prevent accidental mutations and satisfy Sonar standards.
 - Each `if`, `else if`, `for`, `while`, `catch`, `&&`, `||`, ternary `?:` adds +1.
 - Nesting adds a bonus (+1 per nesting level beyond the first).
 
-```ts
-// ❌ Don't — nested conditions bloat complexity
-function parseCSV(text: string) {
-  if (hasHeader) {
-    const headers = ...
-    if (wi >= 0) wordIdx = wi;   // +2 (nested)
-    // more ifs inside...
-  }
+```tsx
+// ❌ Don't — high complexity due to nested conditionals and alignment logic
+export function TimelineItem({ item, index, isLeft }) {
+  return (
+    <View>
+      {isLeft ? <Card content={item.text} /> : <Date text={item.date} />}
+      <Dot />
+      {isLeft ? <Date text={item.date} /> : <Card content={item.text} />}
+    </View>
+  );
 }
 
-// ✅ Do — extract inner logic to a named helper
-function resolveColumnIndices(lines, delim) { ... }  // complexity isolated
-function parseCSV(text: string) {
-  if (hasHeader) {
-    ({ wordIdx, catIdx, dateIdx, variantIdx } = resolveColumnIndices(lines, delim));
-  }
+// ✅ Do — extract sub-components and use layout tricks (like row-reverse)
+function TimelinePane({ content, isLeft }) { ... }
+export function TimelineItem({ item, index }) {
+  const isLeft = index % 2 === 0;
+  return (
+    <View style={{ flexDirection: isLeft ? 'row' : 'row-reverse' }}>
+      <TimelinePane content={<Card item={item} />} />
+      <Dot />
+      <TimelinePane content={<Date item={item} />} />
+    </View>
+  );
 }
+```
+
+---
+
+## SQL Duplication & CTEs
+
+- **Avoid duplicated subqueries in UNION ALL**: When joining multiple tables (e.g., `words` and `variants`) and performing identical subqueries for each branch (like counting assets), use a **Common Table Expression (CTE)** to calculate the shared data once.
+- **COALESCE for safety**: When joining with a CTE that might not have a match for every row, use `COALESCE(count, 0)` to ensure consistent numeric results.
+
+```sql
+-- ❌ Don't — duplicated subqueries in both UNION branches
+SELECT id, (SELECT COUNT(*) FROM assets WHERE parent_id = w.id) AS audio_count FROM words w
+UNION ALL
+SELECT id, (SELECT COUNT(*) FROM assets WHERE parent_id = v.id) AS audio_count FROM variants v;
+
+-- ✅ Do — calculate once in a CTE
+WITH AssetStats AS (
+  SELECT parent_id, COUNT(*) AS audio_count FROM assets GROUP BY parent_id
+)
+SELECT w.id, COALESCE(ast.audio_count, 0) FROM words w LEFT JOIN AssetStats ast ON ast.parent_id = w.id
+UNION ALL
+SELECT v.id, COALESCE(ast.audio_count, 0) FROM variants v LEFT JOIN AssetStats ast ON ast.parent_id = v.id;
+```
+
+---
+
+## Unused Props / PropTypes (S6767)
+
+Avoid defining props in a component or arguments in a callback that are never used.
+
+- **Destructuring in `renderItem`**: In `FlatList`'s `renderItem`, ensure all destructured arguments (`item`, `index`) are actually used in the returned JSX or handlers.
+- If an argument is required by the signature but not used, prefix it with an underscore (e.g., `{ item, _index }`).
+
+```tsx
+// ❌ Don't — 'index' is defined but never used
+const renderItem = ({ item, index }) => <WordCard word={item.word} />;
+
+// ✅ Do — use 'index' or remove it
+const renderItem = ({ item, index }) => <WordCard word={item.word} isFirst={index === 0} />;
 ```
 
 ---

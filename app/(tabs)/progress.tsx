@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity,
 } from 'react-native';
@@ -9,7 +9,7 @@ import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { formatMonth } from '../../src/utils/dashboardHelpers';
 import { useDashboardStats } from '../../src/hooks/useDashboard';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 export default function ProgressScreen() {
   const router = useRouter();
@@ -18,8 +18,18 @@ export default function ProgressScreen() {
   const { data: stats, refetch } = useDashboardStats();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const onRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
+
+  // Scroll to top when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
 
   const visibleCategoryCounts = stats?.categoryCounts.filter(c => c.count > 0) ?? [];
 
@@ -34,6 +44,7 @@ export default function ProgressScreen() {
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
@@ -43,13 +54,13 @@ export default function ProgressScreen() {
         {stats && (
           <Card testID="progress-stats-section">
             <View style={styles.statsGrid}>
-              <StatCard icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="progress-stat-total-words" />
-              <StatCard icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="progress-stat-total-variants" />
+              <StatCard variant="iconValue" icon={<Ionicons name="create-outline" size={22} color={colors.primary} />} value={stats.totalWords} label={t('dashboard.totalWords')} color={colors.primary} testID="progress-stat-total-words" />
+              <StatCard variant="iconValue" icon={<Ionicons name="chatbubbles-outline" size={22} color={colors.secondary} />} value={stats.totalVariants} label={t('dashboard.variants')} color={colors.secondary} testID="progress-stat-total-variants" />
             </View>
             <View style={[styles.statsGrid, styles.statsGridLast]}>
-              <StatCard icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="progress-stat-words-today" />
-              <StatCard icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="progress-stat-words-week" />
-              <StatCard icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="progress-stat-words-month" />
+              <StatCard variant="iconValue" icon={<Ionicons name="today-outline" size={22} color={colors.accent} />} value={stats.wordsToday} label={t('dashboard.today')} color={colors.accent} testID="progress-stat-words-today" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-outline" size={22} color={colors.success} />} value={stats.wordsThisWeek} label={t('dashboard.thisWeek')} color={colors.success} testID="progress-stat-words-week" />
+              <StatCard variant="iconValue" icon={<Ionicons name="calendar-clear-outline" size={22} color={colors.info} />} value={stats.wordsThisMonth} label={t('dashboard.thisMonth')} color={colors.info} testID="progress-stat-words-month" />
             </View>
           </Card>
         )}

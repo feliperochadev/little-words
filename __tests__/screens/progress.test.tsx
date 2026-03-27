@@ -215,6 +215,18 @@ describe('ProgressScreen', () => {
     expect(recentIcon.props.name).toBe('sparkles-outline');
   });
 
+  it('useFocusEffect cleanup scrolls progress screen to top', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+    const { findByTestId } = renderWithProviders(<ProgressScreen />);
+    await findByTestId('progress-scroll');
+
+    const { useFocusEffect } = require('expo-router');
+    const lastCall = useFocusEffect.mock.calls[useFocusEffect.mock.calls.length - 1];
+    const callback = lastCall[0];
+    const cleanup = callback();
+    cleanup?.();
+  });
+
   it('slices monthly progress to last 6 entries', async () => {
     const eightMonthStats = {
       ...fullStats,

@@ -53,10 +53,13 @@ export default function VariantsScreen() {
     }
   }, [initialSearch, router]);
 
-  // Clear search when leaving the screen
+  // Clear search and scroll to top when leaving the screen
   useFocusEffect(
     useCallback(() => {
-      return () => setSearch('');
+      return () => {
+        setSearch('');
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      };
     }, [])
   );
 

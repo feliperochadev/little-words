@@ -36,6 +36,8 @@ const WordsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =
   <TabIcon name="book" color={color} focused={focused} />;
 const VariantsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
   <TabIcon name="chatbubble-ellipses" color={color} focused={focused} />;
+const MemoriesTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
+  <TabIcon name="gift-outline" color={color} focused={focused} />;
 
 function MoreTabButtonTab() {
   return <MoreTabButton />;
@@ -87,6 +89,13 @@ export default function TabLayout() {
           options={{
             title: t('tabs.variants'),
             tabBarIcon: VariantsTabIcon,
+          }}
+        />
+        <Tabs.Screen
+          name="memories"
+          options={{
+            title: t('tabs.memories'),
+            tabBarIcon: MemoriesTabIcon,
           }}
         />
         {/* Media, Settings, and Progress are routable but hidden from the tab bar */}
