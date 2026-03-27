@@ -2,6 +2,41 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-27_02
+
+**[fix] Enhance keepsake-book: Fix capture, button overlap, watermark, decorations, title**
+
+- Fixed Android capture failure: replaced off-screen card positioning (`left:-9999`) with `opacity:0.01` so the GPU renders the view for `captureRef`.
+- Fixed action buttons overlapping Android bottom nav: added `useSafeAreaInsets().bottom` padding.
+- Enhanced watermark: added app icon (bundled `icon_192.png`), QR code via `react-native-qrcode-svg` (locale-aware URL), and larger domain text.
+- Enriched background decorations: ~40 scattered emoji/Unicode elements (stars, moons, bears, balloons) matching the reference image's visual style.
+- Personalized title: `"{{name}}'s First Words"` / `"Primeiras Palavras de {{name}}"` using child name from settings store.
+- Added `watermarkAppName` i18n key in both locales.
+- Added `react-native-qrcode-svg` dependency; added jest mock in `jest.setup.js`.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_01
+
+**[feature] Keepsake Book: shareable 9:16 Polaroid-style image of a baby's first words**
+
+- Created `src/types/keepsake.ts` with `KeepsakeWord` and `KeepsakeState` interfaces.
+- Created migration `0006_add-keepsake-state` adding `keepsake_state` key/value table; registered in `src/db/migrations/index.ts`.
+- Created `src/repositories/keepsakeRepository.ts` with CRUD for `keepsake_state`, `getEarliestWords`, `getWordPhotoFilename`, `getTotalWordCount`.
+- Created `src/services/keepsakeService.ts` orchestrating state loading (with self-heal), word/photo resolution, capture (react-native-view-shot), photo overrides, share (expo-sharing), and save-to-library (expo-media-library).
+- Created `src/hooks/useKeepsake.ts` with TanStack Query hooks: `useKeepsakeState`, `useKeepsakeWords`, `useCaptureKeepsake`, `useSetPhotoOverride`, `useSaveKeepsakeToLibrary`, `useShareKeepsake`.
+- Added `keepsakeState`, `keepsakeWords` query keys and `KEEPSAKE_MUTATION_KEYS` to `src/hooks/queryKeys.ts`.
+- Created `src/components/keepsake/KeepsakeCard.tsx` — off-screen 1080×1920 Polaroid card with adaptive 1/2/3-frame layout, emoji decorations, and `forwardRef` for capture.
+- Created `src/components/keepsake/KeepsakePreviewModal.tsx` — full-screen preview modal with photo swap, save, and share actions.
+- Created `src/components/keepsake/KeepsakeSection.tsx` — Memories screen header (CTA or thumbnail).
+- Created `src/components/keepsake/KeepsakeHomeCard.tsx` — Home screen compact card (hint or thumbnail).
+- Modified `app/(tabs)/memories.tsx` to include `KeepsakeSection` as `ListHeaderComponent`.
+- Modified `app/(tabs)/home.tsx` to include `KeepsakeHomeCard` in the memories card.
+- Added `keepsake` i18n namespace (17 keys) to `en-US.ts` and `pt-BR.ts`.
+- Added `react-native-view-shot` and `expo-media-library` dependencies.
+- Added jest mocks for `react-native-view-shot` and `expo-media-library` in `jest.setup.js`.
+- Updated migrator test to include migration 6 in "all applied" assertion.
+[test] Added 48 tests: `keepsakeRepository.test.ts` (13), `keepsakeService.test.ts` (17), `keepsakeCard.test.ts` (6), `KeepsakePreviewModal.test.tsx` (6), `KeepsakeSection.test.tsx` (3), `KeepsakeHomeCard.test.tsx` (3).
+
 ### 2026-03-26_04
 
 [fix] Extract `checkAndShowPriming()` from `handleWordAdded()` in `notificationService.ts` and call it from all content-save paths: `useSaveAsset` onSuccess in `useAssets.ts`, `linkMediaToWord`/`linkMediaToVariant`/`saveWithoutLinking` in `MediaCaptureProvider.tsx`, and text/CSV and ZIP imports in `ImportModal.tsx`; priming modal now triggers after any first content action, not only after adding the first word via the add-word modal

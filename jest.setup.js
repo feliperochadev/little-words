@@ -225,5 +225,30 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { DATE: 'date', TIME_INTERVAL: 'timeInterval' },
 }));
 
+// Mock react-native-qrcode-svg
+jest.mock('react-native-qrcode-svg', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: (props) => React.createElement('View', { testID: 'qr-code', ...props }),
+  };
+});
+
+// Mock react-native-view-shot
+jest.mock('react-native-view-shot', () => ({
+  __esModule: true,
+  default: require('react').forwardRef(({ children }, ref) => {
+    const React = require('react');
+    return React.createElement('View', { ref, testID: 'view-shot' }, children);
+  }),
+  captureRef: jest.fn(() => Promise.resolve('file:///mock/capture.jpg')),
+}));
+
+// Mock expo-media-library
+jest.mock('expo-media-library', () => ({
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, status: 'granted' })),
+  saveToLibraryAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // Suppress console warnings in tests
 jest.spyOn(console, 'warn').mockImplementation(() => {});

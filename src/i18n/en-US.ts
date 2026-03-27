@@ -205,6 +205,28 @@ export default {
     backToTop: 'Latest',
   },
 
+  // ── Keepsake Book ─────────────────────────────────────────────────────────
+  keepsake: {
+    title: "{{name}}'s\nFirst Words",
+    createBtn: 'Create Keepsake Book',
+    saveToDevice: 'Save to Device',
+    share: 'Share',
+    changePhoto: 'Change Photo',
+    takePhoto: 'Take Photo',
+    chooseFromLibrary: 'Choose from Library',
+    cancel: 'Cancel',
+    saved: 'Keepsake saved!',
+    shared: 'Keepsake shared!',
+    captureFailed: 'Could not generate image. Please try again.',
+    permissionDenied: 'Photo access needed',
+    permissionDeniedMsg: 'Please allow photo access in Settings to save the keepsake.',
+    openSettings: 'Open Settings',
+    homeHint: 'Create a keepsake in Memories',
+    noWordsHint: 'Add your first words to create a keepsake',
+    watermarkAppName: 'Little Words app',
+    watermarkDomain: 'littlewordsapp.com',
+  },
+
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
     columnWord:       'word',

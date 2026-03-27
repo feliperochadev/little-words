@@ -26,6 +26,7 @@ import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { TimelineItem } from '../../src/components/TimelineItem';
 import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { KeepsakeHomeCard } from '../../src/components/keepsake/KeepsakeHomeCard';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
 
@@ -190,6 +191,7 @@ export default function HomeScreen() {
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </TouchableOpacity>
+            <KeepsakeHomeCard />
             <View style={styles.miniTimeline}>
               {recentMemories.map((item, idx) => (
                 <TimelineItem

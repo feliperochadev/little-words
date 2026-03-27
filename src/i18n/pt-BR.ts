@@ -205,6 +205,28 @@ export default {
     backToTop: 'Mais recente',
   },
 
+  // ── Keepsake Book ─────────────────────────────────────────────────────────
+  keepsake: {
+    title: 'Primeiras Palavras\nde {{name}}',
+    createBtn: 'Criar Livro de Memórias',
+    saveToDevice: 'Salvar no Dispositivo',
+    share: 'Compartilhar',
+    changePhoto: 'Trocar Foto',
+    takePhoto: 'Tirar Foto',
+    chooseFromLibrary: 'Escolher da Galeria',
+    cancel: 'Cancelar',
+    saved: 'Lembrança salva!',
+    shared: 'Lembrança compartilhada!',
+    captureFailed: 'Não foi possível gerar a imagem. Tente novamente.',
+    permissionDenied: 'Acesso às fotos necessário',
+    permissionDeniedMsg: 'Permita o acesso às fotos nas Configurações para salvar a lembrança.',
+    openSettings: 'Abrir Configurações',
+    homeHint: 'Crie uma lembrança em Memórias',
+    noWordsHint: 'Adicione suas primeiras palavras para criar uma lembrança',
+    watermarkAppName: 'Palavrinhas app',
+    watermarkDomain: 'palavrinhas.app',
+  },
+
   // ── CSV export headers ───────────────────────────────────────────────────────
   csv: {
     columnWord:       'palavra',
