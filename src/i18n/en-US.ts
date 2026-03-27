@@ -231,6 +231,7 @@ export default {
     watermarkDomain: 'littlewordsapp.com',
     sectionLabel: 'Keepsake Book',
     sectionTitle: "{{name}}'s Keepsake Book",
+    sectionTitleFemale: "{{name}}'s Keepsake Book",
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

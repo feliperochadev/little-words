@@ -3,7 +3,6 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useI18n } from '../../i18n/i18n';
-import { useSettingsStore } from '../../stores/settingsStore';
 import type { KeepsakeWord } from '../../types/keepsake';
 
 const APP_ICON = require('../../../assets/icon_192.png');
@@ -275,16 +274,16 @@ function Watermark({ domain, qrUrl }: Readonly<{ domain: string; qrUrl: string }
 
 interface KeepsakeCardProps {
   words: KeepsakeWord[];
+  name: string;
+  sex: 'boy' | 'girl' | null;
   elevated?: boolean;
 }
 
 const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
-  function KeepsakeCard({ words, elevated = true }, ref) {
+  function KeepsakeCard({ words, name, sex, elevated = true }, ref) {
     const { t, locale } = useI18n();
-    const name = useSettingsStore((s) => s.name);
-    const sex = useSettingsStore((s) => s.sex);
     const qrUrl = QR_URLS[locale] ?? QR_URLS['en-US'];
-    const displayName = name || 'Baby';
+    const displayName = name.trim() || 'Baby';
     const title = getTitleText(locale, sex, t, displayName);
 
     return (

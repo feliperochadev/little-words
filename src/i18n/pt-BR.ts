@@ -231,6 +231,7 @@ export default {
     watermarkDomain: 'palavrinhas.app',
     sectionLabel: 'Livro de Memórias',
     sectionTitle: 'Livro de {{name}}',
+    sectionTitleFemale: 'Livro da {{name}}',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

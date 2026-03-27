@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { KeepsakeCard } from './KeepsakeCard';
 import { useI18n } from '../../i18n/i18n';
 import { useTheme } from '../../hooks/useTheme';
+import { useSettingsStore } from '../../stores/settingsStore';
 import {
   useKeepsakeWords,
   useCaptureKeepsake,
@@ -30,6 +31,20 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
   const cardRef = useRef<View>(null);
   const [capturing, setCapturing] = useState(false);
   const [captureVisible, setCaptureVisible] = useState(false);
+
+  // Read name/sex at the modal level so the KeepsakeCard (inside Modal native layer)
+  // always receives fresh values rather than reading from the store in a potentially
+  // stale Fast-Refresh context.
+  const storeName = useSettingsStore((s) => s.name);
+  const storeSex = useSettingsStore((s) => s.sex);
+  const isHydrated = useSettingsStore((s) => s.isHydrated);
+
+  // Re-hydrate when the modal opens in case Fast Refresh reset the Zustand store.
+  React.useEffect(() => {
+    if (visible && !isHydrated) {
+      void useSettingsStore.getState().hydrate();
+    }
+  }, [visible, isHydrated]);
 
   const { data: words = [], isLoading } = useKeepsakeWords();
   const captureKeepsake = useCaptureKeepsake();
@@ -162,7 +177,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
               {/* Tappable overlay for each word frame */}
               <View style={styles.previewWrapper}>
                 <View style={styles.scaledPreview}>
-                  <KeepsakeCard words={words} />
+                  <KeepsakeCard words={words} name={storeName} sex={storeSex} />
                 </View>
                 {/* Touch targets over each polaroid */}
                 {words.map((word, idx) => (
@@ -224,7 +239,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
       {/* Hidden card for capture — opacity 0.01 keeps it rendered on Android GPU */}
       {words.length > 0 && captureVisible && (
         <View style={styles.captureContainer} pointerEvents="none">
-          <KeepsakeCard ref={cardRef} words={words} elevated={false} />
+          <KeepsakeCard ref={cardRef} words={words} name={storeName} sex={storeSex} elevated={false} />
         </View>
       )}
     </Modal>

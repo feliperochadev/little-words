@@ -2,6 +2,27 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-27_09
+
+**[fix] Enhance keepsake-book: fix "Baby's First Words" — pass name/sex as props to KeepsakeCard**
+
+- KeepsakeCard no longer reads from Zustand store internally; `name` and `sex` are now required props.
+- KeepsakePreviewModal reads `name`, `sex`, and `isHydrated` from the settings store and re-hydrates on open if needed; passes them to both the visible preview and the hidden capture KeepsakeCard.
+- KeepsakePreviewModal tests now seed the settings store with `name: 'Noah'` and `sex: 'boy'` in `beforeEach`.
+- Builds on 2026-03-27_01-keepsake-book.
+
+### 2026-03-27_08
+
+**[fix] Enhance keepsake-book: pt-BR gender, home timeline nav, section icons, centered thumbnail, tappable keepsake area**
+
+- pt-BR keepsake card title now uses "Livro da" for girls and "Livro de" for boys/neutral via new `sectionTitleFemale` key and `getHomeCardTitle` helper.
+- Home memories card: mini timeline wrapped in `TouchableOpacity` to navigate to Memories, with a "Timeline" section label (`time-outline` icon) above the items.
+- KeepsakeSection (memories screen): removed 2-column layout and "Share" hint — thumbnail is now centered without a title. `albums-outline` icon added to keepsake section label; `gift-outline` replaced by `time-outline` on the timeline label.
+- Memories screen header icon updated from `gift-outline` to `time-outline` (both main and error states).
+- KeepsakeSection: entire keepsake area (label + whitespace + thumbnail) is now a single `TouchableOpacity` when generated, so pressing anywhere opens the modal.
+- KeepsakeHomeCard: now shows section label at top + centered thumbnail with no text below; title text below the preview removed.
+- Builds on 2026-03-27_01-keepsake-book.
+
 ### 2026-03-27_07
 
 **[fix] Enhance keepsake-book: memories 2-column layout, shadow fix, home card modal navigation**

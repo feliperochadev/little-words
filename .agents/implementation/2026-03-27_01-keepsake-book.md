@@ -73,10 +73,22 @@ Adds a Keepsake Book feature that generates a shareable 9:16 Polaroid-style imag
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`
 - **Plan Updates:** None.
 
+### 2026-03-27 — pt-BR gender, home timeline nav, section icons, centered thumbnail
+
+- **Description:** (1) pt-BR keepsake title is now gender-aware: "Livro da {{name}}" for girls, "Livro de {{name}}" for boys/neutral via new `sectionTitleFemale` i18n key and exported `getHomeCardTitle` helper. (2) Home memories card mini-timeline wrapped in a `TouchableOpacity` navigating to Memories, with a "Timeline" section label using `time-outline`. (3) KeepsakeSection on Memories screen simplified to a centered thumbnail (no 2-column layout, no share hint). (4) `albums-outline` icon added to keepsake section label; `gift-outline` replaced by `time-outline` on timeline label and Memories screen header.
+- **Files Modified:** `src/components/keepsake/KeepsakeHomeCard.tsx`, `src/components/keepsake/KeepsakeSection.tsx`, `app/(tabs)/home.tsx`, `app/(tabs)/memories.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/integration/KeepsakeHomeCard.test.tsx`, `__tests__/integration/KeepsakeSection.test.tsx`
+- **Plan Updates:** None.
+
 ### 2026-03-27 — Memories 2-column layout, shadow fix, home card modal navigation
 
 - **Description:** Three UI/UX fixes: (1) KeepsakeSection on Memories screen redesigned — shows "Keepsake Book" label always, 2-column row (title left, thumbnail right) when generated, aligned "Timeline" label before the word list; (2) Shadow artifact during save/share removed by passing `elevated={false}` to the hidden capture card to suppress Android's elevation shadows on polaroid frames; (3) KeepsakeHomeCard now opens KeepsakePreviewModal directly instead of navigating to Memories, removed the duplicate chevron arrow, and fixed the broken title by interpolating the child's name from the settings store.
 - **Files Modified:** `src/components/keepsake/KeepsakeSection.tsx`, `src/components/keepsake/KeepsakeHomeCard.tsx`, `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/integration/KeepsakeSection.test.tsx`, `__tests__/integration/KeepsakeHomeCard.test.tsx`
+- **Plan Updates:** None.
+
+### 2026-03-27 — Fix "Baby's First Words" — name/sex as required props
+
+- **Description:** Root cause: Zustand store resets to `name: ''` on Expo Fast Refresh without re-triggering app hydration; `KeepsakeCard` inside a Modal native tree read stale values. Fix: removed store reads from `KeepsakeCard` and made `name`/`sex` required props; `KeepsakePreviewModal` reads from store and re-hydrates on open if needed, then passes both props to both `KeepsakeCard` usages.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `__tests__/integration/KeepsakePreviewModal.test.tsx`
 - **Plan Updates:** None.
 
 ### 2026-03-27 — Save/share repeat reliability fix (second attempt failure)

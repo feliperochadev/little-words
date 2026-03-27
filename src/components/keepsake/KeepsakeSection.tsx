@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useI18n } from '../../i18n/i18n';
 import { useTheme } from '../../hooks/useTheme';
 import { useKeepsakeState } from '../../hooks/useKeepsake';
-import { useSettingsStore } from '../../stores/settingsStore';
 import { getKeepsakeFileUri } from '../../services/keepsakeService';
 import { KeepsakePreviewModal } from './KeepsakePreviewModal';
 
@@ -16,7 +15,6 @@ export function KeepsakeSection({ totalWords }: Readonly<KeepsakeSectionProps>) 
   const { t } = useI18n();
   const { colors } = useTheme();
   const { data: state } = useKeepsakeState();
-  const name = useSettingsStore((s) => s.name);
   const [showModal, setShowModal] = useState(false);
 
   if (totalWords === 0) return null;
@@ -24,54 +22,51 @@ export function KeepsakeSection({ totalWords }: Readonly<KeepsakeSectionProps>) 
   return (
     <View testID="keepsake-section">
       {/* ── Keepsake Book section ──────────────────────────── */}
-      <View style={styles.keepsakeContainer}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          {t('keepsake.sectionLabel')}
-        </Text>
-
-        {state?.isGenerated ? (
-          <TouchableOpacity
-            onPress={() => setShowModal(true)}
-            style={styles.generatedRow}
-            testID="keepsake-thumbnail-btn"
-            activeOpacity={0.8}
-          >
-            <View style={styles.generatedInfo}>
-              <Text style={[styles.generatedTitle, { color: colors.text }]} numberOfLines={2}>
-                {t('keepsake.sectionTitle', { name: name ?? 'Baby' })}
-              </Text>
-              <View style={styles.viewHint}>
-                <Ionicons name="eye-outline" size={14} color={colors.primary} />
-                <Text style={[styles.viewHintText, { color: colors.primary }]}>
-                  {t('keepsake.share')}
-                </Text>
-              </View>
-            </View>
-            <Image
-              source={{ uri: `${getKeepsakeFileUri()}?t=${state.generatedAt ?? ''}` }}
-              style={styles.thumbnail}
-              resizeMode="cover"
-              testID="keepsake-thumbnail"
-            />
-          </TouchableOpacity>
-        ) : (
+      {state?.isGenerated ? (
+        <TouchableOpacity
+          onPress={() => setShowModal(true)}
+          style={styles.keepsakeContainer}
+          testID="keepsake-thumbnail-btn"
+          activeOpacity={0.8}
+        >
+          <View style={styles.sectionLabelRow}>
+            <Ionicons name="albums-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+              {t('keepsake.sectionLabel')}
+            </Text>
+          </View>
+          <Image
+            source={{ uri: `${getKeepsakeFileUri()}?t=${state.generatedAt ?? ''}` }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+            testID="keepsake-thumbnail"
+          />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.keepsakeContainer}>
+          <View style={styles.sectionLabelRow}>
+            <Ionicons name="albums-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+              {t('keepsake.sectionLabel')}
+            </Text>
+          </View>
           <TouchableOpacity
             style={[styles.createBtn, { backgroundColor: colors.primary }]}
             onPress={() => setShowModal(true)}
             testID="keepsake-create-btn"
             activeOpacity={0.8}
           >
-            <Ionicons name="book-outline" size={18} color={colors.textOnPrimary} />
+            <Ionicons name="albums-outline" size={18} color={colors.textOnPrimary} />
             <Text style={[styles.createBtnText, { color: colors.textOnPrimary }]}>
               {t('keepsake.createBtn')}
             </Text>
           </TouchableOpacity>
-        )}
-      </View>
+        </View>
+      )}
 
       {/* ── Timeline section label ──────────────────────────── */}
       <View style={[styles.timelineHeader, { borderTopColor: colors.border }]}>
-        <Ionicons name="gift-outline" size={14} color={colors.textSecondary} />
+        <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
         <Text style={[styles.timelineLabel, { color: colors.textSecondary }]}>
           {t('memories.timelineLabel')}
         </Text>
@@ -90,41 +85,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 12,
+    alignItems: 'center',
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
   },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  generatedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  generatedInfo: {
-    flex: 1,
-    gap: 6,
-  },
-  generatedTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
-  viewHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  viewHintText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   thumbnail: {
-    width: 72,
-    height: 72 * (1920 / 1080),
-    borderRadius: 8,
+    width: 110,
+    height: 110 * (1920 / 1080),
+    borderRadius: 10,
   },
   createBtn: {
     flexDirection: 'row',
@@ -133,7 +112,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 14,
-    alignSelf: 'flex-start',
   },
   createBtnText: {
     fontSize: 14,

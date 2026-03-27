@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { KeepsakePreviewModal } from '../../src/components/keepsake/KeepsakePreviewModal';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 import type { KeepsakeWord } from '../../src/types/keepsake';
 
 let mockWords: KeepsakeWord[] = [
@@ -26,6 +27,7 @@ jest.mock('../../src/services/keepsakeService', () => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  useSettingsStore.setState({ name: 'Noah', sex: 'boy', birth: undefined, isOnboardingDone: true });
   mockWords = [
     { id: 1, word: 'mama', dateAdded: '2026-01-01', photoUri: null, categoryEmoji: '👨‍👩‍👧' },
     { id: 2, word: 'papa', dateAdded: '2026-01-02', photoUri: null, categoryEmoji: '👨‍👩‍👧' },
