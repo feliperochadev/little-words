@@ -1,6 +1,6 @@
 {
   "name": "little-words",
-  "version": "0.8.0-beta",
+  "version": "0.9.1-beta",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",

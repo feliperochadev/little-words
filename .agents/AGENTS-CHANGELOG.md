@@ -2,6 +2,23 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-26_04
+
+[fix] Extract `checkAndShowPriming()` from `handleWordAdded()` in `notificationService.ts` and call it from all content-save paths: `useSaveAsset` onSuccess in `useAssets.ts`, `linkMediaToWord`/`linkMediaToVariant`/`saveWithoutLinking` in `MediaCaptureProvider.tsx`, and text/CSV and ZIP imports in `ImportModal.tsx`; priming modal now triggers after any first content action, not only after adding the first word via the add-word modal
+[fix] Change notification toggle loader in `settings.tsx` from `useEffect` to `useFocusEffect` so enabled/denied state reloads every time the Settings screen gains focus (e.g. after returning from the system permission prompt)
+[fix] Sync `android/app/build.gradle` `versionName` from `0.6.1-beta` to `0.9.1-beta` to match the current EAS/app.json version
+[test] Add `checkAndShowPriming` unit tests to `notificationService.test.ts`; update `ImportModal.test.tsx`, `MediaCaptureProvider.test.tsx`, `useAssets.test.tsx`, `AddWordModal.test.tsx`, and `home.test.tsx` to mock and assert the new export
+
+### 2026-03-26_03
+
+[fix] Remove ExpoCropImageActivity from AndroidManifest.xml, ExpoCropImageThemeOverride styles from styles.xml, crop_image_menu_crop string from values/strings.xml, and delete values-pt/strings.xml and values-pt-rBR/strings.xml; these crop customizations are no longer needed
+[test] Remove android cropper theme and label overrides describe block from appConfig.test.ts to match the removal of the crop activity, styles, and strings files
+
+### 2026-03-26_02
+
+[fix] Use correct Android notification channel in all scheduled notifications: add `channelId: 'default'` to the DATE trigger in `scheduleItem` so scheduled notifications route through the configured channel instead of expo's fallback; replace `trigger: null` with `trigger: { channelId: 'default' }` in `handleWordAdded` milestone delivery for the same reason
+[config] Bump version to 0.9.0-beta
+
 ### 2026-03-25_11
 
 **[feature] Memories screen: paginated infinite scroll (10/page), back-to-top button, scroll-reset on tab leave across all screens**

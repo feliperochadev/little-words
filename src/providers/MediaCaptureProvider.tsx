@@ -9,6 +9,7 @@ import * as assetService from '../services/assetService';
 import { getAssetsByParentAndType, countAssetsByParentType } from '../repositories/assetRepository';
 import { getAssetFileUri } from '../utils/assetStorage';
 import { useI18n } from '../i18n/i18n';
+import { checkAndShowPriming } from '../services/notificationService';
 import type { ParentType, AssetType } from '../types/asset';
 
 export type CapturePhase = 'idle' | 'recording' | 'captured' | 'linking' | 'creating-word';
@@ -100,6 +101,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         height: pendingMedia.height,
       });
       invalidateAssetCaches();
+      void checkAndShowPriming();
     } catch {
       Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
     }
@@ -123,6 +125,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         height: pendingMedia.height,
       });
       invalidateAssetCaches();
+      void checkAndShowPriming();
     } catch {
       Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
     }
@@ -150,6 +153,7 @@ export function MediaCaptureProvider({ children }: Readonly<Props>) {
         height: pendingMedia.height,
       });
       invalidateAssetCaches();
+      void checkAndShowPriming();
     } catch {
       Alert.alert(t('common.error'), t('mediaCapture.linkFailed'));
     }

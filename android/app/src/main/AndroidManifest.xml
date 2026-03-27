@@ -38,9 +38,5 @@
         <data android:scheme="exp+little-words"/>
       </intent-filter>
     </activity>
-    <activity
-      android:name="expo.modules.imagepicker.ExpoCropImageActivity"
-      android:theme="@style/ExpoCropImageThemeOverride"
-      tools:replace="android:theme" />
   </application>
 </manifest>

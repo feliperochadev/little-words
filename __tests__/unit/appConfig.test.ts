@@ -61,36 +61,3 @@ describe('android image picker crop color resources', () => {
   });
 });
 
-describe('android cropper theme and label overrides', () => {
-  it('overrides Expo crop activity theme and popup menu style for readable flip submenu', () => {
-    const manifestPath = path.resolve(__dirname, '../../android/app/src/main/AndroidManifest.xml');
-    const stylesPath = path.resolve(__dirname, '../../android/app/src/main/res/values/styles.xml');
-    const manifestXml = fs.readFileSync(manifestPath, 'utf-8');
-    const stylesXml = fs.readFileSync(stylesPath, 'utf-8');
-
-    expect(manifestXml).toContain('android:name="expo.modules.imagepicker.ExpoCropImageActivity"');
-    expect(manifestXml).toContain('android:theme="@style/ExpoCropImageThemeOverride"');
-    expect(manifestXml).toContain('tools:replace="android:theme"');
-
-    expect(stylesXml).toContain('<style name="ExpoCropImageThemeOverride" parent="Base.Theme.AppCompat">');
-    expect(stylesXml).toContain('<item name="android:popupMenuStyle">@style/ExpoCropPopupMenuStyle</item>');
-    expect(stylesXml).toContain('<item name="popupMenuStyle">@style/ExpoCropPopupMenuStyle</item>');
-    expect(stylesXml).toContain('<item name="android:itemTextAppearance">@style/ExpoCropPopupMenuItemText</item>');
-    expect(stylesXml).toContain('<item name="android:popupBackground">#FFFFFF</item>');
-    expect(stylesXml).toContain('<item name="android:textColor">#0B1F33</item>');
-    expect(stylesXml).toContain('<item name="android:textColorPrimary">#0B1F33</item>');
-  });
-
-  it('overrides crop action label to Save and Salvar for pt and pt-BR', () => {
-    const defaultStringsPath = path.resolve(__dirname, '../../android/app/src/main/res/values/strings.xml');
-    const ptStringsPath = path.resolve(__dirname, '../../android/app/src/main/res/values-pt/strings.xml');
-    const ptBrStringsPath = path.resolve(__dirname, '../../android/app/src/main/res/values-pt-rBR/strings.xml');
-    const defaultStrings = fs.readFileSync(defaultStringsPath, 'utf-8');
-    const ptStrings = fs.readFileSync(ptStringsPath, 'utf-8');
-    const ptBrStrings = fs.readFileSync(ptBrStringsPath, 'utf-8');
-
-    expect(defaultStrings).toContain('<string name="crop_image_menu_crop">Save</string>');
-    expect(ptStrings).toContain('<string name="crop_image_menu_crop">Salvar</string>');
-    expect(ptBrStrings).toContain('<string name="crop_image_menu_crop">Salvar</string>');
-  });
-});

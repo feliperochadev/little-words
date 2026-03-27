@@ -153,6 +153,7 @@ async function scheduleItem(item: ScheduleItem): Promise<void> {
     : {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: item.triggerDate,
+        channelId: 'default',
       };
 
   // Cancel existing notification with same identifier before rescheduling
@@ -257,6 +258,14 @@ export async function scheduleAll(): Promise<void> {
 
 // ─── Milestone handling ───────────────────────────────────────────────────────
 
+/** Show the permission priming modal if permission has not been requested yet. */
+export async function checkAndShowPriming(): Promise<void> {
+  const permRequested = await getNotificationState('permission_requested');
+  if (permRequested !== '1') {
+    useNotificationStore.getState().setPrimingVisible(true);
+  }
+}
+
 /** Check if the new total count hits a milestone and schedule/show priming if so. */
 export async function handleWordAdded(): Promise<void> {
   try {
@@ -267,13 +276,8 @@ export async function handleWordAdded(): Promise<void> {
       getSetting('child_name'),
     ]);
 
-    // Check priming: show after first word if permission not yet requested
-    if (count === 1) {
-      const permRequested = await getNotificationState('permission_requested');
-      if (permRequested !== '1') {
-        useNotificationStore.getState().setPrimingVisible(true);
-      }
-    }
+    // Check priming: show on first content action if permission not yet requested
+    await checkAndShowPriming();
 
     if (!enabled) return;
     const permGranted = await getNotificationState('permission_granted');
@@ -293,7 +297,7 @@ export async function handleWordAdded(): Promise<void> {
         body: content.body,
         data: { route: '/(tabs)/progress' },
       },
-      trigger: null,
+      trigger: { channelId: 'default' },
     });
     await setNotificationState(milestoneKey, new Date().toISOString());
   } catch {

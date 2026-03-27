@@ -34,6 +34,12 @@ const MOCK_PROFILE_ASSET: Asset = {
   created_at: '2024-06-01T00:00:00.000Z',
 };
 
+jest.mock('../../src/services/notificationService', () => ({
+  checkAndShowPriming: jest.fn(() => Promise.resolve()),
+}));
+
+const mockCheckAndShowPriming = require('../../src/services/notificationService').checkAndShowPriming as jest.Mock;
+
 jest.mock('../../src/services/assetService', () => ({
   getAssetsByParent: jest.fn(() => Promise.resolve([])),
   getAssetsByParentAndType: jest.fn(() => Promise.resolve([])),
@@ -396,6 +402,21 @@ describe('useAssets hooks', () => {
       expect(invalidateSpy).toHaveBeenCalledWith(
         expect.objectContaining({ queryKey: ['dashboard'] }),
       );
+    });
+
+    it('calls checkAndShowPriming on success', async () => {
+      const { Wrapper } = createWrapper();
+
+      const { result } = renderHook(() => useSaveAsset(), {
+        wrapper: Wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate(SAVE_PARAMS);
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockCheckAndShowPriming).toHaveBeenCalled();
     });
 
     it('reports error when service rejects', async () => {
