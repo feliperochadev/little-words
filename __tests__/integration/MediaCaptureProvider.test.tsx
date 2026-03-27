@@ -19,6 +19,11 @@ import type { Asset } from '../../src/types/asset';
 jest.mock('../../src/services/assetService');
 jest.mock('../../src/repositories/assetRepository');
 jest.mock('../../src/utils/assetStorage');
+jest.mock('../../src/services/notificationService', () => ({
+  checkAndShowPriming: jest.fn(() => Promise.resolve()),
+}));
+
+const mockCheckAndShowPriming = require('../../src/services/notificationService').checkAndShowPriming as jest.Mock;
 
 const mockSaveAsset = assetService.saveAsset as jest.MockedFunction<typeof assetService.saveAsset>;
 const mockGetAssetsByParentAndType = assetRepository.getAssetsByParentAndType as jest.MockedFunction<
@@ -216,6 +221,13 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       expect(invalidateSpy).toHaveBeenCalled();
       expect(result.current.phase).toBe('idle');
       expect(result.current.pendingMedia).toBeNull();
+    });
+
+    it('calls checkAndShowPriming on successful save', async () => {
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+      act(() => { result.current.setCapturedMedia(SAMPLE_MEDIA); });
+      await act(async () => { await result.current.linkMediaToWord(7); });
+      expect(mockCheckAndShowPriming).toHaveBeenCalled();
     });
 
     it('is a no-op when pendingMedia is null', async () => {
@@ -973,6 +985,13 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       expect(result.current.pendingMedia).toBeNull();
     });
 
+    it('calls checkAndShowPriming on successful save', async () => {
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+      act(() => { result.current.setCapturedMedia(SAMPLE_MEDIA); });
+      await act(async () => { await result.current.linkMediaToVariant(42); });
+      expect(mockCheckAndShowPriming).toHaveBeenCalled();
+    });
+
     it('is a no-op when pendingMedia is null', async () => {
       const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
 
@@ -1035,6 +1054,13 @@ describe('MediaCaptureProvider + useMediaCapture', () => {
       });
       expect(result.current.phase).toBe('idle');
       expect(result.current.pendingMedia).toBeNull();
+    });
+
+    it('calls checkAndShowPriming on successful save', async () => {
+      const { result } = renderHook(() => useMediaCapture(), { wrapper: createWrapper() });
+      act(() => { result.current.setCapturedMedia(SAMPLE_MEDIA); });
+      await act(async () => { await result.current.saveWithoutLinking('my recording'); });
+      expect(mockCheckAndShowPriming).toHaveBeenCalled();
     });
 
     it('is a no-op when pendingMedia is null', async () => {

@@ -3,6 +3,7 @@ import { QUERY_KEYS, ASSET_MUTATION_KEYS } from './queryKeys';
 import * as assetService from '../services/assetService';
 import { relinkAsset, renameAsset, updateAssetDate, getAllAssets } from '../services/assetService';
 import { getAssetFileUri } from '../utils/assetStorage';
+import { checkAndShowPriming } from '../services/notificationService';
 import type { ParentType, AssetType, Asset, AssetWithLink } from '../types/asset';
 
 const EMPTY_ASSETS: Asset[] = [];
@@ -43,6 +44,7 @@ export function useSaveAsset() {
       ASSET_MUTATION_KEYS.forEach(key =>
         queryClient.invalidateQueries({ queryKey: key })
       );
+      void checkAndShowPriming();
     },
   });
 }

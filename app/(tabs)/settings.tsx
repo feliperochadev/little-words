@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAllData } from '../../src/services/settingsService';
 import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
@@ -76,8 +76,8 @@ export default function SettingsScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const exportSectionYRef = useRef<number>(0);
 
-  // Load notification toggle state on mount
-  useEffect(() => {
+  // Reload notification toggle state every time the screen gains focus
+  useFocusEffect(useCallback(() => {
     void (async () => {
       const [enabled, permReq] = await Promise.all([
         isNotificationsEnabled(),
@@ -89,7 +89,7 @@ export default function SettingsScreen() {
         setPermissionDenied(!canAskAgain);
       }
     })();
-  }, []);
+  }, []));
 
   // Scroll to export section when deep-linked from backup reminder
   useEffect(() => {

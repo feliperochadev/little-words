@@ -51,6 +51,7 @@ jest.mock('../../src/services/wordService', () => ({
 
 jest.mock('../../src/services/notificationService', () => ({
   handleWordAdded: jest.fn().mockResolvedValue(undefined),
+  checkAndShowPriming: jest.fn().mockResolvedValue(undefined),
   isNotificationsEnabled: jest.fn().mockResolvedValue(false),
   cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
   scheduleAll: jest.fn().mockResolvedValue(undefined),
