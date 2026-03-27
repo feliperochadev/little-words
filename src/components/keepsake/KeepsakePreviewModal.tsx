@@ -224,7 +224,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
       {/* Hidden card for capture — opacity 0.01 keeps it rendered on Android GPU */}
       {words.length > 0 && captureVisible && (
         <View style={styles.captureContainer} pointerEvents="none">
-          <KeepsakeCard ref={cardRef} words={words} />
+          <KeepsakeCard ref={cardRef} words={words} elevated={false} />
         </View>
       )}
     </Modal>

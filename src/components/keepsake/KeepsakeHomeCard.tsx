@@ -1,54 +1,57 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useI18n } from '../../i18n/i18n';
 import { useTheme } from '../../hooks/useTheme';
 import { useKeepsakeState } from '../../hooks/useKeepsake';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { getKeepsakeFileUri } from '../../services/keepsakeService';
+import { KeepsakePreviewModal } from './KeepsakePreviewModal';
 
 export function KeepsakeHomeCard() {
   const { t } = useI18n();
   const { colors } = useTheme();
-  const router = useRouter();
   const { data: state } = useKeepsakeState();
-
-  if (state?.isGenerated) {
-    return (
-      <TouchableOpacity
-        style={styles.thumbnailRow}
-        onPress={() => router.push('/(tabs)/memories')}
-        testID="home-keepsake-thumbnail"
-        activeOpacity={0.8}
-      >
-        <Image
-          source={{ uri: `${getKeepsakeFileUri()}?t=${state.generatedAt ?? ''}` }}
-          style={styles.thumbnail}
-          resizeMode="cover"
-        />
-        <View style={styles.thumbnailInfo}>
-          <Text style={[styles.thumbnailLabel, { color: colors.text }]}>
-            {t('keepsake.title')}
-          </Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-        </View>
-      </TouchableOpacity>
-    );
-  }
+  const name = useSettingsStore((s) => s.name);
+  const [showModal, setShowModal] = useState(false);
 
   return (
-    <TouchableOpacity
-      style={styles.hintRow}
-      onPress={() => router.push('/(tabs)/memories')}
-      testID="home-keepsake-hint"
-      activeOpacity={0.7}
-    >
-      <Ionicons name="book-outline" size={16} color={colors.textMuted} />
-      <Text style={[styles.hintText, { color: colors.textMuted }]}>
-        {t('keepsake.homeHint')}
-      </Text>
-      <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-    </TouchableOpacity>
+    <>
+      {state?.isGenerated ? (
+        <TouchableOpacity
+          style={styles.thumbnailRow}
+          onPress={() => setShowModal(true)}
+          testID="home-keepsake-thumbnail"
+          activeOpacity={0.8}
+        >
+          <Image
+            source={{ uri: `${getKeepsakeFileUri()}?t=${state.generatedAt ?? ''}` }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
+          <Text style={[styles.thumbnailLabel, { color: colors.text }]} numberOfLines={2}>
+            {t('keepsake.sectionTitle', { name: name ?? 'Baby' })}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.hintRow}
+          onPress={() => setShowModal(true)}
+          testID="home-keepsake-hint"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="book-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.hintText, { color: colors.textMuted }]}>
+            {t('keepsake.homeHint')}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <KeepsakePreviewModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   );
 }
 
@@ -65,13 +68,8 @@ const styles = StyleSheet.create({
     height: 48 * (1920 / 1080),
     borderRadius: 6,
   },
-  thumbnailInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   thumbnailLabel: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '600',
   },

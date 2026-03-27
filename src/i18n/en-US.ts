@@ -203,6 +203,7 @@ export default {
     errorSubtitle: 'Please try again in a moment.',
     retry: 'Retry',
     backToTop: 'Latest',
+    timelineLabel: 'Timeline',
   },
 
   // ── Keepsake Book ─────────────────────────────────────────────────────────
@@ -228,6 +229,8 @@ export default {
     noWordsHint: 'Add your first words to create a keepsake',
     watermarkAppName: 'Little Words app',
     watermarkDomain: 'littlewordsapp.com',
+    sectionLabel: 'Keepsake Book',
+    sectionTitle: "{{name}}'s Keepsake Book",
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────

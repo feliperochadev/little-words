@@ -2,6 +2,15 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-27_07
+
+**[fix] Enhance keepsake-book: memories 2-column layout, shadow fix, home card modal navigation**
+
+- Memories screen: `KeepsakeSection` now shows a section label "Keepsake Book" with a 2-column row (title left, thumbnail right) when generated, and a "Timeline" section label before the word list.
+- Shadow artifact: fixed the faint bottom-left shadow during save/share by passing `elevated={false}` to the hidden capture card, suppressing Android's `elevation`-based shadow on polaroid frames without affecting the captured image.
+- Home card: `KeepsakeHomeCard` now opens `KeepsakePreviewModal` directly (both thumbnail and hint taps) instead of navigating to Memories; removed duplicate chevron arrow; fixed broken title placeholder by interpolating the child's name via settings store.
+- Builds on 2026-03-27_01-keepsake-book.
+
 ### 2026-03-27_06
 
 **[fix] Enhance keepsake-book: fix save/share failing on repeated attempts**

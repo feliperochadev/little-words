@@ -179,10 +179,11 @@ interface PolaroidFrameProps {
   word: KeepsakeWord;
   index: number;
   size: number;
+  elevated?: boolean;
   onPress?: () => void;
 }
 
-function PolaroidFrame({ word, index, size }: Readonly<PolaroidFrameProps>) {
+function PolaroidFrame({ word, index, size, elevated = true }: Readonly<PolaroidFrameProps>) {
   const photoSize = size - 40; // padding for polaroid border
   const rotation = getRotation(word.id, index);
 
@@ -190,7 +191,7 @@ function PolaroidFrame({ word, index, size }: Readonly<PolaroidFrameProps>) {
     <View
       style={[
         styles.polaroid,
-        { width: size, transform: [{ rotate: rotation }] },
+        { width: size, transform: [{ rotate: rotation }], elevation: elevated ? 3 : 0 },
       ]}
       testID={`keepsake-polaroid-${index}`}
     >
@@ -223,33 +224,33 @@ function PolaroidFrame({ word, index, size }: Readonly<PolaroidFrameProps>) {
 
 // ── Layouts ──────────────────────────────────────────────────────────────────
 
-function ThreeWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
+function ThreeWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
   return (
     <>
       <View style={styles.topRow}>
-        <PolaroidFrame word={words[0]} index={0} size={418} />
-        <PolaroidFrame word={words[1]} index={1} size={418} />
+        <PolaroidFrame word={words[0]} index={0} size={418} elevated={elevated} />
+        <PolaroidFrame word={words[1]} index={1} size={418} elevated={elevated} />
       </View>
       <View style={styles.bottomRow}>
-        <PolaroidFrame word={words[2]} index={2} size={440} />
+        <PolaroidFrame word={words[2]} index={2} size={440} elevated={elevated} />
       </View>
     </>
   );
 }
 
-function TwoWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
+function TwoWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={440} />
-      <PolaroidFrame word={words[1]} index={1} size={440} />
+      <PolaroidFrame word={words[0]} index={0} size={440} elevated={elevated} />
+      <PolaroidFrame word={words[1]} index={1} size={440} elevated={elevated} />
     </View>
   );
 }
 
-function OneWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
+function OneWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={528} />
+      <PolaroidFrame word={words[0]} index={0} size={528} elevated={elevated} />
     </View>
   );
 }
@@ -274,10 +275,11 @@ function Watermark({ domain, qrUrl }: Readonly<{ domain: string; qrUrl: string }
 
 interface KeepsakeCardProps {
   words: KeepsakeWord[];
+  elevated?: boolean;
 }
 
 const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
-  function KeepsakeCard({ words }, ref) {
+  function KeepsakeCard({ words, elevated = true }, ref) {
     const { t, locale } = useI18n();
     const name = useSettingsStore((s) => s.name);
     const sex = useSettingsStore((s) => s.sex);
@@ -297,9 +299,9 @@ const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
 
         {/* Polaroid frames */}
         <View style={styles.framesContainer}>
-          {words.length >= 3 && <ThreeWordLayout words={words} />}
-          {words.length === 2 && <TwoWordLayout words={words} />}
-          {words.length === 1 && <OneWordLayout words={words} />}
+          {words.length >= 3 && <ThreeWordLayout words={words} elevated={elevated} />}
+          {words.length === 2 && <TwoWordLayout words={words} elevated={elevated} />}
+          {words.length === 1 && <OneWordLayout words={words} elevated={elevated} />}
         </View>
 
         {/* Watermark */}

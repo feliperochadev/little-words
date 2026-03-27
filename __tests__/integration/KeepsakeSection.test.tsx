@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { KeepsakeSection } from '../../src/components/keepsake/KeepsakeSection';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 jest.mock('../../src/services/keepsakeService', () => ({
   loadKeepsakeState: jest.fn(),
@@ -13,6 +14,7 @@ const { loadKeepsakeState } = require('../../src/services/keepsakeService') as {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  useSettingsStore.setState({ name: 'Sofia', sex: 'girl', birth: undefined, isOnboardingDone: true });
 });
 
 describe('KeepsakeSection', () => {
@@ -46,7 +48,7 @@ describe('KeepsakeSection', () => {
     expect(createBtn).toBeTruthy();
   });
 
-  it('renders thumbnail when keepsake is generated', async () => {
+  it('renders 2-column layout with thumbnail on right when keepsake is generated', async () => {
     loadKeepsakeState.mockResolvedValue({
       isGenerated: true,
       generatedAt: '2026-01-15T12:00:00Z',
@@ -59,5 +61,38 @@ describe('KeepsakeSection', () => {
 
     const thumbnailBtn = await findByTestId('keepsake-thumbnail-btn');
     expect(thumbnailBtn).toBeTruthy();
+
+    const thumbnail = await findByTestId('keepsake-thumbnail');
+    expect(thumbnail).toBeTruthy();
+  });
+
+  it('shows name-based title when keepsake is generated', async () => {
+    loadKeepsakeState.mockResolvedValue({
+      isGenerated: true,
+      generatedAt: '2026-01-15T12:00:00Z',
+      photoOverrides: {},
+    });
+
+    const { findByText } = renderWithProviders(
+      <KeepsakeSection totalWords={5} />,
+    );
+
+    const title = await findByText("Sofia's Keepsake Book");
+    expect(title).toBeTruthy();
+  });
+
+  it('shows timeline label below keepsake section', async () => {
+    loadKeepsakeState.mockResolvedValue({
+      isGenerated: false,
+      generatedAt: null,
+      photoOverrides: {},
+    });
+
+    const { findByText } = renderWithProviders(
+      <KeepsakeSection totalWords={5} />,
+    );
+
+    const label = await findByText('Timeline');
+    expect(label).toBeTruthy();
   });
 });

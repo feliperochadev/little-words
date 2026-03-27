@@ -73,6 +73,12 @@ Adds a Keepsake Book feature that generates a shareable 9:16 Polaroid-style imag
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`
 - **Plan Updates:** None.
 
+### 2026-03-27 — Memories 2-column layout, shadow fix, home card modal navigation
+
+- **Description:** Three UI/UX fixes: (1) KeepsakeSection on Memories screen redesigned — shows "Keepsake Book" label always, 2-column row (title left, thumbnail right) when generated, aligned "Timeline" label before the word list; (2) Shadow artifact during save/share removed by passing `elevated={false}` to the hidden capture card to suppress Android's elevation shadows on polaroid frames; (3) KeepsakeHomeCard now opens KeepsakePreviewModal directly instead of navigating to Memories, removed the duplicate chevron arrow, and fixed the broken title by interpolating the child's name from the settings store.
+- **Files Modified:** `src/components/keepsake/KeepsakeSection.tsx`, `src/components/keepsake/KeepsakeHomeCard.tsx`, `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/integration/KeepsakeSection.test.tsx`, `__tests__/integration/KeepsakeHomeCard.test.tsx`
+- **Plan Updates:** None.
+
 ### 2026-03-27 — Save/share repeat reliability fix (second attempt failure)
 
 - **Description:** Fixed remaining save/share retry instability by replacing fixed capture delay with a ref-readiness wait loop that only starts capture after the hidden capture card is mounted, plus a short layout-settle delay. This prevents intermittent `viewRef.current` null failures on second and later taps.

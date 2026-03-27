@@ -203,6 +203,7 @@ export default {
     errorSubtitle: 'Tente novamente em instantes.',
     retry: 'Tentar novamente',
     backToTop: 'Mais recente',
+    timelineLabel: 'Linha do Tempo',
   },
 
   // ── Keepsake Book ─────────────────────────────────────────────────────────
@@ -228,6 +229,8 @@ export default {
     noWordsHint: 'Adicione suas primeiras palavras para criar uma lembrança',
     watermarkAppName: 'Palavrinhas app',
     watermarkDomain: 'palavrinhas.app',
+    sectionLabel: 'Livro de Memórias',
+    sectionTitle: 'Livro de {{name}}',
   },
 
   // ── CSV export headers ───────────────────────────────────────────────────────
