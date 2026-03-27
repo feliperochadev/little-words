@@ -208,6 +208,9 @@ export default {
   // ── Keepsake Book ─────────────────────────────────────────────────────────
   keepsake: {
     title: 'Primeiras Palavras\nde {{name}}',
+    titleMale: 'Primeiras Palavras\ndo {{name}}',
+    titleFemale: 'Primeiras Palavras\nda {{name}}',
+    titleNeutral: 'Primeiras Palavras\nde {{name}}',
     createBtn: 'Criar Livro de Memórias',
     saveToDevice: 'Salvar no Dispositivo',
     share: 'Compartilhar',

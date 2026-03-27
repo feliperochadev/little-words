@@ -173,9 +173,18 @@ describe('keepsakeService', () => {
     it('captures, copies file, and updates state', async () => {
       const mockView = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       const viewRef = { current: mockView };
+      const { captureRef } = require('react-native-view-shot');
 
       const uri = await captureKeepsake(viewRef);
       expect(uri).toContain('keepsake.jpg');
+      expect(captureRef).toHaveBeenCalledWith(
+        mockView,
+        expect.objectContaining({
+          format: 'jpg',
+          width: 1080,
+          height: 1920,
+        }),
+      );
 
       // Should have updated keepsake_state
       expect(mockDb.runAsync).toHaveBeenCalledWith(
@@ -186,6 +195,16 @@ describe('keepsakeService', () => {
         'INSERT OR REPLACE INTO keepsake_state (key, value) VALUES (?, ?)',
         expect.arrayContaining(['keepsake_generated_at']),
       );
+    });
+
+    it('replaces existing keepsake file before copying', async () => {
+      const mockView = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const viewRef = { current: mockView };
+      const FS = require('expo-file-system');
+
+      await captureKeepsake(viewRef);
+      expect(FS._fileMock.delete).toHaveBeenCalled();
+      expect(FS._fileMock.copy).toHaveBeenCalled();
     });
   });
 

@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useI18n } from '../../i18n/i18n';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -35,10 +36,27 @@ function formatDateForCard(dateStr: string): string {
   }
 }
 
+type ChildSex = 'boy' | 'girl' | null;
+
+function getTitleText(
+  locale: string,
+  sex: ChildSex,
+  t: (key: string, params?: Record<string, string>) => string,
+  name: string,
+): string {
+  if (locale === 'pt-BR') {
+    if (sex === 'boy') return t('keepsake.titleMale', { name });
+    if (sex === 'girl') return t('keepsake.titleFemale', { name });
+    return t('keepsake.titleNeutral', { name });
+  }
+  return t('keepsake.title', { name });
+}
+
 // ── Decorations ──────────────────────────────────────────────────────────────
 
 interface DecorationItem {
-  content: string;
+  content?: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
   top: number;
   left: number;
   fontSize: number;
@@ -48,19 +66,23 @@ interface DecorationItem {
 }
 
 const DECORATIONS: DecorationItem[] = [
-  // ── Top-left corner (balloon + stars) ──
-  { content: '🎈', top: 35, left: 40, fontSize: 80, opacity: 0.6, rotate: '-10deg' },
+  // ── Top-left corner (book + stars) ──
+  { icon: 'book-outline', top: 34, left: 56, fontSize: 72, opacity: 0.52, color: '#4F7C7A' },
   { content: '⭐', top: 55, left: 180, fontSize: 30, opacity: 0.45 },
   { content: '✦', top: 30, left: 230, fontSize: 20, opacity: 0.35, color: '#F4D35E' },
   { content: '✧', top: 115, left: 130, fontSize: 18, opacity: 0.3, color: '#B8D8D0' },
   { content: '·', top: 80, left: 280, fontSize: 28, opacity: 0.25, color: '#E8B4B8' },
 
-  // ── Top-right corner (balloon + stars) ──
-  { content: '🎈', top: 35, left: 920, fontSize: 80, opacity: 0.6, rotate: '10deg' },
+  // ── Top-right corner (dialog + stars) ──
+  { icon: 'chatbubble-ellipses-outline', top: 34, left: 900, fontSize: 72, opacity: 0.52, color: '#7A6B9A' },
   { content: '⭐', top: 60, left: 850, fontSize: 28, opacity: 0.4 },
   { content: '✦', top: 30, left: 790, fontSize: 22, opacity: 0.35, color: '#F4D35E' },
   { content: '✧', top: 110, left: 900, fontSize: 16, opacity: 0.3, color: '#B8D8D0' },
   { content: '·', top: 85, left: 740, fontSize: 26, opacity: 0.25, color: '#E8B4B8' },
+
+  // ── Balloons below top photo row ──
+  { content: '🎈', top: 760, left: 120, fontSize: 74, opacity: 0.58, rotate: '-10deg' },
+  { content: '🎈', top: 760, left: 860, fontSize: 74, opacity: 0.58, rotate: '10deg' },
 
   // ── Top center stars ──
   { content: '⭐', top: 25, left: 480, fontSize: 26, opacity: 0.35, rotate: '15deg' },
@@ -89,17 +111,22 @@ const DECORATIONS: DecorationItem[] = [
   { content: '·', top: 900, left: 80, fontSize: 20, opacity: 0.15, color: '#E8B4B8' },
   { content: '·', top: 1050, left: 970, fontSize: 18, opacity: 0.15, color: '#B8D8D0' },
 
-  // ── Bottom-left corner (bear + stars) ──
-  { content: '🧸', top: 1520, left: 30, fontSize: 72, opacity: 0.55, rotate: '-5deg' },
-  { content: '⭐', top: 1500, left: 160, fontSize: 24, opacity: 0.35 },
-  { content: '✦', top: 1580, left: 140, fontSize: 16, opacity: 0.3, color: '#F4D35E' },
-  { content: '·', top: 1550, left: 200, fontSize: 22, opacity: 0.2, color: '#B8D8D0' },
+  // ── Bottom photo side companions ──
+  { content: '🌙', top: 1130, left: 150, fontSize: 56, opacity: 0.5, rotate: '-12deg' },
+  { content: '🧸', top: 1130, left: 900, fontSize: 64, opacity: 0.5, rotate: '8deg' },
 
-  // ── Bottom-right corner (bear + moon) ──
-  { content: '🧸', top: 1520, left: 900, fontSize: 72, opacity: 0.55, rotate: '5deg' },
+  // ── Bottom-left corner (bear aligned with watermark + stars) ──
+  { content: '⭐', top: 1620, left: 44, fontSize: 46, opacity: 0.42, rotate: '-8deg' },
+  { content: '⭐', top: 1650, left: 120, fontSize: 34, opacity: 0.42 },
+  { content: '🧸', top: 1710, left: 56, fontSize: 78, opacity: 0.56, rotate: '-5deg' },
+  { content: '✦', top: 1550, left: 145, fontSize: 18, opacity: 0.32, color: '#F4D35E' },
+  { content: '·', top: 1620, left: 210, fontSize: 22, opacity: 0.2, color: '#B8D8D0' },
+
+  // ── Bottom-right corner (bear aligned with watermark + stars) ──
   { content: '🌙', top: 1490, left: 840, fontSize: 36, opacity: 0.45, rotate: '10deg' },
-  { content: '⭐', top: 1580, left: 870, fontSize: 20, opacity: 0.3 },
-  { content: '✦', top: 1550, left: 790, fontSize: 14, opacity: 0.25, color: '#D4AF37' },
+  { content: '⭐', top: 1540, left: 900, fontSize: 52, opacity: 0.4, rotate: '8deg' },
+  { content: '⭐', top: 1628, left: 855, fontSize: 40, opacity: 0.38 },
+  { content: '✦', top: 1560, left: 790, fontSize: 14, opacity: 0.25, color: '#D4AF37' },
 
   // ── Bottom center scattered ──
   { content: '✧', top: 1600, left: 450, fontSize: 16, opacity: 0.25, color: '#B8D8D0' },
@@ -111,20 +138,36 @@ function DecorationLayer() {
   return (
     <>
       {DECORATIONS.map((d, i) => (
-        <Text
-          key={i}
-          style={{
-            position: 'absolute',
-            top: d.top,
-            left: d.left,
-            fontSize: d.fontSize,
-            opacity: d.opacity,
-            color: d.color,
-            transform: d.rotate ? [{ rotate: d.rotate }] : undefined,
-          }}
-        >
-          {d.content}
-        </Text>
+        d.icon ? (
+          <Ionicons
+            key={i}
+            name={d.icon}
+            size={d.fontSize}
+            color={d.color ?? TEXT_DARK}
+            style={{
+              position: 'absolute',
+              top: d.top,
+              left: d.left,
+              opacity: d.opacity,
+              transform: d.rotate ? [{ rotate: d.rotate }] : undefined,
+            }}
+          />
+        ) : (
+          <Text
+            key={i}
+            style={{
+              position: 'absolute',
+              top: d.top,
+              left: d.left,
+              fontSize: d.fontSize,
+              opacity: d.opacity,
+              color: d.color,
+              transform: d.rotate ? [{ rotate: d.rotate }] : undefined,
+            }}
+          >
+            {d.content}
+          </Text>
+        )
       ))}
     </>
   );
@@ -184,11 +227,11 @@ function ThreeWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
   return (
     <>
       <View style={styles.topRow}>
-        <PolaroidFrame word={words[0]} index={0} size={380} />
-        <PolaroidFrame word={words[1]} index={1} size={380} />
+        <PolaroidFrame word={words[0]} index={0} size={418} />
+        <PolaroidFrame word={words[1]} index={1} size={418} />
       </View>
       <View style={styles.bottomRow}>
-        <PolaroidFrame word={words[2]} index={2} size={400} />
+        <PolaroidFrame word={words[2]} index={2} size={440} />
       </View>
     </>
   );
@@ -197,8 +240,8 @@ function ThreeWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
 function TwoWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={400} />
-      <PolaroidFrame word={words[1]} index={1} size={400} />
+      <PolaroidFrame word={words[0]} index={0} size={440} />
+      <PolaroidFrame word={words[1]} index={1} size={440} />
     </View>
   );
 }
@@ -206,7 +249,7 @@ function TwoWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
 function OneWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={480} />
+      <PolaroidFrame word={words[0]} index={0} size={528} />
     </View>
   );
 }
@@ -216,12 +259,12 @@ function OneWordLayout({ words }: Readonly<{ words: KeepsakeWord[] }>) {
 function Watermark({ domain, qrUrl }: Readonly<{ domain: string; qrUrl: string }>) {
   return (
     <View style={styles.watermark} testID="keepsake-watermark">
+      <View style={styles.watermarkQr}>
+        <QRCode value={qrUrl} size={80} backgroundColor="transparent" color={TEXT_LIGHT} />
+      </View>
       <View style={styles.watermarkRow}>
         <Image source={APP_ICON} style={styles.watermarkIcon} resizeMode="contain" />
         <Text style={styles.watermarkText}>{domain}</Text>
-      </View>
-      <View style={styles.watermarkQr}>
-        <QRCode value={qrUrl} size={80} backgroundColor="transparent" color={TEXT_LIGHT} />
       </View>
     </View>
   );
@@ -237,7 +280,10 @@ const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
   function KeepsakeCard({ words }, ref) {
     const { t, locale } = useI18n();
     const name = useSettingsStore((s) => s.name);
+    const sex = useSettingsStore((s) => s.sex);
     const qrUrl = QR_URLS[locale] ?? QR_URLS['en-US'];
+    const displayName = name || 'Baby';
+    const title = getTitleText(locale, sex, t, displayName);
 
     return (
       <View ref={ref} style={styles.card} testID="keepsake-card" collapsable={false}>
@@ -246,7 +292,7 @@ const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
 
         {/* Title */}
         <Text style={styles.title} testID="keepsake-title">
-          {t('keepsake.title', { name: name || 'Baby' })}
+          {title}
         </Text>
 
         {/* Polaroid frames */}
@@ -257,13 +303,13 @@ const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
         </View>
 
         {/* Watermark */}
-        <Watermark domain={t('keepsake.watermarkAppName')} qrUrl={qrUrl} />
+        <Watermark domain={t('keepsake.watermarkDomain')} qrUrl={qrUrl} />
       </View>
     );
   },
 );
 
-export { KeepsakeCard, getRotation, formatDateForCard };
+export { KeepsakeCard, getRotation, formatDateForCard, getTitleText };
 
 const styles = StyleSheet.create({
   card: {
@@ -290,6 +336,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    transform: [{ translateY: -84 }],
     zIndex: 1,
   },
   topRow: {
@@ -315,9 +362,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   placeholder: {
     backgroundColor: PLACEHOLDER_BG,

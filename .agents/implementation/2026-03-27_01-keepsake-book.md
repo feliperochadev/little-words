@@ -54,3 +54,27 @@ Adds a Keepsake Book feature that generates a shareable 9:16 Polaroid-style imag
 - **Description:** Fixed 5 issues: (1) capture failure on Android by replacing off-screen `-9999` positioning with `opacity: 0.01`; (2) action buttons overlapping Android nav bar by using `useSafeAreaInsets()`; (3) added app icon, QR code (via `react-native-qrcode-svg`), and larger text to watermark; (4) enriched background with ~40 scattered emoji/Unicode decorations matching reference image; (5) personalized title to `"{name}'s First Words"` using settings store name.
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `jest.setup.js`, `package.json`
 - **Plan Updates:** Updated design decision on decorations from "sparse emoji" to "rich scattered pattern".
+
+### 2026-03-27 — pt-BR title article, preview overlay cleanup, locale domain watermark, decoration rebalance
+
+- **Description:** Improved Keepsake Book polish after QA feedback: (1) pt-BR title now uses `do` for boys and `da` for girls; (2) camera badge overlay is hidden for frames that already have photos (swap tap area is still available); (3) watermark text now uses locale-specific domain (`palavrinhas.app` in pt-BR, `littlewordsapp.com` in en-US); (4) removed bottom-right bear decoration and replaced it with a larger star while moving/enlarging bear+star emphasis to the bottom-left to fill the empty area; (5) softened polaroid shadow to remove the dark bottom-right artifact.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`, `__tests__/unit/keepsakeCard.test.ts`, `__tests__/integration/KeepsakePreviewModal.test.tsx`
+- **Plan Updates:** None.
+
+### 2026-03-27 — Layout icon repositioning, persistent shadow removal, save/share capture fix
+
+- **Description:** Applied second-round visual and functional fixes: (1) moved top balloons down near the upper photo row and replaced their original top-corner positions with book/dialog icons matching the profile avatar style; (2) moved the bottom-right bear down to align with the watermark band and added a star at its previous position; (3) removed the persistent shadow artifact by rendering the hidden capture layer only during capture; (4) fixed save/share failures by capturing `viewRef.current` (instead of the ref object) and waiting briefly for the hidden capture card to mount before running `captureRef`.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`, `src/services/keepsakeService.ts`, `__tests__/unit/keepsakeService.test.ts`
+- **Plan Updates:** None.
+
+### 2026-03-27 — Layout correction pass: balloons below top photos, photos moved up, bear left aligned with watermark
+
+- **Description:** Applied a focused placement correction per latest feedback: (1) balloons moved to a lower position clearly below the two top photos; (2) photo composition lifted upward by translating the frames container; (3) bear returned to the left side and aligned to the watermark vertical band; (4) right-side replacement star kept in the previous bear area.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`
+- **Plan Updates:** None.
+
+### 2026-03-27 — Save/share repeat reliability fix (second attempt failure)
+
+- **Description:** Fixed remaining save/share retry instability by replacing fixed capture delay with a ref-readiness wait loop that only starts capture after the hidden capture card is mounted, plus a short layout-settle delay. This prevents intermittent `viewRef.current` null failures on second and later taps.
+- **Files Modified:** `src/components/keepsake/KeepsakePreviewModal.tsx`, `__tests__/integration/KeepsakePreviewModal.test.tsx`
+- **Plan Updates:** None.

@@ -208,6 +208,9 @@ export default {
   // ── Keepsake Book ─────────────────────────────────────────────────────────
   keepsake: {
     title: "{{name}}'s\nFirst Words",
+    titleMale: "{{name}}'s\nFirst Words",
+    titleFemale: "{{name}}'s\nFirst Words",
+    titleNeutral: "{{name}}'s\nFirst Words",
     createBtn: 'Create Keepsake Book',
     saveToDevice: 'Save to Device',
     share: 'Share',

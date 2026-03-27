@@ -29,6 +29,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
   const insets = useSafeAreaInsets();
   const cardRef = useRef<View>(null);
   const [capturing, setCapturing] = useState(false);
+  const [captureVisible, setCaptureVisible] = useState(false);
 
   const { data: words = [], isLoading } = useKeepsakeWords();
   const captureKeepsake = useCaptureKeepsake();
@@ -93,6 +94,8 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
   const handleSave = useCallback(async () => {
     setCapturing(true);
     try {
+      setCaptureVisible(true);
+      await waitForCaptureCard(cardRef);
       await captureKeepsake.mutateAsync(cardRef);
       await saveToLibrary.mutateAsync();
       Alert.alert(t('keepsake.saved'));
@@ -104,6 +107,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
         Alert.alert(t('keepsake.captureFailed'));
       }
     } finally {
+      setCaptureVisible(false);
       setCapturing(false);
     }
   }, [captureKeepsake, saveToLibrary, t]);
@@ -111,11 +115,14 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
   const handleShare = useCallback(async () => {
     setCapturing(true);
     try {
+      setCaptureVisible(true);
+      await waitForCaptureCard(cardRef);
       await captureKeepsake.mutateAsync(cardRef);
       await shareKeepsake.mutateAsync();
     } catch {
       Alert.alert(t('keepsake.captureFailed'));
     } finally {
+      setCaptureVisible(false);
       setCapturing(false);
     }
   }, [captureKeepsake, shareKeepsake, t]);
@@ -166,9 +173,14 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
                     testID={`keepsake-swap-${idx}`}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.swapBadge, { backgroundColor: colors.primary }]}>
-                      <Ionicons name="camera-outline" size={14} color={colors.textOnPrimary} />
-                    </View>
+                    {!word.photoUri && (
+                      <View
+                        style={[styles.swapBadge, { backgroundColor: colors.primary }]}
+                        testID={`keepsake-swap-badge-${idx}`}
+                      >
+                        <Ionicons name="camera-outline" size={14} color={colors.textOnPrimary} />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -210,7 +222,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
       </View>
 
       {/* Hidden card for capture — opacity 0.01 keeps it rendered on Android GPU */}
-      {words.length > 0 && (
+      {words.length > 0 && captureVisible && (
         <View style={styles.captureContainer} pointerEvents="none">
           <KeepsakeCard ref={cardRef} words={words} />
         </View>
@@ -228,6 +240,29 @@ function showPermissionDenied(t: (key: string) => string) {
       { text: t('keepsake.openSettings'), onPress: () => void Linking.openSettings() },
     ],
   );
+}
+
+async function waitForCaptureCard(
+  cardRef: React.RefObject<View | null>,
+): Promise<void> {
+  const timeoutMs = 1200;
+  const start = Date.now();
+
+  while (!cardRef.current && (Date.now() - start) < timeoutMs) {
+    await delay(16);
+  }
+
+  if (!cardRef.current) {
+    throw new Error('Keepsake capture view did not mount in time');
+  }
+
+  await delay(32);
+}
+
+async function delay(ms: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 // Position overlays approximately over each polaroid frame in the scaled-down preview

@@ -1,4 +1,4 @@
-import { getRotation, formatDateForCard } from '../../src/components/keepsake/KeepsakeCard';
+import { getRotation, formatDateForCard, getTitleText } from '../../src/components/keepsake/KeepsakeCard';
 
 describe('KeepsakeCard helpers', () => {
   describe('getRotation', () => {
@@ -45,6 +45,32 @@ describe('KeepsakeCard helpers', () => {
       const result = formatDateForCard('not-a-date');
       // Date('not-a-date') is Invalid Date, toLocaleDateString returns 'Invalid Date'
       expect(typeof result).toBe('string');
+    });
+  });
+
+  describe('getTitleText', () => {
+    const t = (key: string, params?: Record<string, string>) => {
+      const name = params?.name ?? 'Baby';
+      if (key === 'keepsake.titleMale') return `Primeiras Palavras\ndo ${name}`;
+      if (key === 'keepsake.titleFemale') return `Primeiras Palavras\nda ${name}`;
+      if (key === 'keepsake.titleNeutral') return `Primeiras Palavras\nde ${name}`;
+      return `${name}'s\nFirst Words`;
+    };
+
+    it('uses male article in pt-BR', () => {
+      expect(getTitleText('pt-BR', 'boy', t, 'Miguel')).toBe('Primeiras Palavras\ndo Miguel');
+    });
+
+    it('uses female article in pt-BR', () => {
+      expect(getTitleText('pt-BR', 'girl', t, 'Sofia')).toBe('Primeiras Palavras\nda Sofia');
+    });
+
+    it('uses neutral article in pt-BR when sex is unknown', () => {
+      expect(getTitleText('pt-BR', null, t, 'Alex')).toBe('Primeiras Palavras\nde Alex');
+    });
+
+    it('uses default title outside pt-BR', () => {
+      expect(getTitleText('en-US', 'boy', t, 'Noah')).toBe("Noah's\nFirst Words");
     });
   });
 });

@@ -100,7 +100,7 @@ export async function captureKeepsake(
     throw new Error('Keepsake card view ref is not available');
   }
 
-  const uri = await captureRef(viewRef, {
+  const uri = await captureRef(viewRef.current, {
     format: 'jpg',
     quality: 0.92,
     width: 1080,
@@ -112,6 +112,9 @@ export async function captureKeepsake(
 
   const source = new FSFile(uri);
   const dest = new FSFile(destUri);
+  if (dest.exists) {
+    dest.delete();
+  }
   source.copy(dest);
 
   await setKeepsakeState('keepsake_generated', 'true');

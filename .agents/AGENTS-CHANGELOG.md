@@ -2,6 +2,49 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-27_06
+
+**[fix] Enhance keepsake-book: fix save/share failing on repeated attempts**
+
+- Replaced fixed capture timing with a mount-readiness wait (`cardRef.current`) before triggering keepsake capture, with a brief post-mount settle delay for layout stability.
+- Prevents intermittent second-attempt failures that surfaced as "Could not generate image. Please try again" after one successful save/share.
+- Added integration regressions for two consecutive save actions and two consecutive share actions in the keepsake preview modal.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_05
+
+**[fix] Enhance keepsake-book: final layout correction for balloon/photo/bear placement**
+
+- Moved both balloons farther down so they sit below (not above/over) the two top photos.
+- Shifted the keepsake photo composition upward by translating the frames container to better match requested balance.
+- Moved the bear back to the left side and aligned its height with the watermark band.
+- Kept a larger star in the prior right-side bear area.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_04
+
+**[fix] Enhance keepsake-book: reposition top icons/decorations, remove persistent shadow, restore save/share capture**
+
+- Moved top balloons down to sit just above the two upper photo frames.
+- Replaced the original top-corner balloon spots with icon-style decorations: `book-outline` on the left and `chatbubble-ellipses-outline` on the right (matching Home profile avatar visual language).
+- Moved the bottom-right bear lower to align with the watermark baseline and added a replacement star at the previous bear position.
+- Removed persistent dark shadow bleeding into the action-button/nav area by mounting the hidden capture card only during capture.
+- Fixed save/share capture errors by passing `viewRef.current` to `captureRef` and waiting for the hidden capture card to render before capture.
+- Added regression assertion in keepsake service tests to ensure `captureRef` is invoked with the concrete view node.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_03
+
+**[fix] Enhance keepsake-book: pt-BR title article, preview icon overlap, watermark domain, decoration positioning**
+
+- Updated keepsake pt-BR title grammar by child sex: `do {{name}}` for boys and `da {{name}}` for girls, with neutral fallback `de {{name}}`.
+- Hid preview camera badges on frames that already contain a photo to avoid icon overlap on top of real images (frame tap-to-swap remains available).
+- Switched watermark text to locale domains: `palavrinhas.app` (`pt-BR`) and `littlewordsapp.com` (`en-US`).
+- Rebalanced bottom decorations to match requested composition: moved/enlarged bear+star emphasis to bottom-left, removed the bottom-right bear, and added a larger star in its place.
+- Softened polaroid shadow to remove the unintended dark area near the bottom-right region.
+- Added tests for title/article selection and conditional preview badge visibility.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
 ### 2026-03-27_02
 
 **[fix] Enhance keepsake-book: Fix capture, button overlap, watermark, decorations, title**
