@@ -9,7 +9,6 @@ import {
   getAllKeepsakePhotoOverrides,
   getEarliestWords,
   getWordPhotoFilename,
-  getTotalWordCount,
 } from '../repositories/keepsakeRepository';
 import { getAssetFileUri } from '../utils/assetStorage';
 import { MEDIA_ROOT_DIR } from '../types/asset';
@@ -150,4 +149,4 @@ export async function saveKeepsakeToLibrary(fileUri: string): Promise<void> {
   await MediaLibrary.saveToLibraryAsync(fileUri);
 }
 
-export { getTotalWordCount };
+export { getTotalWordCount } from '../repositories/keepsakeRepository';

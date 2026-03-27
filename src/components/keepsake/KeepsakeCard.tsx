@@ -139,7 +139,7 @@ function DecorationLayer() {
       {DECORATIONS.map((d, i) => (
         d.icon ? (
           <Ionicons
-            key={i}
+            key={`icon-${d.top}-${d.left}`}
             name={d.icon}
             size={d.fontSize}
             color={d.color ?? TEXT_DARK}
@@ -153,7 +153,7 @@ function DecorationLayer() {
           />
         ) : (
           <Text
-            key={i}
+            key={`text-${d.top}-${d.left}`}
             style={{
               position: 'absolute',
               top: d.top,

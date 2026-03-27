@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-27_10
+
+**[fix] SonarCloud issues on PR #60: array-index keys, re-export pattern, coverage, duplication**
+
+- KeepsakeCard.tsx: replaced array-index keys (key={i}) with stable position-based keys (key=`icon/text-{top}-{left}`) in DecorationLayer map.
+- keepsakeService.ts: converted `export { getTotalWordCount }` (re-export via import) to `export { getTotalWordCount } from '../repositories/keepsakeRepository'` per Sonar S7763.
+- KeepsakeSection.tsx: extracted duplicate sectionLabelRow JSX into a local const to eliminate internal duplication, reducing new_code duplicated_lines_density.
+- KeepsakePreviewModal.tsx coverage raised from 67.8% to 91.9%: added tests for camera/library permission granted/denied, swap-then-pick flows, save PERMISSION_DENIED error path, share error path, and Linking.openSettings button.
+- KeepsakeSection.tsx coverage raised from 72.7% to 100%: added tests for pressing create/thumbnail buttons to open modal and pressing close button.
+- home.tsx coverage raised from 84.3% to 100%: added tests for pull-to-refresh, action=add-word deep-link, home-memories-header press, home-timeline-section press.
+
 ### 2026-03-27_09
 
 **[fix] Enhance keepsake-book: fix "Baby's First Words" — pass name/sex as props to KeepsakeCard**

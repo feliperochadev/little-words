@@ -19,6 +19,15 @@ export function KeepsakeSection({ totalWords }: Readonly<KeepsakeSectionProps>) 
 
   if (totalWords === 0) return null;
 
+  const sectionLabelRow = (
+    <View style={styles.sectionLabelRow}>
+      <Ionicons name="albums-outline" size={13} color={colors.textSecondary} />
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+        {t('keepsake.sectionLabel')}
+      </Text>
+    </View>
+  );
+
   return (
     <View testID="keepsake-section">
       {/* ── Keepsake Book section ──────────────────────────── */}
@@ -29,12 +38,7 @@ export function KeepsakeSection({ totalWords }: Readonly<KeepsakeSectionProps>) 
           testID="keepsake-thumbnail-btn"
           activeOpacity={0.8}
         >
-          <View style={styles.sectionLabelRow}>
-            <Ionicons name="albums-outline" size={13} color={colors.textSecondary} />
-            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-              {t('keepsake.sectionLabel')}
-            </Text>
-          </View>
+          {sectionLabelRow}
           <Image
             source={{ uri: `${getKeepsakeFileUri()}?t=${state.generatedAt ?? ''}` }}
             style={styles.thumbnail}
@@ -44,12 +48,7 @@ export function KeepsakeSection({ totalWords }: Readonly<KeepsakeSectionProps>) 
         </TouchableOpacity>
       ) : (
         <View style={styles.keepsakeContainer}>
-          <View style={styles.sectionLabelRow}>
-            <Ionicons name="albums-outline" size={13} color={colors.textSecondary} />
-            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-              {t('keepsake.sectionLabel')}
-            </Text>
-          </View>
+          {sectionLabelRow}
           <TouchableOpacity
             style={[styles.createBtn, { backgroundColor: colors.primary }]}
             onPress={() => setShowModal(true)}
