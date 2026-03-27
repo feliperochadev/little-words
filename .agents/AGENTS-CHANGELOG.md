@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-03-26_04
+
+[fix] Extract `checkAndShowPriming()` from `handleWordAdded()` in `notificationService.ts` and call it from all content-save paths: `useSaveAsset` onSuccess in `useAssets.ts`, `linkMediaToWord`/`linkMediaToVariant`/`saveWithoutLinking` in `MediaCaptureProvider.tsx`, and text/CSV and ZIP imports in `ImportModal.tsx`; priming modal now triggers after any first content action, not only after adding the first word via the add-word modal
+[fix] Change notification toggle loader in `settings.tsx` from `useEffect` to `useFocusEffect` so enabled/denied state reloads every time the Settings screen gains focus (e.g. after returning from the system permission prompt)
+[fix] Sync `android/app/build.gradle` `versionName` from `0.6.1-beta` to `0.9.1-beta` to match the current EAS/app.json version
+[test] Add `checkAndShowPriming` unit tests to `notificationService.test.ts`; update `ImportModal.test.tsx`, `MediaCaptureProvider.test.tsx`, `useAssets.test.tsx`, `AddWordModal.test.tsx`, and `home.test.tsx` to mock and assert the new export
+
 ### 2026-03-26_03
 
 [fix] Remove ExpoCropImageActivity from AndroidManifest.xml, ExpoCropImageThemeOverride styles from styles.xml, crop_image_menu_crop string from values/strings.xml, and delete values-pt/strings.xml and values-pt-rBR/strings.xml; these crop customizations are no longer needed

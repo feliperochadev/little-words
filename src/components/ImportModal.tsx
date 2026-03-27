@@ -18,6 +18,7 @@ import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES, canonicalizeCategoryName, categoryLookupKey } from '../utils/categoryKeys';
 import { parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
 import { openBackupZip, importFullBackup } from '../utils/backupImport';
+import { checkAndShowPriming } from '../services/notificationService';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { BackupData, BackupImportResult } from '../types/backup';
 
@@ -117,6 +118,7 @@ async function runTextCsvImport(deps: TextCsvImportDeps): Promise<void> {
     [['words'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard()].forEach(
       key => queryClient.invalidateQueries({ queryKey: key })
     );
+    if (result.wordsAdded > 0) void checkAndShowPriming();
     reset(); onImported(); onClose();
 
     const lines = [t('importModal.resultWords', { count: result.wordsAdded })];
@@ -256,6 +258,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
       [['words'], ['assets'], QUERY_KEYS.allVariants(), QUERY_KEYS.categories(), QUERY_KEYS.dashboard(), QUERY_KEYS.allAssets()].forEach(
         key => queryClient.invalidateQueries({ queryKey: key })
       );
+      if (result.wordsAdded > 0) void checkAndShowPriming();
       reset(); onImported(); onClose();
       Alert.alert(t('backup.resultTitle'), buildZipResultMessage(result, t));
     } catch (e: unknown) {

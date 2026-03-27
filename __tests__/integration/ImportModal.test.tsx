@@ -44,6 +44,12 @@ jest.mock('../../src/utils/backupImport', () => ({
   importFullBackup: jest.fn(),
 }));
 
+jest.mock('../../src/services/notificationService', () => ({
+  checkAndShowPriming: jest.fn(() => Promise.resolve()),
+}));
+
+const mockCheckAndShowPriming = require('../../src/services/notificationService').checkAndShowPriming as jest.Mock;
+
 const mockGetCategories = categoryService.getCategories as jest.MockedFunction<typeof categoryService.getCategories>;
 const mockAddCategory = categoryService.addCategory as jest.MockedFunction<typeof categoryService.addCategory>;
 const mockFindWordByName = wordService.findWordByName as jest.MockedFunction<typeof wordService.findWordByName>;
@@ -368,6 +374,29 @@ describe('ImportModal', () => {
         expect.any(String)
       );
     });
+  });
+
+  it('calls checkAndShowPriming after text import adds words', async () => {
+    const { findByText, findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    fireEvent.changeText(await findByTestId('import-text-input'), 'hello');
+    await act(async () => { fireEvent.press(await findByText(/Import 1 word/)); });
+    await waitFor(() => expect(mockAddWord).toHaveBeenCalled());
+    expect(mockCheckAndShowPriming).toHaveBeenCalled();
+  });
+
+  it('does not call checkAndShowPriming when text import adds no words', async () => {
+    mockFindWordByName.mockResolvedValue({ id: 99, word: 'hello' } as any);
+    const { findByText, findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    fireEvent.changeText(await findByTestId('import-text-input'), 'hello');
+    await act(async () => { fireEvent.press(await findByText(/Import 1 word/)); });
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    expect(mockCheckAndShowPriming).not.toHaveBeenCalled();
   });
 
   it('imports text with category, creating category if needed', async () => {
@@ -742,6 +771,37 @@ describe('ImportModal', () => {
       expect(onImported).toHaveBeenCalled();
       expect(Alert.alert).toHaveBeenCalledWith(expect.any(String), expect.any(String));
     });
+  });
+
+  it('calls checkAndShowPriming after ZIP import adds words', async () => {
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => expect(mockImportFullBackup).toHaveBeenCalled());
+    expect(mockCheckAndShowPriming).toHaveBeenCalled();
+  });
+
+  it('does not call checkAndShowPriming when ZIP import adds no words', async () => {
+    mockImportFullBackup.mockResolvedValueOnce({ ...MOCK_IMPORT_RESULT, wordsAdded: 0 });
+    mockGetDocumentAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///mock/backup.zip', name: 'backup.zip' }],
+    } as any);
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockOpenBackupZip).toHaveBeenCalled());
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-submit-btn')); });
+    await waitFor(() => expect(mockImportFullBackup).toHaveBeenCalled());
+    expect(mockCheckAndShowPriming).not.toHaveBeenCalled();
   });
 
   it('imports a ZIP backup with restoreProfile toggle off', async () => {

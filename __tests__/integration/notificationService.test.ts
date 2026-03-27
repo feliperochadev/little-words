@@ -55,6 +55,7 @@ import {
   cancelAllNotifications,
   scheduleAll,
   handleWordAdded,
+  checkAndShowPriming,
   MILESTONE_THRESHOLDS,
 } from '../../src/services/notificationService';
 
@@ -370,11 +371,33 @@ describe('scheduleAll', () => {
 
 // ─── handleWordAdded ─────────────────────────────────────────────────────────
 
-describe('handleWordAdded', () => {
-  it('shows priming modal on first word if permission not yet requested', async () => {
+// ─── checkAndShowPriming ──────────────────────────────────────────────────────
+
+describe('checkAndShowPriming', () => {
+  it('shows priming modal when permission not yet requested', async () => {
     const setPrimingVisible = jest.fn();
     useNotificationStore.getState.mockReturnValue({ setPrimingVisible });
-    getTotalWordCount.mockResolvedValueOnce(1);
+    getNotificationState.mockResolvedValueOnce(null); // permission_requested
+
+    await checkAndShowPriming();
+    expect(setPrimingVisible).toHaveBeenCalledWith(true);
+  });
+
+  it('does not show priming when permission already requested', async () => {
+    const setPrimingVisible = jest.fn();
+    useNotificationStore.getState.mockReturnValue({ setPrimingVisible });
+    getNotificationState.mockResolvedValueOnce('1'); // permission_requested = '1'
+
+    await checkAndShowPriming();
+    expect(setPrimingVisible).not.toHaveBeenCalledWith(true);
+  });
+});
+
+describe('handleWordAdded', () => {
+  it('shows priming modal regardless of word count when permission not yet requested', async () => {
+    const setPrimingVisible = jest.fn();
+    useNotificationStore.getState.mockReturnValue({ setPrimingVisible });
+    getTotalWordCount.mockResolvedValueOnce(5);
     getSetting.mockResolvedValue(null);
     getNotificationState
       .mockResolvedValueOnce('0') // isNotificationsEnabled
@@ -402,6 +425,7 @@ describe('handleWordAdded', () => {
     getSetting.mockResolvedValueOnce('en-US').mockResolvedValueOnce('Sofia');
     getNotificationState
       .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
       .mockResolvedValueOnce('1') // permission_granted
       .mockResolvedValueOnce(null); // milestone_10 not sent yet
 
@@ -420,17 +444,19 @@ describe('handleWordAdded', () => {
     getSetting.mockResolvedValue(null);
     getNotificationState
       .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
       .mockResolvedValueOnce('1'); // permission_granted
 
     await handleWordAdded();
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it('returns early when enabled but permission_granted is not 1 (line 236 branch)', async () => {
+  it('returns early when enabled but permission_granted is not 1', async () => {
     getTotalWordCount.mockResolvedValueOnce(10);
     getSetting.mockResolvedValue(null);
     getNotificationState
       .mockResolvedValueOnce('1')  // isNotificationsEnabled = '1'
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
       .mockResolvedValueOnce('0'); // permission_granted = '0' → early return
 
     await handleWordAdded();
@@ -439,10 +465,10 @@ describe('handleWordAdded', () => {
 
   it('uses null-safe fallbacks for locale and childName when scheduling milestone', async () => {
     getTotalWordCount.mockResolvedValueOnce(10);
-    // Both getSetting calls return null (locale=null, childName=null)
     getSetting.mockResolvedValue(null);
     getNotificationState
       .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
       .mockResolvedValueOnce('1') // permission_granted
       .mockResolvedValueOnce(null); // milestone_10 not sent
 
@@ -455,6 +481,7 @@ describe('handleWordAdded', () => {
     getSetting.mockResolvedValue(null);
     getNotificationState
       .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
       .mockResolvedValueOnce('1') // permission_granted
       .mockResolvedValueOnce('2026-01-01T00:00:00Z'); // milestone_10 already sent
 
