@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-03_1
+
+**[fix] Translate built-in category names in category-explorer notification**
+
+- `notificationService.ts`: added `LOCALE_CATALOGS` record and `translateCategoryName(key, locale)` helper that resolves built-in category DB keys via the i18n catalog (`catalog.categories[key]`). No locale-specific ternaries — new locales only need an entry in the map.
+- Applied translation when mapping `emptyCategoryRows` into `emptyCategoryNames`, fixing the bug where pt-BR users received notifications like "Olivia já conhece palavras de toys?" instead of "…brinquedos?".
+- Added integration tests for pt-BR translation (`'toys'` → `'Brinquedos'`), user-created category passthrough, and updated en-US expectation (`'Animals'`, `'Food'`).
+
 ### 2026-04-02_1
 
 **[security] npm audit fix — update package-lock.json**

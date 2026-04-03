@@ -255,7 +255,49 @@ describe('scheduleAll', () => {
         strings: expect.objectContaining({ nudge3dTitle: 'New sounds today?' }),
         childName: 'Sofia',
         totalWords: 12,
-        emptyCategoryNames: ['animals', 'food'],
+        emptyCategoryNames: ['Animals', 'Food'],
+      }),
+      expect.any(Date),
+    );
+  });
+
+  it('translates empty category names to pt-BR when locale is pt-BR', async () => {
+    setupEnabledPermissions();
+    getNotificationState
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Olivia');
+    getTotalWordCount.mockResolvedValueOnce(5);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'toys' }, { name: 'animals' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emptyCategoryNames: ['Brinquedos', 'Animais'],
+      }),
+      expect.any(Date),
+    );
+  });
+
+  it('passes user-created category names unchanged regardless of locale', async () => {
+    setupEnabledPermissions();
+    getNotificationState
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Olivia');
+    getTotalWordCount.mockResolvedValueOnce(5);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'Minha Categoria' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emptyCategoryNames: ['Minha Categoria'],
       }),
       expect.any(Date),
     );
