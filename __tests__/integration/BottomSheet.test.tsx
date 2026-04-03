@@ -36,4 +36,13 @@ describe('BottomSheet', () => {
     );
     expect(queryByText('Hidden')).toBeNull();
   });
+
+  it('renders children in a ScrollView when scrollable is true', () => {
+    const { getByText } = render(
+      <BottomSheet visible onClose={() => {}} scrollable>
+        <Text>Scrollable Content</Text>
+      </BottomSheet>
+    );
+    expect(getByText('Scrollable Content')).toBeTruthy();
+  });
 });

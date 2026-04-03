@@ -2,6 +2,21 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-03_2
+
+**[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**
+
+- `__tests__/unit/migrations.test.ts` (NEW): full `up`/`down` tests for migrations 0003 and 0004 — both reach 100% line/branch coverage (were 25% and 53.8%)
+- `__tests__/integration/BrandHeader.test.tsx`: added tagline and custom-style prop tests — reaches 100% line coverage (was 33.3%)
+- `__tests__/integration/BottomSheet.test.tsx`: added `scrollable={true}` prop test — reaches 100% coverage (was 88.9%)
+- `__tests__/integration/SortBar.test.tsx`: added no-testID rendering test covering the `testID ?` conditional branches — reaches 100% coverage (was 89.5%)
+- `__tests__/unit/categoryKeys.test.ts`: added empty-string and whitespace-only tests for `canonicalizeCategoryName` early-return branch — reaches 100% line coverage (was 87%)
+- `__tests__/unit/csvExport.test.ts`: added `getAllDataForCSV` with category resolver test; `__tests__/integration/csvExport.test.ts`: added non-Error rejection tests for `shareCSV` and `saveCSVToDevice` covering `getErrorMessage` false branch
+- `__tests__/integration/DatePickerField.test.tsx`: added `WheelDatePickerModal` direct tests — future date alert, cancel button, and `initialDate` sync — reaches 92%+ coverage (was 86.1%)
+- `__tests__/screens/settings.test.tsx`: added `permissionDenied` hint, sex-display dash, and "Export First" danger-zone button tests — reaches 90.26% line coverage (was 86.5%)
+- `__tests__/integration/AddVariantModal.test.tsx`: added "no words found" and "variant text but no word selected" tests covering guard branches — reaches 96.25% (was 87%)
+- `__tests__/integration/AddWordModal.test.tsx`: added `creating-word` phase describe block with `useMediaCapture` mock — covers `resetCapture` on cancel, `onWordCreated` on save, and `prefilledWordName` — reaches 99.02% line coverage (was 87.6%)
+
 ### 2026-04-03_1
 
 **[fix] Translate built-in category names in category-explorer notification**

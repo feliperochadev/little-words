@@ -68,3 +68,20 @@ describe('csvExport', () => {
     });
   });
 });
+
+describe('getAllDataForCSV — resolveCategoryName applied to each row', () => {
+  const mockDb = (globalThis as any).__mockDb;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('applies resolveCategoryName to categoria field', async () => {
+    mockDb.getAllAsync.mockResolvedValueOnce([
+      { word: 'cat', categoria: 'animals', data: '2024-01-01', variante: '' },
+    ]);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getAllDataForCSV } = require('../../src/utils/csvExport') as typeof import('../../src/utils/csvExport');
+    const resolver = (name: string) => name === 'animals' ? 'Animals' : name;
+    const csv = await getAllDataForCSV(resolver, 'header');
+    expect(csv).toContain('"Animals"');
+  });
+});

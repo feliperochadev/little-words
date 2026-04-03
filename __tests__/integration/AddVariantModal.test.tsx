@@ -234,6 +234,22 @@ describe('AddVariantModal', () => {
     expect(variantService.findVariantByName).not.toHaveBeenCalled();
   });
 
+  it('shows "no words" message when word list is empty', async () => {
+    (wordService.getWords as jest.Mock).mockResolvedValue([]);
+    const { findByText } = renderModal({ word: null });
+    // Wait for word list to load — no words → shows empty message
+    expect(await findByText(/No words found/i)).toBeTruthy();
+  });
+
+  it('alerts when save is pressed with variant text but no word selected', async () => {
+    const { findByText, findByTestId } = renderModal({ word: null });
+    // Fill in variant text but do NOT select a word
+    const variantInput = await findByTestId('variant-input');
+    fireEvent.changeText(variantInput, 'mamá');
+    fireEvent.press(await findByText('Add'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+  });
+
   it('clears duplicate state when modal reopens', async () => {
     (variantService.findVariantByName as jest.Mock).mockResolvedValue(null);
     const view = renderWithProviders(

@@ -73,6 +73,14 @@ describe('categoryKeys', () => {
     it('keeps custom categories unchanged', () => {
       expect(canonicalizeCategoryName('My Custom Category')).toBe('My Custom Category');
     });
+
+    it('returns empty string immediately when given empty string', () => {
+      expect(canonicalizeCategoryName('')).toBe('');
+    });
+
+    it('returns empty string when given whitespace-only string', () => {
+      expect(canonicalizeCategoryName('   ')).toBe('');
+    });
   });
 
   describe('categoryLookupKey', () => {

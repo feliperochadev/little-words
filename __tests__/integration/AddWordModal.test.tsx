@@ -605,3 +605,61 @@ describe('AddWordModal — panResponder gesture handlers', () => {
     act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });
+
+describe('AddWordModal — creating-word phase (media capture)', () => {
+  const mockOnWordCreated = jest.fn();
+  const mockResetCapture = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRouterPush.mockClear();
+    (categoryService.getCategories as jest.Mock).mockResolvedValue([
+      { id: 1, name: 'animals', color: '#FF6B9D', emoji: '🐾', created_at: '' },
+    ]);
+    (wordService.findWordByName as jest.Mock).mockResolvedValue(null);
+    (variantService.getVariantsByWord as jest.Mock).mockResolvedValue([]);
+    (settingsService.getSetting as jest.Mock).mockResolvedValue(null);
+    useSettingsStore.setState({ name: 'Leo', sex: 'boy', birth: '', isOnboardingDone: true, isHydrated: true });
+    jest.spyOn(require('../../src/hooks/useMediaCapture'), 'useMediaCapture').mockReturnValue({
+      phase: 'creating-word',
+      pendingMedia: { uri: 'file:///recording.m4a', assetType: 'audio', mimeType: 'audio/m4a', fileSize: 100, duration: 3000 },
+      prefilledWordName: 'doggie',
+      onWordCreated: mockOnWordCreated,
+      resetCapture: mockResetCapture,
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('prefills word name from prefilledWordName', async () => {
+    const { AddWordModal: Modal } = require('../../src/components/AddWordModal');
+    const { findByDisplayValue } = renderWithProviders(
+      <Modal visible onClose={jest.fn()} />
+    );
+    expect(await findByDisplayValue('doggie')).toBeTruthy();
+  });
+
+  it('calls onWordCreated after saving in creating-word phase', async () => {
+    mockOnWordCreated.mockResolvedValue(undefined);
+    const { AddWordModal: Modal } = require('../../src/components/AddWordModal');
+    const { findByText, findByDisplayValue } = renderWithProviders(
+      <Modal visible onClose={jest.fn()} />
+    );
+    await findByDisplayValue('doggie');
+    await act(async () => { fireEvent.press(await findByText('Add')); });
+    await waitFor(() => {
+      expect(mockOnWordCreated).toHaveBeenCalled();
+    });
+  });
+
+  it('calls resetCapture when cancel pressed in creating-word phase', async () => {
+    const { AddWordModal: Modal } = require('../../src/components/AddWordModal');
+    const { findByText } = renderWithProviders(
+      <Modal visible onClose={jest.fn()} />
+    );
+    fireEvent.press(await findByText('Cancel'));
+    expect(mockResetCapture).toHaveBeenCalled();
+  });
+});

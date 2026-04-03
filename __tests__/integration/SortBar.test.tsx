@@ -44,4 +44,22 @@ describe('SortBar', () => {
     fireEvent.press(getByTestId('sort-option-alpha_asc'));
     expect(getByTestId('sortbar-btn')).toBeTruthy(); // menu closed
   });
+
+  it('renders without testID prop (covers testID ? ... : undefined branches)', () => {
+    const { getByText } = render(
+      <SortBar
+        currentLabel="A–Z"
+        count={3}
+        countLabel="items"
+        onToggle={() => {}}
+        showMenu={true}
+        options={OPTIONS}
+        selectedKey="alpha_asc"
+        onSelect={() => {}}
+      />
+    );
+    expect(getByText('3 items')).toBeTruthy();
+    // Menu is shown (showMenu=true) — options are rendered
+    expect(getByText('Newest')).toBeTruthy();
+  });
 });
