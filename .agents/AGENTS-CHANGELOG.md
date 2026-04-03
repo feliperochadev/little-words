@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-02_1
+
+**[security] npm audit fix — update package-lock.json**
+
+- Ran `npm audit fix` to resolve security advisories in transitive dependencies.
+- Only `package-lock.json` changed; no direct dependency versions modified.
+
 ### 2026-03-27_10
 
 **[fix] SonarCloud issues on PR #60: array-index keys, re-export pattern, coverage, duplication**
