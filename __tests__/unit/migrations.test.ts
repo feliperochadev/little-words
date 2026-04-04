@@ -1,5 +1,6 @@
 import { migration as migration0003 } from '../../src/db/migrations/0003_add-asset-name';
 import { migration as migration0004 } from '../../src/db/migrations/0004_add-unlinked-parent-type';
+import { migration as migration0006 } from '../../src/db/migrations/0006_add-keepsake-state';
 
 function makeDb() {
   return { execSync: jest.fn() };
@@ -167,6 +168,43 @@ describe('migration 0004 — add-unlinked-parent-type', () => {
       migration0004.down(db as any);
       // CREATE TABLE, INSERT, DROP, RENAME, idx_parent, idx_type = 6
       expect(db.execSync).toHaveBeenCalledTimes(6);
+    });
+  });
+});
+
+describe('migration 0006 — add-keepsake-state', () => {
+  it('has correct version and name', () => {
+    expect(migration0006.version).toBe(6);
+    expect(migration0006.name).toBe('add-keepsake-state');
+  });
+
+  describe('up', () => {
+    it('creates keepsake_state table', () => {
+      const db = makeDb();
+      migration0006.up(db as any);
+      expect(db.execSync).toHaveBeenCalledTimes(1);
+      expect(db.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS keepsake_state'),
+      );
+    });
+
+    it('schema includes key as PRIMARY KEY', () => {
+      const db = makeDb();
+      migration0006.up(db as any);
+      expect(db.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('key TEXT PRIMARY KEY'),
+      );
+    });
+  });
+
+  describe('down', () => {
+    it('drops keepsake_state table', () => {
+      const db = makeDb();
+      migration0006.down(db as any);
+      expect(db.execSync).toHaveBeenCalledTimes(1);
+      expect(db.execSync).toHaveBeenCalledWith(
+        expect.stringContaining('DROP TABLE IF EXISTS keepsake_state'),
+      );
     });
   });
 });

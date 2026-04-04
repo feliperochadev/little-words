@@ -537,6 +537,48 @@ describe('handleWordAdded', () => {
   });
 });
 
+// ─── handleWordAdded with pt-BR locale ───────────────────────────────────────
+
+describe('handleWordAdded — pt-BR milestone strings', () => {
+  it('schedules milestone with pt-BR locale strings', async () => {
+    getTotalWordCount.mockResolvedValueOnce(10);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Miguel');
+    getNotificationState
+      .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
+      .mockResolvedValueOnce('1') // permission_granted
+      .mockResolvedValueOnce(null); // milestone_10 not sent
+
+    await handleWordAdded();
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ identifier: 'milestone-10' }),
+    );
+  });
+});
+
+// ─── scheduleAll with unknown locale (getCatalog fallback) ───────────────────
+
+describe('scheduleAll — unknown locale falls back to en-US catalog', () => {
+  it('does not throw and calls buildSchedule for unknown locale', async () => {
+    // Force getCatalog ?? enUS fallback by using an unrecognized locale
+    getNotificationState
+      .mockResolvedValueOnce('1')  // notifications_enabled
+      .mockResolvedValueOnce('1') // permission_granted
+      .mockResolvedValueOnce(null) // last_schedule_run
+      .mockResolvedValueOnce(null) // last_backup_date
+      .mockResolvedValueOnce(null); // feature_discovery_sent
+    getSetting.mockResolvedValueOnce('fr-FR').mockResolvedValueOnce('Léa');
+    getTotalWordCount.mockResolvedValueOnce(3);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'animals' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalled();
+  });
+});
+
 // ─── MILESTONE_THRESHOLDS export ─────────────────────────────────────────────
 
 describe('MILESTONE_THRESHOLDS', () => {

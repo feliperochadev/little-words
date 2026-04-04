@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-04_1
+
+**[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**
+
+- `__tests__/unit/migrations.test.ts`: added migration 0006 (`add-keepsake-state`) `up`/`down` tests — covers CREATE TABLE and DROP TABLE calls — reaches 100% (was 66.7%)
+- `__tests__/integration/notificationService.test.ts`: added `handleWordAdded` with pt-BR locale test (covers `getMilestoneStrings` pt-BR branch) and `scheduleAll` with unknown locale test (covers `getCatalog ?? enUS` fallback branch) — covers 3 previously uncovered conditions (was 76.9%)
+- `__tests__/integration/KeepsakeCard.test.tsx` (NEW): full render tests for `KeepsakeCard` — covers OneWordLayout, TwoWordLayout, ThreeWordLayout, photoUri present/absent, categoryEmoji null fallback, empty name fallback, elevated=false, sex=girl/null — covers 4 uncovered lines and 7 uncovered conditions (was 86.3%)
+
 ### 2026-04-03_2
 
 **[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**
