@@ -20,6 +20,25 @@ import {
 } from './notificationScheduler';
 import enUS from '../i18n/en-US';
 import ptBR from '../i18n/pt-BR';
+import { DEFAULT_CATEGORY_KEY_SET } from '../utils/categoryKeys';
+
+// ─── Locale catalog lookup ─────────────────────────────────────────────────────
+
+const LOCALE_CATALOGS: Record<string, typeof enUS> = { 'en-US': enUS, 'pt-BR': ptBR };
+
+function getCatalog(locale: string | null): typeof enUS {
+  return LOCALE_CATALOGS[locale ?? 'en-US'] ?? enUS;
+}
+
+/**
+ * Resolves a category name for use in notification text.
+ * Built-in category DB keys (e.g. 'toys') are translated via the i18n catalog.
+ * User-created category names are returned unchanged.
+ */
+function translateCategoryName(key: string, locale: string | null): string {
+  if (!DEFAULT_CATEGORY_KEY_SET.has(key)) return key;
+  return (getCatalog(locale).categories as Record<string, string>)[key] ?? key;
+}
 
 // ─── i18n string helpers ──────────────────────────────────────────────────────
 
@@ -231,7 +250,7 @@ export async function scheduleAll(): Promise<void> {
         lastBackupDate,
         featureDiscoverySent: featureDiscoverySentRaw === '1',
         wordsLast7Days,
-        emptyCategoryNames: emptyCategoryRows.map(r => r.name),
+        emptyCategoryNames: emptyCategoryRows.map(r => translateCategoryName(r.name, locale)),
         nostalgiaWords,
       },
       now,

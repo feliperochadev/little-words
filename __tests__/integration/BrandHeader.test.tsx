@@ -8,8 +8,19 @@ function renderWithProvider(ui: React.ReactElement) {
 }
 
 describe('BrandHeader', () => {
-  it('renders app name and tagline', async () => {
+  it('renders app name', async () => {
     const { findByText } = renderWithProvider(<BrandHeader />);
+    expect(await findByText('Little Words')).toBeTruthy();
+  });
+
+  it('renders tagline', async () => {
+    const { findByText } = renderWithProvider(<BrandHeader />);
+    // The tagline key is 'brandHeader.tagline' — verify it renders
+    expect(await findByText('Every word, a memory')).toBeTruthy();
+  });
+
+  it('accepts a custom style prop without crashing', async () => {
+    const { findByText } = renderWithProvider(<BrandHeader style={{ marginTop: 10 }} />);
     expect(await findByText('Little Words')).toBeTruthy();
   });
 });

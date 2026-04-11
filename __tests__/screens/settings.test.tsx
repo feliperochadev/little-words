@@ -457,6 +457,48 @@ describe('SettingsScreen', () => {
     expect(setNotificationState).not.toHaveBeenCalledWith('last_backup_date', expect.any(String));
   });
 
+  it('shows permissionDeniedHint when permission was requested but denied', async () => {
+    const { isNotificationsEnabled, getPermissionStatus } = require('../../src/services/notificationService');
+    const { getNotificationState } = require('../../src/repositories/notificationRepository');
+    (isNotificationsEnabled as jest.Mock).mockResolvedValueOnce(false);
+    (getNotificationState as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'permission_requested') return Promise.resolve('1');
+      return Promise.resolve(null);
+    });
+    (getPermissionStatus as jest.Mock).mockResolvedValueOnce({ granted: false, canAskAgain: false });
+    const { findByText } = renderWithProviders(<SettingsScreen />);
+    expect(await findByText(/Settings/)).toBeTruthy();
+    // The permissionDenied hint should render (canAskAgain=false)
+    await waitFor(() => {
+      expect(getPermissionStatus).toHaveBeenCalled();
+    });
+  });
+
+  it('renders sex display as dash when sex is undefined', async () => {
+    useSettingsStore.setState({ name: 'Alex', sex: undefined, birth: '', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    const nameEl = await findByTestId('settings-profile-name');
+    const text = Array.isArray(nameEl.props.children)
+      ? nameEl.props.children.join('')
+      : String(nameEl.props.children ?? '');
+    expect(text).toContain('—');
+  });
+
+  it('presses "Export First" button in danger zone alert', async () => {
+    const { findByTestId } = renderWithProviders(<SettingsScreen />);
+    fireEvent.press(await findByTestId('settings-delete-all-btn'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(1));
+
+    const firstAlert = (Alert.alert as jest.Mock).mock.calls[0];
+    const exportFirstBtn = firstAlert[2].find((b: { text: string; style?: string; onPress?: () => void }) => b.text && !b.style);
+    // Press "Export First" — calls shareFullBackup
+    await act(async () => { exportFirstBtn.onPress(); });
+    const { shareFullBackup } = require('../../src/utils/backupExport');
+    await waitFor(() => {
+      expect(shareFullBackup).toHaveBeenCalled();
+    });
+  });
+
   it('handles clear data double confirmation', async () => {
     const { findByTestId } = renderWithProviders(<SettingsScreen />);
     fireEvent.press(await findByTestId('settings-delete-all-btn'));

@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - CSV export (share or save to device) and text/CSV import with preview
 - Full ZIP backup/restore: exports words, variants, categories, and media files into a ZIP archive; imports via merge strategy (add new, skip existing)
 - Swipeable bottom-sheet modals with pan gesture dismiss
+- Keepsake Book: generates a shareable 9:16 Polaroid-style image of a baby's first words, with photo swap, save-to-device, and share
 
 **Targets:** Android (primary). APK built via EAS (`npm run build:apk`). iOS untested.
 
@@ -200,7 +201,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
   - `unit/` — pure logic (helpers, i18n catalogues, date utils, import helpers)
   - `integration/` — component tests (modals, UI components, database layer)
   - `screens/` — full screen render tests
-- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `expo-asset`.
+- Test setup is in `jest.setup.js` — mocks for `expo-sqlite`, `expo-file-system`, `expo-sharing`, `expo-router`, `react-native-safe-area-context`, `react-native-svg`, `expo-constants`, `expo-document-picker`, `expo-status-bar`, `expo-asset`, `react-native-view-shot`, `expo-media-library`, `react-native-qrcode-svg`.
 - The shared mock DB instance is exposed as `global.__mockDb` — reset mocks with `jest.clearAllMocks()` in `beforeEach`.
 - `react-test-renderer` version must exactly match the installed `react` version (enforced by RNTL at runtime).
 
@@ -210,7 +211,7 @@ E2E tests live in `__tests__/e2e/` as Maestro YAML flows. Run via `maestro test 
 
 - `app/index.tsx` — Splash/entry: initializes SQLite DB, hydrates `useSettingsStore`, then routes to `/(tabs)/home` or `/onboarding`.
 - `app/_layout.tsx` — Root layout: wraps everything in `<QueryClientProvider>` and `<I18nProvider>`.
-- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats with compact StatCards and "See the Progress" CTA), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `media.tsx` (global media browser with search/filter/sort), `more.tsx` (hamburger menu linking to Settings and Media), `settings.tsx` (categories, CSV export — hidden from tab bar, accessible via More screen), `progress.tsx` (analytics — monthly chart, category breakdown, recent words, coming soon placeholder — hidden from tab bar, accessible via "See the Progress" button on home).
+- `app/(tabs)/` — Tab navigator with: `home.tsx` (dashboard/stats with compact StatCards, "See the Progress" CTA, and KeepsakeHomeCard), `words.tsx` (word list + search), `variants.tsx` (pronunciation variants list), `memories.tsx` (timeline with KeepsakeSection header), `media.tsx` (global media browser with search/filter/sort), `more.tsx` (hamburger menu linking to Settings and Media), `settings.tsx` (categories, CSV export — hidden from tab bar, accessible via More screen), `progress.tsx` (analytics — monthly chart, category breakdown, recent words, coming soon placeholder — hidden from tab bar, accessible via "See the Progress" button on home).
 - `app/onboarding.tsx` — First-run flow; saves via `useSettingsStore.getState().setProfile()` + `setOnboardingDone()`.
 
 ### State Management
@@ -240,7 +241,8 @@ The app uses a three-tier state strategy:
 - `useProfilePhotoPicker({ onPhotoSelected, onPhotoRemoved? })` — shared photo picker UX hook; encapsulates `pickingPhoto` guard, camera/library source Alert, permission requests with denied-alert fallback, and remove confirm dialog. Callers provide callbacks for what to do after select/remove. Used in `home.tsx`, `onboarding.tsx`, and `EditProfileModal.tsx`.
 - `useTheme()` — returns the sex-adaptive theme; reads `sex` from `useSettingsStore`
 - `useNotifications()` — registers AppState + notification response listeners; implements the Reset Sequence (cancel on foreground, schedule on background), deep-links via `router.push(route)` on notification tap. Must be called inside `expo-router` context (rendered in `app/_layout.tsx` via a `NotificationHandler` wrapper component).
-- `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays
+- `useKeepsakeState()` / `useKeepsakeWords()` / `useCaptureKeepsake()` / `useSetPhotoOverride()` / `useSaveKeepsakeToLibrary()` / `useShareKeepsake()` — TQ hooks for keepsake book state, word queries, image capture, photo overrides, save, and share
+- `queryKeys.ts` — centralized `QUERY_KEYS` + `*_MUTATION_KEYS` arrays (includes `keepsakeState`, `keepsakeWords`, `KEEPSAKE_MUTATION_KEYS`)
 
 **Stores** (`src/stores/`):
 - `useSettingsStore` — `name`, `sex`, `birth`, `isOnboardingDone`; `hydrate()`, `setProfile()`, `setOnboardingDone()`
@@ -268,9 +270,9 @@ components/hooks → services → repositories → db/client
 
 **Migrations** (`src/db/migrator.ts`): Lightweight schema version runner using a `schema_migrations` table. Uses sync methods since it runs at startup. Migration files in `src/db/migrations/` export `{ version, name, up(db), down(db) }`.
 
-**Repositories** (`src/repositories/`): Per-entity SQL modules — `categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`, `notificationRepository.ts`. No React, hooks, or Zustand. All SQL uses `?` placeholders — never string interpolation.
+**Repositories** (`src/repositories/`): Per-entity SQL modules — `categoryRepository.ts`, `wordRepository.ts`, `variantRepository.ts`, `settingsRepository.ts`, `assetRepository.ts`, `dashboardRepository.ts`, `csvRepository.ts`, `notificationRepository.ts`, `keepsakeRepository.ts`. No React, hooks, or Zustand. All SQL uses `?` placeholders — never string interpolation.
 
-**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `notification_state` (key/value store for notification bookkeeping), `schema_migrations`.
+**Schema:** `categories`, `words`, `variants`, `settings` (key/value store for locale and onboarding flag), `assets` (media attachments for words and variants), `notification_state` (key/value store for notification bookkeeping), `keepsake_state` (key/value store for keepsake book generation state and photo overrides), `schema_migrations`.
 
 **Assets table:** Stores metadata for audio/photo/video files. Uses `parent_type` (`word`|`variant`|`profile`) + `parent_id` as a polymorphic foreign key. Profile photos use `parent_type='profile'`, `parent_id=1` as a singleton. Files live in `Documents/media/{words|variants|profile}/{parentId}/{audio|photos|videos}/`. Cascade deletion removes assets when a word or variant is deleted. `getWords()` and `getAllVariants()` include an `asset_count` subquery.
 
@@ -288,7 +290,7 @@ components/hooks → services → repositories → db/client
 
 **Photo picker pattern:** Camera + gallery are both supported via an `Alert.alert` source picker ("Take Photo" / "Choose from Library" / "Cancel"). `handlePickPhoto` is synchronous (shows Alert, sets `pickingPhoto` guard). `launchPicker(source)` is async: requests the appropriate permission (`requestCameraPermissionsAsync` or `requestMediaLibraryPermissionsAsync`), then launches the picker. Used consistently in `EditProfileModal` and `app/onboarding.tsx`.
 
-**Dependencies:** `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage), `expo-notifications` (local notification scheduling and permission management).
+**Dependencies:** `expo-audio` (audio recording/playback), `expo-image-picker` (camera/gallery), `expo-file-system` (persistent storage), `expo-notifications` (local notification scheduling and permission management), `react-native-view-shot` (off-screen view capture for keepsake image), `expo-media-library` (save keepsake image to camera roll), `react-native-qrcode-svg` (QR code generation for keepsake watermark).
 
 ### Media Capture & Linking Layer
 
@@ -300,6 +302,26 @@ Media capture is orchestrated globally at tab level:
 - `src/components/MediaChips.tsx` displays pending/saved media chips in edit contexts with remove and preview/play interactions.
 - `src/components/AudioPlayerInline.tsx` provides compact audio playback triggers used in word/variant list metadata rows.
 - `src/components/EditAssetModal.tsx` — bottom-sheet modal to rename assets and relink them to different words/variants; used by `app/(tabs)/media.tsx`.
+
+### Keepsake Book
+
+Generates a shareable 9:16 (1080×1920) Polaroid-style image card showing a baby's first words, with photo swap, save-to-device, and share.
+
+**Types** (`src/types/keepsake.ts`): `KeepsakeWord` (id, word, dateAdded, photoUri, categoryEmoji), `KeepsakeState` (isGenerated, generatedAt, photoOverrides).
+
+**Repository** (`src/repositories/keepsakeRepository.ts`): CRUD for `keepsake_state` key/value table + `getEarliestWords(limit)`, `getWordPhotoFilename(wordId)`, `getTotalWordCount()`.
+
+**Service** (`src/services/keepsakeService.ts`): `loadKeepsakeState` (self-heals when DB says generated but file missing), `getKeepsakeWords` (resolves photo overrides then falls back to word's first photo asset), `captureKeepsake` (react-native-view-shot), `setPhotoOverride` / `clearPhotoOverride`, `shareKeepsake` (expo-sharing), `saveKeepsakeToLibrary` (expo-media-library).
+
+**keepsake_state keys:** `keepsake_generated`, `keepsake_generated_at`, `photo_override_{wordId}`.
+
+**Components** (`src/components/keepsake/`):
+- `KeepsakeCard.tsx` — Off-screen 1080×1920 Polaroid card with adaptive layout (1/2/3 frames). Rich scattered emoji/Unicode decorations (~40 elements: stars, moons, bears, balloons). Personalized title (`"{name}'s First Words"` via settings store). Watermark with app icon, locale-aware QR code (`react-native-qrcode-svg`), and domain text. `forwardRef` for capture. Helper exports: `getRotation(id)`, `formatDateForCard(dateStr)`.
+- `KeepsakePreviewModal.tsx` — Full-screen modal with scaled preview, photo swap touch targets (camera badge), save/share buttons with safe area inset padding. Hidden capture card uses `opacity: 0.01` (not off-screen positioning) to ensure Android GPU renders it for `captureRef`.
+- `KeepsakeSection.tsx` — Memories screen header: CTA when no keepsake, thumbnail when generated. Hidden when no words exist.
+- `KeepsakeHomeCard.tsx` — Home screen compact card: hint text or thumbnail row. Navigates to `/(tabs)/memories`.
+
+**File storage:** `Documents/media/keepsake/keepsake.jpg`. Migration `0006_add-keepsake-state` creates the `keepsake_state` table.
 
 ### Local Notification System
 

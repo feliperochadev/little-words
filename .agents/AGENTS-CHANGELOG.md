@@ -2,6 +2,163 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-04_1
+
+**[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**
+
+- `__tests__/unit/migrations.test.ts`: added migration 0006 (`add-keepsake-state`) `up`/`down` tests — covers CREATE TABLE and DROP TABLE calls — reaches 100% (was 66.7%)
+- `__tests__/integration/notificationService.test.ts`: added `handleWordAdded` with pt-BR locale test (covers `getMilestoneStrings` pt-BR branch) and `scheduleAll` with unknown locale test (covers `getCatalog ?? enUS` fallback branch) — covers 3 previously uncovered conditions (was 76.9%)
+- `__tests__/integration/KeepsakeCard.test.tsx` (NEW): full render tests for `KeepsakeCard` — covers OneWordLayout, TwoWordLayout, ThreeWordLayout, photoUri present/absent, categoryEmoji null fallback, empty name fallback, elevated=false, sex=girl/null — covers 4 uncovered lines and 7 uncovered conditions (was 86.3%)
+
+### 2026-04-03_2
+
+**[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**
+
+- `__tests__/unit/migrations.test.ts` (NEW): full `up`/`down` tests for migrations 0003 and 0004 — both reach 100% line/branch coverage (were 25% and 53.8%)
+- `__tests__/integration/BrandHeader.test.tsx`: added tagline and custom-style prop tests — reaches 100% line coverage (was 33.3%)
+- `__tests__/integration/BottomSheet.test.tsx`: added `scrollable={true}` prop test — reaches 100% coverage (was 88.9%)
+- `__tests__/integration/SortBar.test.tsx`: added no-testID rendering test covering the `testID ?` conditional branches — reaches 100% coverage (was 89.5%)
+- `__tests__/unit/categoryKeys.test.ts`: added empty-string and whitespace-only tests for `canonicalizeCategoryName` early-return branch — reaches 100% line coverage (was 87%)
+- `__tests__/unit/csvExport.test.ts`: added `getAllDataForCSV` with category resolver test; `__tests__/integration/csvExport.test.ts`: added non-Error rejection tests for `shareCSV` and `saveCSVToDevice` covering `getErrorMessage` false branch
+- `__tests__/integration/DatePickerField.test.tsx`: added `WheelDatePickerModal` direct tests — future date alert, cancel button, and `initialDate` sync — reaches 92%+ coverage (was 86.1%)
+- `__tests__/screens/settings.test.tsx`: added `permissionDenied` hint, sex-display dash, and "Export First" danger-zone button tests — reaches 90.26% line coverage (was 86.5%)
+- `__tests__/integration/AddVariantModal.test.tsx`: added "no words found" and "variant text but no word selected" tests covering guard branches — reaches 96.25% (was 87%)
+- `__tests__/integration/AddWordModal.test.tsx`: added `creating-word` phase describe block with `useMediaCapture` mock — covers `resetCapture` on cancel, `onWordCreated` on save, and `prefilledWordName` — reaches 99.02% line coverage (was 87.6%)
+
+### 2026-04-03_1
+
+**[fix] Translate built-in category names in category-explorer notification**
+
+- `notificationService.ts`: added `LOCALE_CATALOGS` record and `translateCategoryName(key, locale)` helper that resolves built-in category DB keys via the i18n catalog (`catalog.categories[key]`). No locale-specific ternaries — new locales only need an entry in the map.
+- Applied translation when mapping `emptyCategoryRows` into `emptyCategoryNames`, fixing the bug where pt-BR users received notifications like "Olivia já conhece palavras de toys?" instead of "…brinquedos?".
+- Added integration tests for pt-BR translation (`'toys'` → `'Brinquedos'`), user-created category passthrough, and updated en-US expectation (`'Animals'`, `'Food'`).
+
+### 2026-04-02_1
+
+**[security] npm audit fix — update package-lock.json**
+
+- Ran `npm audit fix` to resolve security advisories in transitive dependencies.
+- Only `package-lock.json` changed; no direct dependency versions modified.
+
+### 2026-03-27_10
+
+**[fix] SonarCloud issues on PR #60: array-index keys, re-export pattern, coverage, duplication**
+
+- KeepsakeCard.tsx: replaced array-index keys (key={i}) with stable position-based keys (key=`icon/text-{top}-{left}`) in DecorationLayer map.
+- keepsakeService.ts: converted `export { getTotalWordCount }` (re-export via import) to `export { getTotalWordCount } from '../repositories/keepsakeRepository'` per Sonar S7763.
+- KeepsakeSection.tsx: extracted duplicate sectionLabelRow JSX into a local const to eliminate internal duplication, reducing new_code duplicated_lines_density.
+- KeepsakePreviewModal.tsx coverage raised from 67.8% to 91.9%: added tests for camera/library permission granted/denied, swap-then-pick flows, save PERMISSION_DENIED error path, share error path, and Linking.openSettings button.
+- KeepsakeSection.tsx coverage raised from 72.7% to 100%: added tests for pressing create/thumbnail buttons to open modal and pressing close button.
+- home.tsx coverage raised from 84.3% to 100%: added tests for pull-to-refresh, action=add-word deep-link, home-memories-header press, home-timeline-section press.
+
+### 2026-03-27_09
+
+**[fix] Enhance keepsake-book: fix "Baby's First Words" — pass name/sex as props to KeepsakeCard**
+
+- KeepsakeCard no longer reads from Zustand store internally; `name` and `sex` are now required props.
+- KeepsakePreviewModal reads `name`, `sex`, and `isHydrated` from the settings store and re-hydrates on open if needed; passes them to both the visible preview and the hidden capture KeepsakeCard.
+- KeepsakePreviewModal tests now seed the settings store with `name: 'Noah'` and `sex: 'boy'` in `beforeEach`.
+- Builds on 2026-03-27_01-keepsake-book.
+
+### 2026-03-27_08
+
+**[fix] Enhance keepsake-book: pt-BR gender, home timeline nav, section icons, centered thumbnail, tappable keepsake area**
+
+- pt-BR keepsake card title now uses "Livro da" for girls and "Livro de" for boys/neutral via new `sectionTitleFemale` key and `getHomeCardTitle` helper.
+- Home memories card: mini timeline wrapped in `TouchableOpacity` to navigate to Memories, with a "Timeline" section label (`time-outline` icon) above the items.
+- KeepsakeSection (memories screen): removed 2-column layout and "Share" hint — thumbnail is now centered without a title. `albums-outline` icon added to keepsake section label; `gift-outline` replaced by `time-outline` on the timeline label.
+- Memories screen header icon updated from `gift-outline` to `time-outline` (both main and error states).
+- KeepsakeSection: entire keepsake area (label + whitespace + thumbnail) is now a single `TouchableOpacity` when generated, so pressing anywhere opens the modal.
+- KeepsakeHomeCard: now shows section label at top + centered thumbnail with no text below; title text below the preview removed.
+- Builds on 2026-03-27_01-keepsake-book.
+
+### 2026-03-27_07
+
+**[fix] Enhance keepsake-book: memories 2-column layout, shadow fix, home card modal navigation**
+
+- Memories screen: `KeepsakeSection` now shows a section label "Keepsake Book" with a 2-column row (title left, thumbnail right) when generated, and a "Timeline" section label before the word list.
+- Shadow artifact: fixed the faint bottom-left shadow during save/share by passing `elevated={false}` to the hidden capture card, suppressing Android's `elevation`-based shadow on polaroid frames without affecting the captured image.
+- Home card: `KeepsakeHomeCard` now opens `KeepsakePreviewModal` directly (both thumbnail and hint taps) instead of navigating to Memories; removed duplicate chevron arrow; fixed broken title placeholder by interpolating the child's name via settings store.
+- Builds on 2026-03-27_01-keepsake-book.
+
+### 2026-03-27_06
+
+**[fix] Enhance keepsake-book: fix save/share failing on repeated attempts**
+
+- Replaced fixed capture timing with a mount-readiness wait (`cardRef.current`) before triggering keepsake capture, with a brief post-mount settle delay for layout stability.
+- Prevents intermittent second-attempt failures that surfaced as "Could not generate image. Please try again" after one successful save/share.
+- Added integration regressions for two consecutive save actions and two consecutive share actions in the keepsake preview modal.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_05
+
+**[fix] Enhance keepsake-book: final layout correction for balloon/photo/bear placement**
+
+- Moved both balloons farther down so they sit below (not above/over) the two top photos.
+- Shifted the keepsake photo composition upward by translating the frames container to better match requested balance.
+- Moved the bear back to the left side and aligned its height with the watermark band.
+- Kept a larger star in the prior right-side bear area.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_04
+
+**[fix] Enhance keepsake-book: reposition top icons/decorations, remove persistent shadow, restore save/share capture**
+
+- Moved top balloons down to sit just above the two upper photo frames.
+- Replaced the original top-corner balloon spots with icon-style decorations: `book-outline` on the left and `chatbubble-ellipses-outline` on the right (matching Home profile avatar visual language).
+- Moved the bottom-right bear lower to align with the watermark baseline and added a replacement star at the previous bear position.
+- Removed persistent dark shadow bleeding into the action-button/nav area by mounting the hidden capture card only during capture.
+- Fixed save/share capture errors by passing `viewRef.current` to `captureRef` and waiting for the hidden capture card to render before capture.
+- Added regression assertion in keepsake service tests to ensure `captureRef` is invoked with the concrete view node.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_03
+
+**[fix] Enhance keepsake-book: pt-BR title article, preview icon overlap, watermark domain, decoration positioning**
+
+- Updated keepsake pt-BR title grammar by child sex: `do {{name}}` for boys and `da {{name}}` for girls, with neutral fallback `de {{name}}`.
+- Hid preview camera badges on frames that already contain a photo to avoid icon overlap on top of real images (frame tap-to-swap remains available).
+- Switched watermark text to locale domains: `palavrinhas.app` (`pt-BR`) and `littlewordsapp.com` (`en-US`).
+- Rebalanced bottom decorations to match requested composition: moved/enlarged bear+star emphasis to bottom-left, removed the bottom-right bear, and added a larger star in its place.
+- Softened polaroid shadow to remove the unintended dark area near the bottom-right region.
+- Added tests for title/article selection and conditional preview badge visibility.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_02
+
+**[fix] Enhance keepsake-book: Fix capture, button overlap, watermark, decorations, title**
+
+- Fixed Android capture failure: replaced off-screen card positioning (`left:-9999`) with `opacity:0.01` so the GPU renders the view for `captureRef`.
+- Fixed action buttons overlapping Android bottom nav: added `useSafeAreaInsets().bottom` padding.
+- Enhanced watermark: added app icon (bundled `icon_192.png`), QR code via `react-native-qrcode-svg` (locale-aware URL), and larger domain text.
+- Enriched background decorations: ~40 scattered emoji/Unicode elements (stars, moons, bears, balloons) matching the reference image's visual style.
+- Personalized title: `"{{name}}'s First Words"` / `"Primeiras Palavras de {{name}}"` using child name from settings store.
+- Added `watermarkAppName` i18n key in both locales.
+- Added `react-native-qrcode-svg` dependency; added jest mock in `jest.setup.js`.
+- Builds on implementation `2026-03-27_01-keepsake-book`.
+
+### 2026-03-27_01
+
+**[feature] Keepsake Book: shareable 9:16 Polaroid-style image of a baby's first words**
+
+- Created `src/types/keepsake.ts` with `KeepsakeWord` and `KeepsakeState` interfaces.
+- Created migration `0006_add-keepsake-state` adding `keepsake_state` key/value table; registered in `src/db/migrations/index.ts`.
+- Created `src/repositories/keepsakeRepository.ts` with CRUD for `keepsake_state`, `getEarliestWords`, `getWordPhotoFilename`, `getTotalWordCount`.
+- Created `src/services/keepsakeService.ts` orchestrating state loading (with self-heal), word/photo resolution, capture (react-native-view-shot), photo overrides, share (expo-sharing), and save-to-library (expo-media-library).
+- Created `src/hooks/useKeepsake.ts` with TanStack Query hooks: `useKeepsakeState`, `useKeepsakeWords`, `useCaptureKeepsake`, `useSetPhotoOverride`, `useSaveKeepsakeToLibrary`, `useShareKeepsake`.
+- Added `keepsakeState`, `keepsakeWords` query keys and `KEEPSAKE_MUTATION_KEYS` to `src/hooks/queryKeys.ts`.
+- Created `src/components/keepsake/KeepsakeCard.tsx` — off-screen 1080×1920 Polaroid card with adaptive 1/2/3-frame layout, emoji decorations, and `forwardRef` for capture.
+- Created `src/components/keepsake/KeepsakePreviewModal.tsx` — full-screen preview modal with photo swap, save, and share actions.
+- Created `src/components/keepsake/KeepsakeSection.tsx` — Memories screen header (CTA or thumbnail).
+- Created `src/components/keepsake/KeepsakeHomeCard.tsx` — Home screen compact card (hint or thumbnail).
+- Modified `app/(tabs)/memories.tsx` to include `KeepsakeSection` as `ListHeaderComponent`.
+- Modified `app/(tabs)/home.tsx` to include `KeepsakeHomeCard` in the memories card.
+- Added `keepsake` i18n namespace (17 keys) to `en-US.ts` and `pt-BR.ts`.
+- Added `react-native-view-shot` and `expo-media-library` dependencies.
+- Added jest mocks for `react-native-view-shot` and `expo-media-library` in `jest.setup.js`.
+- Updated migrator test to include migration 6 in "all applied" assertion.
+[test] Added 48 tests: `keepsakeRepository.test.ts` (13), `keepsakeService.test.ts` (17), `keepsakeCard.test.ts` (6), `KeepsakePreviewModal.test.tsx` (6), `KeepsakeSection.test.tsx` (3), `KeepsakeHomeCard.test.tsx` (3).
+
 ### 2026-03-26_04
 
 [fix] Extract `checkAndShowPriming()` from `handleWordAdded()` in `notificationService.ts` and call it from all content-save paths: `useSaveAsset` onSuccess in `useAssets.ts`, `linkMediaToWord`/`linkMediaToVariant`/`saveWithoutLinking` in `MediaCaptureProvider.tsx`, and text/CSV and ZIP imports in `ImportModal.tsx`; priming modal now triggers after any first content action, not only after adding the first word via the add-word modal

@@ -16,6 +16,7 @@ import { useFocusEffect } from 'expo-router';
 import { EmptyState } from '../../src/components/UIComponents';
 import { TimelineItem } from '../../src/components/TimelineItem';
 import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { KeepsakeSection } from '../../src/components/keepsake/KeepsakeSection';
 import { useI18n } from '../../src/i18n/i18n';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useMemoriesInfinite } from '../../src/hooks/useMemories';
@@ -120,7 +121,7 @@ export default function MemoriesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.header}>
-          <Ionicons name="gift-outline" size={20} color={colors.primary} />
+          <Ionicons name="time-outline" size={20} color={colors.primary} />
           <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tabs.memories')}</Text>
         </View>
         <EmptyState
@@ -140,7 +141,7 @@ export default function MemoriesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Ionicons name="gift-outline" size={20} color={colors.primary} />
+        <Ionicons name="time-outline" size={20} color={colors.primary} />
         <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tabs.memories')}</Text>
       </View>
 
@@ -158,6 +159,7 @@ export default function MemoriesScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={200}
           removeClippedSubviews
+          ListHeaderComponent={<KeepsakeSection totalWords={items.length} />}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={
             <EmptyState

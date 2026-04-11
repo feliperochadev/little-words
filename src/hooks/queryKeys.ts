@@ -15,6 +15,8 @@ export const QUERY_KEYS = {
     ['assets', parentType, parentId, assetType] as const,
   allAssets: (search?: string, assetType?: AssetType | null, sortKey?: string) =>
     ['allAssets', { search: search ?? '', assetType: assetType ?? null, sortKey: sortKey ?? 'date_desc' }] as const,
+  keepsakeState: () => ['keepsakeState'] as const,
+  keepsakeWords: () => ['keepsakeWords'] as const,
 } as const;
 
 // Keys to invalidate after word mutations (word count + variant count affect dashboard)
@@ -50,4 +52,10 @@ export const ASSET_MUTATION_KEYS = [
   ['dashboard'],
   ['memories'],
   ['memoriesInfinite'],
+] as const;
+
+// Keys to invalidate after keepsake mutations
+export const KEEPSAKE_MUTATION_KEYS = [
+  ['keepsakeState'],
+  ['keepsakeWords'],
 ] as const;

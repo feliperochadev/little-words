@@ -255,7 +255,49 @@ describe('scheduleAll', () => {
         strings: expect.objectContaining({ nudge3dTitle: 'New sounds today?' }),
         childName: 'Sofia',
         totalWords: 12,
-        emptyCategoryNames: ['animals', 'food'],
+        emptyCategoryNames: ['Animals', 'Food'],
+      }),
+      expect.any(Date),
+    );
+  });
+
+  it('translates empty category names to pt-BR when locale is pt-BR', async () => {
+    setupEnabledPermissions();
+    getNotificationState
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Olivia');
+    getTotalWordCount.mockResolvedValueOnce(5);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'toys' }, { name: 'animals' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emptyCategoryNames: ['Brinquedos', 'Animais'],
+      }),
+      expect.any(Date),
+    );
+  });
+
+  it('passes user-created category names unchanged regardless of locale', async () => {
+    setupEnabledPermissions();
+    getNotificationState
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Olivia');
+    getTotalWordCount.mockResolvedValueOnce(5);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'Minha Categoria' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emptyCategoryNames: ['Minha Categoria'],
       }),
       expect.any(Date),
     );
@@ -492,6 +534,48 @@ describe('handleWordAdded', () => {
   it('does not throw on error', async () => {
     getTotalWordCount.mockRejectedValueOnce(new Error('db error'));
     await expect(handleWordAdded()).resolves.toBeUndefined();
+  });
+});
+
+// ─── handleWordAdded with pt-BR locale ───────────────────────────────────────
+
+describe('handleWordAdded — pt-BR milestone strings', () => {
+  it('schedules milestone with pt-BR locale strings', async () => {
+    getTotalWordCount.mockResolvedValueOnce(10);
+    getSetting.mockResolvedValueOnce('pt-BR').mockResolvedValueOnce('Miguel');
+    getNotificationState
+      .mockResolvedValueOnce('1')  // isNotificationsEnabled
+      .mockResolvedValueOnce('1') // permission_requested (checkAndShowPriming)
+      .mockResolvedValueOnce('1') // permission_granted
+      .mockResolvedValueOnce(null); // milestone_10 not sent
+
+    await handleWordAdded();
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ identifier: 'milestone-10' }),
+    );
+  });
+});
+
+// ─── scheduleAll with unknown locale (getCatalog fallback) ───────────────────
+
+describe('scheduleAll — unknown locale falls back to en-US catalog', () => {
+  it('does not throw and calls buildSchedule for unknown locale', async () => {
+    // Force getCatalog ?? enUS fallback by using an unrecognized locale
+    getNotificationState
+      .mockResolvedValueOnce('1')  // notifications_enabled
+      .mockResolvedValueOnce('1') // permission_granted
+      .mockResolvedValueOnce(null) // last_schedule_run
+      .mockResolvedValueOnce(null) // last_backup_date
+      .mockResolvedValueOnce(null); // feature_discovery_sent
+    getSetting.mockResolvedValueOnce('fr-FR').mockResolvedValueOnce('Léa');
+    getTotalWordCount.mockResolvedValueOnce(3);
+    getWordCountSinceDate.mockResolvedValue(0);
+    getWordsWithUpcomingAnniversaries.mockResolvedValueOnce([]);
+    getEmptyCategoryNames.mockResolvedValueOnce([{ name: 'animals' }]);
+    getTotalNonProfileAssetCount.mockResolvedValueOnce(0);
+
+    await scheduleAll();
+    expect(buildSchedule).toHaveBeenCalled();
   });
 });
 

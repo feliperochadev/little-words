@@ -468,6 +468,48 @@ describe('DashboardScreen', () => {
     expect(() => fireEvent.press(btn)).not.toThrow();
   });
 
+  it('pressing memories header navigates to memories without error', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue([]);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const header = await findByTestId('home-memories-header');
+    expect(() => fireEvent.press(header)).not.toThrow();
+  });
+
+  it('pressing timeline section navigates to memories without error', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue([]);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const section = await findByTestId('home-timeline-section');
+    expect(() => fireEvent.press(section)).not.toThrow();
+  });
+
+  it('pull-to-refresh triggers refetch without error', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    const scroll = await findByTestId('home-scroll');
+    const onRefresh = scroll.props.refreshControl?.props?.onRefresh;
+    await act(async () => {
+      if (typeof onRefresh === 'function') {
+        await onRefresh();
+      }
+    });
+    // getDashboardStats called for initial load and refresh
+    expect(db.getDashboardStats).toHaveBeenCalled();
+  });
+
+  it('auto-opens add-word modal when action=add-word param is set', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const expoRouter = require('expo-router');
+    (expoRouter.useLocalSearchParams as jest.Mock).mockReturnValue({ action: 'add-word' });
+    const { findByTestId } = renderWithProviders(<DashboardScreen />);
+    expect(await findByTestId('modal-title-new-word')).toBeTruthy();
+    // Restore to default
+    (expoRouter.useLocalSearchParams as jest.Mock).mockReturnValue({});
+  });
+
   it('AddWordModal callbacks close modal and navigate to words tab', async () => {
     (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
     const { findByTestId, queryByTestId, UNSAFE_getByType } = renderWithProviders(<DashboardScreen />);

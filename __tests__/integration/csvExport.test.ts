@@ -84,4 +84,22 @@ describe('csvExport', () => {
       expect(exportCSV).toBe(shareCSV);
     });
   });
+
+  describe('non-Error exceptions (getErrorMessage false branch)', () => {
+    it('shareCSV returns "Unknown error" for non-Error rejection', async () => {
+      mockDb.getAllAsync.mockRejectedValueOnce('plain string error');
+      const result = await shareCSV(resolver, header, t);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+      mockDb.getAllAsync.mockResolvedValue([]);
+    });
+
+    it('saveCSVToDevice returns "Unknown error" for non-Error rejection', async () => {
+      mockDb.getAllAsync.mockRejectedValueOnce(42);
+      const result = await saveCSVToDevice(resolver, header, t);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+      mockDb.getAllAsync.mockResolvedValue([]);
+    });
+  });
 });

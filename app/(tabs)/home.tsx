@@ -26,6 +26,7 @@ import { ProfileAvatar } from '../../src/components/ProfileAvatar';
 import { AddWordModal } from '../../src/components/AddWordModal';
 import { TimelineItem } from '../../src/components/TimelineItem';
 import { AssetPreviewOverlays } from '../../src/components/AssetPreviewOverlays';
+import { KeepsakeHomeCard } from '../../src/components/keepsake/KeepsakeHomeCard';
 import { getAgeText, getGreeting } from '../../src/utils/dashboardHelpers';
 import type { TimelineItem as TimelineItemModel } from '../../src/types/domain';
 
@@ -190,20 +191,33 @@ export default function HomeScreen() {
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </TouchableOpacity>
-            <View style={styles.miniTimeline}>
-              {recentMemories.map((item, idx) => (
-                <TimelineItem
-                  key={`${item.item_type}-${item.id}`}
-                  item={item}
-                  index={idx}
-                  isFirst={idx === 0}
-                  isLast={idx === recentMemories.length - 1}
-                  compact
-                  onPlayAudio={handlePlayAudio}
-                  onViewPhoto={handleViewPhoto}
-                />
-              ))}
-            </View>
+            <KeepsakeHomeCard />
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/memories')}
+              activeOpacity={0.7}
+              testID="home-timeline-section"
+            >
+              <View style={[styles.timelineSectionHeader, { borderTopColor: colors.border }]}>
+                <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+                <Text style={[styles.timelineSectionLabel, { color: colors.textSecondary }]}>
+                  {t('memories.timelineLabel')}
+                </Text>
+              </View>
+              <View style={styles.miniTimeline}>
+                {recentMemories.map((item, idx) => (
+                  <TimelineItem
+                    key={`${item.item_type}-${item.id}`}
+                    item={item}
+                    index={idx}
+                    isFirst={idx === 0}
+                    isLast={idx === recentMemories.length - 1}
+                    compact
+                    onPlayAudio={handlePlayAudio}
+                    onViewPhoto={handleViewPhoto}
+                  />
+                ))}
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.seeAllBtn, { borderTopColor: colors.border }]}
               onPress={() => router.push('/(tabs)/memories')}
@@ -298,7 +312,9 @@ const styles = StyleSheet.create({
   addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },
   addWordBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minHeight: 48 },
   addWordBtnText: { fontSize: 16, fontWeight: '700' },
-  miniTimeline: { marginTop: 8 },
+  miniTimeline: { marginTop: 4 },
+  timelineSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 4 },
+  timelineSectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, marginTop: 2, borderTopWidth: StyleSheet.hairlineWidth },
   seeAllText: { fontSize: 13, fontWeight: '700' },
 });

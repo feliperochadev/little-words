@@ -1,8 +1,11 @@
 import React from 'react';
-import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
-import { FlatList } from 'react-native';
+import { render, fireEvent, waitFor, within, act } from '@testing-library/react-native';
+import { FlatList, Alert } from 'react-native';
 import { I18nProvider } from '../../src/i18n/i18n';
 import { DatePickerField } from '../../src/components/DatePickerField';
+import { WheelDatePickerModal } from '../../src/components/WheelDatePickerModal';
+
+jest.spyOn(Alert, 'alert');
 
 jest.mock('../../src/services/settingsService', () => ({
   ...jest.requireActual('../../src/services/settingsService'),
@@ -160,6 +163,88 @@ describe('DatePickerField', () => {
     // onChange should have been called (day 2 = value 2)
 
     jest.useRealTimers();
+  });
+
+  it('WheelDatePickerModal shows alert when confirmed date is in the future', async () => {
+    // Set system time to Jan 1 of current year so Dec 31 same year is future
+    jest.useFakeTimers();
+    const pastDate = new Date('2025-01-01T12:00:00.000Z');
+    jest.setSystemTime(pastDate);
+
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    // initialDate = Dec 31 2025 (future relative to mocked "today" = Jan 1 2025)
+    const futureDate = new Date(2025, 11, 31); // Dec 31, 2025
+    const { getByTestId } = render(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible
+          onClose={onClose}
+          onConfirm={onConfirm}
+          accentColor="#FF6B9D"
+          initialDate={futureDate}
+        />
+      </I18nProvider>
+    );
+
+    await act(async () => {});
+    fireEvent.press(getByTestId('wheel-date-confirm-btn'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalled();
+    });
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
+  });
+
+  it('WheelDatePickerModal cancel button calls onClose', async () => {
+    const onClose = jest.fn();
+    const { getByTestId } = render(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible
+          onClose={onClose}
+          onConfirm={jest.fn()}
+          accentColor="#FF6B9D"
+        />
+      </I18nProvider>
+    );
+    fireEvent.press(getByTestId('wheel-date-cancel-btn'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('WheelDatePickerModal syncs from initialDate when visible changes', async () => {
+    const onConfirm = jest.fn();
+    const initialDate = new Date(2023, 5, 15); // June 15, 2023
+    const { getByTestId, rerender } = render(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible={false}
+          onClose={jest.fn()}
+          onConfirm={onConfirm}
+          accentColor="#FF6B9D"
+          initialDate={initialDate}
+        />
+      </I18nProvider>
+    );
+    rerender(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible
+          onClose={jest.fn()}
+          onConfirm={onConfirm}
+          accentColor="#FF6B9D"
+          initialDate={initialDate}
+        />
+      </I18nProvider>
+    );
+    await act(async () => {});
+    // Confirm with the synced date (2023 is in the past — no alert)
+    fireEvent.press(getByTestId('wheel-date-confirm-btn'));
+    await waitFor(() => {
+      expect(onConfirm).toHaveBeenCalled();
+    });
   });
 
   it('WheelColumn onScrollEndDrag is suppressed when momentum follows', async () => {
