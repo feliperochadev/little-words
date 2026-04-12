@@ -2,6 +2,48 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-12_4
+
+**[feature] Enhance 2026-04-12_01-ux-improvements-part-1: variants screen title icon chatbubbles-outline → chatbubble-outline**
+
+- `app/(tabs)/variants.tsx`: changed `titleIconName` from `chatbubbles-outline` to `chatbubble-outline`, matching the standardized single-bubble icon across AddVariantModal, EditAssetModal, and the variant tab bar
+- `__tests__/screens/variants.test.tsx`: updated assertion to expect `chatbubble-outline`
+- Builds on: 2026-04-12_3
+
+### 2026-04-12_3
+
+**[feature] Enhance 2026-04-12_01-ux-improvements-part-1: replace 🗣️ emoji with chatbubble-outline icon in AddVariantModal title**
+
+- `src/components/AddVariantModal.tsx`: replaced `<Text style={s.titleEmoji}>🗣️</Text>` with `<Ionicons name="chatbubble-outline" size={22} color={colors.secondary} />` in the modal title header (both new and edit modes); removed `titleEmoji` style from StyleSheet
+- Consistent with the `chatbubble-outline` icon standardized across tab bar, EditAssetModal, and KeepsakeCard in this implementation
+- Builds on: 2026-04-12_2
+
+### 2026-04-12_2
+
+**[feature] Enhance 2026-04-12_01-ux-improvements-part-1: font tuning, outline tab icon, variant emoji icon**
+
+- `app/onboarding.tsx`, `app/(tabs)/home.tsx`, `src/components/ProfileAvatar.tsx`, `src/components/EditProfileModal.tsx`: decreased all Part 1 font increases by 10% (previewDate 17→15, profileGreeting 17→15/lineHeight 22→20, profileAge 16→14, tapHintText 12→11, photoHint 16→14)
+- `app/(tabs)/_layout.tsx`: variant tab bar icon `chatbubble` → `chatbubble-outline` (hollow interior, matching the style in EditAssetModal)
+- `src/components/AddVariantModal.tsx`: extracted 🗣️ emoji from i18n strings into a standalone `<Text style={s.titleEmoji}>` element in the header; added `titleRow`/`titleRowLeft`/`titleEmoji` styles; removed `titleLeft` (replaced by `titleRowLeft`)
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: removed `🗣️ ` prefix from `addVariant.titleNew` and `addVariant.titleEdit` (UI decorations belong in the component, not in translatable strings)
+- `.agents/standards/design-system.md`: updated Variants tab icon entry to `chatbubble-outline`
+- Builds on: 2026-04-12_1
+
+### 2026-04-12_1
+
+**[feature] UX improvements part 1 — gender checkmark, font sizes, variant icon dot-removal**
+
+- `app/onboarding.tsx`: added ✓ checkmark to selected sex button (girl/boy), matching the language selector pattern (`fontSize: 13, fontWeight: '900'`, color = active sex color); `previewDate` font 13→17px; testIDs `onboarding-sex-girl-check` / `onboarding-sex-boy-check`
+- `app/(tabs)/home.tsx`: `profileGreeting` font 13→17px (lineHeight 18→22); `profileAge` font 12→16px
+- `src/components/ProfileAvatar.tsx`: `tapHintText` font 9→12px (all instances); top-right badge icon `chatbubble-ellipses-outline` → `chatbubble-outline`
+- `src/components/EditProfileModal.tsx`: added ✓ checkmark to selected sex button (same pattern as onboarding); `photoHint` font 12→16px; testIDs `edit-profile-sex-girl-check` / `edit-profile-sex-boy-check`
+- `app/(tabs)/_layout.tsx`: variant tab bar icon `chatbubble-ellipses` → `chatbubble` (same shape, no dots)
+- `src/components/EditAssetModal.tsx`: variant link picker icon `chatbubble-ellipses-outline` → `chatbubble-outline`
+- `src/components/keepsake/KeepsakeCard.tsx`: decorative icon `chatbubble-ellipses-outline` → `chatbubble-outline`
+- `.agents/standards/design-system.md`: updated Variants tab icon reference to `chatbubble` / `chatbubble-outline`
+- `__tests__/screens/onboarding.test.tsx`: 4 new checkmark tests (no selection, girl, boy, selection change)
+- `__tests__/integration/editProfileModal.test.tsx`: 4 new checkmark tests (pre-filled girl, switch to boy, null, move between)
+
 ### 2026-04-04_1
 
 **[test] Increase test coverage on SonarCloud-flagged files to ≥ 90%**

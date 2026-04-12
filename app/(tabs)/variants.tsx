@@ -117,7 +117,7 @@ export default function VariantsScreen() {
       <ListScreenControls
         colors={colors}
         title={t('variants.title')}
-        titleIconName="chatbubbles-outline"
+        titleIconName="chatbubble-outline"
         titleIconColor={colors.secondary}
         titleIconTestID="variants-title-icon"
         addButtonLabel={t('variants.addNew')}

@@ -127,7 +127,10 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
           </View>
 
           <View style={s.header}>
-            <Text style={[s.title, editVariant && s.titleLeft, { color: colors.text }]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            <View style={[s.titleRow, editVariant && s.titleRowLeft]}>
+              <Ionicons name="chatbubble-outline" size={22} color={colors.secondary} />
+              <Text style={[s.title, { color: colors.text }]} testID={editVariant ? 'modal-title-edit-variant' : 'modal-title-new-variant'}>{editVariant ? t('addVariant.titleEdit') : t('addVariant.titleNew')}</Text>
+            </View>
             {editVariant && (
               <TouchableOpacity style={[s.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="variant-delete-btn">
                 <Ionicons name="trash-outline" size={14} color={colors.error} />
@@ -253,8 +256,9 @@ const s = StyleSheet.create({
   handleWrap:   { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10, marginBottom: 10 },
   handle:       { width: 40, height: 4, borderRadius: 2 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title:        { fontSize: 22, fontWeight: '800', textAlign: 'center', flex: 1 },
-  titleLeft:    { textAlign: 'left' },
+  titleRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 8 },
+  titleRowLeft: { justifyContent: 'flex-start' },
+  title:        { fontSize: 22, fontWeight: '800' },
   deleteBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
   deleteBtnText:{ fontSize: 13, fontWeight: '700' },
   label:        { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },

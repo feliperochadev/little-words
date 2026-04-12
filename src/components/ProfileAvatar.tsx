@@ -98,7 +98,7 @@ export function ProfileAvatar({
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.secondary} />
+            <Ionicons name="chatbubble-outline" size={24} color={colors.secondary} />
           </View>
         </>
       )}
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hintContent: { alignItems: 'center' },
-  tapHintText: { fontSize: 9, textAlign: 'center', marginTop: 2, fontWeight: '600', opacity: 0.8 },
+  tapHintText: { fontSize: 11, textAlign: 'center', marginTop: 2, fontWeight: '600', opacity: 0.8 },
   badgeLg: { width: 42, height: 42 },
   badgeMd: { width: 36, height: 36 },
   badgeBottomLeft: { bottom: -6, left: -6 },

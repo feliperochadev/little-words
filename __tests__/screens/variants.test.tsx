@@ -93,7 +93,7 @@ describe('VariantsScreen', () => {
     const { findByTestId } = renderWithProviders(<VariantsScreen />);
     const titleIcon = await findByTestId('variants-title-icon');
     const sortIcon = await findByTestId('variants-sort-icon');
-    expect(titleIcon.props.name).toBe('chatbubbles-outline');
+    expect(titleIcon.props.name).toBe('chatbubble-outline');
     expect(sortIcon.props.name).toBe('calendar-outline');
   });
 

@@ -284,6 +284,37 @@ describe('OnboardingScreen', () => {
     });
   });
 
+  // ─── Sex checkmark ──────────────────────────────────────────────────────────
+
+  it('shows no sex checkmark when no sex is selected', async () => {
+    const { queryByTestId } = renderOnboarding();
+    expect(queryByTestId('onboarding-sex-girl-check')).toBeNull();
+    expect(queryByTestId('onboarding-sex-boy-check')).toBeNull();
+  });
+
+  it('shows girl checkmark when girl is selected', async () => {
+    const { findByText, findByTestId, queryByTestId } = renderOnboarding();
+    fireEvent.press(await findByText('Girl'));
+    expect(await findByTestId('onboarding-sex-girl-check')).toBeTruthy();
+    expect(queryByTestId('onboarding-sex-boy-check')).toBeNull();
+  });
+
+  it('shows boy checkmark when boy is selected', async () => {
+    const { findByText, findByTestId, queryByTestId } = renderOnboarding();
+    fireEvent.press(await findByText('Boy'));
+    expect(await findByTestId('onboarding-sex-boy-check')).toBeTruthy();
+    expect(queryByTestId('onboarding-sex-girl-check')).toBeNull();
+  });
+
+  it('moves checkmark from girl to boy when selection changes', async () => {
+    const { findByText, findByTestId, queryByTestId } = renderOnboarding();
+    fireEvent.press(await findByText('Girl'));
+    expect(await findByTestId('onboarding-sex-girl-check')).toBeTruthy();
+    fireEvent.press(await findByText('Boy'));
+    expect(await findByTestId('onboarding-sex-boy-check')).toBeTruthy();
+    expect(queryByTestId('onboarding-sex-girl-check')).toBeNull();
+  });
+
   it('does not save photo on continue when no photo selected (skip)', async () => {
     const assetService = require('../../src/services/assetService');
     const { findByText, findByPlaceholderText } = renderOnboarding();
