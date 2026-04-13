@@ -35,7 +35,7 @@ const HomeTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
 const WordsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
   <TabIcon name="book" color={color} focused={focused} />;
 const VariantsTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
-  <TabIcon name="chatbubble-ellipses" color={color} focused={focused} />;
+  <TabIcon name="chatbubble-outline" color={color} focused={focused} />;
 const MemoriesTabIcon = ({ color, focused }: { color: string; focused: boolean }) =>
   <TabIcon name="gift-outline" color={color} focused={focused} />;
 

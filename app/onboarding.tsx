@@ -141,10 +141,12 @@ export default function OnboardingScreen() {
             <TouchableOpacity style={[styles.sexBtn, isGirl && styles.sexBtnGirl]} onPress={() => setSex('girl')} testID="onboarding-sex-girl-btn">
               <Text style={styles.sexEmoji}>👧</Text>
               <Text style={[styles.sexLabel, isGirl && styles.sexLabelActiveGirl]}>{t('onboarding.girl')}</Text>
+              {isGirl && <Text style={[styles.sexCheck, { color: THEME_COLORS.profileGirl }]} testID="onboarding-sex-girl-check">✓</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={[styles.sexBtn, isBoy && styles.sexBtnBoy]} onPress={() => setSex('boy')} testID="onboarding-sex-boy-btn">
               <Text style={styles.sexEmoji}>👦</Text>
               <Text style={[styles.sexLabel, isBoy && styles.sexLabelActiveBoy]}>{t('onboarding.boy')}</Text>
+              {isBoy && <Text style={[styles.sexCheck, { color: THEME_COLORS.profileBoy }]} testID="onboarding-sex-boy-check">✓</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -239,6 +241,7 @@ const styles = StyleSheet.create({
   sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },
   sexEmoji: { fontSize: 22 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
+  sexCheck: { fontSize: 13, fontWeight: '900' },
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: THEME_COLORS.surface, borderRadius: 14,
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
   previewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center' },
   previewEmoji: { fontSize: 30 },
   previewName: { fontSize: 18, fontWeight: '900', flexShrink: 1 },
-  previewDate: { fontSize: 13, color: THEME_COLORS.textSecondary, flexShrink: 1 },
+  previewDate: { fontSize: 15, color: THEME_COLORS.textSecondary, flexShrink: 1 },
   continueBtn: {
     width: '100%', paddingVertical: 18, borderRadius: 18, alignItems: 'center',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,

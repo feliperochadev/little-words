@@ -321,8 +321,8 @@ export default {
 
   // ── Add Variant Modal ────────────────────────────────────────────────────────
   addVariant: {
-    titleNew: '🗣️ Nova Variante',
-    titleEdit: '🗣️ Editar Variante',
+    titleNew: 'Nova Variante',
+    titleEdit: 'Editar Variante',
     wordLabel: 'Palavra *',
     wordSearchPlaceholder: 'Buscar palavra...',
     noWordsFound: 'Nenhuma palavra encontrada',

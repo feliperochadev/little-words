@@ -336,7 +336,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
                             onPress={() => { setSelectedLink({ type: 'variant', id: v.id, label: v.variant }); setVariantSearch(''); setEditLinkMode('none'); }}
                             testID={`edit-asset-link-variant-${v.id}`}
                           >
-                            <Ionicons name="chatbubble-ellipses-outline" size={14} color={theme.colors.textMuted} />
+                            <Ionicons name="chatbubble-outline" size={14} color={theme.colors.textMuted} />
                             <Text style={[s.resultLabel, { color: theme.colors.text }]}>{v.variant}</Text>
                           </TouchableOpacity>
                         ))

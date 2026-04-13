@@ -73,7 +73,7 @@ const DECORATIONS: DecorationItem[] = [
   { content: '·', top: 80, left: 280, fontSize: 28, opacity: 0.25, color: '#E8B4B8' },
 
   // ── Top-right corner (dialog + stars) ──
-  { icon: 'chatbubble-ellipses-outline', top: 34, left: 900, fontSize: 72, opacity: 0.52, color: '#7A6B9A' },
+  { icon: 'chatbubble-outline', top: 34, left: 900, fontSize: 72, opacity: 0.52, color: '#7A6B9A' },
   { content: '⭐', top: 60, left: 850, fontSize: 28, opacity: 0.4 },
   { content: '✦', top: 30, left: 790, fontSize: 22, opacity: 0.35, color: '#F4D35E' },
   { content: '✧', top: 110, left: 900, fontSize: 16, opacity: 0.3, color: '#B8D8D0' },

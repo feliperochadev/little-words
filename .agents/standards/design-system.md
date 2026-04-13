@@ -185,7 +185,7 @@ import { Ionicons } from '@expo/vector-icons';
 |---|---|
 | Home tab | `home` |
 | Words tab | `book` |
-| Variants tab | `chatbubble-ellipses` |
+| Variants tab | `chatbubble-outline` (outline, no dots, hollow interior) |
 | Settings tab | `settings-sharp` |
 | Search | `search` |
 | Clear input | `close-circle` |

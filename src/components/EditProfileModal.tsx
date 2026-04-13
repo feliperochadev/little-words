@@ -148,6 +148,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
                 >
                   <Text style={s.sexEmoji}>👧</Text>
                   <Text style={[s.sexLabel, isGirl && s.sexLabelActiveGirl]}>{t('onboarding.girl')}</Text>
+                  {isGirl && <Text style={[s.sexCheck, { color: THEME_COLORS.profileGirl }]} testID="edit-profile-sex-girl-check">✓</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[s.sexBtn, isBoy && s.sexBtnBoy]}
@@ -156,6 +157,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
                 >
                   <Text style={s.sexEmoji}>👦</Text>
                   <Text style={[s.sexLabel, isBoy && s.sexLabelActiveBoy]}>{t('onboarding.boy')}</Text>
+                  {isBoy && <Text style={[s.sexCheck, { color: THEME_COLORS.profileBoy }]} testID="edit-profile-sex-boy-check">✓</Text>}
                 </TouchableOpacity>
               </View>
 
@@ -213,7 +215,7 @@ const s = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 20 },
   photoSection: { alignItems: 'center', gap: 8, marginBottom: 20 },
-  photoHint: { fontSize: 12 },
+  photoHint: { fontSize: 14 },
   removePhotoText: { fontSize: 13, fontWeight: '600' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
@@ -231,6 +233,7 @@ const s = StyleSheet.create({
   sexBtnBoy: { borderColor: THEME_COLORS.profileBoy, backgroundColor: THEME_COLORS.profileBoyBg },
   sexEmoji: { fontSize: 22 },
   sexLabel: { fontSize: 15, fontWeight: '600', color: THEME_COLORS.textSecondary },
+  sexCheck: { fontSize: 13, fontWeight: '900' },
   sexLabelActiveGirl: { color: THEME_COLORS.profileGirl, fontWeight: '800' },
   sexLabelActiveBoy: { color: THEME_COLORS.profileBoy, fontWeight: '800' },
   dateBtn: {

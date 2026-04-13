@@ -258,6 +258,37 @@ describe('EditProfileModal', () => {
     expect(Alert.alert).toHaveBeenCalledTimes(2); // source picker + remove confirm
   });
 
+  // ─── Sex checkmark ──────────────────────────────────────────────────────────
+
+  it('shows girl checkmark when sex is pre-filled as girl', async () => {
+    const { findByTestId, queryByTestId } = renderModal();
+    expect(await findByTestId('edit-profile-sex-girl-check')).toBeTruthy();
+    expect(queryByTestId('edit-profile-sex-boy-check')).toBeNull();
+  });
+
+  it('shows boy checkmark after switching sex to boy', async () => {
+    const { findByTestId, queryByTestId } = renderModal();
+    fireEvent.press(await findByTestId('edit-profile-sex-boy-btn'));
+    expect(await findByTestId('edit-profile-sex-boy-check')).toBeTruthy();
+    expect(queryByTestId('edit-profile-sex-girl-check')).toBeNull();
+  });
+
+  it('shows no checkmark when sex is null', async () => {
+    useSettingsStore.setState({ name: 'Luna', sex: null, birth: '2023-06-15', isOnboardingDone: true, isHydrated: true });
+    const { findByTestId, queryByTestId } = renderModal();
+    await findByTestId('edit-profile-title');
+    expect(queryByTestId('edit-profile-sex-girl-check')).toBeNull();
+    expect(queryByTestId('edit-profile-sex-boy-check')).toBeNull();
+  });
+
+  it('moves checkmark from girl to boy when tapping boy button', async () => {
+    const { findByTestId, queryByTestId } = renderModal();
+    expect(await findByTestId('edit-profile-sex-girl-check')).toBeTruthy();
+    fireEvent.press(await findByTestId('edit-profile-sex-boy-btn'));
+    expect(await findByTestId('edit-profile-sex-boy-check')).toBeTruthy();
+    expect(queryByTestId('edit-profile-sex-girl-check')).toBeNull();
+  });
+
   it('guards against double tap on picker', async () => {
     const { findByTestId } = renderModal();
     const avatar = await findByTestId('edit-profile-avatar');
