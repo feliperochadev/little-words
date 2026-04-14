@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_1
+
+**[fix] SonarCloud PR#66: replace `&&` null guard with optional chain in memories.tsx**
+
+- `app/(tabs)/memories.tsx:91`: replace `prevItem === null || prevItem.date_added !== item.date_added` with `prevItem?.date_added !== item.date_added` (rule `typescript:S6582`)
+
 ### 2026-04-13_7
 
 **[fix] SonarCloud coverage: remove dead code, add branch/callback coverage tests, document patterns**

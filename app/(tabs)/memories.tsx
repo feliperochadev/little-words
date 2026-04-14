@@ -88,7 +88,7 @@ export default function MemoriesScreen() {
 
   const renderItem = useCallback(({ item, index }: Readonly<{ item: TimelineItemModel; index: number }>) => {
     const prevItem = index > 0 ? items[index - 1] : null;
-    const showDate = prevItem === null || prevItem.date_added !== item.date_added;
+    const showDate = prevItem?.date_added !== item.date_added;
     return (
       <TimelineItem
         item={item}
