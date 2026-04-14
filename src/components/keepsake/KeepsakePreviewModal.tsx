@@ -177,7 +177,13 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
               {/* Tappable overlay for each word frame */}
               <View style={styles.previewWrapper}>
                 <View style={styles.scaledPreview}>
-                  <KeepsakeCard words={words} name={storeName} sex={storeSex} />
+                  <KeepsakeCard
+                    words={words}
+                    name={storeName}
+                    sex={storeSex}
+                    placeholderBadgeColor={colors.primary}
+                    placeholderBadgeIconColor={colors.textOnPrimary}
+                  />
                 </View>
                 {/* Touch targets over each polaroid */}
                 {words.map((word, idx) => (
@@ -186,15 +192,13 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
                     style={[styles.frameTouchTarget, getFramePosition(words.length, idx)]}
                     onPress={() => handlePhotoSwap(word)}
                     testID={`keepsake-swap-${idx}`}
-                    activeOpacity={0.7}
+                    activeOpacity={0.85}
                   >
                     {!word.photoUri && (
                       <View
-                        style={[styles.swapBadge, { backgroundColor: colors.primary }]}
+                        style={styles.swapBadgeHitArea}
                         testID={`keepsake-swap-badge-${idx}`}
-                      >
-                        <Ionicons name="camera-outline" size={14} color={colors.textOnPrimary} />
-                      </View>
+                      />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -333,16 +337,13 @@ const styles = StyleSheet.create({
   },
   frameTouchTarget: {
     position: 'absolute',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    padding: 4,
-  },
-  swapBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 4,
+  },
+  swapBadgeHitArea: {
+    width: 44,
+    height: 44,
   },
   actions: {
     flexDirection: 'row',

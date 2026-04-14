@@ -1,11 +1,12 @@
 import { unzipSync } from 'fflate';
-import { File as FSFile } from 'expo-file-system';
+import { File as FSFile, Paths } from 'expo-file-system';
 import { withTransaction } from '../db/client';
 import { findCategoryByName, importCategory } from '../repositories/categoryRepository';
 import { findWordByName, importWord } from '../repositories/wordRepository';
 import { findVariantByName, importVariant } from '../repositories/variantRepository';
 import { importAsset, updateAssetFilename, deleteAsset } from '../repositories/assetRepository';
-import { ensureAssetDirTree, getAssetFileUri } from './assetStorage';
+import { clearKeepsakeState, setKeepsakeState } from '../repositories/keepsakeRepository';
+import { ensureAssetDirTree, ensureDir, getAssetFileUri } from './assetStorage';
 import { validateManifestBytes, validateDataBytes, validateMediaPaths } from './backupValidation';
 import type { BackupData, BackupImportResult } from '../types/backup';
 import type { ParentType } from '../types/asset';
@@ -199,6 +200,49 @@ export function openBackupZip(zipBytes: Uint8Array): {
   return { fileMap, data, manifest };
 }
 
+const PHOTO_OVERRIDE_PREFIX = 'photo_override_';
+const KEEPSAKE_OVERRIDES_ZIP_DIR = 'media/keepsake/overrides/';
+
+async function restoreKeepsake(
+  keepsake: NonNullable<BackupData['keepsake']>,
+  fileMap: Record<string, Uint8Array>,
+  wordIdMap: Map<number, number>,
+): Promise<void> {
+  if (keepsake.state.length > 0) {
+    await clearKeepsakeState();
+    for (const row of keepsake.state) {
+      if (row.key.startsWith(PHOTO_OVERRIDE_PREFIX)) {
+        // Remap word ID and restore the override photo file from ZIP
+        const oldWordId = Number(row.key.slice(PHOTO_OVERRIDE_PREFIX.length));
+        const newWordId = wordIdMap.get(oldWordId);
+        if (!newWordId) continue; // word not in backup or skipped — drop override
+
+        const overrideBytes = fileMap[`${KEEPSAKE_OVERRIDES_ZIP_DIR}${oldWordId}.jpg`];
+        if (!overrideBytes) continue; // photo file wasn't in ZIP — drop override
+
+        // Write photo to keepsake overrides dir and set the new local URI
+        const keepsakeDirBase = `${Paths.document.uri}media/keepsake/`;
+        ensureDir(keepsakeDirBase);
+        const overrideDirUri = `${keepsakeDirBase}overrides/`;
+        ensureDir(overrideDirUri);
+        const destFilename = `${newWordId}.jpg`;
+        const destFile = new FSFile(`${overrideDirUri}${destFilename}`);
+        destFile.write(overrideBytes);
+        await setKeepsakeState(`${PHOTO_OVERRIDE_PREFIX}${newWordId}`, destFile.uri);
+        continue;
+      }
+      await setKeepsakeState(row.key, row.value);
+    }
+  }
+
+  const keepsakeBytes = fileMap['media/keepsake/keepsake.jpg'];
+  if (keepsakeBytes) {
+    const keepsakeDirUri = `${Paths.document.uri}media/keepsake/`;
+    ensureDir(keepsakeDirUri);
+    new FSFile(`${keepsakeDirUri}keepsake.jpg`).write(keepsakeBytes);
+  }
+}
+
 /** Executes the full backup import: DB + media file writes. */
 export async function importFullBackup(
   data: BackupData,
@@ -226,6 +270,11 @@ export async function importFullBackup(
 
   // File I/O phase (outside transaction — individual failures are non-blocking)
   const { audiosRestored, photosRestored, videosRestored, warnings } = await importAssets(data, idMap, fileMap);
+
+  // Restore keepsake state + file if present in backup
+  if (data.keepsake) {
+    await restoreKeepsake(data.keepsake, fileMap, idMap.words);
+  }
 
   return {
     categoriesAdded,

@@ -7,6 +7,18 @@ export interface BackupManifest {
   category_count: number;
   asset_count: number;
   locale: string;
+  has_keepsake?: boolean;
+}
+
+export interface BackupKeepsakeState {
+  key: string;
+  value: string;
+}
+
+export interface BackupKeepsake {
+  state: BackupKeepsakeState[];
+  /** "keepsake.jpg" when file is included in ZIP, null otherwise */
+  filename: string | null;
 }
 
 export interface BackupCategory {
@@ -66,6 +78,7 @@ export interface BackupData {
   words: BackupWord[];
   variants: BackupVariant[];
   assets: BackupAsset[];
+  keepsake?: BackupKeepsake;
 }
 
 export interface BackupImportResult {

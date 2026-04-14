@@ -21,6 +21,14 @@ jest.mock('../../src/repositories/assetRepository', () => ({
   deleteAsset: jest.fn(),
 }));
 
+const mockClearKeepsakeState = jest.fn().mockResolvedValue(undefined);
+const mockSetKeepsakeState = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../../src/repositories/keepsakeRepository', () => ({
+  clearKeepsakeState: (...args: unknown[]) => mockClearKeepsakeState(...args),
+  setKeepsakeState: (...args: unknown[]) => mockSetKeepsakeState(...args),
+}));
+
 import * as categoryRepo from '../../src/repositories/categoryRepository';
 import * as wordRepo from '../../src/repositories/wordRepository';
 import * as variantRepo from '../../src/repositories/variantRepository';
@@ -40,21 +48,28 @@ const mockDeleteAsset = assetRepo.deleteAsset as jest.Mock;
 
 // --- File system mock ---
 const mockFileWrite = jest.fn();
+const mockDirCreate = jest.fn();
+
 jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
     exists: true,
     write: mockFileWrite,
     uri: 'file:///media/test.m4a',
   })),
-  Directory: jest.fn(),
+  Directory: jest.fn().mockImplementation(() => ({
+    exists: false,
+    create: mockDirCreate,
+  })),
   Paths: { document: { uri: 'file:///documents/' } },
 }));
 
 // --- assetStorage mock ---
 const mockGetAssetFileUri = jest.fn().mockReturnValue('file:///media/words/1/audio/asset_1.m4a');
 const mockEnsureAssetDirTree = jest.fn();
+const mockEnsureDir = jest.fn();
 jest.mock('../../src/utils/assetStorage', () => ({
   ensureAssetDirTree: (...args: unknown[]) => mockEnsureAssetDirTree(...args),
+  ensureDir: (...args: unknown[]) => mockEnsureDir(...args),
   getAssetFileUri: (...args: unknown[]) => mockGetAssetFileUri(...args),
 }));
 
@@ -84,7 +99,10 @@ describe('backupImport', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFileWrite.mockReset();
+    mockDirCreate.mockReset();
     mockEnsureAssetDirTree.mockReset();
+    mockClearKeepsakeState.mockResolvedValue(undefined);
+    mockSetKeepsakeState.mockResolvedValue(undefined);
     mockDb.withTransactionAsync.mockImplementation(async (fn: () => Promise<void>) => fn());
 
     // Default repository responses
@@ -569,6 +587,152 @@ describe('backupImport', () => {
       const result = await importFullBackup(data, fileMap);
       expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
       expect(result.assetWarnings[0]).toContain('file write failed');
+    });
+
+    it('skips keepsake restore when backup has no keepsake field (old backup)', async () => {
+      const result = await importFullBackup(emptyData, {});
+      expect(result.categoriesAdded).toBe(0);
+      expect(mockClearKeepsakeState).not.toHaveBeenCalled();
+      expect(mockSetKeepsakeState).not.toHaveBeenCalled();
+    });
+
+    it('restores keepsake state rows from backup', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [
+            { key: 'keepsake_generated', value: 'true' },
+            { key: 'keepsake_generated_at', value: '2026-01-01T00:00:00Z' },
+          ],
+          filename: 'keepsake.jpg',
+        },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      expect(mockSetKeepsakeState).toHaveBeenCalledTimes(2);
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated', 'true');
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated_at', '2026-01-01T00:00:00Z');
+    });
+
+    it('does not call clearKeepsakeState when state array is empty', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: { state: [], filename: null },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).not.toHaveBeenCalled();
+      expect(mockSetKeepsakeState).not.toHaveBeenCalled();
+    });
+
+    it('writes keepsake image file when present in ZIP', async () => {
+      const keepsakeBytes = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileMap = { 'media/keepsake/keepsake.jpg': keepsakeBytes };
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [{ key: 'keepsake_generated', value: 'true' }],
+          filename: 'keepsake.jpg',
+        },
+      };
+      await importFullBackup(data, fileMap);
+      expect(mockEnsureDir).toHaveBeenCalledWith('file:///documents/media/keepsake/');
+      expect(mockFileWrite).toHaveBeenCalledWith(keepsakeBytes);
+    });
+
+    it('skips keepsake file write when not present in ZIP', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [{ key: 'keepsake_generated', value: 'true' }],
+          filename: null,
+        },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      // No keepsake bytes in fileMap → no file write
+      expect(mockFileWrite).not.toHaveBeenCalled();
+    });
+
+    it('writes keepsake image via ensureDir', async () => {
+      const keepsakeBytes = new Uint8Array([0xFF, 0xD8]);
+      const fileMap = { 'media/keepsake/keepsake.jpg': keepsakeBytes };
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: { state: [], filename: 'keepsake.jpg' },
+      };
+      await importFullBackup(data, fileMap);
+      expect(mockEnsureDir).toHaveBeenCalledWith('file:///documents/media/keepsake/');
+      expect(mockFileWrite).toHaveBeenCalledWith(keepsakeBytes);
+    });
+
+    it('skips photo_override keys when word not in idMap (word skipped on import)', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [
+            { key: 'keepsake_generated', value: 'true' },
+            { key: 'photo_override_999', value: 'file:///old-device/cache/photo.jpg' },
+          ],
+          filename: null,
+        },
+      };
+      // No words in backup → idMap.words is empty → override dropped
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      expect(mockSetKeepsakeState).toHaveBeenCalledTimes(1);
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated', 'true');
+    });
+
+    it('skips photo_override when override file not in ZIP', async () => {
+      // Word 5 maps to new ID 1 via mock, but no override bytes in fileMap
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 5, word: 'mama', date_added: '2026-01-01', category_id: null, notes: null, created_at: '2026-01-01' }],
+        keepsake: {
+          state: [
+            { key: 'keepsake_generated', value: 'true' },
+            { key: 'photo_override_5', value: 'file:///old-cache/photo.jpg' },
+          ],
+          filename: null,
+        },
+      };
+      await importFullBackup(data, {});
+      expect(mockSetKeepsakeState).toHaveBeenCalledTimes(1);
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated', 'true');
+    });
+
+    it('restores photo_override with remapped word ID and writes file', async () => {
+      const overrideBytes = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+      // Word 5 in backup → importWord returns newId 10
+      mockImportWord.mockResolvedValueOnce(10);
+      const data: BackupData = {
+        ...emptyData,
+        words: [{ id: 5, word: 'mama', date_added: '2026-01-01', category_id: null, notes: null, created_at: '2026-01-01' }],
+        keepsake: {
+          state: [
+            { key: 'keepsake_generated', value: 'true' },
+            { key: 'photo_override_5', value: 'file:///old-cache/photo.jpg' },
+          ],
+          filename: null,
+        },
+      };
+      const fileMap: Record<string, Uint8Array> = {
+        'media/keepsake/overrides/5.jpg': overrideBytes,
+      };
+      await importFullBackup(data, fileMap);
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      // keepsake_generated + photo_override_10 (remapped from 5)
+      expect(mockSetKeepsakeState).toHaveBeenCalledTimes(2);
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated', 'true');
+      // Key remapped 5→10
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith(
+        'photo_override_10',
+        expect.any(String),
+      );
+      // ensureDir called for both keepsake base + overrides dir
+      expect(mockEnsureDir).toHaveBeenCalledWith(expect.stringContaining('media/keepsake/'));
+      expect(mockEnsureDir).toHaveBeenCalledWith(expect.stringContaining('media/keepsake/overrides/'));
+      expect(mockFileWrite).toHaveBeenCalledWith(overrideBytes);
     });
   });
 });

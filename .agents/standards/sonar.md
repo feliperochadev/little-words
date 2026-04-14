@@ -158,7 +158,50 @@ if (flag) { doThing(); }
 // TODO(#42): refactor after migration
 ```
 
-### S125 — Commented-out code
+### S3776 — Cognitive complexity > 15
+Functions must not exceed cognitive complexity of 15. Each branch (`if`, `for`, `while`, `catch`, `&&`, `||`, `??`), nesting level, and ternary adds to the score.
+
+**Fix pattern:** extract nested loops or complex blocks into dedicated helper functions.
+
+```ts
+// ❌ Don't — buildBackupZip had complexity 16: two for-loops with try/catch/if inside
+export async function buildBackupZip(...) {
+  // ...
+  for (const asset of assets) {
+    try {
+      if (file.exists) { ... }   // +2 (for + if + nesting)
+    } catch { ... }              // +1
+  }
+  for (const row of stateRows) {
+    if (!row.key.startsWith(prefix)) continue;  // +2
+    try {
+      if (file.exists) { ... }   // +2
+    } catch { ... }              // +1
+  }
+}
+
+// ✅ Do — extract loops into named helpers; each helper stays ≤ 15
+async function addMediaAssetsToFileMap(assets, fileMap) {
+  for (const asset of assets) { /* loop body here */ }
+}
+
+async function addKeepsakeOverridesToFileMap(rows, fileMap) {
+  for (const row of rows) { /* loop body here */ }
+}
+
+export async function buildBackupZip(...) {
+  // ...
+  await addMediaAssetsToFileMap(assets, fileMap);
+  await addKeepsakeOverridesToFileMap(stateRows, fileMap);
+}
+```
+
+**Prevention:**
+- Each async export function should do one thing. If it orchestrates multiple data sources, delegate reads/writes to private helpers.
+- Functions with multiple `for` loops + `try/catch` inside will almost always exceed 15. Extract loops eagerly.
+- Run `npm run lint` — ESLint sonar plugin flags S3776 violations before push.
+
+
 Remove commented-out code from production files. Use version control to recover deleted code.
 
 ### S1128 — Unnecessary imports
@@ -339,7 +382,7 @@ Key TypeScript rule IDs tracked by SonarCloud in this project include (non-exhau
 | Code Smells | S1172, S1481, S1854, S3358, S1066, S3972, S3973, S1135, S125, S1128, S1874 |
 | TypeScript | S4325, S4322, S4157, S4156, S2966, S3257, S1533, S4326, S1774 |
 | React | S6747, S6749, S6750, S6754, S6635 |
-| Complexity | S3776 (cognitive > 15 — covered in quality.md) |
+| Complexity | S3776 (cognitive > 15 — extract loops/blocks into named helpers) |
 
 ---
 
@@ -357,3 +400,4 @@ Before every commit, verify new code:
 - [ ] No unnecessary type assertions (S4325, S2966)
 - [ ] No insecure protocols or weak crypto (S5332, S2245)
 - [ ] No unnecessary JSX fragments (S6749)
+- [ ] Functions do not exceed cognitive complexity 15 — extract loops/nested blocks into helpers (S3776)

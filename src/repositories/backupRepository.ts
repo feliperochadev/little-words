@@ -1,5 +1,5 @@
 import { query } from '../db/client';
-import type { BackupCategory, BackupWord, BackupVariant, BackupAsset } from '../types/backup';
+import type { BackupCategory, BackupWord, BackupVariant, BackupAsset, BackupKeepsakeState } from '../types/backup';
 
 export const getAllCategoriesForBackup = (): Promise<BackupCategory[]> =>
   query<BackupCategory>('SELECT id, name, color, emoji, created_at FROM categories ORDER BY id ASC');
@@ -21,3 +21,6 @@ export const getAllAssetsForBackup = (): Promise<(Omit<BackupAsset, 'media_path'
      FROM assets
      ORDER BY id ASC`
   );
+
+export const getAllKeepsakeStateForBackup = (): Promise<BackupKeepsakeState[]> =>
+  query<BackupKeepsakeState>('SELECT key, value FROM keepsake_state ORDER BY key ASC');

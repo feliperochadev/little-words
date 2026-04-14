@@ -154,5 +154,15 @@ describe('backupValidation', () => {
     it('handles empty asset list without error', () => {
       expect(() => validateMediaPaths([], goodFileMap)).not.toThrow();
     });
+
+    it('accepts keepsake/keepsake.jpg as a valid path', () => {
+      const assets = [{ media_path: 'keepsake/keepsake.jpg' }];
+      expect(() => validateMediaPaths(assets, {})).not.toThrow();
+    });
+
+    it('rejects paths that merely resemble keepsake but differ', () => {
+      const assets = [{ media_path: 'keepsake/keepsake.png' }];
+      expect(() => validateMediaPaths(assets, {})).toThrow('Unsafe file path detected');
+    });
   });
 });

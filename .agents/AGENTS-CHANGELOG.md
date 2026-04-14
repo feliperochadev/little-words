@@ -2,6 +2,68 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_3
+
+**[security] Bump follow-redirects 1.15.11→1.16.0 (GHSA-r4q5-vmmm-2653)**
+
+- `package-lock.json`: `npm audit fix` bumped `follow-redirects` to patch auth header leak vuln
+
+
+
+**[fix] SonarCloud S3776 cognitive complexity in backupExport.ts**
+
+- `src/utils/backupExport.ts`: extracted two `for` loops from `buildBackupZip` into `addMediaAssetsToFileMap` and `addKeepsakeOverridesToFileMap` helpers; reduces cognitive complexity 16→~10
+
+**[config] Document S3776 cognitive complexity rule in sonar.md**
+
+- `.agents/standards/sonar.md`: added full S3776 entry with fix pattern, prevention tips, and updated checklist
+
+### 2026-04-15_1
+
+**[fix] Memories screen icon + keepsake photo override backup/restore**
+
+- `app/(tabs)/memories.tsx`: changed header icon from `time-outline` to `gift-outline` to match tab bar
+- `src/utils/backupExport.ts`: added `PHOTO_OVERRIDE_PREFIX`; export now reads photo override files from their ephemeral URIs and includes them in ZIP as `media/keepsake/overrides/{wordId}.jpg`
+- `src/utils/backupImport.ts`: `restoreKeepsake()` now accepts word idMap; photo overrides are remapped (old→new word ID), override files written to `Documents/media/keepsake/overrides/`, and new local URIs stored. Overrides dropped when word missing or file not in ZIP
+- `__tests__/unit/backupExport.test.ts`: tests for override file inclusion/skip in ZIP
+- `__tests__/unit/backupImport.test.ts`: tests for override remap, skip on missing word, skip on missing file
+
+### 2026-04-14_6
+
+**[fix] Keepsake placeholder badge exactly centered in photo frame area**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: added `placeholderBadgeColor` + `placeholderBadgeIconColor` props; threaded through `LayoutProps` → layout components → `PolaroidFrame`; badge renders inside the placeholder `<View>` (which has `alignItems/justifyContent: center`) so it sits exactly where the emoji was; badge only shown when color prop provided; added `placeholderBadge` style
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: preview `KeepsakeCard` now receives `placeholderBadgeColor={colors.primary}` + `placeholderBadgeIconColor={colors.textOnPrimary}`; removed visible badge from `frameTouchTarget` overlay (replaced with transparent `swapBadgeHitArea` for test ID only); capture card receives no badge props (clean image)
+- Builds on `2026-04-14_5`
+
+### 2026-04-14_5
+
+**[fix] Keepsake polaroid placeholder: round camera badge in preview, blank in captured card**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: revert placeholder to empty `<View>` — no icon in captured image
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: enlarge `swapBadge` to 44×44dp (was 28×28) and camera icon to 22px (was 14) so the round button is clearly visible centered in the photo frame when no photo set
+- Builds on `2026-04-14_4`
+
+### 2026-04-14_4
+
+**[fix] Keepsake polaroid placeholder: replace category emoji with camera icon**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: replaced `<Text placeholderEmoji>` (category emoji or 💬) with `<Ionicons name="camera-outline">` sized proportionally to frame; removed `placeholderEmoji` style
+- `__tests__/integration/KeepsakeCard.test.tsx`: updated 2 test descriptions to reflect camera icon (not emoji) in placeholder
+- Builds on `2026-04-14_01-memories-export-backup-assets-photo-icon`
+
+### 2026-04-14_3
+
+**[feature] Keepsake book backup export/import + photo icon alignment fix**
+
+- `src/types/backup.ts`: add `BackupKeepsakeState`, `BackupKeepsake` interfaces; add optional `has_keepsake` to `BackupManifest`; add optional `keepsake` to `BackupData`
+- `src/repositories/backupRepository.ts`: add `getAllKeepsakeStateForBackup()` query
+- `src/utils/backupExport.ts`: include keepsake state + `keepsake.jpg` in ZIP (`media/keepsake/keepsake.jpg`); `manifest.has_keepsake` reflects file presence; `data.keepsake` carries state rows + filename
+- `src/utils/backupValidation.ts`: `isPathSafe()` accepts `keepsake/keepsake.jpg` as a valid media path
+- `src/utils/backupImport.ts`: `restoreKeepsake()` clears + re-inserts `keepsake_state` rows and writes keepsake image file on import; called from `importFullBackup()` when `data.keepsake` is present
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: center camera swap badge within polaroid touch target (`alignItems/justifyContent: center`) so it renders inside the photo frame
+- Tests: `backupExport`, `backupImport`, `backupRepository`, `backupValidation` all reach 100% coverage across stmts/branch/funcs/lines; 2196 tests pass
+
 ### 2026-04-14_2
 
 **[config] /refine auto-save convention + canonical prompts dir + Copilot hooks**

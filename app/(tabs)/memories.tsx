@@ -126,7 +126,7 @@ export default function MemoriesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.header}>
-          <Ionicons name="time-outline" size={20} color={colors.primary} />
+          <Ionicons name="gift-outline" size={20} color={colors.primary} />
           <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tabs.memories')}</Text>
         </View>
         <EmptyState
@@ -146,7 +146,7 @@ export default function MemoriesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Ionicons name="time-outline" size={20} color={colors.primary} />
+        <Ionicons name="gift-outline" size={20} color={colors.primary} />
         <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tabs.memories')}</Text>
       </View>
 
