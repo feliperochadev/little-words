@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_4
+
+**[fix] Keepsake polaroid placeholder: replace category emoji with camera icon**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: replaced `<Text placeholderEmoji>` (category emoji or 💬) with `<Ionicons name="camera-outline">` sized proportionally to frame; removed `placeholderEmoji` style
+- `__tests__/integration/KeepsakeCard.test.tsx`: updated 2 test descriptions to reflect camera icon (not emoji) in placeholder
+- Builds on `2026-04-14_01-memories-export-backup-assets-photo-icon`
+
 ### 2026-04-14_3
 
 **[feature] Keepsake book backup export/import + photo icon alignment fix**

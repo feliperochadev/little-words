@@ -33,3 +33,11 @@ Adds keepsake book to ZIP backup export/import and centers the camera swap badge
 | `__tests__/unit/backupImport.test.ts` | modified | Mock keepsake repo + Directory; keepsake restore tests |
 | `__tests__/unit/backupRepository.test.ts` | modified | Tests for `getAllKeepsakeStateForBackup` |
 | `__tests__/unit/backupValidation.test.ts` | modified | Tests keepsake path accepted + similar-but-invalid path rejected |
+
+## Enhancements
+
+### 2026-04-14 — Polaroid placeholder: camera icon replaces category emoji
+
+- **Description:** Removed category emoji (and 💬 fallback) from the photo placeholder inside each polaroid frame. Replaced with a centered `Ionicons camera-outline` icon sized at 25% of the photo area, colored `TEXT_LIGHT`. Removed the now-unused `placeholderEmoji` StyleSheet entry.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `__tests__/integration/KeepsakeCard.test.tsx`
+- **Plan Updates:** None — visual-only change, no architecture impact.

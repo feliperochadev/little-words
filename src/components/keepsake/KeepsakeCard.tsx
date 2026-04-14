@@ -206,9 +206,7 @@ function PolaroidFrame({ word, index, size, elevated = true }: Readonly<Polaroid
           style={[styles.placeholder, { width: photoSize, height: photoSize }]}
           testID={`keepsake-placeholder-${index}`}
         >
-          <Text style={styles.placeholderEmoji}>
-            {word.categoryEmoji ?? '💬'}
-          </Text>
+          <Ionicons name="camera-outline" size={Math.round(photoSize * 0.25)} color={TEXT_LIGHT} />
         </View>
       )}
       <Text style={styles.wordLabel} numberOfLines={1} testID={`keepsake-word-${index}`}>
@@ -372,9 +370,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  placeholderEmoji: {
-    fontSize: 72,
   },
   wordLabel: {
     fontSize: 32,

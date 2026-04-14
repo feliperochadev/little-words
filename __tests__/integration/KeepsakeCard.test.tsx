@@ -77,15 +77,14 @@ describe('KeepsakeCard', () => {
     expect(getByTestId('keepsake-photo-0')).toBeTruthy();
   });
 
-  it('renders placeholder emoji from categoryEmoji when no photo', () => {
+  it('renders placeholder camera icon when no photo', () => {
     const { getByTestId } = renderCard({
       words: [makeWord({ photoUri: null, categoryEmoji: '🐾' })],
     });
     expect(getByTestId('keepsake-placeholder-0')).toBeTruthy();
   });
 
-  it('uses fallback emoji 💬 when categoryEmoji is null', () => {
-    // Renders without error when categoryEmoji is null
+  it('renders placeholder camera icon when categoryEmoji is null', () => {
     const { getByTestId } = renderCard({
       words: [makeWord({ photoUri: null, categoryEmoji: null })],
     });
