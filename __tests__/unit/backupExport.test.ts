@@ -5,12 +5,14 @@ const mockGetAllCategoriesForBackup = jest.fn();
 const mockGetAllWordsForBackup = jest.fn();
 const mockGetAllVariantsForBackup = jest.fn();
 const mockGetAllAssetsForBackup = jest.fn();
+const mockGetAllKeepsakeStateForBackup = jest.fn();
 
 jest.mock('../../src/repositories/backupRepository', () => ({
   getAllCategoriesForBackup: (...args: unknown[]) => mockGetAllCategoriesForBackup(...args),
   getAllWordsForBackup: (...args: unknown[]) => mockGetAllWordsForBackup(...args),
   getAllVariantsForBackup: (...args: unknown[]) => mockGetAllVariantsForBackup(...args),
   getAllAssetsForBackup: (...args: unknown[]) => mockGetAllAssetsForBackup(...args),
+  getAllKeepsakeStateForBackup: (...args: unknown[]) => mockGetAllKeepsakeStateForBackup(...args),
 }));
 
 const mockFileBytesResult = new Uint8Array([0xDE, 0xAD, 0xBE, 0xEF]);
@@ -81,6 +83,10 @@ describe('backupExport', () => {
     mockGetAllWordsForBackup.mockResolvedValue([sampleWord]);
     mockGetAllVariantsForBackup.mockResolvedValue([sampleVariant]);
     mockGetAllAssetsForBackup.mockResolvedValue([sampleAsset]);
+    mockGetAllKeepsakeStateForBackup.mockResolvedValue([
+      { key: 'keepsake_generated', value: 'true' },
+      { key: 'keepsake_generated_at', value: '2026-01-01T00:00:00Z' },
+    ]);
     mockIsAvailableAsync.mockResolvedValue(true);
     mockFileBytes.mockResolvedValue(mockFileBytesResult);
   });
@@ -203,19 +209,87 @@ describe('backupExport', () => {
       expect(data.assets[0].media_path).toContain('/document/');
     });
 
-    it('skips asset file when file does not exist on disk', async () => {
+    it('manifest has_keepsake is true when keepsake file exists', async () => {
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      const manifest = JSON.parse(strFromU8(extracted['manifest.json']));
+      expect(manifest.has_keepsake).toBe(true);
+    });
+
+    it('data.json includes keepsake section with state and filename', async () => {
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      const data = JSON.parse(strFromU8(extracted['data.json']));
+      expect(data.keepsake).toBeDefined();
+      expect(data.keepsake.state).toHaveLength(2);
+      expect(data.keepsake.state[0].key).toBe('keepsake_generated');
+      expect(data.keepsake.filename).toBe('keepsake.jpg');
+    });
+
+    it('keepsake image file is included in ZIP when file exists', async () => {
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      expect(Object.keys(extracted)).toContain('media/keepsake/keepsake.jpg');
+    });
+
+    it('manifest has_keepsake is false and keepsake filename is null when keepsake file does not exist', async () => {
       const { File } = require('expo-file-system');
+      // The keepsake File check happens before assets loop — first instance is the keepsake file
       File.mockImplementationOnce(() => ({
         exists: false,
+        bytes: mockFileBytes,
+        write: mockFileWrite,
+        uri: 'file:///documents/media/keepsake/keepsake.jpg',
+      }));
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      const manifest = JSON.parse(strFromU8(extracted['manifest.json']));
+      const data = JSON.parse(strFromU8(extracted['data.json']));
+      expect(manifest.has_keepsake).toBe(false);
+      expect(data.keepsake.filename).toBeNull();
+      expect(Object.keys(extracted)).not.toContain('media/keepsake/keepsake.jpg');
+    });
+
+    it('keepsake image is omitted from ZIP if keepsake bytes() throws', async () => {
+      // bytes() call order: asset first (call #1), then keepsake (call #2)
+      mockFileBytes
+        .mockResolvedValueOnce(mockFileBytesResult)          // asset → success
+        .mockRejectedValueOnce(new Error('keepsake read error')); // keepsake → throw
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      expect(Object.keys(extracted)).toContain('media/words/1/audio/asset_1.m4a');
+      expect(Object.keys(extracted)).not.toContain('media/keepsake/keepsake.jpg');
+    });
+
+    it('data.json keepsake state is empty array when no keepsake state rows exist', async () => {
+      mockGetAllKeepsakeStateForBackup.mockResolvedValue([]);
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      const data = JSON.parse(strFromU8(extracted['data.json']));
+      expect(data.keepsake.state).toHaveLength(0);
+    });
+
+    it('skips asset file when file does not exist on disk', async () => {
+      // File instantiation order: (1) keepsake check, (2) asset in loop
+      // Use two mockImplementationOnce: keepsake exists, asset does not
+      const { File } = require('expo-file-system');
+      File.mockImplementationOnce(() => ({
+        exists: true,   // keepsake exists
+        bytes: mockFileBytes,
+        write: mockFileWrite,
+        uri: 'file:///documents/media/keepsake/keepsake.jpg',
+      })).mockImplementationOnce(() => ({
+        exists: false,  // asset does not exist → skipped
         bytes: mockFileBytes,
         write: mockFileWrite,
         uri: 'file:///media/words/1/audio/asset_1.m4a',
       }));
       const zipBytes = await buildBackupZip(mockT, mockLocale);
       const extracted = unzipSync(zipBytes);
-      // data.json still has the asset record
+      // data.json still has the asset record even though file was skipped
       const data = JSON.parse(strFromU8(extracted['data.json']));
       expect(data.assets).toHaveLength(1);
+      expect(Object.keys(extracted)).not.toContain('media/words/1/audio/asset_1.m4a');
     });
   });
 

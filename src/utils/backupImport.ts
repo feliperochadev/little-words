@@ -1,10 +1,11 @@
 import { unzipSync } from 'fflate';
-import { File as FSFile } from 'expo-file-system';
+import { File as FSFile, Directory, Paths } from 'expo-file-system';
 import { withTransaction } from '../db/client';
 import { findCategoryByName, importCategory } from '../repositories/categoryRepository';
 import { findWordByName, importWord } from '../repositories/wordRepository';
 import { findVariantByName, importVariant } from '../repositories/variantRepository';
 import { importAsset, updateAssetFilename, deleteAsset } from '../repositories/assetRepository';
+import { clearKeepsakeState, setKeepsakeState } from '../repositories/keepsakeRepository';
 import { ensureAssetDirTree, getAssetFileUri } from './assetStorage';
 import { validateManifestBytes, validateDataBytes, validateMediaPaths } from './backupValidation';
 import type { BackupData, BackupImportResult } from '../types/backup';
@@ -199,6 +200,28 @@ export function openBackupZip(zipBytes: Uint8Array): {
   return { fileMap, data, manifest };
 }
 
+async function restoreKeepsake(
+  keepsake: NonNullable<BackupData['keepsake']>,
+  fileMap: Record<string, Uint8Array>,
+): Promise<void> {
+  if (keepsake.state.length > 0) {
+    await clearKeepsakeState();
+    for (const row of keepsake.state) {
+      await setKeepsakeState(row.key, row.value);
+    }
+  }
+
+  const keepsakeBytes = fileMap['media/keepsake/keepsake.jpg'];
+  if (keepsakeBytes) {
+    const keepsakeDirUri = `${Paths.document.uri}media/keepsake/`;
+    const dir = new Directory(keepsakeDirUri);
+    if (!dir.exists) {
+      dir.create();
+    }
+    new FSFile(`${keepsakeDirUri}keepsake.jpg`).write(keepsakeBytes);
+  }
+}
+
 /** Executes the full backup import: DB + media file writes. */
 export async function importFullBackup(
   data: BackupData,
@@ -226,6 +249,11 @@ export async function importFullBackup(
 
   // File I/O phase (outside transaction — individual failures are non-blocking)
   const { audiosRestored, photosRestored, videosRestored, warnings } = await importAssets(data, idMap, fileMap);
+
+  // Restore keepsake state + file if present in backup
+  if (data.keepsake) {
+    await restoreKeepsake(data.keepsake, fileMap);
+  }
 
   return {
     categoriesAdded,

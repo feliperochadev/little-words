@@ -333,8 +333,8 @@ const styles = StyleSheet.create({
   },
   frameTouchTarget: {
     position: 'absolute',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 4,
   },
   swapBadge: {

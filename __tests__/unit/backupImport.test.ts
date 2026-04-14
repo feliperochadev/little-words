@@ -21,6 +21,14 @@ jest.mock('../../src/repositories/assetRepository', () => ({
   deleteAsset: jest.fn(),
 }));
 
+const mockClearKeepsakeState = jest.fn().mockResolvedValue(undefined);
+const mockSetKeepsakeState = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../../src/repositories/keepsakeRepository', () => ({
+  clearKeepsakeState: (...args: unknown[]) => mockClearKeepsakeState(...args),
+  setKeepsakeState: (...args: unknown[]) => mockSetKeepsakeState(...args),
+}));
+
 import * as categoryRepo from '../../src/repositories/categoryRepository';
 import * as wordRepo from '../../src/repositories/wordRepository';
 import * as variantRepo from '../../src/repositories/variantRepository';
@@ -40,13 +48,18 @@ const mockDeleteAsset = assetRepo.deleteAsset as jest.Mock;
 
 // --- File system mock ---
 const mockFileWrite = jest.fn();
+const mockDirCreate = jest.fn();
+
 jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
     exists: true,
     write: mockFileWrite,
     uri: 'file:///media/test.m4a',
   })),
-  Directory: jest.fn(),
+  Directory: jest.fn().mockImplementation(() => ({
+    exists: false,
+    create: mockDirCreate,
+  })),
   Paths: { document: { uri: 'file:///documents/' } },
 }));
 
@@ -84,7 +97,10 @@ describe('backupImport', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFileWrite.mockReset();
+    mockDirCreate.mockReset();
     mockEnsureAssetDirTree.mockReset();
+    mockClearKeepsakeState.mockResolvedValue(undefined);
+    mockSetKeepsakeState.mockResolvedValue(undefined);
     mockDb.withTransactionAsync.mockImplementation(async (fn: () => Promise<void>) => fn());
 
     // Default repository responses
@@ -569,6 +585,84 @@ describe('backupImport', () => {
       const result = await importFullBackup(data, fileMap);
       expect(result.audiosRestored + result.photosRestored + result.videosRestored).toBe(0);
       expect(result.assetWarnings[0]).toContain('file write failed');
+    });
+
+    it('skips keepsake restore when backup has no keepsake field (old backup)', async () => {
+      const result = await importFullBackup(emptyData, {});
+      expect(result.categoriesAdded).toBe(0);
+      expect(mockClearKeepsakeState).not.toHaveBeenCalled();
+      expect(mockSetKeepsakeState).not.toHaveBeenCalled();
+    });
+
+    it('restores keepsake state rows from backup', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [
+            { key: 'keepsake_generated', value: 'true' },
+            { key: 'keepsake_generated_at', value: '2026-01-01T00:00:00Z' },
+          ],
+          filename: 'keepsake.jpg',
+        },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      expect(mockSetKeepsakeState).toHaveBeenCalledTimes(2);
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated', 'true');
+      expect(mockSetKeepsakeState).toHaveBeenCalledWith('keepsake_generated_at', '2026-01-01T00:00:00Z');
+    });
+
+    it('does not call clearKeepsakeState when state array is empty', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: { state: [], filename: null },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).not.toHaveBeenCalled();
+      expect(mockSetKeepsakeState).not.toHaveBeenCalled();
+    });
+
+    it('writes keepsake image file when present in ZIP', async () => {
+      const keepsakeBytes = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileMap = { 'media/keepsake/keepsake.jpg': keepsakeBytes };
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [{ key: 'keepsake_generated', value: 'true' }],
+          filename: 'keepsake.jpg',
+        },
+      };
+      await importFullBackup(data, fileMap);
+      expect(mockDirCreate).toHaveBeenCalledTimes(1);
+      expect(mockFileWrite).toHaveBeenCalledWith(keepsakeBytes);
+    });
+
+    it('skips keepsake file write when not present in ZIP', async () => {
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: {
+          state: [{ key: 'keepsake_generated', value: 'true' }],
+          filename: null,
+        },
+      };
+      await importFullBackup(data, {});
+      expect(mockClearKeepsakeState).toHaveBeenCalledTimes(1);
+      // No keepsake bytes in fileMap → no file write
+      expect(mockFileWrite).not.toHaveBeenCalled();
+    });
+
+    it('does not create dir when it already exists', async () => {
+      const { Directory } = require('expo-file-system');
+      Directory.mockImplementationOnce(() => ({ exists: true, create: mockDirCreate }));
+      const keepsakeBytes = new Uint8Array([0xFF, 0xD8]);
+      const fileMap = { 'media/keepsake/keepsake.jpg': keepsakeBytes };
+      const data: BackupData = {
+        ...emptyData,
+        keepsake: { state: [], filename: 'keepsake.jpg' },
+      };
+      await importFullBackup(data, fileMap);
+      expect(mockDirCreate).not.toHaveBeenCalled();
+      expect(mockFileWrite).toHaveBeenCalledWith(keepsakeBytes);
     });
   });
 });

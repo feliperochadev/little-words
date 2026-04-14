@@ -2,6 +2,18 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_3
+
+**[feature] Keepsake book backup export/import + photo icon alignment fix**
+
+- `src/types/backup.ts`: add `BackupKeepsakeState`, `BackupKeepsake` interfaces; add optional `has_keepsake` to `BackupManifest`; add optional `keepsake` to `BackupData`
+- `src/repositories/backupRepository.ts`: add `getAllKeepsakeStateForBackup()` query
+- `src/utils/backupExport.ts`: include keepsake state + `keepsake.jpg` in ZIP (`media/keepsake/keepsake.jpg`); `manifest.has_keepsake` reflects file presence; `data.keepsake` carries state rows + filename
+- `src/utils/backupValidation.ts`: `isPathSafe()` accepts `keepsake/keepsake.jpg` as a valid media path
+- `src/utils/backupImport.ts`: `restoreKeepsake()` clears + re-inserts `keepsake_state` rows and writes keepsake image file on import; called from `importFullBackup()` when `data.keepsake` is present
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: center camera swap badge within polaroid touch target (`alignItems/justifyContent: center`) so it renders inside the photo frame
+- Tests: `backupExport`, `backupImport`, `backupRepository`, `backupValidation` all reach 100% coverage across stmts/branch/funcs/lines; 2196 tests pass
+
 ### 2026-04-14_2
 
 **[config] /refine auto-save convention + canonical prompts dir + Copilot hooks**

@@ -3,6 +3,7 @@ import {
   getAllWordsForBackup,
   getAllVariantsForBackup,
   getAllAssetsForBackup,
+  getAllKeepsakeStateForBackup,
 } from '../../src/repositories/backupRepository';
 
 const mockDb = (globalThis as any).__mockDb;
@@ -86,6 +87,27 @@ describe('backupRepository', () => {
     it('returns empty array when no assets', async () => {
       mockDb.getAllAsync.mockResolvedValueOnce([]);
       const result = await getAllAssetsForBackup();
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAllKeepsakeStateForBackup', () => {
+    it('returns all keepsake state rows ordered by key', async () => {
+      const rows = [
+        { key: 'keepsake_generated', value: 'true' },
+        { key: 'keepsake_generated_at', value: '2026-01-01T00:00:00Z' },
+      ];
+      mockDb.getAllAsync.mockResolvedValueOnce(rows);
+      const result = await getAllKeepsakeStateForBackup();
+      expect(result).toEqual(rows);
+      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY key ASC'),
+      );
+    });
+
+    it('returns empty array when keepsake_state is empty', async () => {
+      mockDb.getAllAsync.mockResolvedValueOnce([]);
+      const result = await getAllKeepsakeStateForBackup();
       expect(result).toEqual([]);
     });
   });

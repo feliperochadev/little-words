@@ -3,11 +3,14 @@ import type { BackupManifest, BackupData } from '../types/backup';
 
 const SUPPORTED_VERSION = '1.0';
 
+const KEEPSAKE_SAFE_PATH = 'keepsake/keepsake.jpg';
+
 /** Path traversal guard — returns true if the path is safe */
 function isPathSafe(path: string): boolean {
   if (!path) return false;
   if (path.startsWith('/') || path.startsWith('\\')) return false;
   if (path.includes('..')) return false;
+  if (path === KEEPSAKE_SAFE_PATH) return true;
   // Allowed pattern: {words|variants|profile|unlinked}/{number}/{audio|photos|videos}/asset_{number}.{ext}
   const SAFE_PATH = /^(words|variants|profile|unlinked)\/\d+\/(audio|photos|videos)\/asset_\d+\.\w+$/;
   return SAFE_PATH.test(path);

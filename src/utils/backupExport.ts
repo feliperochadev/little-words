@@ -7,11 +7,18 @@ import {
   getAllWordsForBackup,
   getAllVariantsForBackup,
   getAllAssetsForBackup,
+  getAllKeepsakeStateForBackup,
 } from '../repositories/backupRepository';
 import { getAssetFileUri } from './assetStorage';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { BackupManifest, BackupData, BackupAsset } from '../types/backup';
 import type { ParentType, AssetType } from '../types/asset';
+
+const KEEPSAKE_MEDIA_ZIP_PATH = 'keepsake/keepsake.jpg';
+
+function buildKeepsakeFileUri(): string {
+  return `${Paths.document.uri}media/keepsake/keepsake.jpg`;
+}
 
 const ASSET_TYPE_DIRS: Record<AssetType, string> = {
   audio: 'audio',
@@ -58,11 +65,12 @@ export async function buildBackupZip(
   t: (key: string) => string,
   locale: string,
 ): Promise<Uint8Array> {
-  const [categories, words, variants, rawAssets] = await Promise.all([
+  const [categories, words, variants, rawAssets, keepsakeStateRows] = await Promise.all([
     getAllCategoriesForBackup(),
     getAllWordsForBackup(),
     getAllVariantsForBackup(),
     getAllAssetsForBackup(),
+    getAllKeepsakeStateForBackup(),
   ]);
 
   const { name, sex, birth } = useSettingsStore.getState();
@@ -75,6 +83,10 @@ export async function buildBackupZip(
     media_path: buildMediaPath(asset.parent_type, asset.parent_id, asset.asset_type, asset.filename),
   }));
 
+  // Check keepsake file
+  const keepsakeFile = new FSFile(buildKeepsakeFileUri());
+  const hasKeepsake = keepsakeFile.exists;
+
   const manifest: BackupManifest = {
     version: '1.0',
     exported_at: new Date().toISOString(),
@@ -84,6 +96,7 @@ export async function buildBackupZip(
     category_count: categories.length,
     asset_count: assetsWithPaths.length,
     locale,
+    has_keepsake: hasKeepsake,
   };
 
   const data: BackupData = {
@@ -98,6 +111,10 @@ export async function buildBackupZip(
     words,
     variants,
     assets: assetsWithPaths,
+    keepsake: {
+      state: keepsakeStateRows,
+      filename: hasKeepsake ? 'keepsake.jpg' : null,
+    },
   };
 
   // Build fflate file map
@@ -122,6 +139,16 @@ export async function buildBackupZip(
       }
     } catch {
       // File missing or unreadable — skip; import will log a warning
+    }
+  }
+
+  // Include keepsake image if it exists
+  if (hasKeepsake) {
+    try {
+      const bytes = await keepsakeFile.bytes();
+      fileMap[`media/${KEEPSAKE_MEDIA_ZIP_PATH}`] = bytes;
+    } catch {
+      // File unreadable — skip silently
     }
   }
 
