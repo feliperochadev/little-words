@@ -36,7 +36,13 @@ Adds keepsake book to ZIP backup export/import and centers the camera swap badge
 
 ## Enhancements
 
-### 2026-04-14 — Polaroid placeholder: camera icon replaces category emoji
+### 2026-04-14 — Polaroid placeholder: blank card + prominent round badge in preview
+
+- **Description:** `KeepsakeCard.tsx` placeholder reverted to empty `<View>` (no icon in captured image). `KeepsakePreviewModal.tsx` `swapBadge` enlarged to 44×44dp with 22px icon so the round camera button is prominently centered in the photo frame when no photo is set.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`
+- **Plan Updates:** None.
+
+### 2026-04-14 — Polaroid placeholder: camera icon replaces category emoji (superseded)
 
 - **Description:** Removed category emoji (and 💬 fallback) from the photo placeholder inside each polaroid frame. Replaced with a centered `Ionicons camera-outline` icon sized at 25% of the photo area, colored `TEXT_LIGHT`. Removed the now-unused `placeholderEmoji` StyleSheet entry.
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `__tests__/integration/KeepsakeCard.test.tsx`

@@ -193,7 +193,7 @@ export function KeepsakePreviewModal({ visible, onClose }: Readonly<KeepsakePrev
                         style={[styles.swapBadge, { backgroundColor: colors.primary }]}
                         testID={`keepsake-swap-badge-${idx}`}
                       >
-                        <Ionicons name="camera-outline" size={14} color={colors.textOnPrimary} />
+                        <Ionicons name="camera-outline" size={22} color={colors.textOnPrimary} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -338,9 +338,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   swapBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

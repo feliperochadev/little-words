@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_5
+
+**[fix] Keepsake polaroid placeholder: round camera badge in preview, blank in captured card**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: revert placeholder to empty `<View>` — no icon in captured image
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: enlarge `swapBadge` to 44×44dp (was 28×28) and camera icon to 22px (was 14) so the round button is clearly visible centered in the photo frame when no photo set
+- Builds on `2026-04-14_4`
+
 ### 2026-04-14_4
 
 **[fix] Keepsake polaroid placeholder: replace category emoji with camera icon**

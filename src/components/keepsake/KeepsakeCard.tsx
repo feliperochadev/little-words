@@ -205,9 +205,7 @@ function PolaroidFrame({ word, index, size, elevated = true }: Readonly<Polaroid
         <View
           style={[styles.placeholder, { width: photoSize, height: photoSize }]}
           testID={`keepsake-placeholder-${index}`}
-        >
-          <Ionicons name="camera-outline" size={Math.round(photoSize * 0.25)} color={TEXT_LIGHT} />
-        </View>
+        />
       )}
       <Text style={styles.wordLabel} numberOfLines={1} testID={`keepsake-word-${index}`}>
         {word.word}
