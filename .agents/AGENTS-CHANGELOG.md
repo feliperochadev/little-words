@@ -2,6 +2,33 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_9
+
+**[fix] Variant bubble: italic right-quote clip — trailing space after &rdquo;**
+
+- `app/(tabs)/variants.tsx`: appended `{' '}` after `&rdquo;` — trailing space adds measured width for the italic glyph's rightward lean; `paddingRight` on Text removed (doesn't reliably expand layout bounds on Android); bubble padding restored to symmetric `paddingHorizontal: 16`
+
+### 2026-04-14_8
+
+**[fix] Variant bubble: italic right-quote clipped — paddingRight on Text component**
+
+- `app/(tabs)/variants.tsx`: moved extra padding from bubble View to `variantText` itself (`paddingRight: 8`) — italic glyph overhang now included in Text's measured width, preventing clip. Bubble `paddingRight` restored to symmetric 16.
+
+### 2026-04-14_7
+
+**[fix] Enhance 2026-04-14_03: variant bubble right-quote clip, keepsake preview scale/position**
+
+- `app/(tabs)/variants.tsx`: asymmetric bubble padding (`paddingRight: 22`) — italic right curly-quote no longer clipped
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: scale reduced 20%→15% (`408→391`), `previewWrapper` recalculated, `paddingTop` reduced `40→20` (preview shifted ~10% toward top)
+
+### 2026-04-14_6
+
+**[fix] UI polish — color swatch clipping, variant bubble overflow, keepsake preview size**
+
+- `src/components/AddCategoryModal.tsx`: `colorGrid` += `paddingHorizontal: 4` — scaled selected swatch no longer clipped at left edge
+- `app/(tabs)/variants.tsx`: `variantBubble` padding `14→16` / `8→9` — right curly-quote no longer clipped by bubble background
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: `PREVIEW_SCALE` `340→408` (+20%), `previewWrapper` recalculated, `previewContent paddingTop` `16→40` (~15% downward shift)
+
 ### 2026-04-15_5
 
 **[fix] SonarCloud quality gate on PR #69 — S3358, coverage, duplication**

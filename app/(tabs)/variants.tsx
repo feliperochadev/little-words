@@ -90,7 +90,7 @@ export default function VariantsScreen() {
           <View style={styles.variantMain}>
             <View style={styles.variantHeader}>
               <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
-                <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;</Text>
+                <Text style={[styles.variantText, { color: colors.primaryDark }]}>&ldquo;{item.variant}&rdquo;{' '}</Text>
               </View>
               <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
               <Text style={[styles.mainWord, { color: colors.text }]} numberOfLines={1}>{item.main_word}</Text>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   cardRight: { alignItems: 'flex-end', marginLeft: 8 },
   variantHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' },
   variantBubble: {
-    paddingHorizontal: 14, paddingVertical: 8,
+    paddingHorizontal: 16, paddingVertical: 9,
     borderRadius: 16,
   },
   variantText: { fontSize: 18, fontWeight: '700', fontStyle: 'italic' },
