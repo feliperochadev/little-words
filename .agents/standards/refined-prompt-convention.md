@@ -4,11 +4,17 @@
 
 Refined prompts are prompts that have been analyzed, strengthened, and documented using the `/refine` skill. This convention ensures prompts are clear, complete, and actionable before planning or implementation begins.
 
+## Refined Prompt Storage
+
+All refined prompts must be saved to **`.agents/refined-prompts/`** — the canonical location for all `/refine` output across all agents. File naming: `YYYY-MM-DD_NN-<slug>.md` (same convention as plans).
+
+Do NOT save refined prompts to the project root, `.agents/plan/prompts/`, or any other location.
+
 ## Refined Prompt Marker
 
 **When using `/refine` to refine a prompt:**
 - The `/refine` skill outputs an improved version of the prompt
-- Save this output to a `.md` file in the project root or `.agents/` folder
+- **Always save** to `.agents/refined-prompts/YYYY-MM-DD_NN-<slug>.md` automatically — no user confirmation needed
 - Add a YAML frontmatter block at the top with the following marker:
 
 ```markdown
@@ -98,10 +104,11 @@ User: "Use EXPORT_IMPORT_ENHANCEMENT.md as the spec"
 
 All agents (Claude, Codex, Gemini) must:
 
-1. **When using `/refine`:** Add the `refined: true` marker to saved outputs
+1. **When using `/refine`:** Auto-save to `.agents/refined-prompts/YYYY-MM-DD_NN-<slug>.md` with the `refined: true` frontmatter marker. No user confirmation needed.
 2. **When using `/plan` on a `.md` file:** Check for `refined: true` before processing
 3. **When recommending `/refine`:** Suggest it for unrefined or unclear prompts
 4. **When inheriting refined prompts:** Skip re-refinement and document the reuse
+5. **Canonical save location:** Always `.agents/refined-prompts/` — never root, never `.agents/plan/prompts/` or elsewhere
 
 ## Notes
 
