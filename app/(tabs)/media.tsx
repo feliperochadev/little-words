@@ -14,7 +14,6 @@ import { PhotoPreviewOverlay } from '../../src/components/PhotoPreviewOverlay';
 import { EditAssetModal } from '../../src/components/EditAssetModal';
 import { SearchBar, EmptyState } from '../../src/components/UIComponents';
 import { getAssetFileUri } from '../../src/utils/assetStorage';
-import { theme } from '../../src/theme';
 import { LIST_SCREEN_LAYOUT } from '../../src/theme/layout';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import type { AssetType, AssetWithLink } from '../../src/types/asset';

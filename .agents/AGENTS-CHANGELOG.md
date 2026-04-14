@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-13_6
+
+**[fix] Remove unused vars: `noWords` in variants.tsx, `theme` import in media.tsx**
+
+- `app/(tabs)/variants.tsx`: remove unused `noWords` variable (lint error on CI)
+- `app/(tabs)/media.tsx`: remove unused `theme` import (replaced by `colors` from `useTheme()` in 2026-04-13_4)
+
 ### 2026-04-13_5
 
 **[fix] Variants add button gating: show only after first variant added**

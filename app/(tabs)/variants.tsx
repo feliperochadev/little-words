@@ -122,7 +122,6 @@ export default function VariantsScreen() {
       </Card>
   );
 
-  const noWords = words.length === 0;
   const openFirstVariant = () => {
     setSelectedWord(words[0] ?? null);
     setEditVariant(null);
