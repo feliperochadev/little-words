@@ -89,7 +89,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
     <>
       <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
         <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="edit-profile-backdrop" />
         </Animated.View>
         <View style={s.overlay} pointerEvents="box-none">
           <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>

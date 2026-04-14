@@ -22,6 +22,34 @@ export function BottomSheet({
 }: Readonly<BottomSheetProps>) {
   const insets = useSafeAreaInsets();
 
+  let contentNode: React.ReactNode;
+  if (scrollable && keyboardAware) {
+    contentNode = (
+      <KeyboardAwareScrollView
+        contentContainerStyle={[styles.content, contentStyle]}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={insets.bottom + theme.spacing['6']}
+      >
+        {children}
+      </KeyboardAwareScrollView>
+    );
+  } else if (scrollable) {
+    contentNode = (
+      <ScrollView
+        contentContainerStyle={[styles.content, contentStyle]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
+    );
+  } else {
+    contentNode = (
+      <View style={[styles.content, contentStyle]}>
+        {children}
+      </View>
+    );
+  }
+
   return (
     <Modal
       visible={visible}
@@ -38,26 +66,7 @@ export function BottomSheet({
       />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + theme.spacing['6'] }]}>
         <View style={styles.handle} />
-        {scrollable && keyboardAware ? (
-          <KeyboardAwareScrollView
-            contentContainerStyle={[styles.content, contentStyle]}
-            keyboardShouldPersistTaps="handled"
-            bottomOffset={insets.bottom + theme.spacing['6']}
-          >
-            {children}
-          </KeyboardAwareScrollView>
-        ) : scrollable ? (
-          <ScrollView
-            contentContainerStyle={[styles.content, contentStyle]}
-            keyboardShouldPersistTaps="handled"
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View style={[styles.content, contentStyle]}>
-            {children}
-          </View>
-        )}
+        {contentNode}
       </View>
     </Modal>
   );

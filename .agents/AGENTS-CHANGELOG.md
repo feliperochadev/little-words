@@ -2,6 +2,24 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_5
+
+**[fix] SonarCloud quality gate on PR #69 — S3358, coverage, duplication**
+
+- `src/components/BottomSheet.tsx`: extracted nested ternary into `if/else` block (fixes S3358)
+- `src/components/AddWordModal.tsx`: added `testID="add-word-backdrop"` to backdrop; tests for keyboard dismiss
+- `src/components/AddCategoryModal.tsx`: added `testID="add-category-backdrop"`; tests for keyboard dismiss
+- `src/components/AddVariantModal.tsx`: added `testID="add-variant-backdrop"`; tests for keyboard dismiss
+- `src/components/EditProfileModal.tsx`: added `testID="edit-profile-backdrop"`; tests for keyboard dismiss
+- `src/components/ImportModal.tsx`: added `testID="import-backdrop"`; tests for keyboard dismiss
+- `src/components/MediaLinkingModal.tsx`: added `testID="media-linking-backdrop"`; tests for keyboard dismiss
+- `__tests__/integration/AddWordModal.test.tsx`: backdrop keyboard dismiss test
+- `__tests__/integration/AddCategoryModal.test.tsx`: backdrop keyboard dismiss test
+- `__tests__/integration/AddVariantModal.test.tsx`: backdrop keyboard dismiss test
+- `__tests__/integration/EditProfileModal.test.tsx`: backdrop keyboard dismiss test
+- `__tests__/integration/ImportModal.test.tsx`: backdrop keyboard dismiss test
+- `__tests__/integration/MediaLinkingModal.test.tsx`: backdrop keyboard dismiss test
+
 ### 2026-04-15_4
 
 **[feature] Keyboard UX best practices — prevent keyboard from covering inputs**
