@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Animated, Image, PanResponder, Alert,
+  StyleSheet, Animated, Image, PanResponder, Alert, Keyboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -173,7 +174,7 @@ export function MediaLinkingModal() {
     <>
       <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
         <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="media-linking-backdrop" />
         </Animated.View>
         <View style={s.overlay} pointerEvents="box-none">
           <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
@@ -185,7 +186,11 @@ export function MediaLinkingModal() {
               {isAudio ? t('mediaCapture.addAudioTitle') : t('mediaCapture.addPhotoTitle')}
             </Text>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bottomOffset={insets.bottom + 24}
+            >
               {/* ── Preview ── */}
               <View style={[s.previewSection, { backgroundColor: withOpacity(colors.primary, '10'), borderColor: withOpacity(colors.primary, '30') }]} testID="media-preview">
                 {isAudio ? (
@@ -244,6 +249,7 @@ export function MediaLinkingModal() {
                   onChangeText={setMediaName}
                   placeholder={t('mediaCapture.namePlaceholder')}
                   placeholderTextColor={colors.textMuted}
+                  returnKeyType="done"
                   testID="media-name-input"
                 />
               </View>
@@ -336,7 +342,7 @@ export function MediaLinkingModal() {
                   testID="media-link-btn"
                 />
               </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </Animated.View>
         </View>
       </Modal>
@@ -438,6 +444,7 @@ function WordLinkSection({
           placeholder={t('mediaCapture.searchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          returnKeyType="search"
           testID="media-word-search"
         />
         {wordSearch.length > 0 && (
@@ -570,6 +577,7 @@ function VariantLinkSection({
           placeholder={t('mediaCapture.variantSearchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          returnKeyType="search"
           testID="media-variant-search"
         />
         {variantSearch.length > 0 && (
@@ -660,6 +668,7 @@ function InlineVariantCreateForm({
           onChangeText={onInlineVariantNameChange}
           placeholder={t('mediaCapture.inlineVariantName')}
           placeholderTextColor={colors.textMuted}
+          returnKeyType="done"
           testID="media-inline-variant-name-input"
         />
       </View>
@@ -686,6 +695,7 @@ function InlineVariantCreateForm({
               placeholder={t('mediaCapture.searchPlaceholder')}
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
+              returnKeyType="search"
               testID="media-inline-word-search"
             />
           </View>

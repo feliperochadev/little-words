@@ -686,4 +686,13 @@ describe('AddWordModal — creating-word phase (media capture)', () => {
     fireEvent.press(await findByText('Cancel'));
     expect(mockResetCapture).toHaveBeenCalled();
   });
+
+  it('dismisses keyboard when backdrop pressed', () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { getByTestId } = renderModal();
+    fireEvent.press(getByTestId('add-word-backdrop'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
 });

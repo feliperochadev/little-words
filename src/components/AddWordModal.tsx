@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, Animated,
+  StyleSheet, Alert, Animated, Keyboard, ScrollView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { layout } from '../theme/layout';
 import { withOpacity } from '../utils/colorHelpers';
@@ -248,7 +249,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     <>
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="add-word-backdrop" />
       </Animated.View>
       <View style={s.overlay} pointerEvents="box-none">
         <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
@@ -275,7 +276,11 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             separateRows
           />
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={insets.bottom + 24}
+          >
 
             {/* ── Word ── */}
             <Text style={[s.label, { color: colors.textSecondary }]}>{t('addWord.wordLabel')}</Text>
@@ -286,6 +291,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
               placeholder={t('addWord.wordPlaceholder')}
               placeholderTextColor={colors.textMuted}
               autoFocus={!editWord} autoCapitalize="none"
+              returnKeyType="next"
             />
 
             {duplicate && (
@@ -444,6 +450,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
                     : t('addWord.variantPlaceholderGeneric')}
                   placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
+                  returnKeyType="next"
                   testID={`word-variant-input-${i}`}
                 />
                 <TouchableOpacity style={s.varRemove} onPress={() => removeVariantRow(v.key)} testID={`new-variant-remove-${i}`}>
@@ -467,6 +474,8 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
               style={[s.input, s.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]} value={notes} onChangeText={setNotes}
               placeholder={t('addWord.notesPlaceholder')}
               placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
+              textAlignVertical="top"
+              returnKeyType="done"
               testID="word-notes-input"
             />
 
@@ -480,7 +489,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
                 testID="word-save-btn"
               />
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </Animated.View>
       </View>
     </Modal>

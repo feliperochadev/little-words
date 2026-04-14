@@ -32,4 +32,19 @@ describe('Input', () => {
     );
     expect(getByText('Required')).toBeTruthy();
   });
+
+  it('passes returnKeyType to TextInput', () => {
+    const { getByTestId } = render(
+      <Input value="" onChangeText={() => {}} testID="rkt-input" returnKeyType="done" />
+    );
+    expect(getByTestId('rkt-input').props.returnKeyType).toBe('done');
+  });
+
+  it('renders without error when no error prop', () => {
+    const { queryByTestId } = render(
+      <Input value="" onChangeText={() => {}} testID="no-err" />
+    );
+    // Just verifies no crash — error text absent
+    expect(queryByTestId('no-err')).toBeTruthy();
+  });
 });

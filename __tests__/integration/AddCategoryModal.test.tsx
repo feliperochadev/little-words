@@ -309,3 +309,14 @@ describe('AddCategoryModal — panResponder gesture handlers', () => {
     act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });
+
+describe('AddCategoryModal keyboard dismiss', () => {
+  it('dismisses keyboard when backdrop pressed', () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { getByTestId } = renderModal();
+    fireEvent.press(getByTestId('add-category-backdrop'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
+});

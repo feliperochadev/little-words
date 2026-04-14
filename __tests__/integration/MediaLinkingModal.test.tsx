@@ -974,3 +974,14 @@ describe('MediaLinkingModal', () => {
     });
   });
 });
+
+describe('MediaLinkingModal keyboard dismiss', () => {
+  it('dismisses keyboard when backdrop pressed', () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { getByTestId } = renderModal();
+    fireEvent.press(getByTestId('media-linking-backdrop'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
+});

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, Animated, Switch,
+  StyleSheet, Alert, ActivityIndicator, Animated, Switch, Keyboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FSFile } from 'expo-file-system';
@@ -301,6 +302,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
             placeholder={t('importModal.placeholder')}
             placeholderTextColor={colors.textMuted}
             multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false}
+            returnKeyType="default"
           />
         </>
       );
@@ -369,7 +371,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="import-backdrop" />
       </Animated.View>
       <View style={styles.overlay} pointerEvents="box-none">
         <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
@@ -411,7 +413,11 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={insets.bottom + 24}
+          >
             {renderActiveTabContent()}
 
             {tab !== 'zip' && preview.length > 0 && (
@@ -470,7 +476,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
             )}
 
             <View style={styles.bottomSpacer} />
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </Animated.View>
       </View>
     </Modal>

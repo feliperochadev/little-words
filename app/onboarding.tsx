@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert,
+  StyleSheet, Alert, Keyboard, TouchableWithoutFeedback,
 } from 'react-native';
+import { KeyboardAwareScrollView, type KeyboardAwareScrollViewRef } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +28,7 @@ export default function OnboardingScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; mimeType: string; fileSize: number } | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<KeyboardAwareScrollViewRef>(null);
   const saveProfilePhoto = useSaveProfilePhoto();
   const { handlePickPhoto } = useProfilePhotoPicker({
     onPhotoSelected: (asset) => {
@@ -80,7 +81,8 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <KeyboardAwareScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <BrandHeader />
 
@@ -130,6 +132,7 @@ export default function OnboardingScreen() {
             placeholder={t('onboarding.babyNamePlaceholder')}
             placeholderTextColor={THEME_COLORS.textMuted}
             autoCapitalize="words"
+            returnKeyType="done"
             testID="onboarding-name-input"
           />
         </View>
@@ -194,7 +197,8 @@ export default function OnboardingScreen() {
         )}
 
         <View style={styles.bottomSpacer} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
+      </TouchableWithoutFeedback>
 
       <WheelDatePickerModal
         visible={showPicker}

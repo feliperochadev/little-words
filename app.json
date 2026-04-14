@@ -24,6 +24,8 @@
         "backgroundColor": "#FAF4EC"
       },
       "package": "com.littlewords.app",
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",

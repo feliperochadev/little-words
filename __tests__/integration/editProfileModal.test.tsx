@@ -298,4 +298,13 @@ describe('EditProfileModal', () => {
     await act(async () => { fireEvent.press(avatar); });
     expect(Alert.alert).toHaveBeenCalledTimes(1);
   });
+
+  it('dismisses keyboard when backdrop pressed', () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { getByTestId } = renderModal();
+    fireEvent.press(getByTestId('edit-profile-backdrop'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
 });

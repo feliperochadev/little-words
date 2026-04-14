@@ -951,3 +951,16 @@ describe('ImportModal — panResponder gesture handlers', () => {
     act(() => { capturedConfig.onPanResponderRelease(null, { dy: 30, vy: 0.2 }); });
   });
 });
+
+describe('ImportModal keyboard dismiss', () => {
+  it('dismisses keyboard when backdrop pressed', () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { getByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    fireEvent.press(getByTestId('import-backdrop'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
+});

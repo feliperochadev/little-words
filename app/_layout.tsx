@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { useNotifications } from '../src/hooks/useNotifications';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,16 +36,18 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <NotificationHandler />
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="onboarding" />
-        </Stack>
-      </I18nProvider>
-    </QueryClientProvider>
+    <KeyboardProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <NotificationHandler />
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="onboarding" />
+          </Stack>
+        </I18nProvider>
+      </QueryClientProvider>
+    </KeyboardProvider>
   );
 }

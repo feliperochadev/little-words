@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal, StyleSheet,
-  ScrollView, Alert, Animated,
+  Alert, Animated, Keyboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
@@ -178,7 +179,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
         testID="edit-asset-modal"
       >
         <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} testID="edit-asset-backdrop" />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="edit-asset-backdrop" />
         </Animated.View>
         <View style={s.overlay} pointerEvents="box-none">
           <Animated.View style={[s.sheet, { paddingBottom: insets.bottom + 16, backgroundColor: theme.colors.surface, transform: [{ translateY }] }]}>
@@ -203,7 +204,11 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={s.body} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView
+              style={s.body}
+              keyboardShouldPersistTaps="handled"
+              bottomOffset={insets.bottom + 16}
+            >
               <Text style={[s.label, { color: theme.colors.textMuted }]}>{t('media.editNameLabel')}</Text>
               <TextInput
                 style={[s.input, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.background }]}
@@ -211,6 +216,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
                 onChangeText={setName}
                 placeholder={t('media.editNamePlaceholder')}
                 placeholderTextColor={theme.colors.textMuted}
+                returnKeyType="done"
                 testID="edit-asset-name-input"
               />
 
@@ -282,6 +288,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
                     placeholder={t('mediaCapture.searchPlaceholder')}
                     placeholderTextColor={theme.colors.textMuted}
                     autoCapitalize="none"
+                    returnKeyType="search"
                     testID="edit-asset-word-search"
                   />
                   {wordSearch.trim().length > 0 && (
@@ -322,6 +329,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
                     placeholder={t('mediaCapture.searchPlaceholder')}
                     placeholderTextColor={theme.colors.textMuted}
                     autoCapitalize="none"
+                    returnKeyType="search"
                     testID="edit-asset-variant-search"
                   />
                   {variantSearch.trim().length > 0 && (
@@ -345,7 +353,7 @@ export function EditAssetModal({ visible, asset, onClose }: Readonly<Props>) {
                   )}
                 </>
               )}
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <View style={s.actions}>
               <Button

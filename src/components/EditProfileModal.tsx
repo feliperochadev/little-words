@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, Animated,
+  StyleSheet, Alert, Animated, Keyboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useProfilePhotoPicker } from '../hooks/useProfilePhotoPicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors as THEME_COLORS } from '../theme';
@@ -88,7 +89,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
     <>
       <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
         <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="edit-profile-backdrop" />
         </Animated.View>
         <View style={s.overlay} pointerEvents="box-none">
           <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }] }]}>
@@ -100,7 +101,11 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
               {t('settings.editProfileTitle', { label: childLabel })}
             </Text>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bottomOffset={insets.bottom + 24}
+            >
               {/* Photo */}
               <View style={s.photoSection}>
                 <ProfileAvatar
@@ -135,6 +140,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
                 placeholder={t('onboarding.babyNamePlaceholder')}
                 placeholderTextColor={THEME_COLORS.textMuted}
                 autoCapitalize="words"
+                returnKeyType="done"
                 testID="edit-profile-name-input"
               />
 
@@ -191,7 +197,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
                   testID="edit-profile-save-btn"
                 />
               </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </Animated.View>
         </View>
       </Modal>
