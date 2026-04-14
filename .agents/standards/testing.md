@@ -115,6 +115,46 @@ await waitFor(() => expect(getByTestId('word-item-banana')).toBeTruthy());
 await waitFor(() => {});
 ```
 
+### Modal visibility — use queryByTestId after close
+
+React Native Modals with `visible={false}` are removed from the RNTL tree. After triggering close, use `queryByTestId` (returns `null`) instead of `getByTestId` (throws):
+
+```ts
+// ✅ Do
+fireEvent.press(getByTestId('close-btn'));
+await waitFor(() => {
+  const modal = queryByTestId('my-modal');
+  expect(!modal || modal.props.visible === false).toBeTruthy();
+});
+
+// ❌ Don't — throws "Unable to find element" when modal is hidden
+await waitFor(() => expect(getByTestId('my-modal').props.visible).toBeFalsy());
+```
+
+### Null/fallback branch coverage
+
+Always test components with null values for optional props that have fallback expressions (`|| default`, `?? default`). Without a null-value test, those branches stay uncovered:
+
+```ts
+// ✅ Do — render with null category_color to cover the `|| colors.primary` branch
+(getWords as jest.Mock).mockResolvedValue([{ ...word, category_color: null, category_emoji: null }]);
+```
+
+### Mock all service functions used in a component
+
+When a component's service module is partially mocked with `jest.requireActual`, add explicit mocks for every function the component's mutations call (add/update/delete). Without this, those functions fall through to the real implementation and hit the DB:
+
+```ts
+// ✅ Do
+jest.mock('../../src/services/variantService', () => ({
+  ...jest.requireActual('../../src/services/variantService'),
+  getAllVariants: jest.fn(),
+  addVariant: jest.fn().mockResolvedValue(1),
+  updateVariant: jest.fn().mockResolvedValue(undefined),
+  deleteVariant: jest.fn().mockResolvedValue(undefined),
+}));
+```
+
 ---
 
 ## Coverage Floor

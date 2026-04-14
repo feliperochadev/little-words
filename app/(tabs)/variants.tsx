@@ -86,7 +86,7 @@ export default function VariantsScreen() {
         style={styles.variantCard}
         testID={`variant-pos-${index}-${item.variant}`}
       >
-        <TouchableOpacity onPress={() => handleEditVariant(item)} activeOpacity={0.8} testID={`variant-item-${item.variant}`}>
+        <View style={styles.cardRow}>
           <View style={styles.variantMain}>
             <View style={styles.variantHeader}>
               <View style={[styles.variantBubble, { backgroundColor: withOpacity(colors.primaryLight, '30') }]}>
@@ -94,23 +94,39 @@ export default function VariantsScreen() {
               </View>
               <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
               <Text style={[styles.mainWord, { color: colors.text }]} numberOfLines={1}>{item.main_word}</Text>
-              <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
             </View>
             {(item.asset_count ?? 0) > 0 && (
               <View style={styles.variantMeta}>
                 <WordAssetChips parentType="variant" parentId={item.id} />
               </View>
             )}
+            {item.notes && (
+              <View style={styles.notesRow}>
+                <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
+                <Text style={[styles.notes, { color: colors.textSecondary }]} numberOfLines={2}>{item.notes}</Text>
+              </View>
+            )}
           </View>
-          {item.notes && (
-            <View style={styles.notesRow}>
-              <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
-              <Text style={[styles.notes, { color: colors.textSecondary }]} numberOfLines={2}>{item.notes}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+          <View style={styles.cardRight}>
+            <TouchableOpacity
+              onPress={() => handleEditVariant(item)}
+              style={[styles.editBtn, { borderColor: withOpacity(colors.textMuted, '40'), backgroundColor: withOpacity(colors.textMuted, '10') }]}
+              testID={`variant-edit-btn-${item.variant}`}
+            >
+              <Ionicons name="pencil-outline" size={14} color={colors.textMuted} />
+              <Text style={[styles.editBtnText, { color: colors.textMuted }]}>{t('common.edit')}</Text>
+            </TouchableOpacity>
+            <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDateDMY(item.date_added)}</Text>
+          </View>
+        </View>
       </Card>
   );
+
+  const openFirstVariant = () => {
+    setSelectedWord(words[0] ?? null);
+    setEditVariant(null);
+    setShowAddVariant(true);
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -123,6 +139,7 @@ export default function VariantsScreen() {
         addButtonLabel={t('variants.addNew')}
         addButtonIcon={<Ionicons name="add" size={16} color={colors.textOnPrimary} />}
         addButtonTestID="variants-add-btn"
+        showAddButton={variants.length > 0 || search.length > 0}
         onPressAdd={() => {
           setSelectedWord(null);
           setEditVariant(null);
@@ -148,6 +165,13 @@ export default function VariantsScreen() {
         }}
       />
 
+      {variants.length === 0 && !search && (
+        <View style={[styles.hintBanner, { backgroundColor: withOpacity(colors.secondary, '15'), borderColor: withOpacity(colors.secondary, '30') }]} testID="variants-hint-banner">
+          <Ionicons name="bulb-outline" size={16} color={colors.secondary} />
+          <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t('variants.hint')}</Text>
+        </View>
+      )}
+
       <FlatList
         ref={flatListRef}
         testID="variants-flatlist"
@@ -156,18 +180,26 @@ export default function VariantsScreen() {
         renderItem={renderVariant}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.secondary} />}
-        ListHeaderComponent={
-          <View style={[styles.hint, { backgroundColor: withOpacity(colors.secondary, '15') }]}>
-            <Ionicons name="bulb-outline" size={14} color={colors.secondary} style={styles.hintIcon} testID="variants-hint-icon" />
-            <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t('variants.hint')}</Text>
-          </View>
-        }
         ListEmptyComponent={
-          <EmptyState
-            icon={<Ionicons name="chatbubbles-outline" size={56} color={colors.textMuted} />}
-            title={search ? t('variants.emptySearchTitle') : t('variants.emptyTitle')}
-            subtitle={search ? t('variants.emptySearchSubtitle', { search }) : t('variants.emptySubtitle')}
-          />
+          search ? (
+            <EmptyState
+              icon={<Ionicons name="chatbubbles-outline" size={56} color={colors.textMuted} />}
+              title={t('variants.emptySearchTitle')}
+              subtitle={t('variants.emptySearchSubtitle', { search })}
+            />
+          ) : (
+            <EmptyState
+              icon={<Ionicons name="chatbubbles-outline" size={56} color={colors.textMuted} />}
+              title={t('variants.emptyTitle')}
+              subtitle={t('variants.emptySubtitle')}
+              action={{
+                label: t('variants.addFirst'),
+                onPress: openFirstVariant,
+                icon: <Ionicons name="add" size={16} color={colors.textOnPrimary} />,
+                testID: 'variants-add-first-btn',
+              }}
+            />
+          )
         }
       />
 
@@ -186,12 +218,11 @@ export default function VariantsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
-  hint: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 12 },
-  hintIcon: { marginRight: 6 },
-  hintText: { fontSize: 13, lineHeight: 18, flex: 1 },
   variantCard: { marginBottom: 10 },
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
   variantMain: { flex: 1 },
-  variantHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  cardRight: { alignItems: 'flex-end', marginLeft: 8 },
+  variantHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' },
   variantBubble: {
     paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: 16,
@@ -203,4 +234,9 @@ const styles = StyleSheet.create({
   date: { fontSize: 12 },
   notesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   notes: { fontSize: 12, flex: 1, lineHeight: 16 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, marginBottom: 5, borderWidth: 1, borderRadius: 8 },
+  editBtnText: { fontSize: 12, fontWeight: '600' },
+  addFirstBtn: { marginTop: 16, alignSelf: 'center' },
+  hintBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1 },
+  hintText: { flex: 1, fontSize: 13, lineHeight: 18 },
 });

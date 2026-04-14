@@ -28,6 +28,10 @@ jest.mock('../../src/providers/MediaCaptureProvider', () => ({
 let mockPhase = 'idle';
 const mockResetCapture = jest.fn();
 
+jest.mock('../../src/hooks/useWords', () => ({
+  useWords: () => ({ data: [{ id: 1, word: 'test' }], refetch: jest.fn() }),
+}));
+
 jest.mock('../../src/hooks/useMediaCapture', () => ({
   useMediaCapture: () => ({
     phase: mockPhase,

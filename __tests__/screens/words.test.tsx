@@ -174,9 +174,14 @@ describe('WordsScreen', () => {
     });
   });
 
-  it('opens edit word modal on word press', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+  it('shows edit button on word card', async () => {
+    const { findByTestId } = renderWithProviders(<WordsScreen />);
+    expect(await findByTestId('word-edit-btn-mamãe')).toBeTruthy();
+  });
+
+  it('opens edit word modal via edit button', async () => {
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
@@ -197,8 +202,8 @@ describe('WordsScreen', () => {
   });
 
   it('handles word deletion from modal', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
@@ -208,15 +213,15 @@ describe('WordsScreen', () => {
     expect(await findByText(/Edit Category/)).toBeTruthy();
   });
 
-  it('opens edit word via card area press', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText(/first word/));
+  it('opens edit word modal via notes area (edit button)', async () => {
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
   it('handles word deletion and closes modal', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
     fireEvent.press(await findByText(/Remove/));
     await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
@@ -287,6 +292,19 @@ describe('WordsScreen', () => {
     await waitFor(() => {
       expect(categoryService.deleteCategoryWithUnlink as jest.Mock).toHaveBeenCalled();
     });
+  });
+
+  it('renders category badge with null color/emoji fallbacks', async () => {
+    (db.getWords as jest.Mock).mockResolvedValue([{
+      id: 3, word: 'leite', category_id: 2, date_added: '2024-03-01',
+      notes: null, created_at: '2024-03-01',
+      category_name: 'food', category_color: null, category_emoji: null,
+      variant_count: 0, variant_texts: null,
+    }]);
+    const { findByText } = renderWithProviders(<WordsScreen />);
+    expect(await findByText('leite')).toBeTruthy();
+    // category badge renders with fallback color/emoji
+    expect(await findByText('Food')).toBeTruthy();
   });
 
   it('sets active search when initialSearch is set on navigation', async () => {

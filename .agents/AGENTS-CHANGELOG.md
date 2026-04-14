@@ -2,6 +2,88 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_1
+
+**[fix] SonarCloud PR#66: replace `&&` null guard with optional chain in memories.tsx**
+
+- `app/(tabs)/memories.tsx:91`: replace `prevItem === null || prevItem.date_added !== item.date_added` with `prevItem?.date_added !== item.date_added` (rule `typescript:S6582`)
+
+### 2026-04-13_7
+
+**[fix] SonarCloud coverage: remove dead code, add branch/callback coverage tests, document patterns**
+
+- `app/(tabs)/words.tsx`: remove dead `AddVariantModal` block (never opened — `setShowAddVariant(true)` was never called), remove `showAddVariant`, `editVariant` state vars, `AddVariantModal` import, `Variant` type import
+- `app/(tabs)/variants.tsx`: remove unused `noWords` variable; extend `variantService` mock with `addVariant`/`updateVariant`/`deleteVariant` for callback coverage
+- `app/(tabs)/media.tsx`: remove unused `theme` import (replaced by `colors` from `useTheme()`)
+- `__tests__/screens/variants.test.tsx`: add `Alert` spy; add tests for `openFirstVariant` body, `onSave` refetch, `onDeleted` refetch, null `main_word` search branch, null `asset_count` render
+- `__tests__/screens/words.test.tsx`: add test for word with null `category_color`/`category_emoji` (hits `|| colors.primary` fallback branches)
+- `__tests__/screens/media.test.tsx`: add close tests for audio overlay (backdrop), photo overlay (dismiss), edit asset modal (cancel)
+- `.agents/standards/testing.md`: document 3 new patterns — Modal visibility after close (use `queryByTestId`), null-value branch coverage, mock all service mutations
+
+Coverage on changed files:
+- `media.tsx`: 100% stmts/funcs/lines (was 87.5% funcs)
+- `variants.tsx`: branch 89.65% (was 79.31%)
+- `words.tsx`: branch 88.57% (was 82.85%)
+
+### 2026-04-13_6
+
+**[fix] Remove unused vars: `noWords` in variants.tsx, `theme` import in media.tsx**
+
+- `app/(tabs)/variants.tsx`: remove unused `noWords` variable (lint error on CI)
+- `app/(tabs)/media.tsx`: remove unused `theme` import (replaced by `colors` from `useTheme()` in 2026-04-13_4)
+
+### 2026-04-13_5
+
+**[fix] Variants add button gating: show only after first variant added**
+
+- `app/(tabs)/variants.tsx`: `showAddButton` changed from `!noWords` → `variants.length > 0 || search.length > 0`; top-right "New" button now hidden until first variant exists; first-time CTA in EmptyState handles initial add
+- `__tests__/screens/variants.test.tsx`: updated "renders add new button" test name; added test confirming button hidden when no variants exist
+- Builds on: 2026-04-13_4
+
+### 2026-04-13_4
+
+**[fix] Restore variants hint banner (conditional), fix SearchBar + media screen theme consistency**
+
+- `app/(tabs)/variants.tsx`: restore hint banner (`bulb-outline` + `variants.hint` text) between ListScreenControls and FlatList; shown only when `variants.length === 0 && !search`; hidden once first variant is added
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: re-add `variants.hint` key (removed in 2026-04-13_1 by mistake)
+- `src/components/UIComponents.tsx` — `SearchBar`: add `useTheme()` hook; apply `colors.surface`, `colors.border`, `colors.text`, `colors.textMuted` as inline overrides so search box follows selected theme (was always blossom)
+- `app/(tabs)/media.tsx`: replace all `theme.colors.*` inline references with `colors.*` from `useTheme()`; fixes background, title, filter buttons, sort menu, row items always rendering in blossom palette
+- `__tests__/screens/variants.test.tsx`: 3 new tests — hint banner visible when no variants, hidden when variants exist, hidden when searching
+- Builds on: 2026-04-13_3
+
+### 2026-04-13_3
+
+**[feature] Enhance UX part 2: darker modal backdrops (+30%) + labeled media action buttons**
+
+- `src/components/AddWordModal.tsx`, `AddVariantModal.tsx`, `AddCategoryModal.tsx`, `EditProfileModal.tsx`, `ImportModal.tsx`, `EditAssetModal.tsx`, `MediaLinkingModal.tsx`: backdrop `rgba(0,0,0,0.5)` → `rgba(0,0,0,0.65)` (+30%)
+- `app/(tabs)/media.tsx`: replace icon-only action buttons with vertically-stacked labeled buttons — edit button uses `textMuted` border+bg (matches words/variants style); remove button uses `colors.error` border+bg with trash icon and "Remove" label; `rowActions` changed to `flexDirection: column`
+- Builds on: 2026-04-13_2
+
+### 2026-04-13_2
+
+**[feature] Enhance edit button on words/variants cards: border, background, increased gap**
+
+- `app/(tabs)/words.tsx`: edit button gains `borderWidth: 1`, `borderRadius: 8`, increased padding; inline `borderColor` and `backgroundColor` from `withOpacity(colors.textMuted, '40'/'10')`; `marginBottom` increased 4→5 (+15%) to widen gap between button and date
+- `app/(tabs)/variants.tsx`: same edit button styling as words.tsx
+- `__tests__/integration/tabLayout.integration.test.tsx`: add `useWords` mock — `_layout.tsx` now calls `useWords` for variants tab gating but test lacked a `QueryClientProvider`; mock fixes all 17 failing tests
+- Builds on: 2026-04-13_1
+
+### 2026-04-13_1
+
+**[feature] UX improvements part 2: variant gating, save gate, explicit edit buttons, date dedup, search bar alignment**
+
+- `app/(tabs)/variants.tsx`: disable add button + show no-words empty state when no words exist; show "Add First Variant" CTA when words exist but no variants; remove hint/tooltip banner; restructure card to edit button (top-right, `alignSelf: 'flex-end'`) above title row
+- `app/(tabs)/words.tsx`: restructure word card to edit button (top-right, `alignSelf: 'flex-end'`) above title row so date appears below edit button
+- `src/components/AddWordModal.tsx`: disable save/add button when word input has fewer than 2 characters
+- `src/components/TimelineItem.tsx`: add `showDate` prop (default `true`); renders empty `View` when `false`
+- `app/(tabs)/memories.tsx`: deduplicate date headers — consecutive items with the same `date_added` only show the date once
+- `app/(tabs)/media.tsx`: wrap SearchBar in container with `LIST_SCREEN_LAYOUT.paddingHorizontal`; align `titleRow`, `filtersRow`, `listContent`, `emptyContainer` padding to same constant
+- `src/theme/layout.ts`: add `LIST_SCREEN_LAYOUT` token (`paddingHorizontal: 20`, `searchBarGap: 12`)
+- `.agents/standards/design-system.md`: document `LIST_SCREEN_LAYOUT` usage rule for all list screens
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: add `variants.emptyNoWords`, `variants.emptyNoWordsSubtitle`, `variants.addFirst`; remove `variants.hint`
+- `src/components/UIComponents.tsx`: add `testID` and `action.testID` props to `EmptyState`
+- `__tests__/screens/variants.test.tsx`, `__tests__/screens/words.test.tsx`, `__tests__/integration/AddWordModal.test.tsx`, `__tests__/integration/TimelineItem.test.tsx`, `__tests__/screens/memories.test.tsx`: updated and new tests for all changes
+
 ### 2026-04-12_4
 
 **[feature] Enhance 2026-04-12_01-ux-improvements-part-1: variants screen title icon chatbubbles-outline → chatbubble-outline**
