@@ -34,6 +34,19 @@ Five UX improvements: variant screen gating by word count, 2-char save gate on A
 
 ## Enhancements
 
+### 2026-04-13 — Variants add button gating
+
+`showAddButton`: `!noWords` → `variants.length > 0 || search.length > 0`. Top-right "New" hides until first variant added; EmptyState CTA handles initial add. Tests updated (+1).
+
+### 2026-04-13 — Variants hint restored + theme consistency fixes
+
+**Changes:**
+- `app/(tabs)/variants.tsx`: restore hint banner, visible only when `variants.length === 0 && !search`
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: re-add `variants.hint` key
+- `src/components/UIComponents.tsx` — `SearchBar`: `useTheme()` + inline dynamic colors (was stuck on blossom)
+- `app/(tabs)/media.tsx`: all `theme.colors.*` → `colors.*` from `useTheme()` (background + all inline colors)
+- `__tests__/screens/variants.test.tsx`: 3 new hint banner tests
+
 ### 2026-04-13 — Darker modal backdrops + labeled media action buttons
 
 **Changes:**

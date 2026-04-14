@@ -140,7 +140,7 @@ export default function VariantsScreen() {
         addButtonLabel={t('variants.addNew')}
         addButtonIcon={<Ionicons name="add" size={16} color={colors.textOnPrimary} />}
         addButtonTestID="variants-add-btn"
-        showAddButton={!noWords}
+        showAddButton={variants.length > 0 || search.length > 0}
         onPressAdd={() => {
           setSelectedWord(null);
           setEditVariant(null);
@@ -165,6 +165,13 @@ export default function VariantsScreen() {
           setShowSortMenu(false);
         }}
       />
+
+      {variants.length === 0 && !search && (
+        <View style={[styles.hintBanner, { backgroundColor: withOpacity(colors.secondary, '15'), borderColor: withOpacity(colors.secondary, '30') }]} testID="variants-hint-banner">
+          <Ionicons name="bulb-outline" size={16} color={colors.secondary} />
+          <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t('variants.hint')}</Text>
+        </View>
+      )}
 
       <FlatList
         ref={flatListRef}
@@ -231,4 +238,6 @@ const styles = StyleSheet.create({
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, marginBottom: 5, borderWidth: 1, borderRadius: 8 },
   editBtnText: { fontSize: 12, fontWeight: '600' },
   addFirstBtn: { marginTop: 16, alignSelf: 'center' },
+  hintBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1 },
+  hintText: { flex: 1, fontSize: 13, lineHeight: 18 },
 });

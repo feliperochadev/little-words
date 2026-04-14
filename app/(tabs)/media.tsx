@@ -122,7 +122,7 @@ export default function MediaScreen() {
     const dateStr = item.created_at.split(/[T ]/)[0];
     return (
       <TouchableOpacity
-        style={[s.row, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+        style={[s.row, { backgroundColor: colors.surface, borderColor: colors.border }]}
         onPress={() => handleRowPress(item)}
         testID={`media-item-${item.id}`}
         activeOpacity={0.7}
@@ -131,13 +131,13 @@ export default function MediaScreen() {
           <Ionicons name={typeIcon} size={20} color={colors.primary} />
         </View>
         <View style={s.rowContent}>
-          <Text style={[s.rowName, { color: theme.colors.text }]} numberOfLines={1}>{displayName}</Text>
+          <Text style={[s.rowName, { color: colors.text }]} numberOfLines={1}>{displayName}</Text>
           {linkLabel && (
             <View style={[s.linkBadge, { backgroundColor: withOpacity(colors.primary, '1E') }]}>
               <Text style={[s.linkBadgeText, { color: colors.primary }]} numberOfLines={1}>{linkLabel}</Text>
             </View>
           )}
-          <Text style={[s.rowMeta, { color: theme.colors.textMuted }]}>
+          <Text style={[s.rowMeta, { color: colors.textMuted }]}>
             {dateStr} · {formatFileSize(item.file_size)}
           </Text>
         </View>
@@ -164,10 +164,10 @@ export default function MediaScreen() {
   }, [colors, t, handleRowPress, handleRemove]);
 
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={s.titleRow}>
         <Ionicons name="images-outline" size={22} color={colors.primary} testID="media-screen-icon" />
-        <Text style={[s.title, { color: theme.colors.text }]}>{t('media.title')}</Text>
+        <Text style={[s.title, { color: colors.text }]}>{t('media.title')}</Text>
       </View>
 
       <View style={s.searchContainer}>
@@ -186,14 +186,14 @@ export default function MediaScreen() {
               key={f.key ?? 'all'}
               style={[
                 s.filterBtn,
-                { borderColor: theme.colors.border },
+                { borderColor: colors.border },
                 assetFilter === f.key && { backgroundColor: colors.primary, borderColor: colors.primary },
               ]}
               onPress={() => setAssetFilter(f.key)}
               testID={`media-filter-${f.key ?? 'all'}`}
             >
-              <Ionicons name={f.icon} size={14} color={assetFilter === f.key ? '#fff' : theme.colors.textMuted} />
-              <Text style={[s.filterLabel, { color: assetFilter === f.key ? '#fff' : theme.colors.text }]}>{f.label}</Text>
+              <Ionicons name={f.icon} size={14} color={assetFilter === f.key ? '#fff' : colors.textMuted} />
+              <Text style={[s.filterLabel, { color: assetFilter === f.key ? '#fff' : colors.text }]}>{f.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -202,7 +202,7 @@ export default function MediaScreen() {
         </TouchableOpacity>
 
         {showSortMenu && (
-          <View style={[s.sortMenu, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[s.sortMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {sortOptions.map(opt => (
               <TouchableOpacity
                 key={opt.key}
@@ -210,7 +210,7 @@ export default function MediaScreen() {
                 onPress={() => { setSort(opt.key); setShowSortMenu(false); }}
                 testID={`media-sort-${opt.key}`}
               >
-                <Text style={[s.sortMenuLabel, { color: sort === opt.key ? colors.primary : theme.colors.text }]}>{opt.label}</Text>
+                <Text style={[s.sortMenuLabel, { color: sort === opt.key ? colors.primary : colors.text }]}>{opt.label}</Text>
                 {sort === opt.key && <Ionicons name="checkmark" size={16} color={colors.primary} />}
               </TouchableOpacity>
             ))}
@@ -228,7 +228,7 @@ export default function MediaScreen() {
         ListEmptyComponent={
           <View testID="media-empty">
             <EmptyState
-              icon={<Ionicons name="images-outline" size={48} color={theme.colors.textMuted} />}
+              icon={<Ionicons name="images-outline" size={48} color={colors.textMuted} />}
               title={t('media.emptyTitle')}
               subtitle={t('media.emptySubtitle')}
             />

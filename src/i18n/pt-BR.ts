@@ -184,6 +184,7 @@ export default {
     emptyNoWords: 'Nenhuma Palavra Ainda',
     emptyNoWordsSubtitle: 'Adicione algumas palavras antes de criar variantes de pronúncia.',
     addFirst: 'Adicionar Primeira Variante',
+    hint: 'Variantes são como a criança pronuncia cada palavra antes de aprender corretamente',
     emptySearchTitle: 'Nenhuma variante encontrada',
     emptySearchSubtitle: 'Não encontramos "{{search}}"',
     deleteTitle: 'Remover Variante',

@@ -325,17 +325,7 @@ Generates a shareable 9:16 (1080×1920) Polaroid-style image card showing a baby
 
 ### Local Notification System
 
-**Strategy:** Reset Sequence — cancel all managed notifications on app foreground, batch-schedule on background. No server dependency; all notifications are local (expo-notifications).
-
-**Notification types (8 total):**
-1. Gentle Nudge (retention) — 3d / 7d / 15d after last use
-2. Weekly Win — next Sunday if words added this week
-3. Monthly Recap — last day of month if total words > 0
-4. Nostalgia Trip — 1-month and 1-year word anniversaries (1 random per run)
-5. Milestone — immediate notification at counts 1, 10, 30, 50, 100, 200, 500, 1000
-6. Feature Discovery — one-shot after 5+ words with no media assets
-7. Category Explorer — when inactive 7 days with empty categories
-8. Backup Reminder — when last backup > 30 days ago
+**Strategy:** Reset Sequence — cancel all managed notifications on app foreground, batch-schedule on background. No server dependency; all notifications are local (expo-notifications).ß
 
 **Architecture:**
 - `src/services/notificationScheduler.ts` — pure, side-effect-free function `buildSchedule(ctx, now) → ScheduleItem[]`. No expo-notifications import. Fully testable without mocking.
@@ -411,25 +401,6 @@ src/theme/
 ## Permanently Allowed Commands
 
 The following commands are pre-approved and may be run at any time without asking for user permission. They are listed in `.agents/agent-config.json` under `allowed_commands`.
-
-| Command | Purpose |
-|---------|---------|
-| `npm run ci` | Full quality gate: lint + typecheck + tests + semgrep |
-| `npm run lint` | ESLint only |
-| `npm run typecheck` | TypeScript type-check only |
-| `npm run test` | Jest tests (no coverage) |
-| `npm run test:coverage` | Jest tests with LCOV coverage report |
-| `npm run agent:review` | Complexity check + review file creation |
-| `npm run agent:check-tasks` | List pending unfinished agent tasks |
-| `npm run agent:availability` | Show which agents are online/offline |
-| `git status` | Working tree status |
-| `git diff` | Show unstaged / staged changes |
-| `git add` | Stage files for commit |
-| `git commit` | Create a commit |
-| `git push` | Push branch and/or tags to remote |
-| `git tag` | Create or list tags |
-| `git log` | Inspect commit history |
-| `git branch` | List or show current branch |
 
 ## Changelog
 

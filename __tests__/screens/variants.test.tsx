@@ -84,9 +84,16 @@ describe('VariantsScreen', () => {
     expect(mainWords.length).toBeGreaterThan(0);
   });
 
-  it('renders add new button', async () => {
+  it('renders add new button when variants exist', async () => {
     const { findByTestId } = renderWithProviders(<VariantsScreen />);
     expect(await findByTestId('variants-add-btn')).toBeTruthy();
+  });
+
+  it('hides add new button when no variants exist', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/No variants yet/);
+    expect(queryByTestId('variants-add-btn')).toBeNull();
   });
 
   it('renders semantic title and sort icons', async () => {
@@ -112,6 +119,27 @@ describe('VariantsScreen', () => {
     (db.getAllVariants as jest.Mock).mockResolvedValue([]);
     const { findByTestId } = renderWithProviders(<VariantsScreen />);
     expect(await findByTestId('variants-add-first-btn')).toBeTruthy();
+  });
+
+  it('shows hint banner when no variants exist', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variants-hint-banner')).toBeTruthy();
+  });
+
+  it('hides hint banner when variants exist', async () => {
+    const { queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mamá/);
+    expect(queryByTestId('variants-hint-banner')).toBeNull();
+  });
+
+  it('hides hint banner when searching', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { findByPlaceholderText, queryByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/No variants yet/);
+    const searchInput = await findByPlaceholderText(/Search variants/);
+    fireEvent.changeText(searchInput, 'test');
+    expect(queryByTestId('variants-hint-banner')).toBeNull();
   });
 
 

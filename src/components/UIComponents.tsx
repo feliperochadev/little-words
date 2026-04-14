@@ -151,15 +151,16 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChangeText, placeholder, testID }: Readonly<SearchBarProps>) {
+  const { colors } = useTheme();
   return (
-    <View style={searchStyles.container}>
-      <Ionicons name="search" size={18} color={theme.colors.textMuted} style={searchStyles.icon} />
+    <View style={[searchStyles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Ionicons name="search" size={18} color={colors.textMuted} style={searchStyles.icon} />
       <TextInput
-        style={searchStyles.input}
+        style={[searchStyles.input, { color: colors.text }]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder ?? 'Buscar palavras...'}
-        placeholderTextColor={theme.colors.textMuted}
+        placeholderTextColor={colors.textMuted}
         testID={testID}
         accessibilityRole="search"
       />
@@ -172,7 +173,7 @@ export function SearchBar({ value, onChangeText, placeholder, testID }: Readonly
           accessibilityLabel="Clear search"
           accessibilityRole="button"
         >
-          <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+          <Ionicons name="close-circle" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       )}
     </View>

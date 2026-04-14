@@ -2,6 +2,25 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-13_5
+
+**[fix] Variants add button gating: show only after first variant added**
+
+- `app/(tabs)/variants.tsx`: `showAddButton` changed from `!noWords` → `variants.length > 0 || search.length > 0`; top-right "New" button now hidden until first variant exists; first-time CTA in EmptyState handles initial add
+- `__tests__/screens/variants.test.tsx`: updated "renders add new button" test name; added test confirming button hidden when no variants exist
+- Builds on: 2026-04-13_4
+
+### 2026-04-13_4
+
+**[fix] Restore variants hint banner (conditional), fix SearchBar + media screen theme consistency**
+
+- `app/(tabs)/variants.tsx`: restore hint banner (`bulb-outline` + `variants.hint` text) between ListScreenControls and FlatList; shown only when `variants.length === 0 && !search`; hidden once first variant is added
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: re-add `variants.hint` key (removed in 2026-04-13_1 by mistake)
+- `src/components/UIComponents.tsx` — `SearchBar`: add `useTheme()` hook; apply `colors.surface`, `colors.border`, `colors.text`, `colors.textMuted` as inline overrides so search box follows selected theme (was always blossom)
+- `app/(tabs)/media.tsx`: replace all `theme.colors.*` inline references with `colors.*` from `useTheme()`; fixes background, title, filter buttons, sort menu, row items always rendering in blossom palette
+- `__tests__/screens/variants.test.tsx`: 3 new tests — hint banner visible when no variants, hidden when variants exist, hidden when searching
+- Builds on: 2026-04-13_3
+
 ### 2026-04-13_3
 
 **[feature] Enhance UX part 2: darker modal backdrops (+30%) + labeled media action buttons**
