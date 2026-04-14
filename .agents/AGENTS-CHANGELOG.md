@@ -2,6 +2,17 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_2
+
+**[config] /refine auto-save convention + canonical prompts dir + Copilot hooks**
+
+- `.agents/standards/refined-prompt-convention.md`: add "Refined Prompt Storage" section; canonical save location is `.agents/refined-prompts/YYYY-MM-DD_NN-<slug>.md`; no user confirmation needed
+- `.claude/commands/refine.md`, `.codex/commands/refine.md`, `.gemini/commands/refine.md`: replace "ask whether to save" step with auto-save to `.agents/refined-prompts/`; add frontmatter template
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`: update cross-vendor `/refine` convention bullet to match new auto-save canonical path
+- `.agents/refined-prompts/.gitkeep`: new canonical directory for all refined prompt outputs
+- `.github/copilot-instructions.md`: RTK hook instructions for GitHub Copilot
+- `.github/hooks/rtk-rewrite.json`: PreToolUse hook config for `rtk hook copilot`
+
 ### 2026-04-14_1
 
 **[fix] SonarCloud PR#66: replace `&&` null guard with optional chain in memories.tsx**
