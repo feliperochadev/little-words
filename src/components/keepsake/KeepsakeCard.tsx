@@ -179,12 +179,14 @@ interface PolaroidFrameProps {
   index: number;
   size: number;
   elevated?: boolean;
-  onPress?: () => void;
+  placeholderBadgeColor?: string;
+  placeholderBadgeIconColor?: string;
 }
 
-function PolaroidFrame({ word, index, size, elevated = true }: Readonly<PolaroidFrameProps>) {
+function PolaroidFrame({ word, index, size, elevated = true, placeholderBadgeColor, placeholderBadgeIconColor }: Readonly<PolaroidFrameProps>) {
   const photoSize = size - 40; // padding for polaroid border
   const rotation = getRotation(word.id, index);
+  const badgeSize = Math.round(photoSize * 0.25);
 
   return (
     <View
@@ -205,7 +207,19 @@ function PolaroidFrame({ word, index, size, elevated = true }: Readonly<Polaroid
         <View
           style={[styles.placeholder, { width: photoSize, height: photoSize }]}
           testID={`keepsake-placeholder-${index}`}
-        />
+        >
+          {placeholderBadgeColor && (
+            <View
+              style={[
+                styles.placeholderBadge,
+                { width: badgeSize, height: badgeSize, borderRadius: badgeSize / 2, backgroundColor: placeholderBadgeColor },
+              ]}
+              testID={`keepsake-placeholder-badge-${index}`}
+            >
+              <Ionicons name="camera-outline" size={Math.round(badgeSize * 0.5)} color={placeholderBadgeIconColor ?? '#fff'} />
+            </View>
+          )}
+        </View>
       )}
       <Text style={styles.wordLabel} numberOfLines={1} testID={`keepsake-word-${index}`}>
         {word.word}
@@ -219,33 +233,40 @@ function PolaroidFrame({ word, index, size, elevated = true }: Readonly<Polaroid
 
 // ── Layouts ──────────────────────────────────────────────────────────────────
 
-function ThreeWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
+interface LayoutProps {
+  words: KeepsakeWord[];
+  elevated?: boolean;
+  placeholderBadgeColor?: string;
+  placeholderBadgeIconColor?: string;
+}
+
+function ThreeWordLayout({ words, elevated, placeholderBadgeColor, placeholderBadgeIconColor }: Readonly<LayoutProps>) {
   return (
     <>
       <View style={styles.topRow}>
-        <PolaroidFrame word={words[0]} index={0} size={418} elevated={elevated} />
-        <PolaroidFrame word={words[1]} index={1} size={418} elevated={elevated} />
+        <PolaroidFrame word={words[0]} index={0} size={418} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
+        <PolaroidFrame word={words[1]} index={1} size={418} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
       </View>
       <View style={styles.bottomRow}>
-        <PolaroidFrame word={words[2]} index={2} size={440} elevated={elevated} />
+        <PolaroidFrame word={words[2]} index={2} size={440} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
       </View>
     </>
   );
 }
 
-function TwoWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
+function TwoWordLayout({ words, elevated, placeholderBadgeColor, placeholderBadgeIconColor }: Readonly<LayoutProps>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={440} elevated={elevated} />
-      <PolaroidFrame word={words[1]} index={1} size={440} elevated={elevated} />
+      <PolaroidFrame word={words[0]} index={0} size={440} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
+      <PolaroidFrame word={words[1]} index={1} size={440} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
     </View>
   );
 }
 
-function OneWordLayout({ words, elevated }: Readonly<{ words: KeepsakeWord[]; elevated?: boolean }>) {
+function OneWordLayout({ words, elevated, placeholderBadgeColor, placeholderBadgeIconColor }: Readonly<LayoutProps>) {
   return (
     <View style={styles.centerRow}>
-      <PolaroidFrame word={words[0]} index={0} size={528} elevated={elevated} />
+      <PolaroidFrame word={words[0]} index={0} size={528} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />
     </View>
   );
 }
@@ -273,10 +294,12 @@ interface KeepsakeCardProps {
   name: string;
   sex: 'boy' | 'girl' | null;
   elevated?: boolean;
+  placeholderBadgeColor?: string;
+  placeholderBadgeIconColor?: string;
 }
 
 const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
-  function KeepsakeCard({ words, name, sex, elevated = true }, ref) {
+  function KeepsakeCard({ words, name, sex, elevated = true, placeholderBadgeColor, placeholderBadgeIconColor }, ref) {
     const { t, locale } = useI18n();
     const qrUrl = QR_URLS[locale] ?? QR_URLS['en-US'];
     const displayName = name.trim() || 'Baby';
@@ -294,9 +317,9 @@ const KeepsakeCard = forwardRef<View, KeepsakeCardProps>(
 
         {/* Polaroid frames */}
         <View style={styles.framesContainer}>
-          {words.length >= 3 && <ThreeWordLayout words={words} elevated={elevated} />}
-          {words.length === 2 && <TwoWordLayout words={words} elevated={elevated} />}
-          {words.length === 1 && <OneWordLayout words={words} elevated={elevated} />}
+          {words.length >= 3 && <ThreeWordLayout words={words} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />}
+          {words.length === 2 && <TwoWordLayout words={words} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />}
+          {words.length === 1 && <OneWordLayout words={words} elevated={elevated} placeholderBadgeColor={placeholderBadgeColor} placeholderBadgeIconColor={placeholderBadgeIconColor} />}
         </View>
 
         {/* Watermark */}
@@ -366,6 +389,10 @@ const styles = StyleSheet.create({
   placeholder: {
     backgroundColor: PLACEHOLDER_BG,
     borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderBadge: {
     alignItems: 'center',
     justifyContent: 'center',
   },

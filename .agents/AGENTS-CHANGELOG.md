@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_6
+
+**[fix] Keepsake placeholder badge exactly centered in photo frame area**
+
+- `src/components/keepsake/KeepsakeCard.tsx`: added `placeholderBadgeColor` + `placeholderBadgeIconColor` props; threaded through `LayoutProps` → layout components → `PolaroidFrame`; badge renders inside the placeholder `<View>` (which has `alignItems/justifyContent: center`) so it sits exactly where the emoji was; badge only shown when color prop provided; added `placeholderBadge` style
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: preview `KeepsakeCard` now receives `placeholderBadgeColor={colors.primary}` + `placeholderBadgeIconColor={colors.textOnPrimary}`; removed visible badge from `frameTouchTarget` overlay (replaced with transparent `swapBadgeHitArea` for test ID only); capture card receives no badge props (clean image)
+- Builds on `2026-04-14_5`
+
 ### 2026-04-14_5
 
 **[fix] Keepsake polaroid placeholder: round camera badge in preview, blank in captured card**

@@ -36,7 +36,13 @@ Adds keepsake book to ZIP backup export/import and centers the camera swap badge
 
 ## Enhancements
 
-### 2026-04-14 — Polaroid placeholder: blank card + prominent round badge in preview
+### 2026-04-14 — Polaroid placeholder badge exactly centered in photo frame
+
+- **Description:** Added `placeholderBadgeColor`/`placeholderBadgeIconColor` props to `KeepsakeCard` → `PolaroidFrame`. Badge renders inside the placeholder `<View>` (centered by flex), exactly where the emoji was. Preview card passes `colors.primary`/`textOnPrimary`; capture card passes nothing. Overlay touch target keeps transparent `swapBadgeHitArea` for test ID.
+- **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`
+- **Plan Updates:** None.
+
+### 2026-04-14 — Polaroid placeholder: blank card + prominent round badge in preview (superseded)
 
 - **Description:** `KeepsakeCard.tsx` placeholder reverted to empty `<View>` (no icon in captured image). `KeepsakePreviewModal.tsx` `swapBadge` enlarged to 44×44dp with 22px icon so the round camera button is prominently centered in the photo frame when no photo is set.
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `src/components/keepsake/KeepsakePreviewModal.tsx`
