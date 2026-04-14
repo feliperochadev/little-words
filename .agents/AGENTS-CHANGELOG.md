@@ -2,6 +2,16 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_2
+
+**[fix] SonarCloud S3776 cognitive complexity in backupExport.ts**
+
+- `src/utils/backupExport.ts`: extracted two `for` loops from `buildBackupZip` into `addMediaAssetsToFileMap` and `addKeepsakeOverridesToFileMap` helpers; reduces cognitive complexity 16→~10
+
+**[config] Document S3776 cognitive complexity rule in sonar.md**
+
+- `.agents/standards/sonar.md`: added full S3776 entry with fix pattern, prevention tips, and updated checklist
+
 ### 2026-04-15_1
 
 **[fix] Memories screen icon + keepsake photo override backup/restore**

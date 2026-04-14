@@ -62,6 +62,48 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
+async function addMediaAssetsToFileMap(
+  assetsWithPaths: BackupAsset[],
+  fileMap: Record<string, Uint8Array>,
+): Promise<void> {
+  for (const asset of assetsWithPaths) {
+    const fileUri = getAssetFileUri(
+      asset.parent_type as ParentType,
+      asset.parent_id,
+      asset.asset_type,
+      asset.filename,
+    );
+    try {
+      const file = new FSFile(fileUri);
+      if (file.exists) {
+        const bytes = await file.bytes();
+        fileMap[`media/${asset.media_path}`] = bytes;
+      }
+    } catch {
+      // File missing or unreadable — skip; import will log a warning
+    }
+  }
+}
+
+async function addKeepsakeOverridesToFileMap(
+  keepsakeStateRows: { key: string; value: string }[],
+  fileMap: Record<string, Uint8Array>,
+): Promise<void> {
+  for (const row of keepsakeStateRows) {
+    if (!row.key.startsWith(PHOTO_OVERRIDE_PREFIX)) continue;
+    const wordId = row.key.slice(PHOTO_OVERRIDE_PREFIX.length);
+    try {
+      const file = new FSFile(row.value);
+      if (file.exists) {
+        const bytes = await file.bytes();
+        fileMap[`media/keepsake/overrides/${wordId}.jpg`] = bytes;
+      }
+    } catch {
+      // Override file unreadable or gone — skip; import will drop this override
+    }
+  }
+}
+
 export async function buildBackupZip(
   t: (key: string) => string,
   locale: string,
@@ -125,23 +167,7 @@ export async function buildBackupZip(
   };
 
   // Read each media file into the ZIP map
-  for (const asset of assetsWithPaths) {
-    const fileUri = getAssetFileUri(
-      asset.parent_type as ParentType,
-      asset.parent_id,
-      asset.asset_type,
-      asset.filename,
-    );
-    try {
-      const file = new FSFile(fileUri);
-      if (file.exists) {
-        const bytes = await file.bytes();
-        fileMap[`media/${asset.media_path}`] = bytes;
-      }
-    } catch {
-      // File missing or unreadable — skip; import will log a warning
-    }
-  }
+  await addMediaAssetsToFileMap(assetsWithPaths, fileMap);
 
   // Include keepsake image if it exists
   if (hasKeepsake) {
@@ -154,19 +180,7 @@ export async function buildBackupZip(
   }
 
   // Include photo override files (ephemeral URIs that must be persisted into the ZIP)
-  for (const row of keepsakeStateRows) {
-    if (!row.key.startsWith(PHOTO_OVERRIDE_PREFIX)) continue;
-    const wordId = row.key.slice(PHOTO_OVERRIDE_PREFIX.length);
-    try {
-      const file = new FSFile(row.value);
-      if (file.exists) {
-        const bytes = await file.bytes();
-        fileMap[`media/keepsake/overrides/${wordId}.jpg`] = bytes;
-      }
-    } catch {
-      // Override file unreadable or gone — skip; import will drop this override
-    }
-  }
+  await addKeepsakeOverridesToFileMap(keepsakeStateRows, fileMap);
 
   return zipSync(fileMap, { level: 1 });
 }
