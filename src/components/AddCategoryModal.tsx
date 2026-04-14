@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   emojiScroll:      { marginBottom: 16 },
   emojiBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
   emojiText:        { fontSize: 24 },
-  colorGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  colorGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20, paddingHorizontal: 4 },
   colorBtn:         { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   colorBtnSelected: { borderWidth: 3, transform: [{ scale: 1.15 }] },
   colorCheck:       { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
