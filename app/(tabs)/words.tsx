@@ -10,7 +10,6 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Card, CategoryBadge, EmptyState } from '../../src/components/UIComponents';
 import { ListScreenControls } from '../../src/components/ListScreenControls';
 import { AddWordModal } from '../../src/components/AddWordModal';
-import { AddVariantModal } from '../../src/components/AddVariantModal';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useI18n, useCategoryName } from '../../src/i18n/i18n';
 import { sortWords, SortKey } from '../../src/utils/sortHelpers';
@@ -18,7 +17,7 @@ import { formatDateDMY } from '../../src/utils/dateHelpers';
 import { buildDefaultSortOptions } from '../../src/utils/sortOptions';
 import { useWords } from '../../src/hooks/useWords';
 import { useTheme } from '../../src/hooks/useTheme';
-import type { Word, Variant } from '../../src/types/domain';
+import type { Word } from '../../src/types/domain';
 import { WordAssetChips } from '../../src/components/WordAssetChips';
 
 const EMPTY_WORDS: Word[] = [];
@@ -39,11 +38,9 @@ export default function WordsScreen() {
   const [sort, setSort] = useState<SortKey>('date_desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showAddWord, setShowAddWord] = useState(false);
-  const [showAddVariant, setShowAddVariant] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryToEdit | null>(null);
   const [editWord, setEditWord] = useState<Word | null>(null);
-  const [editVariant, setEditVariant] = useState<Variant | null>(null);
 
   // Server state via TanStack Query — caching, dedup, auto-refresh on focus
   const { data: words = EMPTY_WORDS, refetch } = useWords(search);
@@ -195,15 +192,6 @@ export default function WordsScreen() {
         onDeleted={closeWordModal}
         editWord={editWord}
         onEditDuplicate={(w) => { setShowAddWord(false); setTimeout(() => { setEditWord(w); setShowAddWord(true); }, 300); }}
-      />
-
-      <AddVariantModal
-        visible={showAddVariant}
-        onClose={() => { setShowAddVariant(false); setEditVariant(null); }}
-        onSave={() => {}}
-        onDeleted={() => { setShowAddVariant(false); setEditVariant(null); }}
-        word={null}
-        editVariant={editVariant}
       />
 
       <AddCategoryModal

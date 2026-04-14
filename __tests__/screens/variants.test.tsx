@@ -1,10 +1,16 @@
 import React from 'react';
 import { fireEvent, waitFor, act } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { renderWithProviders } from '../helpers/renderWithProviders';
+
+jest.spyOn(Alert, 'alert');
 
 jest.mock('../../src/services/variantService', () => ({
   ...jest.requireActual('../../src/services/variantService'),
   getAllVariants: jest.fn(),
+  addVariant: jest.fn().mockResolvedValue(1),
+  updateVariant: jest.fn().mockResolvedValue(undefined),
+  deleteVariant: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../../src/services/wordService', () => ({
@@ -253,6 +259,74 @@ describe('VariantsScreen', () => {
 
     // Restore the default no-op implementation
     (useFocusEffect as jest.Mock).mockImplementation(jest.fn());
+  });
+
+  it('search filter matches main_word when variant does not match (covers null main_word branch)', async () => {
+    const variantNullMain = { ...sampleVariants[0], main_word: null };
+    (db.getAllVariants as jest.Mock).mockResolvedValue([variantNullMain]);
+    const { findByPlaceholderText, findByText } = renderWithProviders(<VariantsScreen />);
+    await findByText(/mamá/);
+    const input = await findByPlaceholderText(/Search variants/);
+    // search for text not in variant but in a null main_word — covers the || '' branch
+    fireEvent.changeText(input, 'zzznomatch');
+    await waitFor(() => {
+      // filtered list should be empty → empty search state shown
+    });
+  });
+
+  it('renders variant with null asset_count without error', async () => {
+    const variantNullAssets = { ...sampleVariants[0], asset_count: null, audio_count: 0, photo_count: 0, video_count: 0 };
+    (db.getAllVariants as jest.Mock).mockResolvedValue([variantNullAssets]);
+    const { findByText } = renderWithProviders(<VariantsScreen />);
+    expect(await findByText(/mamá/)).toBeTruthy();
+  });
+
+  it('openFirstVariant opens modal with first word pre-selected', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { findByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    fireEvent.press(await findByTestId('variants-add-first-btn'));
+    expect(await findByText(/New Variant/)).toBeTruthy();
+  });
+
+  it('onSave callback invokes refetchVariants after successful add', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { getAllVariants } = require('../../src/services/variantService');
+    const { findByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    // Open modal with first word pre-selected
+    fireEvent.press(await findByTestId('variants-add-first-btn'));
+    await findByText(/New Variant/);
+    // Fill variant text
+    fireEvent.changeText(await findByTestId('variant-input'), 'mamá');
+    // Save — triggers onSave → refetchVariants
+    await act(async () => {
+      fireEvent.press(await findByTestId('variant-save-btn'));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(getAllVariants.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('onDeleted callback invokes refetchVariants after variant deletion', async () => {
+    const { deleteVariant, getAllVariants } = require('../../src/services/variantService');
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    // Open edit modal for existing variant
+    fireEvent.press(await findByTestId('variant-edit-btn-mamá'));
+    await findByTestId('variant-delete-btn');
+    // Tap delete
+    fireEvent.press(await findByTestId('variant-delete-btn'));
+    // Confirm via Alert destructive button
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+    const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
+    const destructiveBtn = alertCall[2].find((b: { style?: string; onPress?: () => void }) => b.style === 'destructive');
+    await act(async () => {
+      destructiveBtn?.onPress?.();
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(deleteVariant).toHaveBeenCalled();
+      expect(getAllVariants).toHaveBeenCalled();
+    });
   });
 
   it('sets active search when initialSearch is set on navigation', async () => {

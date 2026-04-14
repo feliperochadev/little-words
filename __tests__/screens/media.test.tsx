@@ -456,5 +456,51 @@ describe('MediaScreen', () => {
     const { getByTestId } = renderWithProviders(<MediaScreen />);
     await waitFor(() => expect(getByTestId('media-item-1')).toBeTruthy());
   });
+
+  it('closes audio overlay via backdrop dismiss', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId, queryByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    fireEvent.press(getByTestId('media-item-1'));
+    await waitFor(() => {
+      expect(getByTestId('audio-preview-modal').props.visible).toBeTruthy();
+    });
+    fireEvent.press(getByTestId('audio-preview-backdrop'));
+    await waitFor(() => {
+      const modal = queryByTestId('audio-preview-modal');
+      expect(!modal || modal.props.visible === false).toBeTruthy();
+    });
+  });
+
+  it('closes photo overlay via dismiss button', async () => {
+    const photoAsset: AssetWithLink = { ...sampleAsset, asset_type: 'photo' };
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([photoAsset]);
+    const { getByTestId, queryByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-item-1'));
+    fireEvent.press(getByTestId('media-item-1'));
+    await waitFor(() => {
+      expect(getByTestId('photo-preview-modal').props.visible).toBeTruthy();
+    });
+    fireEvent.press(getByTestId('photo-preview-dismiss'));
+    await waitFor(() => {
+      const modal = queryByTestId('photo-preview-modal');
+      expect(!modal || modal.props.visible === false).toBeTruthy();
+    });
+  });
+
+  it('closes edit asset modal via cancel button', async () => {
+    (assetService.getAllAssets as jest.Mock).mockResolvedValue([sampleAsset]);
+    const { getByTestId, queryByTestId } = renderWithProviders(<MediaScreen />);
+    await waitFor(() => getByTestId('media-edit-1'));
+    fireEvent.press(getByTestId('media-edit-1'));
+    await waitFor(() => {
+      expect(getByTestId('edit-asset-modal')).toBeTruthy();
+    });
+    fireEvent.press(getByTestId('edit-asset-cancel'));
+    await waitFor(() => {
+      const modal = queryByTestId('edit-asset-modal');
+      expect(!modal || modal.props.visible === false).toBeTruthy();
+    });
+  });
 });
 

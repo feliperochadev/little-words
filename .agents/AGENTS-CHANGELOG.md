@@ -2,6 +2,23 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-13_7
+
+**[fix] SonarCloud coverage: remove dead code, add branch/callback coverage tests, document patterns**
+
+- `app/(tabs)/words.tsx`: remove dead `AddVariantModal` block (never opened — `setShowAddVariant(true)` was never called), remove `showAddVariant`, `editVariant` state vars, `AddVariantModal` import, `Variant` type import
+- `app/(tabs)/variants.tsx`: remove unused `noWords` variable; extend `variantService` mock with `addVariant`/`updateVariant`/`deleteVariant` for callback coverage
+- `app/(tabs)/media.tsx`: remove unused `theme` import (replaced by `colors` from `useTheme()`)
+- `__tests__/screens/variants.test.tsx`: add `Alert` spy; add tests for `openFirstVariant` body, `onSave` refetch, `onDeleted` refetch, null `main_word` search branch, null `asset_count` render
+- `__tests__/screens/words.test.tsx`: add test for word with null `category_color`/`category_emoji` (hits `|| colors.primary` fallback branches)
+- `__tests__/screens/media.test.tsx`: add close tests for audio overlay (backdrop), photo overlay (dismiss), edit asset modal (cancel)
+- `.agents/standards/testing.md`: document 3 new patterns — Modal visibility after close (use `queryByTestId`), null-value branch coverage, mock all service mutations
+
+Coverage on changed files:
+- `media.tsx`: 100% stmts/funcs/lines (was 87.5% funcs)
+- `variants.tsx`: branch 89.65% (was 79.31%)
+- `words.tsx`: branch 88.57% (was 82.85%)
+
 ### 2026-04-13_6
 
 **[fix] Remove unused vars: `noWords` in variants.tsx, `theme` import in media.tsx**
