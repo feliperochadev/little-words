@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ScrollView, Alert, Animated,
+  StyleSheet, Alert, Animated, Keyboard, ScrollView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { CATEGORY_COLORS, CATEGORY_EMOJIS } from '../theme/category';
 import { withOpacity } from '../utils/colorHelpers';
@@ -154,7 +155,7 @@ export function AddCategoryModal({
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} />
       </Animated.View>
       <View style={styles.overlay} pointerEvents="box-none">
         <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
@@ -179,7 +180,11 @@ export function AddCategoryModal({
             )}
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={insets.bottom + 24}
+          >
             {/* Preview */}
             <View style={[styles.preview, { borderColor: selectedColor, backgroundColor: colors.surface }]}>
               <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
@@ -197,6 +202,7 @@ export function AddCategoryModal({
               placeholderTextColor={colors.textMuted}
               autoFocus
               autoCapitalize="words"
+              returnKeyType="done"
               testID="category-name-input"
             />
             {duplicate && (
@@ -247,7 +253,7 @@ export function AddCategoryModal({
                 testID="category-save-btn"
               />
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </Animated.View>
       </View>
     </Modal>

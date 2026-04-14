@@ -3,6 +3,7 @@ import {
   Modal, View, TouchableOpacity, StyleSheet, ScrollView,
   type StyleProp, type ViewStyle,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 
@@ -13,10 +14,11 @@ interface BottomSheetProps {
   testID?: string;
   contentStyle?: StyleProp<ViewStyle>;
   scrollable?: boolean;
+  keyboardAware?: boolean;
 }
 
 export function BottomSheet({
-  visible, onClose, children, testID, contentStyle, scrollable,
+  visible, onClose, children, testID, contentStyle, scrollable, keyboardAware,
 }: Readonly<BottomSheetProps>) {
   const insets = useSafeAreaInsets();
 
@@ -36,7 +38,15 @@ export function BottomSheet({
       />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + theme.spacing['6'] }]}>
         <View style={styles.handle} />
-        {scrollable ? (
+        {scrollable && keyboardAware ? (
+          <KeyboardAwareScrollView
+            contentContainerStyle={[styles.content, contentStyle]}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={insets.bottom + theme.spacing['6']}
+          >
+            {children}
+          </KeyboardAwareScrollView>
+        ) : scrollable ? (
           <ScrollView
             contentContainerStyle={[styles.content, contentStyle]}
             keyboardShouldPersistTaps="handled"

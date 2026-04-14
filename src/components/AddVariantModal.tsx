@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Modal, StyleSheet,
-  Alert, TouchableOpacity, ScrollView, Animated,
+  Alert, TouchableOpacity, Animated, Keyboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout } from '../theme/layout';
@@ -118,7 +119,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissModal} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} />
       </Animated.View>
       <View style={s.overlay} pointerEvents="box-none">
         <Animated.View style={[s.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
@@ -139,7 +140,11 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
             )}
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={insets.bottom + 24}
+          >
 
             {/* ── Word search ── */}
             {showSearch && (
@@ -161,6 +166,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
                         placeholder={t('addVariant.wordSearchPlaceholder')}
                         placeholderTextColor={colors.textMuted}
                         autoCapitalize="none"
+                        returnKeyType="search"
                         testID="variant-word-search"
                       />
                       {wordSearch.length > 0 && (
@@ -212,6 +218,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
                 : t('addVariant.variantPlaceholderGeneric')}
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
+              returnKeyType="next"
             />
 
             {duplicate && effectiveWord && (
@@ -230,6 +237,8 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
               style={[s.input, s.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]} value={notes} onChangeText={setNotes}
               placeholder={t('addVariant.notesPlaceholder')}
               placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
+              textAlignVertical="top"
+              returnKeyType="done"
               testID="variant-notes-input"
             />
 
@@ -242,7 +251,7 @@ export function AddVariantModal({ visible, onClose, onSave, onDeleted, word, edi
                 testID="variant-save-btn"
               />
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </Animated.View>
       </View>
     </Modal>

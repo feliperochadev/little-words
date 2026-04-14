@@ -2,6 +2,28 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_4
+
+**[feature] Keyboard UX best practices — prevent keyboard from covering inputs**
+
+- `app.json`: added `edgeToEdgeEnabled: true` + `softwareKeyboardLayoutMode: "resize"` to Android config
+- `android/app/src/main/res/values/styles.xml`: added `android:windowTranslucentStatus: false` to AppTheme
+- `app/_layout.tsx`: wrapped app root in `KeyboardProvider` from `react-native-keyboard-controller`
+- `src/components/AddWordModal.tsx`: `ScrollView` → `KeyboardAwareScrollView`; `Keyboard.dismiss()` on backdrop; `returnKeyType` on all TextInputs
+- `src/components/AddVariantModal.tsx`: same pattern
+- `src/components/AddCategoryModal.tsx`: same pattern
+- `src/components/EditProfileModal.tsx`: same pattern
+- `src/components/EditAssetModal.tsx`: same pattern
+- `src/components/MediaLinkingModal.tsx`: same pattern
+- `src/components/ImportModal.tsx`: same pattern
+- `src/components/BottomSheet.tsx`: added `keyboardAware` opt-in prop using `KeyboardAwareScrollView` when `scrollable && keyboardAware`
+- `src/components/Input.tsx`: added `returnKeyType` prop forwarded to TextInput
+- `app/onboarding.tsx`: `ScrollView` → `KeyboardAwareScrollView`; `TouchableWithoutFeedback` + `Keyboard.dismiss()` for dismiss-on-tap; `scrollRef` type → `KeyboardAwareScrollViewRef`
+- `jest.setup.js`: mock for `react-native-keyboard-controller` (`KeyboardProvider`, `KeyboardAwareScrollView`)
+- `package.json` / `package-lock.json`: `react-native-keyboard-controller` added
+- `__tests__/integration/BottomSheet.test.tsx`: tests for `keyboardAware` prop branch
+- `__tests__/integration/Input.test.tsx`: test for `returnKeyType` prop forwarding
+
 ### 2026-04-15_3
 
 **[security] Bump follow-redirects 1.15.11→1.16.0 (GHSA-r4q5-vmmm-2653)**

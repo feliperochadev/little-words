@@ -15,13 +15,14 @@ interface InputProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send' | 'default';
   maxLength?: number;
   editable?: boolean;
 }
 
 export function Input({
   value, onChangeText, placeholder, multiline, label, error, testID, style,
-  numberOfLines, autoCapitalize, autoCorrect, keyboardType, maxLength, editable,
+  numberOfLines, autoCapitalize, autoCorrect, keyboardType, returnKeyType, maxLength, editable,
 }: Readonly<InputProps>) {
   return (
     <View style={[styles.wrapper, style]}>
@@ -41,6 +42,7 @@ export function Input({
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCorrect}
         keyboardType={keyboardType}
+        returnKeyType={returnKeyType}
         maxLength={maxLength}
         editable={editable}
         testID={testID}

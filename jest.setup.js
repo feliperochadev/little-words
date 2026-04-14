@@ -250,5 +250,23 @@ jest.mock('expo-media-library', () => ({
   saveToLibraryAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock react-native-keyboard-controller
+jest.mock('react-native-keyboard-controller', () => {
+  const React = require('react');
+  const KeyboardAwareScrollView = ({ children, contentContainerStyle, style, ...props }) =>
+    React.createElement(
+      require('react-native').ScrollView,
+      { contentContainerStyle, style, ...props },
+      children,
+    );
+  const KeyboardProvider = ({ children }) => children;
+  return {
+    KeyboardProvider,
+    KeyboardAwareScrollView,
+    useKeyboardController: () => ({ enabled: true }),
+    useReanimatedKeyboardAnimation: () => ({ height: { value: 0 }, state: { value: 0 } }),
+  };
+});
+
 // Suppress console warnings in tests
 jest.spyOn(console, 'warn').mockImplementation(() => {});

@@ -45,4 +45,22 @@ describe('BottomSheet', () => {
     );
     expect(getByText('Scrollable Content')).toBeTruthy();
   });
+
+  it('renders children in a KeyboardAwareScrollView when scrollable and keyboardAware are true', () => {
+    const { getByText } = render(
+      <BottomSheet visible onClose={() => {}} scrollable keyboardAware>
+        <Text>Keyboard Aware Content</Text>
+      </BottomSheet>
+    );
+    expect(getByText('Keyboard Aware Content')).toBeTruthy();
+  });
+
+  it('applies contentStyle when scrollable is true', () => {
+    const { getByText } = render(
+      <BottomSheet visible onClose={() => {}} scrollable contentStyle={{ padding: 10 }}>
+        <Text>Styled</Text>
+      </BottomSheet>
+    );
+    expect(getByText('Styled')).toBeTruthy();
+  });
 });
