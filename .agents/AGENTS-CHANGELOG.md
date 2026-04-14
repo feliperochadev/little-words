@@ -2,6 +2,39 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-13_3
+
+**[feature] Enhance UX part 2: darker modal backdrops (+30%) + labeled media action buttons**
+
+- `src/components/AddWordModal.tsx`, `AddVariantModal.tsx`, `AddCategoryModal.tsx`, `EditProfileModal.tsx`, `ImportModal.tsx`, `EditAssetModal.tsx`, `MediaLinkingModal.tsx`: backdrop `rgba(0,0,0,0.5)` → `rgba(0,0,0,0.65)` (+30%)
+- `app/(tabs)/media.tsx`: replace icon-only action buttons with vertically-stacked labeled buttons — edit button uses `textMuted` border+bg (matches words/variants style); remove button uses `colors.error` border+bg with trash icon and "Remove" label; `rowActions` changed to `flexDirection: column`
+- Builds on: 2026-04-13_2
+
+### 2026-04-13_2
+
+**[feature] Enhance edit button on words/variants cards: border, background, increased gap**
+
+- `app/(tabs)/words.tsx`: edit button gains `borderWidth: 1`, `borderRadius: 8`, increased padding; inline `borderColor` and `backgroundColor` from `withOpacity(colors.textMuted, '40'/'10')`; `marginBottom` increased 4→5 (+15%) to widen gap between button and date
+- `app/(tabs)/variants.tsx`: same edit button styling as words.tsx
+- `__tests__/integration/tabLayout.integration.test.tsx`: add `useWords` mock — `_layout.tsx` now calls `useWords` for variants tab gating but test lacked a `QueryClientProvider`; mock fixes all 17 failing tests
+- Builds on: 2026-04-13_1
+
+### 2026-04-13_1
+
+**[feature] UX improvements part 2: variant gating, save gate, explicit edit buttons, date dedup, search bar alignment**
+
+- `app/(tabs)/variants.tsx`: disable add button + show no-words empty state when no words exist; show "Add First Variant" CTA when words exist but no variants; remove hint/tooltip banner; restructure card to edit button (top-right, `alignSelf: 'flex-end'`) above title row
+- `app/(tabs)/words.tsx`: restructure word card to edit button (top-right, `alignSelf: 'flex-end'`) above title row so date appears below edit button
+- `src/components/AddWordModal.tsx`: disable save/add button when word input has fewer than 2 characters
+- `src/components/TimelineItem.tsx`: add `showDate` prop (default `true`); renders empty `View` when `false`
+- `app/(tabs)/memories.tsx`: deduplicate date headers — consecutive items with the same `date_added` only show the date once
+- `app/(tabs)/media.tsx`: wrap SearchBar in container with `LIST_SCREEN_LAYOUT.paddingHorizontal`; align `titleRow`, `filtersRow`, `listContent`, `emptyContainer` padding to same constant
+- `src/theme/layout.ts`: add `LIST_SCREEN_LAYOUT` token (`paddingHorizontal: 20`, `searchBarGap: 12`)
+- `.agents/standards/design-system.md`: document `LIST_SCREEN_LAYOUT` usage rule for all list screens
+- `src/i18n/en-US.ts`, `src/i18n/pt-BR.ts`: add `variants.emptyNoWords`, `variants.emptyNoWordsSubtitle`, `variants.addFirst`; remove `variants.hint`
+- `src/components/UIComponents.tsx`: add `testID` and `action.testID` props to `EmptyState`
+- `__tests__/screens/variants.test.tsx`, `__tests__/screens/words.test.tsx`, `__tests__/integration/AddWordModal.test.tsx`, `__tests__/integration/TimelineItem.test.tsx`, `__tests__/screens/memories.test.tsx`: updated and new tests for all changes
+
 ### 2026-04-12_4
 
 **[feature] Enhance 2026-04-12_01-ux-improvements-part-1: variants screen title icon chatbubbles-outline → chatbubble-outline**

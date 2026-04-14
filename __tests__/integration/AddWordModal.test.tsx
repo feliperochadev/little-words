@@ -147,10 +147,34 @@ describe('AddWordModal', () => {
     expect(style.backgroundColor).toBe(getThemeForSex('boy').colors.primary);
   });
 
-  it('alerts on empty word save', async () => {
-    const { findByText } = renderModal();
-    fireEvent.press(await findByText('Add'));
-    await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
+  it('save button is disabled when word input is empty', async () => {
+    const { findByTestId } = renderModal();
+    const saveBtn = await findByTestId('word-save-btn');
+    expect(saveBtn.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('save button is disabled when word input is 1 character', async () => {
+    const { findByTestId, findByPlaceholderText } = renderModal();
+    const input = await findByPlaceholderText(/E\.g\./);
+    fireEvent.changeText(input, 'a');
+    const saveBtn = await findByTestId('word-save-btn');
+    expect(saveBtn.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('save button is enabled when word input has 2+ characters', async () => {
+    const { findByTestId, findByPlaceholderText } = renderModal();
+    const input = await findByPlaceholderText(/E\.g\./);
+    fireEvent.changeText(input, 'ab');
+    const saveBtn = await findByTestId('word-save-btn');
+    expect(saveBtn.props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('save button is enabled for accented 2-char input', async () => {
+    const { findByTestId, findByPlaceholderText } = renderModal();
+    const input = await findByPlaceholderText(/E\.g\./);
+    fireEvent.changeText(input, 'éà');
+    const saveBtn = await findByTestId('word-save-btn');
+    expect(saveBtn.props.accessibilityState?.disabled).toBeFalsy();
   });
 
   it('saves a new word', async () => {

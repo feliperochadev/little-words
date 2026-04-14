@@ -12,8 +12,12 @@ import { MoreTabButton } from '../../src/components/MoreTabButton';
 import { NotificationPrimingModal } from '../../src/components/NotificationPrimingModal';
 import { useMediaCapture } from '../../src/hooks/useMediaCapture';
 import { Ionicons } from '@expo/vector-icons';
+import { useWords } from '../../src/hooks/useWords';
+
+import type { Word } from '../../src/types/domain';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+const EMPTY_WORDS: Word[] = [];
 
 /** Opens AddWordModal globally whenever the capture phase is 'creating-word'. */
 function GlobalAddWordModal() {
@@ -48,6 +52,8 @@ export default function TabLayout() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { colors: themeColors } = useTheme();
+  const { data: words = EMPTY_WORDS } = useWords();
+  const hasWords = words.length > 0;
 
   return (
     <MediaCaptureProvider>
@@ -89,6 +95,7 @@ export default function TabLayout() {
           options={{
             title: t('tabs.variants'),
             tabBarIcon: VariantsTabIcon,
+            href: hasWords ? undefined : null,
           }}
         />
         <Tabs.Screen

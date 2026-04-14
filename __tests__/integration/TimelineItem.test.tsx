@@ -121,6 +121,32 @@ describe('TimelineItem', () => {
     expect(await findByText('mama')).toBeTruthy();
   });
 
+  it('hides date when showDate is false', async () => {
+    const { queryByText } = renderWithProviders(
+      <TimelineItem
+        item={WORD_ITEM}
+        index={0}
+        showDate={false}
+        onPlayAudio={() => {}}
+        onViewPhoto={() => {}}
+      />
+    );
+    expect(queryByText('3rd Mar, 2025')).toBeNull();
+  });
+
+  it('shows date when showDate is true (default)', async () => {
+    const { findByText } = renderWithProviders(
+      <TimelineItem
+        item={WORD_ITEM}
+        index={0}
+        showDate={true}
+        onPlayAudio={() => {}}
+        onViewPhoto={() => {}}
+      />
+    );
+    expect(await findByText('3rd Mar, 2025')).toBeTruthy();
+  });
+
   it('renders in compact mode with audio/photo controls', async () => {
     const onPlayAudio = jest.fn();
     const { findByTestId } = renderWithProviders(

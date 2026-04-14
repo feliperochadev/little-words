@@ -21,6 +21,7 @@ type TimelineItemProps = {
   isFirst?: boolean;
   isLast?: boolean;
   compact?: boolean;
+  showDate?: boolean;
   onPlayAudio: (item: TimelineItemModel) => void;
   onViewPhoto: (item: TimelineItemModel) => void;
 };
@@ -196,6 +197,7 @@ export function TimelineItem({
   isFirst = false,
   isLast = false,
   compact = false,
+  showDate = true,
   onPlayAudio,
   onViewPhoto,
 }: Readonly<TimelineItemProps>) {
@@ -238,10 +240,12 @@ export function TimelineItem({
     />
   );
 
-  const dateNode = (
+  const dateNode = showDate ? (
     <Text style={[styles.dateOutside, { color: colors.text, textAlign: isLeft ? 'left' : 'right' }]}>
       {formattedDate}
     </Text>
+  ) : (
+    <View />
   );
 
   return (

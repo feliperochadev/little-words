@@ -140,6 +140,29 @@ const elev = buildElevation(theme.colors.text, theme.colors.primary);
 ...elev.md,  // spread shadow props onto StyleSheet
 ```
 
+### List Screen Layout
+
+All list screens with a `SearchBar` + `FlatList` (Words, Variants, Media) **must** use `LIST_SCREEN_LAYOUT` from `src/theme/layout.ts`:
+
+```typescript
+import { LIST_SCREEN_LAYOUT } from '../theme/layout';
+
+// SearchBar wrapper
+<View style={{ paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal }}>
+  <SearchBar ... />
+</View>
+
+// FlatList contentContainerStyle
+contentContainerStyle={{ paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal, paddingBottom: 20 }}
+```
+
+| Token | Value | Meaning |
+|---|---|---|
+| `LIST_SCREEN_LAYOUT.paddingHorizontal` | `20` | Horizontal padding for search bar and list content |
+| `LIST_SCREEN_LAYOUT.searchBarGap` | `12` | Gap below search bar (`marginBottom` in `SearchBar` style) |
+
+**Never hardcode `16` or `20` for list screen padding** — always reference `LIST_SCREEN_LAYOUT`.
+
 ---
 
 ## Component Library

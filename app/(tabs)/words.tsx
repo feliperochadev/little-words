@@ -78,57 +78,63 @@ export default function WordsScreen() {
 
   const renderWord = ({ item, index }: { item: Word; index: number }) => (
     <Card style={[styles.wordCard]} testID={`word-item-${item.word}`}>
-      <TouchableOpacity onPress={() => { setEditWord(item); setShowAddWord(true); }} activeOpacity={0.8}>
-        <View style={styles.wordRow}>
-          <View style={styles.wordMain}>
-            <View style={styles.wordHeader}>
-              <Text style={[styles.wordText, { color: colors.text }]} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
-              <Text style={[styles.wordDate, { color: colors.textSecondary }]} testID={`word-date-${item.word}`}>{formatDateDMY(item.date_added)}</Text>
-            </View>
-            <View style={styles.wordMeta}>
-              {(() => {
-                const categoryId = item.category_id;
-                const categoryNameValue = item.category_name;
-                if (!categoryNameValue || categoryId === null) return null;
-                return (
-                <TouchableOpacity
-                  onLongPress={() => setEditCategory({
-                    id: categoryId,
-                    name: categoryName(categoryNameValue),
-                    color: item.category_color || colors.primary,
-                    emoji: item.category_emoji || '🏷️',
-                  })}
-                  delayLongPress={400}
-                  activeOpacity={1}
-                >
-                  <CategoryBadge
-                    name={categoryName(categoryNameValue)}
-                    color={item.category_color || colors.primary}
-                    emoji={item.category_emoji || '📝'}
-                    size="small"
-                  />
-                </TouchableOpacity>
-                );
-              })()}
-              {item.variant_texts?.split('|||').map((v: string) => (
-                <View key={v} style={[styles.variantChip, { backgroundColor: withOpacity(colors.secondary, '20') }]} testID={`word-variant-chip-${v}`}>
-                  <Ionicons name="chatbubble" size={12} color={colors.secondary} style={styles.variantChipIcon} testID={`word-variant-icon-${v}`} />
-                  <Text style={[styles.variantChipText, { color: colors.primaryDark }]} testID={`word-variant-text-${v}`}>{v}</Text>
-                </View>
-              ))}
-              {(item.asset_count ?? 0) > 0 && (
-                <WordAssetChips parentId={item.id} />
-              )}
-            </View>
-            {item.notes && (
-              <View style={styles.noteRow}>
-                <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
-                <Text style={[styles.notePreview, { color: colors.textSecondary }]} numberOfLines={1}>{item.notes}</Text>
-              </View>
-            )}
+      <View style={styles.cardRow}>
+        <View style={styles.wordMain}>
+          <Text style={[styles.wordText, { color: colors.text }]} testID={`word-pos-${index}-${item.word}`}>{item.word}</Text>
+          <View style={styles.wordMeta}>
+        {(() => {
+          const categoryId = item.category_id;
+          const categoryNameValue = item.category_name;
+          if (!categoryNameValue || categoryId === null) return null;
+          return (
+          <TouchableOpacity
+            onLongPress={() => setEditCategory({
+              id: categoryId,
+              name: categoryName(categoryNameValue),
+              color: item.category_color || colors.primary,
+              emoji: item.category_emoji || '🏷️',
+            })}
+            delayLongPress={400}
+            activeOpacity={1}
+          >
+            <CategoryBadge
+              name={categoryName(categoryNameValue)}
+              color={item.category_color || colors.primary}
+              emoji={item.category_emoji || '📝'}
+              size="small"
+            />
+          </TouchableOpacity>
+          );
+        })()}
+        {item.variant_texts?.split('|||').map((v: string) => (
+          <View key={v} style={[styles.variantChip, { backgroundColor: withOpacity(colors.secondary, '20') }]} testID={`word-variant-chip-${v}`}>
+            <Ionicons name="chatbubble" size={12} color={colors.secondary} style={styles.variantChipIcon} testID={`word-variant-icon-${v}`} />
+            <Text style={[styles.variantChipText, { color: colors.primaryDark }]} testID={`word-variant-text-${v}`}>{v}</Text>
           </View>
+        ))}
+        {(item.asset_count ?? 0) > 0 && (
+          <WordAssetChips parentId={item.id} />
+        )}
+          </View>
+          {item.notes && (
+            <View style={styles.noteRow}>
+              <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.notePreview, { color: colors.textSecondary }]} numberOfLines={1}>{item.notes}</Text>
+            </View>
+          )}
         </View>
-      </TouchableOpacity>
+        <View style={styles.cardRight}>
+          <TouchableOpacity
+            onPress={() => { setEditWord(item); setShowAddWord(true); }}
+            style={[styles.editBtn, { borderColor: withOpacity(colors.textMuted, '40'), backgroundColor: withOpacity(colors.textMuted, '10') }]}
+            testID={`word-edit-btn-${item.word}`}
+          >
+            <Ionicons name="pencil-outline" size={14} color={colors.textMuted} />
+            <Text style={[styles.editBtnText, { color: colors.textMuted }]}>{t('common.edit')}</Text>
+          </TouchableOpacity>
+          <Text style={[styles.wordDate, { color: colors.textSecondary }]} testID={`word-date-${item.word}`}>{formatDateDMY(item.date_added)}</Text>
+        </View>
+      </View>
     </Card>
   );
 
@@ -215,10 +221,10 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
   wordCard: { marginBottom: 10 },
-  wordRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
   wordMain: { flex: 1 },
-  wordHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 },
-  wordText: { fontSize: 20, fontWeight: '800' },
+  cardRight: { alignItems: 'flex-end', marginLeft: 8 },
+  wordText: { fontSize: 20, fontWeight: '800', marginBottom: 6 },
   wordMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   wordDate: { fontSize: 12 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
@@ -226,4 +232,6 @@ const styles = StyleSheet.create({
   variantChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   variantChipIcon: { marginRight: 3 },
   variantChipText: { fontSize: 11, fontWeight: '700' },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, marginBottom: 5, borderWidth: 1, borderRadius: 8 },
+  editBtnText: { fontSize: 12, fontWeight: '600' },
 });

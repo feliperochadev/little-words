@@ -102,11 +102,18 @@ describe('VariantsScreen', () => {
     expect(await findByText(/2 variants/)).toBeTruthy();
   });
 
-  it('shows empty state when no variants', async () => {
+  it('shows empty state when no variants but words exist', async () => {
     (db.getAllVariants as jest.Mock).mockResolvedValue([]);
     const { findByText } = renderWithProviders(<VariantsScreen />);
     expect(await findByText(/No variants yet/)).toBeTruthy();
   });
+
+  it('shows add-first-variant CTA button when words exist but no variants', async () => {
+    (db.getAllVariants as jest.Mock).mockResolvedValue([]);
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variants-add-first-btn')).toBeTruthy();
+  });
+
 
   it('renders notes on variant', async () => {
     const { findByText } = renderWithProviders(<VariantsScreen />);
@@ -126,11 +133,6 @@ describe('VariantsScreen', () => {
   it('renders date formatted', async () => {
     const { findByText } = renderWithProviders(<VariantsScreen />);
     expect(await findByText('15/01/2024')).toBeTruthy();
-  });
-
-  it('renders hint text', async () => {
-    const { findByText } = renderWithProviders(<VariantsScreen />);
-    expect(await findByText(/Variants are how the child/i)).toBeTruthy();
   });
 
   it('filters variants by search', async () => {
@@ -156,10 +158,14 @@ describe('VariantsScreen', () => {
     expect(await findByText(/New Variant/)).toBeTruthy();
   });
 
-  it('opens edit variant modal on variant press', async () => {
-    const { findByText } = renderWithProviders(<VariantsScreen />);
-    fireEvent.press(await findByText(/mamá/));
-    // Should open AddVariantModal in edit mode
+  it('shows edit button on variant card', async () => {
+    const { findByTestId } = renderWithProviders(<VariantsScreen />);
+    expect(await findByTestId('variant-edit-btn-mamá')).toBeTruthy();
+  });
+
+  it('opens edit variant modal via edit button', async () => {
+    const { findByTestId, findByText } = renderWithProviders(<VariantsScreen />);
+    fireEvent.press(await findByTestId('variant-edit-btn-mamá'));
     expect(await findByText(/Edit Variant/)).toBeTruthy();
   });
 

@@ -250,6 +250,45 @@ describe('MemoriesScreen', () => {
     });
   });
 
+  it('deduplicates date headers for consecutive items with same date', async () => {
+    const SAME_DATE_SAMPLE = [
+      {
+        id: 1,
+        text: 'mama',
+        item_type: 'word' as const,
+        created_at: '2026-03-03T10:00:00.000Z',
+        date_added: '2026-03-03',
+        main_word_text: null,
+        word_id: null,
+        audio_count: 0,
+        photo_count: 0,
+        first_photo_filename: null,
+        first_photo_mime: null,
+      },
+      {
+        id: 2,
+        text: 'papa',
+        item_type: 'word' as const,
+        created_at: '2026-03-03T12:00:00.000Z',
+        date_added: '2026-03-03',
+        main_word_text: null,
+        word_id: null,
+        audio_count: 0,
+        photo_count: 0,
+        first_photo_filename: null,
+        first_photo_mime: null,
+      },
+    ];
+    (memoriesService.getTimelineItemsPaginated as jest.Mock).mockResolvedValue(SAME_DATE_SAMPLE);
+
+    const { findByText, findAllByText } = renderWithProviders(<MemoriesScreen />);
+    await findByText('mama');
+    await findByText('papa');
+    // Both items on same date — date header should appear only once
+    const dateHeaders = await findAllByText('3rd Mar, 2026');
+    expect(dateHeaders).toHaveLength(1);
+  });
+
   it('pressing retry button in error state covers retry handler', async () => {
     (memoriesService.getTimelineItemsPaginated as jest.Mock).mockRejectedValueOnce(new Error('fail'));
     const { findByText } = renderWithProviders(<MemoriesScreen />);

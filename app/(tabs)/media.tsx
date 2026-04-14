@@ -15,6 +15,7 @@ import { EditAssetModal } from '../../src/components/EditAssetModal';
 import { SearchBar, EmptyState } from '../../src/components/UIComponents';
 import { getAssetFileUri } from '../../src/utils/assetStorage';
 import { theme } from '../../src/theme';
+import { LIST_SCREEN_LAYOUT } from '../../src/theme/layout';
 import { withOpacity } from '../../src/utils/colorHelpers';
 import type { AssetType, AssetWithLink } from '../../src/types/asset';
 
@@ -143,17 +144,19 @@ export default function MediaScreen() {
         <View style={s.rowActions}>
           <TouchableOpacity
             onPress={() => setEditAsset(item)}
-            style={s.actionBtn}
+            style={[s.actionBtn, { borderColor: withOpacity(colors.textMuted, '40'), backgroundColor: withOpacity(colors.textMuted, '10') }]}
             testID={`media-edit-${item.id}`}
           >
-            <Ionicons name="pencil-outline" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="pencil-outline" size={13} color={colors.textMuted} />
+            <Text style={[s.actionBtnText, { color: colors.textMuted }]}>{t('common.edit')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleRemove(item)}
-            style={s.actionBtn}
+            style={[s.actionBtn, { borderColor: withOpacity(colors.error, '50'), backgroundColor: withOpacity(colors.error, '10') }]}
             testID={`media-remove-${item.id}`}
           >
-            <Ionicons name="trash-outline" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="trash-outline" size={13} color={colors.error} />
+            <Text style={[s.actionBtnText, { color: colors.error }]}>{t('common.remove')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -167,12 +170,14 @@ export default function MediaScreen() {
         <Text style={[s.title, { color: theme.colors.text }]}>{t('media.title')}</Text>
       </View>
 
-      <SearchBar
-        value={search}
-        onChangeText={setSearch}
-        placeholder={t('media.searchPlaceholder')}
-        testID="media-search"
-      />
+      <View style={s.searchContainer}>
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t('media.searchPlaceholder')}
+          testID="media-search"
+        />
+      </View>
 
       <View style={s.filtersRow}>
         <View style={s.filters}>
@@ -257,9 +262,9 @@ export default function MediaScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, gap: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal, paddingTop: 12, paddingBottom: 4, gap: 8 },
   title: { fontSize: 20, fontWeight: '700', flex: 1 },
-  filtersRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8, position: 'relative' },
+  filtersRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal, marginBottom: 8, position: 'relative' },
   filters: { flexDirection: 'row', flex: 1, gap: 8, flexWrap: 'nowrap' },
   filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   filterLabel: { fontSize: 12, fontWeight: '600' },
@@ -267,8 +272,9 @@ const s = StyleSheet.create({
   sortMenu: { position: 'absolute', top: '100%', right: 0, zIndex: 100, borderWidth: 1, borderRadius: 12, overflow: 'hidden', minWidth: 180 },
   sortMenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 },
   sortMenuLabel: { fontSize: 14 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  emptyContainer: { flex: 1, paddingHorizontal: 16 },
+  searchContainer: { paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal },
+  listContent: { paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal, paddingBottom: 100 },
+  emptyContainer: { flex: 1, paddingHorizontal: LIST_SCREEN_LAYOUT.paddingHorizontal },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8, borderRadius: 12, borderWidth: 1, gap: 10 },
   typeIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   rowContent: { flex: 1, gap: 3 },
@@ -276,6 +282,7 @@ const s = StyleSheet.create({
   linkBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   linkBadgeText: { fontSize: 11, fontWeight: '600' },
   rowMeta: { fontSize: 11 },
-  rowActions: { flexDirection: 'row', gap: 4 },
-  actionBtn: { padding: 8 },
+  rowActions: { flexDirection: 'column', gap: 4, alignItems: 'flex-end' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, borderWidth: 1, borderRadius: 8 },
+  actionBtnText: { fontSize: 12, fontWeight: '600' },
 });

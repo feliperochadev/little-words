@@ -86,16 +86,21 @@ export default function MemoriesScreen() {
     }, [])
   );
 
-  const renderItem = useCallback(({ item, index }: Readonly<{ item: TimelineItemModel; index: number }>) => (
-    <TimelineItem
-      item={item}
-      index={index}
-      isFirst={index === 0}
-      isLast={index === items.length - 1}
-      onPlayAudio={handlePlayAudio}
-      onViewPhoto={handleViewPhoto}
-    />
-  ), [handlePlayAudio, handleViewPhoto, items.length]);
+  const renderItem = useCallback(({ item, index }: Readonly<{ item: TimelineItemModel; index: number }>) => {
+    const prevItem = index > 0 ? items[index - 1] : null;
+    const showDate = prevItem === null || prevItem.date_added !== item.date_added;
+    return (
+      <TimelineItem
+        item={item}
+        index={index}
+        isFirst={index === 0}
+        isLast={index === items.length - 1}
+        showDate={showDate}
+        onPlayAudio={handlePlayAudio}
+        onViewPhoto={handleViewPhoto}
+      />
+    );
+  }, [handlePlayAudio, handleViewPhoto, items]);
 
   const renderFooter = useCallback(() => {
     if (!isFetchingNextPage) return null;

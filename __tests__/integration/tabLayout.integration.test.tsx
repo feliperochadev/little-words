@@ -10,6 +10,10 @@ jest.mock('../../src/services/settingsService', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../src/hooks/useWords', () => ({
+  useWords: jest.fn(() => ({ data: [] })),
+}));
+
 jest.mock('../../src/components/MediaFAB', () => ({
   MediaFAB: () => null,
 }));

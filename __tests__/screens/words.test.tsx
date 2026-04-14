@@ -174,9 +174,14 @@ describe('WordsScreen', () => {
     });
   });
 
-  it('opens edit word modal on word press', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+  it('shows edit button on word card', async () => {
+    const { findByTestId } = renderWithProviders(<WordsScreen />);
+    expect(await findByTestId('word-edit-btn-mamãe')).toBeTruthy();
+  });
+
+  it('opens edit word modal via edit button', async () => {
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
@@ -197,8 +202,8 @@ describe('WordsScreen', () => {
   });
 
   it('handles word deletion from modal', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
@@ -208,15 +213,15 @@ describe('WordsScreen', () => {
     expect(await findByText(/Edit Category/)).toBeTruthy();
   });
 
-  it('opens edit word via card area press', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText(/first word/));
+  it('opens edit word modal via notes area (edit button)', async () => {
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
   });
 
   it('handles word deletion and closes modal', async () => {
-    const { findByText } = renderWithProviders(<WordsScreen />);
-    fireEvent.press(await findByText('mamãe'));
+    const { findByTestId, findByText } = renderWithProviders(<WordsScreen />);
+    fireEvent.press(await findByTestId('word-edit-btn-mamãe'));
     expect(await findByText(/Edit Word/)).toBeTruthy();
     fireEvent.press(await findByText(/Remove/));
     await waitFor(() => expect(Alert.alert).toHaveBeenCalled());
