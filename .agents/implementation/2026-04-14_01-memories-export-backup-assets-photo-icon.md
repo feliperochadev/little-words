@@ -53,3 +53,9 @@ Adds keepsake book to ZIP backup export/import and centers the camera swap badge
 - **Description:** Removed category emoji (and 💬 fallback) from the photo placeholder inside each polaroid frame. Replaced with a centered `Ionicons camera-outline` icon sized at 25% of the photo area, colored `TEXT_LIGHT`. Removed the now-unused `placeholderEmoji` StyleSheet entry.
 - **Files Modified:** `src/components/keepsake/KeepsakeCard.tsx`, `__tests__/integration/KeepsakeCard.test.tsx`
 - **Plan Updates:** None — visual-only change, no architecture impact.
+
+### 2026-04-15 — Memories icon + keepsake photo override backup/restore
+
+- **Description:** (1) Changed memories screen header icon from `time-outline` to `gift-outline` to match the tab bar icon. (2) Fixed keepsake backup/restore: photo overrides store ephemeral ImagePicker URIs. Export now reads those files and includes them in the ZIP as `media/keepsake/overrides/{wordId}.jpg`. Import remaps word IDs (`photo_override_{oldId}` → `photo_override_{newId}`), writes the override file to local storage, and sets the new URI. Overrides are dropped when the word is missing from backup or the file wasn't in the ZIP.
+- **Files Modified:** `app/(tabs)/memories.tsx`, `src/utils/backupExport.ts`, `src/utils/backupImport.ts`, `__tests__/unit/backupExport.test.ts`, `__tests__/unit/backupImport.test.ts`
+- **Plan Updates:** None.

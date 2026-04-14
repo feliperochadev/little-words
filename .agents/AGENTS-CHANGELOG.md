@@ -2,6 +2,16 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_1
+
+**[fix] Memories screen icon + keepsake photo override backup/restore**
+
+- `app/(tabs)/memories.tsx`: changed header icon from `time-outline` to `gift-outline` to match tab bar
+- `src/utils/backupExport.ts`: added `PHOTO_OVERRIDE_PREFIX`; export now reads photo override files from their ephemeral URIs and includes them in ZIP as `media/keepsake/overrides/{wordId}.jpg`
+- `src/utils/backupImport.ts`: `restoreKeepsake()` now accepts word idMap; photo overrides are remapped (old→new word ID), override files written to `Documents/media/keepsake/overrides/`, and new local URIs stored. Overrides dropped when word missing or file not in ZIP
+- `__tests__/unit/backupExport.test.ts`: tests for override file inclusion/skip in ZIP
+- `__tests__/unit/backupImport.test.ts`: tests for override remap, skip on missing word, skip on missing file
+
 ### 2026-04-14_6
 
 **[fix] Keepsake placeholder badge exactly centered in photo frame area**

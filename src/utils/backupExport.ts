@@ -15,6 +15,7 @@ import type { BackupManifest, BackupData, BackupAsset } from '../types/backup';
 import type { ParentType, AssetType } from '../types/asset';
 
 const KEEPSAKE_MEDIA_ZIP_PATH = 'keepsake/keepsake.jpg';
+const PHOTO_OVERRIDE_PREFIX = 'photo_override_';
 
 function buildKeepsakeFileUri(): string {
   return `${Paths.document.uri}media/keepsake/keepsake.jpg`;
@@ -149,6 +150,21 @@ export async function buildBackupZip(
       fileMap[`media/${KEEPSAKE_MEDIA_ZIP_PATH}`] = bytes;
     } catch {
       // File unreadable — skip silently
+    }
+  }
+
+  // Include photo override files (ephemeral URIs that must be persisted into the ZIP)
+  for (const row of keepsakeStateRows) {
+    if (!row.key.startsWith(PHOTO_OVERRIDE_PREFIX)) continue;
+    const wordId = row.key.slice(PHOTO_OVERRIDE_PREFIX.length);
+    try {
+      const file = new FSFile(row.value);
+      if (file.exists) {
+        const bytes = await file.bytes();
+        fileMap[`media/keepsake/overrides/${wordId}.jpg`] = bytes;
+      }
+    } catch {
+      // Override file unreadable or gone — skip; import will drop this override
     }
   }
 

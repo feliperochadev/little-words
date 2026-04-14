@@ -269,6 +269,38 @@ describe('backupExport', () => {
       expect(data.keepsake.state).toHaveLength(0);
     });
 
+    it('includes photo override files in ZIP when file exists', async () => {
+      const overrideBytes = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+      mockGetAllKeepsakeStateForBackup.mockResolvedValue([
+        { key: 'keepsake_generated', value: 'true' },
+        { key: 'photo_override_5', value: 'file:///cache/ImagePicker/photo.jpg' },
+      ]);
+      // Override file exists and is readable
+      mockFileBytes.mockResolvedValue(overrideBytes);
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      expect(Object.keys(extracted)).toContain('media/keepsake/overrides/5.jpg');
+    });
+
+    it('skips photo override file when it does not exist', async () => {
+      mockGetAllKeepsakeStateForBackup.mockResolvedValue([
+        { key: 'keepsake_generated', value: 'true' },
+        { key: 'photo_override_7', value: 'file:///cache/ImagePicker/gone.jpg' },
+      ]);
+      const { File } = require('expo-file-system');
+      // keepsake file (exists=true), asset file (exists=true), override file (exists=false)
+      File.mockImplementationOnce(() => ({
+        exists: true, bytes: mockFileBytes, write: mockFileWrite, uri: 'keepsake.jpg',
+      })).mockImplementationOnce(() => ({
+        exists: true, bytes: mockFileBytes, write: mockFileWrite, uri: 'asset.m4a',
+      })).mockImplementationOnce(() => ({
+        exists: false, bytes: mockFileBytes, write: mockFileWrite, uri: 'gone.jpg',
+      }));
+      const zipBytes = await buildBackupZip(mockT, mockLocale);
+      const extracted = unzipSync(zipBytes);
+      expect(Object.keys(extracted)).not.toContain('media/keepsake/overrides/7.jpg');
+    });
+
     it('skips asset file when file does not exist on disk', async () => {
       // File instantiation order: (1) keepsake check, (2) asset in loop
       // Use two mockImplementationOnce: keepsake exists, asset does not
