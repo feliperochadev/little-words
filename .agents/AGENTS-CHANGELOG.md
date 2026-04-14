@@ -2,7 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
-### 2026-04-15_2
+### 2026-04-15_3
+
+**[security] Bump follow-redirects 1.15.11→1.16.0 (GHSA-r4q5-vmmm-2653)**
+
+- `package-lock.json`: `npm audit fix` bumped `follow-redirects` to patch auth header leak vuln
+
+
 
 **[fix] SonarCloud S3776 cognitive complexity in backupExport.ts**
 
