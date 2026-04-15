@@ -37,15 +37,17 @@ Automate fixing SonarCloud issues, security hotspots, and test coverage gaps fou
    - **Complexity**: Refactor complex functions
    - **Code Smells**: Apply naming/style fixes
 
-5. **Document Findings** — Update relevant `.agents/standards/` files:
-   - **Coverage gaps** → `.agents/standards/testing.md`
-   - **Duplication patterns** → `.agents/standards/quality.md`
-   - **Security hotspots** → `.agents/standards/security.md`
-   - **Type/style issues** → `.agents/standards/typescript.md` or `.agents/standards/styling-and-naming.md`
-   - **Component patterns** → `.agents/standards/components.md`
-   - **Hook/state patterns** → `.agents/standards/hooks.md` or `.agents/standards/state-management.md`
+5. **Document Findings** — For every Sonar rule violation fixed in this PR:
+   - **First**: check `.agents/standards/sonar.md` — if the rule (`S####`) does **not** have a section there yet, add one with a before/after code example and a prevention tip. This is the canonical Sonar rule reference.
+   - **Then** update the domain-specific standards file as well, if relevant:
+     - **Coverage gaps** → `.agents/standards/testing.md`
+     - **Duplication patterns** → `.agents/standards/quality.md`
+     - **Security hotspots** → `.agents/standards/security.md`
+     - **Type/style issues** → `.agents/standards/typescript.md` or `.agents/standards/styling-and-naming.md`
+     - **Component patterns** → `.agents/standards/components.md`
+     - **Hook/state patterns** → `.agents/standards/hooks.md` or `.agents/standards/state-management.md`
 
-   Include concrete examples and prevention tips.
+   Include concrete examples and prevention tips in every entry.
 
 6. **Validate Fixes** — For each fix:
    - Run `npm run lint` to check for linting errors

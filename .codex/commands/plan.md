@@ -76,7 +76,9 @@ Ask the user (or infer from context) the following:
 
 1. Copy `.agents/plan/design/DESIGN-TEMPLATE.md` to `.agents/plan/design/YYYY-MM-DD_NN-<slug>.md`.
 2. Fill in every section. Leave `## Open Questions` items as checkboxes if unresolved.
-3. Save the file. Reference it in the task description or changelog entry.
+3. In the `## Acceptance Criteria` section, always include this mandatory item:
+   - `[ ] New code follows all rules in `.agents/standards/sonar.md` — no S6749, S2004, S3776, or other documented violations introduced`
+4. Save the file. Reference it in the task description or changelog entry.
 
 **Naming convention:** `2026-03-11_01-google-drive-backup.md`, `2026-03-11_02-word-import-preview.md` (where `NN` is a daily sequence number).
 

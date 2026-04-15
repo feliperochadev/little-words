@@ -61,3 +61,4 @@ Brief notes on approaches that were discarded and why.
 
 - [ ] [testable criterion 1]
 - [ ] [testable criterion 2]
+- [ ] New code follows all rules in `.agents/standards/sonar.md` — no S6749, S2004, S3776, or other documented violations introduced

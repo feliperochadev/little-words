@@ -207,6 +207,41 @@ Remove commented-out code from production files. Use version control to recover 
 ### S1128 — Unnecessary imports
 Remove imports that are not referenced in the file.
 
+### S2004 — Function nesting depth > 4
+Functions must not be nested more than **4 levels deep**. Each arrow function, callback, or closure counts as one level. The component/module function is level 1.
+
+```ts
+// ❌ Don't — 5 levels: component → async fn → Promise callback → Alert buttons → onPress
+const withBackup = async (action) => {           // level 2
+  await new Promise<void>((resolve) => {         // level 3
+    Alert.alert('...', '...', [
+      { onPress: () => {                         // level 4
+        void Promise.resolve(action()).then(      // level 5 ← violation
+          () => resolve()
+        );
+      }},
+    ]);
+  });
+};
+
+// ✅ Do — extract Promise into a top-level helper
+function promptBackupFailed(t): Promise<boolean> {  // level 1 (top-level)
+  return new Promise<boolean>((resolve) => {         // level 2
+    Alert.alert('...', '...', [
+      { text: t('cancel'), style: 'cancel', onPress: () => resolve(false) },  // level 3
+      { text: t('proceed'), onPress: () => resolve(true) },                   // level 3
+    ]);
+  });
+}
+
+const withBackup = async (action) => {
+  const proceed = await promptBackupFailed(t);  // no extra nesting
+  if (proceed) await action();
+};
+```
+
+**Prevention:** whenever a `new Promise` wraps an `Alert.alert` inside an async handler, extract the Promise into a top-level named function that resolves to a `boolean` result. The caller `await`s the result and acts on it directly.
+
 ### S1874 — Deprecated APIs (covered in quality.md)
 
 ---
@@ -379,7 +414,7 @@ Key TypeScript rule IDs tracked by SonarCloud in this project include (non-exhau
 |----------|----------|
 | Bugs | S2259, S1751, S3984, S6544, S2187, S2201 |
 | Security | S2068, S2612, S4036, S5659, S4830, S2245, S5332, S3330, S5042, S2631 |
-| Code Smells | S1172, S1481, S1854, S3358, S1066, S3972, S3973, S1135, S125, S1128, S1874 |
+| Code Smells | S1172, S1481, S1854, S3358, S1066, S3972, S3973, S1135, S125, S1128, S1874, S2004 |
 | TypeScript | S4325, S4322, S4157, S4156, S2966, S3257, S1533, S4326, S1774 |
 | React | S6747, S6749, S6750, S6754, S6635 |
 | Complexity | S3776 (cognitive > 15 — extract loops/blocks into named helpers) |
@@ -401,3 +436,4 @@ Before every commit, verify new code:
 - [ ] No insecure protocols or weak crypto (S5332, S2245)
 - [ ] No unnecessary JSX fragments (S6749)
 - [ ] Functions do not exceed cognitive complexity 15 — extract loops/nested blocks into helpers (S3776)
+- [ ] Functions nested no more than 4 levels deep — extract Promise/Alert helpers to top-level if needed (S2004)
