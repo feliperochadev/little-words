@@ -2,6 +2,13 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_10
+
+**[fix] SonarCloud PR #71: S6749, S2004 coverage, duplication, security hotspots**
+
+- `src/components/AddWordModal.tsx`: removed redundant single-child fragment `<>` wrapping the `<Modal>` return (S6749)
+- `src/components/ImportModal.tsx`: extracted `promptBackupFailed()` as a top-level function, reducing `withBackup` arrow nesting from 5 to ≤4 levels (S2004)
+
 ### 2026-04-15_9
 
 **[fix] Enhance 2026-04-15_01-ui-polish-and-ios-fixes: button +10%, timeline word -5%, import tab labels -10%**
