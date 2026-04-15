@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, Alert, Animated, Keyboard, ScrollView,
-  InteractionManager,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -151,10 +150,10 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   // Avoids KeyboardAwareScrollView overshooting to bottom on iOS.
   useEffect(() => {
     if (!visible || editWord) return;
-    const handle = InteractionManager.runAfterInteractions(() => {
+    const timer = setTimeout(() => {
       wordInputRef.current?.focus();
-    });
-    return () => handle.cancel();
+    }, 200);
+    return () => clearTimeout(timer);
   }, [visible, editWord]);
 
   // Scroll category carousel to the selected chip when editing (runs when categories load).

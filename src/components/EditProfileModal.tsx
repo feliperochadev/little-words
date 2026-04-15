@@ -86,8 +86,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
   };
 
   return (
-    <>
-      <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
         <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="edit-profile-backdrop" />
         </Animated.View>
@@ -209,8 +208,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
           initialDate={birthDate}
           renderAsOverlay
         />
-      </Modal>
-    </>
+    </Modal>
   );
 }
 
