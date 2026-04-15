@@ -5,6 +5,7 @@ import { ImportModal } from '../../src/components/ImportModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as backupImport from '../../src/utils/backupImport';
+import * as backupExport from '../../src/utils/backupExport';
 const mockTextFn: jest.Mock = (FileSystem as any)._fileMock?.text;
 const mockBytesFn: jest.Mock = (FileSystem as any)._fileMock?.bytes;
 import * as categoryService from '../../src/services/categoryService';
@@ -44,6 +45,13 @@ jest.mock('../../src/utils/backupImport', () => ({
   importFullBackup: jest.fn(),
 }));
 
+jest.mock('../../src/utils/backupExport', () => ({
+  saveFullBackupToDevice: jest.fn().mockResolvedValue({ success: true }),
+  shareFullBackup: jest.fn().mockResolvedValue({ success: true }),
+  buildBackupZip: jest.fn().mockResolvedValue(new Uint8Array()),
+  buildBackupFilename: jest.fn().mockReturnValue('backup.zip'),
+}));
+
 jest.mock('../../src/services/notificationService', () => ({
   checkAndShowPriming: jest.fn(() => Promise.resolve()),
 }));
@@ -57,6 +65,7 @@ const mockAddWord = wordService.addWord as jest.MockedFunction<typeof wordServic
 const mockAddVariant = variantService.addVariant as jest.MockedFunction<typeof variantService.addVariant>;
 const mockGetDocumentAsync = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof DocumentPicker.getDocumentAsync>;
 const mockOpenBackupZip = backupImport.openBackupZip as jest.MockedFunction<typeof backupImport.openBackupZip>;
+const mockSaveFullBackupToDevice = backupExport.saveFullBackupToDevice as jest.MockedFunction<typeof backupExport.saveFullBackupToDevice>;
 const mockImportFullBackup = backupImport.importFullBackup as jest.MockedFunction<typeof backupImport.importFullBackup>;
 
 function renderWithProvider(ui: React.ReactElement) {
@@ -97,6 +106,7 @@ beforeEach(() => {
   mockOpenBackupZip.mockReturnValue({ fileMap: {}, data: MOCK_BACKUP_DATA, manifest: { version: '1.0', exported_at: '', app_version: '1.0', word_count: 1, variant_count: 0, category_count: 0, asset_count: 0, locale: 'en-US' } });
   mockImportFullBackup.mockResolvedValue(MOCK_IMPORT_RESULT);
   mockAddVariant.mockResolvedValue(1);
+  mockSaveFullBackupToDevice.mockResolvedValue({ success: true });
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 });
 
@@ -962,5 +972,99 @@ describe('ImportModal keyboard dismiss', () => {
     fireEvent.press(getByTestId('import-backdrop'));
     expect(dismissSpy).toHaveBeenCalled();
     dismissSpy.mockRestore();
+  });
+});
+
+describe('ImportModal pre-import backup guard (withBackup)', () => {
+  it('silently skips backup and does not open picker when backup is cancelled', async () => {
+    mockSaveFullBackupToDevice.mockResolvedValueOnce({ success: false, error: 'cancelled' });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockSaveFullBackupToDevice).toHaveBeenCalled());
+    expect(mockGetDocumentAsync).not.toHaveBeenCalled();
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('shows backup-failed alert with Cancel/Proceed when backup fails with an error', async () => {
+    mockSaveFullBackupToDevice.mockResolvedValueOnce({ success: false, error: 'disk full' });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(
+      expect.stringMatching(/backup/i),
+      expect.any(String),
+      expect.arrayContaining([
+        expect.objectContaining({ style: 'cancel' }),
+        expect.objectContaining({ text: expect.any(String) }),
+      ])
+    ));
+  });
+
+  it('does not open picker when Cancel is tapped on backup-failed alert', async () => {
+    mockSaveFullBackupToDevice.mockResolvedValueOnce({ success: false, error: 'disk full' });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementationOnce((_title, _msg, buttons) => {
+      const cancelBtn = (buttons as { style?: string; onPress?: () => void }[]).find(b => b.style === 'cancel');
+      cancelBtn?.onPress?.();
+    });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(mockGetDocumentAsync).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('proceeds with ZIP pick after user taps Proceed on backup-failed alert', async () => {
+    mockSaveFullBackupToDevice.mockResolvedValueOnce({ success: false, error: 'disk full' });
+    mockGetDocumentAsync.mockResolvedValueOnce({ canceled: true, assets: [] } as any);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementationOnce((_title, _msg, buttons) => {
+      const proceedBtn = (buttons as { style?: string; onPress?: () => void }[]).find(b => !b || b.style !== 'cancel');
+      proceedBtn?.onPress?.();
+    });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-zip-pick-btn')); });
+    await waitFor(() => expect(mockGetDocumentAsync).toHaveBeenCalled());
+    alertSpy.mockRestore();
+  });
+
+  it('shows backup-failed alert on text/CSV import button when backup fails', async () => {
+    mockSaveFullBackupToDevice.mockResolvedValueOnce({ success: false, error: 'disk full' });
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    await act(async () => { fireEvent.press(await findByTestId('import-tab-text')); });
+    const input = await findByTestId('import-text-input');
+    fireEvent.changeText(input, 'hello');
+    await act(async () => { fireEvent.press(await findByTestId('import-submit-btn')); });
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(
+      expect.stringMatching(/backup/i),
+      expect.any(String),
+      expect.any(Array)
+    ));
+  });
+
+  it('restore button is disabled when no ZIP is selected', async () => {
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    const btn = await findByTestId('import-zip-submit-btn');
+    expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBeTruthy();
+  });
+
+  it('restore button is disabled when no ZIP selected — defensive guard in handleImportZip is never reachable from UI', async () => {
+    // Lines 277-278 guard against zipData=null inside handleImportZip.
+    // The button is disabled when zipData is null, so this branch is unreachable from UI.
+    // Verified: button disabled state enforces the guard at the UI level.
+    const { findByTestId } = renderWithProvider(
+      <ImportModal visible={true} onClose={jest.fn()} onImported={jest.fn()} />
+    );
+    const btn = await findByTestId('import-zip-submit-btn');
+    expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBeTruthy();
   });
 });

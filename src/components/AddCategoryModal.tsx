@@ -34,10 +34,11 @@ interface AddCategoryModalProps {
   onSave: (id?: number) => void;
   onDeleted?: () => void;
   editCategory?: CategoryToEdit | null;
+  renderAsOverlay?: boolean;
 }
 
 export function AddCategoryModal({
-  visible, onClose, onSave, onDeleted, editCategory,
+  visible, onClose, onSave, onDeleted, editCategory, renderAsOverlay = false,
 }: Readonly<AddCategoryModalProps>) {
   const { t } = useI18n();
   const categoryName = useCategoryName();
@@ -163,115 +164,133 @@ export function AddCategoryModal({
     }
   };
 
+  const modalContent = (
+    <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
+      <View style={styles.handleWrap} {...panResponder.panHandlers}>
+        <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
+      </View>
+
+      {/* Header row */}
+      <View style={styles.header}>
+        <View style={styles.titleWrap}>
+          <Ionicons name="pricetag-outline" size={20} color={colors.primary} testID="category-title-icon" />
+          <Text style={[styles.title, isEditing && styles.titleLeft, { color: colors.text }]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
+            {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
+          </Text>
+        </View>
+        {isEditing && (
+          <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="category-delete-btn">
+            <Ionicons name="trash-outline" size={14} color={colors.error} />
+          <Text style={[styles.deleteBtnText, { color: colors.error }]}>{t('common.remove')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={insets.bottom + 24}
+      >
+        {/* Preview */}
+        <View style={[styles.preview, { borderColor: selectedColor, backgroundColor: colors.surface }]}>
+          <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
+          <Text style={[styles.previewName, { color: selectedColor }]}>
+            {name.trim() || t('addCategory.previewNamePlaceholder')}
+          </Text>
+        </View>
+
+        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.nameLabel')}</Text>
+        <TextInput
+          ref={nameInputRef}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+          value={name}
+          onChangeText={setName}
+          placeholder={t('addCategory.namePlaceholder')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="words"
+          returnKeyType="done"
+          testID="category-name-input"
+        />
+        {duplicate && (
+          <View style={styles.duplicateWrap} testID="category-duplicate-warning">
+            <Text style={[styles.duplicateText, { color: colors.error }]}>
+              {t('addCategory.errorDuplicate')}
+            </Text>
+          </View>
+        )}
+
+        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.emojiLabel')}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
+          {CATEGORY_EMOJIS.map(emoji => (
+            <TouchableOpacity
+              key={emoji}
+              style={[
+                styles.emojiBtn,
+                { backgroundColor: colors.surface },
+                selectedEmoji === emoji && { backgroundColor: withOpacity(selectedColor, '30'), borderColor: selectedColor },
+              ]}
+              onPress={() => setSelectedEmoji(emoji)}
+            >
+              <Text style={styles.emojiText}>{emoji}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.colorLabel')}</Text>
+        <View style={styles.colorGrid}>
+          {CATEGORY_COLORS.map(color => (
+            <TouchableOpacity
+              key={color}
+              style={[styles.colorBtn, { backgroundColor: color }, selectedColor === color && styles.colorBtnSelected, selectedColor === color && { borderColor: colors.text }]}
+              onPress={() => setSelectedColor(color)}
+            >
+              {selectedColor === color && <Text style={styles.colorCheck}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.actions}>
+          <Button title={t('addCategory.btnCancel')} onPress={handleClose} variant="outline" style={styles.actionBtn} testID="category-cancel-btn" />
+          <Button
+            title={isEditing ? t('addCategory.btnSave') : t('addCategory.btnCreate')}
+            onPress={handleSave}
+            loading={loading}
+            style={[styles.actionBtn, !!duplicate && styles.btnDisabled]}
+            testID="category-save-btn"
+          />
+        </View>
+      </KeyboardAwareScrollView>
+    </Animated.View>
+  );
+
+  if (renderAsOverlay) {
+    if (!visible) return null;
+    return (
+      <View style={[StyleSheet.absoluteFill, styles.overlayRoot]} pointerEvents="box-none">
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="add-category-backdrop" />
+        </Animated.View>
+        <View style={styles.overlay} pointerEvents="box-none">
+          {modalContent}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="add-category-backdrop" />
       </Animated.View>
       <View style={styles.overlay} pointerEvents="box-none">
-        <Animated.View style={[styles.container, { paddingBottom: 24 + insets.bottom, transform: [{ translateY }], backgroundColor: colors.background }]}>
-          <View style={styles.handleWrap} {...panResponder.panHandlers}>
-            <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
-          </View>
-
-
-          {/* Header row */}
-          <View style={styles.header}>
-            <View style={styles.titleWrap}>
-              <Ionicons name="pricetag-outline" size={20} color={colors.primary} testID="category-title-icon" />
-              <Text style={[styles.title, isEditing && styles.titleLeft, { color: colors.text }]} testID={isEditing ? 'modal-title-edit-category' : 'modal-title-new-category'}>
-                {isEditing ? t('addCategory.titleEdit') : t('addCategory.title')}
-              </Text>
-            </View>
-            {isEditing && (
-              <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: withOpacity(colors.error, '20') }]} onPress={handleDelete} testID="category-delete-btn">
-                <Ionicons name="trash-outline" size={14} color={colors.error} />
-              <Text style={[styles.deleteBtnText, { color: colors.error }]}>{t('common.remove')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <KeyboardAwareScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            bottomOffset={insets.bottom + 24}
-          >
-            {/* Preview */}
-            <View style={[styles.preview, { borderColor: selectedColor, backgroundColor: colors.surface }]}>
-              <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
-              <Text style={[styles.previewName, { color: selectedColor }]}>
-                {name.trim() || t('addCategory.previewNamePlaceholder')}
-              </Text>
-            </View>
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.nameLabel')}</Text>
-            <TextInput
-              ref={nameInputRef}
-              style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-              value={name}
-              onChangeText={setName}
-              placeholder={t('addCategory.namePlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="words"
-              returnKeyType="done"
-              testID="category-name-input"
-            />
-            {duplicate && (
-              <View style={styles.duplicateWrap} testID="category-duplicate-warning">
-                <Text style={[styles.duplicateText, { color: colors.error }]}>
-                  {t('addCategory.errorDuplicate')}
-                </Text>
-              </View>
-            )}
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.emojiLabel')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
-              {CATEGORY_EMOJIS.map(emoji => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={[
-                    styles.emojiBtn,
-                    { backgroundColor: colors.surface },
-                    selectedEmoji === emoji && { backgroundColor: withOpacity(selectedColor, '30'), borderColor: selectedColor },
-                  ]}
-                  onPress={() => setSelectedEmoji(emoji)}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.colorLabel')}</Text>
-            <View style={styles.colorGrid}>
-              {CATEGORY_COLORS.map(color => (
-                <TouchableOpacity
-                  key={color}
-                  style={[styles.colorBtn, { backgroundColor: color }, selectedColor === color && styles.colorBtnSelected, selectedColor === color && { borderColor: colors.text }]}
-                  onPress={() => setSelectedColor(color)}
-                >
-                  {selectedColor === color && <Text style={styles.colorCheck}>✓</Text>}
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.actions}>
-              <Button title={t('addCategory.btnCancel')} onPress={handleClose} variant="outline" style={styles.actionBtn} testID="category-cancel-btn" />
-              <Button
-                title={isEditing ? t('addCategory.btnSave') : t('addCategory.btnCreate')}
-                onPress={handleSave}
-                loading={loading}
-                style={[styles.actionBtn, !!duplicate && styles.btnDisabled]}
-                testID="category-save-btn"
-              />
-            </View>
-          </KeyboardAwareScrollView>
-        </Animated.View>
+        {modalContent}
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  overlayRoot:      { zIndex: 999 },
   backdrop:         { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.65)' },
   overlay:          { flex: 1, justifyContent: 'flex-end' },
   container:        { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '90%' },

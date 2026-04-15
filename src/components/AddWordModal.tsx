@@ -504,29 +504,29 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
               />
             </View>
           </KeyboardAwareScrollView>
+
+          <AddCategoryModal
+            renderAsOverlay
+            visible={showNewCategory || !!editCategory}
+            editCategory={editCategory}
+            onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
+            onSave={async (id) => {
+              setEditCategory(null);
+              setShowNewCategory(false);
+              CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+              if (id) setSelectedCategory(id);
+              catScrollRef.current?.scrollTo({ x: 0, animated: true });
+            }}
+            onDeleted={async () => {
+              setEditCategory(null);
+              setShowNewCategory(false);
+              CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+              setSelectedCategory(null);
+            }}
+          />
         </Animated.View>
       </View>
     </Modal>
-
-    <AddCategoryModal
-      visible={showNewCategory || !!editCategory}
-      editCategory={editCategory}
-      onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
-      onSave={async (id) => {
-        setEditCategory(null);
-        setShowNewCategory(false);
-        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
-        if (id) setSelectedCategory(id);
-        catScrollRef.current?.scrollTo({ x: 0, animated: true });
-      }}
-      onDeleted={async () => {
-        setEditCategory(null);
-        setShowNewCategory(false);
-        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
-        setSelectedCategory(null);
-      }}
-    />
-
     </>
   );
 }

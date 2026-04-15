@@ -531,6 +531,9 @@ export default {
     errorCorrupt: 'Backup file is corrupted.',
     errorUnsafeFile: 'Unsafe file paths detected in backup.',
     errorImport: 'Restore failed. Please try again.',
+    preImportBackupFailedTitle: 'Backup Failed',
+    preImportBackupFailedMessage: 'Could not save a backup before importing. Proceed anyway?',
+    preImportBackupProceed: 'Proceed',
   },
 
   // ── Notifications ─────────────────────────────────────────────────────────────
