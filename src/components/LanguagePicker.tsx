@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '../theme';
-import { withOpacity } from '../utils/colorHelpers';
+import { hexToRgba } from '../utils/colorHelpers';
 
 interface Language {
   code: string;
@@ -35,7 +35,7 @@ export function LanguagePicker({
             key={lang.code}
             style={[
               styles.option,
-              active && { borderColor: accent, backgroundColor: withOpacity(accent, '15') },
+              active && { borderColor: accent, backgroundColor: hexToRgba(accent, 0.08) },
             ]}
             onPress={() => onSelect(lang.code)}
             testID={testID ? `${testID}-${lang.code}` : undefined}

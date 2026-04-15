@@ -91,9 +91,11 @@ interface WheelDatePickerModalProps {
   onConfirm: (date: Date) => void;
   accentColor: string;
   initialDate?: Date | null;
+  /** Render as absolute overlay instead of native Modal. Use when already inside a Modal to avoid iOS stacked-modal issues. */
+  renderAsOverlay?: boolean;
 }
 
-export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor, initialDate }: Readonly<WheelDatePickerModalProps>) {
+export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor, initialDate, renderAsOverlay }: Readonly<WheelDatePickerModalProps>) {
   const { t, ta } = useI18n();
   const MONTHS: string[] = ta('datePicker.months');
 
@@ -144,39 +146,53 @@ export function WheelDatePickerModal({ visible, onClose, onConfirm, accentColor,
     onConfirm(chosen);
   };
 
+  const pickerContent = (
+    <View style={modalStyles.overlay}>
+      <View style={modalStyles.sheet}>
+        <View style={modalStyles.header}>
+          <TouchableOpacity onPress={onClose} testID="wheel-date-cancel-btn">
+            <Text style={[modalStyles.headerBtn, { color: THEME_COLORS.textSecondary }]}>
+              {t('onboarding.datePicker.cancel')}
+            </Text>
+          </TouchableOpacity>
+          <Text style={modalStyles.headerTitle} testID="wheel-date-title">{t('onboarding.datePicker.title')}</Text>
+          <TouchableOpacity onPress={handleConfirm} testID="wheel-date-confirm-btn">
+            <Text style={[modalStyles.headerBtn, { color: accentColor }]}>
+              {t('onboarding.datePicker.confirm')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={modalStyles.wheelsRow}>
+          <WheelColumn key={`day-${columnKey}`} data={dayData} selectedValue={clampedDay} onValueChange={setPickerDay} accentColor={accentColor} width={70} />
+          <WheelColumn key={`month-${columnKey}`} data={monthData} selectedValue={pickerMonth} onValueChange={setPickerMonth} accentColor={accentColor} />
+          <WheelColumn key={`year-${columnKey}`} data={yearData} selectedValue={pickerYear} onValueChange={setPickerYear} accentColor={accentColor} width={80} />
+        </View>
+        <Text style={modalStyles.previewText}>
+          {String(clampedDay).padStart(2, '0')} {MONTHS[pickerMonth]} {pickerYear}
+        </Text>
+      </View>
+    </View>
+  );
+
+  if (renderAsOverlay) {
+    if (!visible) return null;
+    return (
+      <View style={modalStyles.overlayAbsolute}>
+        {pickerContent}
+      </View>
+    );
+  }
+
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.sheet}>
-          <View style={modalStyles.header}>
-            <TouchableOpacity onPress={onClose} testID="wheel-date-cancel-btn">
-              <Text style={[modalStyles.headerBtn, { color: THEME_COLORS.textSecondary }]}>
-                {t('onboarding.datePicker.cancel')}
-              </Text>
-            </TouchableOpacity>
-            <Text style={modalStyles.headerTitle} testID="wheel-date-title">{t('onboarding.datePicker.title')}</Text>
-            <TouchableOpacity onPress={handleConfirm} testID="wheel-date-confirm-btn">
-              <Text style={[modalStyles.headerBtn, { color: accentColor }]}>
-                {t('onboarding.datePicker.confirm')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={modalStyles.wheelsRow}>
-            <WheelColumn key={`day-${columnKey}`} data={dayData} selectedValue={clampedDay} onValueChange={setPickerDay} accentColor={accentColor} width={70} />
-            <WheelColumn key={`month-${columnKey}`} data={monthData} selectedValue={pickerMonth} onValueChange={setPickerMonth} accentColor={accentColor} />
-            <WheelColumn key={`year-${columnKey}`} data={yearData} selectedValue={pickerYear} onValueChange={setPickerYear} accentColor={accentColor} width={80} />
-          </View>
-          <Text style={modalStyles.previewText}>
-            {String(clampedDay).padStart(2, '0')} {MONTHS[pickerMonth]} {pickerYear}
-          </Text>
-        </View>
-      </View>
+      {pickerContent}
     </Modal>
   );
 }
 
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  overlayAbsolute: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 },
   sheet: {
     backgroundColor: THEME_COLORS.surface,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,

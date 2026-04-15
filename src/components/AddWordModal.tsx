@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, Alert, Animated, Keyboard, ScrollView,
+  InteractionManager,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,6 +105,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   };
   const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, handleClose);
 
+  const wordInputRef = useRef<TextInput>(null);
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
   const catContentWidth = useRef(0);
@@ -144,6 +146,16 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     setShowNewCategory(false);
     setDuplicate(null);
   }, [visible, editWord, today, prefilledWordName]);
+
+  // Delayed focus: wait for modal animation to finish before focusing input.
+  // Avoids KeyboardAwareScrollView overshooting to bottom on iOS.
+  useEffect(() => {
+    if (!visible || editWord) return;
+    const handle = InteractionManager.runAfterInteractions(() => {
+      wordInputRef.current?.focus();
+    });
+    return () => handle.cancel();
+  }, [visible, editWord]);
 
   // Scroll category carousel to the selected chip when editing (runs when categories load).
   useEffect(() => {
@@ -285,12 +297,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             {/* ── Word ── */}
             <Text style={[s.label, { color: colors.textSecondary }]}>{t('addWord.wordLabel')}</Text>
             <TextInput
+              ref={wordInputRef}
               testID="word-input"
               style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }, duplicate && s.inputDup]}
               value={word} onChangeText={setWord}
               placeholder={t('addWord.wordPlaceholder')}
               placeholderTextColor={colors.textMuted}
-              autoFocus={!editWord} autoCapitalize="none"
+              autoCapitalize="none"
               returnKeyType="next"
             />
 

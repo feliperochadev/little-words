@@ -171,7 +171,7 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
               <Text style={[s.label, { color: THEME_COLORS.textSecondary }]}>{t('onboarding.birthDate').toUpperCase()}</Text>
               <TouchableOpacity
                 style={[s.dateBtn, { borderColor: birthDate ? accentColor : THEME_COLORS.border }]}
-                onPress={() => setShowPicker(true)}
+                onPress={() => { Keyboard.dismiss(); setShowPicker(true); }}
                 testID="edit-profile-birthdate-btn"
               >
                 <Text style={[s.dateBtnText, !birthDate && s.dateBtnPlaceholder]}>
@@ -200,15 +200,16 @@ export function EditProfileModal({ visible, onClose, onSaved }: Readonly<EditPro
             </KeyboardAwareScrollView>
           </Animated.View>
         </View>
-      </Modal>
 
-      <WheelDatePickerModal
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        onConfirm={(date) => { setBirthDate(date); setShowPicker(false); }}
-        accentColor={accentColor}
-        initialDate={birthDate}
-      />
+        <WheelDatePickerModal
+          visible={showPicker}
+          onClose={() => setShowPicker(false)}
+          onConfirm={(date) => { setBirthDate(date); setShowPicker(false); }}
+          accentColor={accentColor}
+          initialDate={birthDate}
+          renderAsOverlay
+        />
+      </Modal>
     </>
   );
 }

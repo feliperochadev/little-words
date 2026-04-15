@@ -247,6 +247,44 @@ describe('DatePickerField', () => {
     });
   });
 
+  it('WheelDatePickerModal renderAsOverlay renders inline instead of Modal', async () => {
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    const { getByTestId, queryByTestId } = render(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible
+          onClose={onClose}
+          onConfirm={onConfirm}
+          accentColor="#FF6B9D"
+          renderAsOverlay
+        />
+      </I18nProvider>
+    );
+    // Picker should render (no Modal wrapper, but content visible)
+    expect(getByTestId('wheel-date-title')).toBeTruthy();
+    expect(getByTestId('wheel-date-cancel-btn')).toBeTruthy();
+    expect(getByTestId('wheel-date-confirm-btn')).toBeTruthy();
+    // Cancel still works
+    fireEvent.press(getByTestId('wheel-date-cancel-btn'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('WheelDatePickerModal renderAsOverlay returns null when not visible', () => {
+    const { queryByTestId } = render(
+      <I18nProvider>
+        <WheelDatePickerModal
+          visible={false}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          accentColor="#FF6B9D"
+          renderAsOverlay
+        />
+      </I18nProvider>
+    );
+    expect(queryByTestId('wheel-date-title')).toBeNull();
+  });
+
   it('WheelColumn onScrollEndDrag is suppressed when momentum follows', async () => {
     jest.useFakeTimers();
     const onChange = jest.fn();

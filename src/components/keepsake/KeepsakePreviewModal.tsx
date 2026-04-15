@@ -298,8 +298,8 @@ function getFramePosition(totalWords: number, index: number) {
   return { top: '25%' as const, left: '20%' as const, width: '60%' as const, height: '45%' as const };
 }
 
-// Scale factor to fit 1080px card into ~391dp preview (340 × 1.15)
-const PREVIEW_SCALE = 391 / 1080;
+// Scale factor to fit 1080px card into ~352dp preview (391 × 0.9 for iPhone 16/17 fit)
+const PREVIEW_SCALE = 352 / 1080;
 
 const styles = StyleSheet.create({
   container: {
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   previewWrapper: {
-    width: 391,
-    height: 391 * (1920 / 1080),
+    width: 352,
+    height: 352 * (1920 / 1080),
     position: 'relative',
   },
   scaledPreview: {
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   actionBtnText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
   },
   captureContainer: {

@@ -2,6 +2,22 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_10
+
+**[fix] iOS UX fixes — faded language buttons, broken date picker, keepsake sizing, modal keyboard scroll**
+
+- `src/utils/colorHelpers.ts`: added `hexToRgba()` helper — converts hex+alpha to rgba() string, avoids iOS 8-digit hex rendering issue
+- `app/(tabs)/settings.tsx`: language button active background uses `hexToRgba` instead of `withOpacity`
+- `src/components/LanguagePicker.tsx`: same rgba fix for active button background
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: `PREVIEW_SCALE` 391→352 (-10% for iPhone 16/17 fit), `actionBtnText` fontSize 15→13 (-15% for Portuguese button overflow)
+- `src/components/AddWordModal.tsx`: replaced `autoFocus` with `InteractionManager.runAfterInteractions` delayed focus — prevents KeyboardAwareScrollView overshoot on iOS
+- `src/components/EditProfileModal.tsx`: moved `WheelDatePickerModal` inside outer Modal with `renderAsOverlay`; added `Keyboard.dismiss()` before opening date picker (fixes Android double-tap)
+- `src/components/WheelDatePickerModal.tsx`: added `renderAsOverlay` prop — renders as absolute View overlay instead of nested Modal when inside another Modal
+- `__tests__/unit/colorHelpers.test.ts`: new — tests for `withOpacity` and `hexToRgba`
+- `__tests__/integration/DatePickerField.test.tsx`: added renderAsOverlay mode tests
+- `__tests__/integration/editProfileModal.test.tsx`: added keyboard dismiss + overlay date picker tests
+- `__tests__/integration/LanguagePicker.test.tsx`: added rgba background assertion
+
 ### 2026-04-14_9
 
 **[fix] Variant bubble: italic right-quote clip — trailing space after &rdquo;**

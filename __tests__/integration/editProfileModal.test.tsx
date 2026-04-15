@@ -307,4 +307,20 @@ describe('EditProfileModal', () => {
     expect(dismissSpy).toHaveBeenCalled();
     dismissSpy.mockRestore();
   });
+
+  it('dismisses keyboard when date button is pressed', async () => {
+    const { Keyboard } = require('react-native');
+    const dismissSpy = jest.spyOn(Keyboard, 'dismiss');
+    const { findByTestId } = renderModal();
+    fireEvent.press(await findByTestId('edit-profile-birthdate-btn'));
+    expect(dismissSpy).toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
+
+  it('renders date picker as overlay inside modal (not nested Modal)', async () => {
+    const { findByTestId, queryByTestId } = renderModal();
+    fireEvent.press(await findByTestId('edit-profile-birthdate-btn'));
+    // WheelDatePickerModal renders as overlay — title should be visible
+    expect(await findByTestId('wheel-date-title')).toBeTruthy();
+  });
 });
