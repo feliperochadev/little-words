@@ -191,7 +191,6 @@ export default function VariantsScreen() {
             <EmptyState
               icon={<Ionicons name="chatbubbles-outline" size={56} color={colors.textMuted} />}
               title={t('variants.emptyTitle')}
-              subtitle={t('variants.emptySubtitle')}
               action={{
                 label: t('variants.addFirst'),
                 onPress: openFirstVariant,

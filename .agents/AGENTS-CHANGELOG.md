@@ -2,6 +2,12 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_7
+
+**[fix] Remove subtitle from variants empty state**
+
+- `app/(tabs)/variants.tsx`: removed `subtitle` prop from `EmptyState` in the non-search empty state
+
 ### 2026-04-15_6
 
 **[fix] Home mini-timeline date dedup + Android modal focus blink**
