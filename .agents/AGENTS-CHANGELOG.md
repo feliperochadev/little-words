@@ -2,6 +2,14 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-14_11
+
+**[fix] SonarCloud PR #71: S1874, S6749, S7773 — deprecated API, redundant fragment, parseInt**
+
+- `src/utils/colorHelpers.ts`: `parseInt` → `Number.parseInt` (S7773 x3)
+- `src/components/EditProfileModal.tsx`: removed redundant single-child fragment `<>` (S6749)
+- `src/components/AddWordModal.tsx`: replaced deprecated `InteractionManager.runAfterInteractions` with `setTimeout` (S1874)
+
 ### 2026-04-14_10
 
 **[fix] iOS UX fixes — faded language buttons, broken date picker, keepsake sizing, modal keyboard scroll**
