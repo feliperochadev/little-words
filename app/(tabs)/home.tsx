@@ -204,18 +204,23 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <View style={styles.miniTimeline}>
-                {recentMemories.map((item, idx) => (
-                  <TimelineItem
-                    key={`${item.item_type}-${item.id}`}
-                    item={item}
-                    index={idx}
-                    isFirst={idx === 0}
-                    isLast={idx === recentMemories.length - 1}
-                    compact
-                    onPlayAudio={handlePlayAudio}
-                    onViewPhoto={handleViewPhoto}
-                  />
-                ))}
+                {recentMemories.map((item, idx) => {
+                  const prevItem = idx > 0 ? recentMemories[idx - 1] : null;
+                  const showDate = prevItem?.date_added !== item.date_added;
+                  return (
+                    <TimelineItem
+                      key={`${item.item_type}-${item.id}`}
+                      item={item}
+                      index={idx}
+                      isFirst={idx === 0}
+                      isLast={idx === recentMemories.length - 1}
+                      compact
+                      showDate={showDate}
+                      onPlayAudio={handlePlayAudio}
+                      onViewPhoto={handleViewPhoto}
+                    />
+                  );
+                })}
               </View>
             </TouchableOpacity>
             <TouchableOpacity

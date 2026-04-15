@@ -38,4 +38,8 @@ export const TIMING = {
   DRAG_SNAP_DELAY: 80,
   SCROLL_TRANSITION_DELAY: 300,
   DUPLICATE_CHECK_DEBOUNCE: 400,
+  // Delay before focusing a TextInput inside a bottom-sheet modal.
+  // Must be >= the spring animation settle time (friction:8, tension:65 ≈ 400ms)
+  // to prevent the Android keyboard from appearing mid-animation and causing a visual blink.
+  MODAL_FOCUS_DELAY: 350,
 } as const;

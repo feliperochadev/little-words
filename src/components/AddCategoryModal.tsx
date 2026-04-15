@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, Alert, Animated, Keyboard, ScrollView,
+  StyleSheet, Alert, Animated, Keyboard, ScrollView, Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,6 +55,7 @@ export function AddCategoryModal({
   const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_CATEGORY_EMOJI);
   const [loading, setLoading] = useState(false);
   const [duplicate, setDuplicate] = useState<Category | null>(null);
+  const nameInputRef = useRef<TextInput>(null);
 
   const resetForm = useCallback(() => {
     setName('');
@@ -79,6 +80,16 @@ export function AddCategoryModal({
       resetForm();
     }
   }, [editCategory, visible, resetForm]);
+
+  // iOS only: delayed focus after modal spring animation settles.
+  // On Android, programmatic focus after open triggers layout-resize blink — skip it.
+  useEffect(() => {
+    if (!visible || Platform.OS === 'android') return;
+    const timer = setTimeout(() => {
+      nameInputRef.current?.focus();
+    }, TIMING.MODAL_FOCUS_DELAY);
+    return () => clearTimeout(timer);
+  }, [visible]);
 
   useEffect(() => {
     if (editCategory || !name.trim()) {
@@ -195,12 +206,12 @@ export function AddCategoryModal({
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addCategory.nameLabel')}</Text>
             <TextInput
+              ref={nameInputRef}
               style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
               value={name}
               onChangeText={setName}
               placeholder={t('addCategory.namePlaceholder')}
               placeholderTextColor={colors.textMuted}
-              autoFocus
               autoCapitalize="words"
               returnKeyType="done"
               testID="category-name-input"

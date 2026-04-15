@@ -2,6 +2,19 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_6
+
+**[fix] Home mini-timeline date dedup + Android modal focus blink**
+
+- `app/(tabs)/home.tsx`: mini-timeline now computes `showDate = prevItem?.date_added !== item.date_added`, same logic as memories screen — consecutive items on the same day no longer show duplicate date labels
+- `src/utils/animationConstants.ts`: added `TIMING.MODAL_FOCUS_DELAY = 350` — minimum safe delay after bottom-sheet spring (friction:8, tension:65) before focusing a TextInput on iOS
+- `src/components/AddWordModal.tsx`: auto-focus is now iOS-only (`Platform.OS !== 'android'`) — on Android, any programmatic focus after modal open triggers `adjustResize` layout shift and visible blink; users tap to focus. On iOS, delayed focus (350ms) retained for smooth KeyboardAwareScrollView scroll.
+- `src/components/AddCategoryModal.tsx`: replaced `autoFocus` with `ref` + iOS-only `setTimeout(TIMING.MODAL_FOCUS_DELAY)` — same Android blink prevention; added `nameInputRef` useRef and platform-guarded delayed-focus useEffect
+- `__tests__/screens/home.test.tsx`: added deduplication test — verifies `showDate` prop is `true`/`false`/`true` for two same-date items followed by a different-date item
+- `__tests__/integration/AddCategoryModal.test.tsx`: added two tests — verifies `autoFocus` prop is absent and input renders correctly with ref-based focus pattern
+
+Builds on: `2026-04-14_04-ios-ux-fixes`
+
 ### 2026-04-14_11
 
 **[fix] SonarCloud PR #71: S1874, S6749, S7773 — deprecated API, redundant fragment, parseInt**

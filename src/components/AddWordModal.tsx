@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, Alert, Animated, Keyboard, ScrollView,
+  StyleSheet, Alert, Animated, Keyboard, ScrollView, Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -146,13 +146,15 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     setDuplicate(null);
   }, [visible, editWord, today, prefilledWordName]);
 
-  // Delayed focus: wait for modal animation to finish before focusing input.
-  // Avoids KeyboardAwareScrollView overshooting to bottom on iOS.
+  // iOS only: delayed focus after modal spring animation settles.
+  // On iOS, auto-focus is needed for smooth keyboard scroll via KeyboardAwareScrollView.
+  // On Android, any programmatic focus after open causes a layout-resize blink
+  // (keyboard appearing post-animation shifts the window via adjustResize). Let the user tap.
   useEffect(() => {
-    if (!visible || editWord) return;
+    if (!visible || editWord || Platform.OS === 'android') return;
     const timer = setTimeout(() => {
       wordInputRef.current?.focus();
-    }, 200);
+    }, TIMING.MODAL_FOCUS_DELAY);
     return () => clearTimeout(timer);
   }, [visible, editWord]);
 

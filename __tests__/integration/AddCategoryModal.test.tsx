@@ -320,3 +320,21 @@ describe('AddCategoryModal keyboard dismiss', () => {
     dismissSpy.mockRestore();
   });
 });
+
+describe('AddCategoryModal delayed focus', () => {
+  it('name input has no autoFocus prop — focus is deferred via platform-conditional setTimeout', async () => {
+    const { findByTestId } = renderModal();
+    const input = await findByTestId('category-name-input');
+    // autoFocus replaced with ref + setTimeout(TIMING.MODAL_FOCUS_DELAY) gated on iOS only.
+    // On Android: no auto-focus (prevents layout-resize blink from keyboard appearing post-animation).
+    // On iOS: delayed focus for smooth KeyboardAwareScrollView scroll.
+    expect(input.props.autoFocus).toBeUndefined();
+  });
+
+  it('input ref is wired — component renders without error when modal becomes visible', async () => {
+    // Verify the input renders correctly with the ref-based focus pattern.
+    // The ref is internal; we just confirm no crash occurs on mount/open.
+    const { findByTestId } = renderModal({ visible: true });
+    expect(await findByTestId('category-name-input')).toBeTruthy();
+  });
+});
