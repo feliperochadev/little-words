@@ -259,7 +259,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   };
 
   return (
-    <>
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="add-word-backdrop" />
@@ -527,7 +526,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
         </Animated.View>
       </View>
     </Modal>
-    </>
   );
 }
 

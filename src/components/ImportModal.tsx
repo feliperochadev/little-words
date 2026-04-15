@@ -171,6 +171,19 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   return result;
 }
 
+function promptBackupFailed(t: (key: string) => string): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    Alert.alert(
+      t('backup.preImportBackupFailedTitle'),
+      t('backup.preImportBackupFailedMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('backup.preImportBackupProceed'), onPress: () => resolve(true) },
+      ]
+    );
+  });
+}
+
 export function ImportModal({ visible, onClose, onImported }: Readonly<ImportModalProps>) {
   const { t, tc, locale } = useI18n();
   const insets = useSafeAreaInsets();
@@ -203,21 +216,10 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     setBackingUp(true);
     const result = await saveFullBackupToDevice(t, locale);
     setBackingUp(false);
-    if (result.success) {
-      await action();
-      return;
-    }
+    if (result.success) { await action(); return; }
     if (result.error === 'cancelled') return;
-    await new Promise<void>((resolve) => {
-      Alert.alert(
-        t('backup.preImportBackupFailedTitle'),
-        t('backup.preImportBackupFailedMessage'),
-        [
-          { text: t('common.cancel'), style: 'cancel', onPress: () => resolve() },
-          { text: t('backup.preImportBackupProceed'), onPress: () => { void Promise.resolve(action()).then(() => resolve()); } },
-        ]
-      );
-    });
+    const proceed = await promptBackupFailed(t);
+    if (proceed) await action();
   };
 
   // Modal animation and gesture handling
