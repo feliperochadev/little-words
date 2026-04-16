@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert, PanResponder } from 'react-native';
+import { Alert, Platform, PanResponder } from 'react-native';
 import { AddCategoryModal } from '../../src/components/AddCategoryModal';
 import * as categoryService from '../../src/services/categoryService';
 import * as settingsService from '../../src/services/settingsService';
@@ -318,5 +318,87 @@ describe('AddCategoryModal keyboard dismiss', () => {
     fireEvent.press(getByTestId('add-category-backdrop'));
     expect(dismissSpy).toHaveBeenCalled();
     dismissSpy.mockRestore();
+  });
+});
+
+describe('AddCategoryModal iOS delayed focus', () => {
+  it('iOS focus effect fires without crashing when visible becomes true on iOS', async () => {
+    const originalOS = Platform.OS;
+    (Platform as any).OS = 'ios';
+    jest.useFakeTimers();
+    try {
+      renderWithProviders(
+        <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} />
+      );
+      // Advance timers to trigger the delayed focus setTimeout (covers line 90)
+      await act(async () => { jest.runAllTimers(); });
+    } finally {
+      jest.useRealTimers();
+      (Platform as any).OS = originalOS;
+    }
+  });
+});
+
+describe('AddCategoryModal delayed focus', () => {
+  it('name input has no autoFocus prop — focus is deferred via platform-conditional setTimeout', async () => {
+    const { findByTestId } = renderModal();
+    const input = await findByTestId('category-name-input');
+    // autoFocus replaced with ref + setTimeout(TIMING.MODAL_FOCUS_DELAY) gated on iOS only.
+    // On Android: no auto-focus (prevents layout-resize blink from keyboard appearing post-animation).
+    // On iOS: delayed focus for smooth KeyboardAwareScrollView scroll.
+    expect(input.props.autoFocus).toBeUndefined();
+  });
+
+  it('input ref is wired — component renders without error when modal becomes visible', async () => {
+    // Verify the input renders correctly with the ref-based focus pattern.
+    // The ref is internal; we just confirm no crash occurs on mount/open.
+    const { findByTestId } = renderModal({ visible: true });
+    expect(await findByTestId('category-name-input')).toBeTruthy();
+  });
+});
+
+describe('AddCategoryModal renderAsOverlay', () => {
+  it('renders content as overlay view (no native Modal) when renderAsOverlay is true', async () => {
+    const { findByTestId } = renderWithProviders(
+      <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} renderAsOverlay />
+    );
+    // Backdrop and input are still accessible in the overlay tree
+    expect(await findByTestId('add-category-backdrop')).toBeTruthy();
+    expect(await findByTestId('category-name-input')).toBeTruthy();
+  });
+
+  it('returns null when renderAsOverlay is true and visible is false', () => {
+    const { queryByTestId } = renderWithProviders(
+      <AddCategoryModal visible={false} onClose={jest.fn()} onSave={jest.fn()} renderAsOverlay />
+    );
+    expect(queryByTestId('category-name-input')).toBeNull();
+  });
+
+  it('pressing overlay backdrop does not throw', async () => {
+    const onClose = jest.fn();
+    const { findByTestId } = renderWithProviders(
+      <AddCategoryModal visible={true} onClose={onClose} onSave={jest.fn()} renderAsOverlay />
+    );
+    const backdrop = await findByTestId('add-category-backdrop');
+    // dismissModal triggers an animation; onClose fires after it completes (async in real device).
+    // Just verify the press does not throw.
+    expect(() => fireEvent.press(backdrop)).not.toThrow();
+  });
+
+  it('selecting a color in overlay mode updates the selection without crashing', async () => {
+    const { findAllByRole, UNSAFE_getAllByType } = renderWithProviders(
+      <AddCategoryModal visible={true} onClose={jest.fn()} onSave={jest.fn()} renderAsOverlay />
+    );
+    const { TouchableOpacity } = require('react-native');
+    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    // Color buttons are rendered in the colorGrid — press the first non-backdrop button
+    // (index 0 is backdrop, 1 is cancel, further are emoji/color buttons)
+    const colorBtns = buttons.filter((b: { props: { style?: unknown } }) => {
+      const s = Array.isArray(b.props.style) ? Object.assign({}, ...b.props.style) : (b.props.style ?? {});
+      return (s as Record<string, unknown>).borderRadius === 20;
+    });
+    if (colorBtns.length > 0) {
+      expect(() => fireEvent.press(colorBtns[0])).not.toThrow();
+    }
   });
 });

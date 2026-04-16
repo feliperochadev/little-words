@@ -2,6 +2,79 @@
 
 Entries are added after every approved change. Most recent first.
 
+### 2026-04-15_10
+
+**[fix] SonarCloud PR #71: S6749, S2004 coverage, duplication, security hotspots**
+
+- `src/components/AddWordModal.tsx`: removed redundant single-child fragment `<>` wrapping the `<Modal>` return (S6749)
+- `src/components/ImportModal.tsx`: extracted `promptBackupFailed()` as a top-level function, reducing `withBackup` arrow nesting from 5 to ≤4 levels (S2004)
+
+### 2026-04-15_9
+
+**[fix] Enhance 2026-04-15_01-ui-polish-and-ios-fixes: button +10%, timeline word -5%, import tab labels -10%**
+
+- `app/(tabs)/home.tsx`: Nova Palavra button increased ~10% — `paddingHorizontal` 14→15, `paddingVertical` 7→8, `fontSize` 13→14, icon 14→15
+- `src/components/TimelineItem.tsx`: word font decreased ~5% — compact 12→11, normal 15→14
+- `src/components/ImportModal.tsx`: tab label font (`tabText.fontSize`) decreased ~10% — 11→10, so "📦 Backup Completo" fits on one line on iPhone
+
+Builds on 2026-04-15_01-ui-polish-and-ios-fixes
+
+### 2026-04-15_8
+
+**[fix] iOS category modal freeze + pre-import backup + UI font/button reduction**
+
+- `src/components/AddCategoryModal.tsx`: added `renderAsOverlay` prop — when `true`, renders as absolute-positioned overlay View instead of native `<Modal>`, avoiding iOS stacked-modal touch freeze
+- `src/components/AddWordModal.tsx`: moved `<AddCategoryModal>` inside the outer `<Modal>` tree with `renderAsOverlay` — fixes iOS freeze when tapping "+ Category" in AddWordModal
+- `src/components/ImportModal.tsx`: added `withBackup` helper that runs `saveFullBackupToDevice` before ZIP pick or CSV/text import; shows Alert on failure with Cancel/Proceed options; adds `backingUp` state with spinner
+- `src/i18n/en-US.ts` + `src/i18n/pt-BR.ts`: added `backup.preImportBackupFailedTitle`, `backup.preImportBackupFailedMessage`, `backup.preImportBackupProceed` keys
+- `app/(tabs)/home.tsx`: reduced Nova Palavra button — `paddingHorizontal` 18→14, `paddingVertical` 10→7, font 15→13, icon 16→14
+- `src/components/TimelineItem.tsx`: reduced word/variant card font sizes (`wordFontSize` compact 14→12, normal 17→15); added explicit `fontSize: 13` to `variantOf` context line
+- `__tests__/integration/ImportModal.test.tsx`: added mock for `saveFullBackupToDevice`; new tests for backup cancelled, backup error alert, Proceed and Cancel paths
+- `__tests__/integration/AddCategoryModal.test.tsx`: added `renderAsOverlay` tests (render, null when hidden, backdrop pressable, color selection); iOS focus effect test
+
+### 2026-04-15_7
+
+**[fix] Remove subtitle from variants empty state**
+
+- `app/(tabs)/variants.tsx`: removed `subtitle` prop from `EmptyState` in the non-search empty state
+
+### 2026-04-15_6
+
+**[fix] Home mini-timeline date dedup + Android modal focus blink**
+
+- `app/(tabs)/home.tsx`: mini-timeline now computes `showDate = prevItem?.date_added !== item.date_added`, same logic as memories screen — consecutive items on the same day no longer show duplicate date labels
+- `src/utils/animationConstants.ts`: added `TIMING.MODAL_FOCUS_DELAY = 350` — minimum safe delay after bottom-sheet spring (friction:8, tension:65) before focusing a TextInput on iOS
+- `src/components/AddWordModal.tsx`: auto-focus is now iOS-only (`Platform.OS !== 'android'`) — on Android, any programmatic focus after modal open triggers `adjustResize` layout shift and visible blink; users tap to focus. On iOS, delayed focus (350ms) retained for smooth KeyboardAwareScrollView scroll.
+- `src/components/AddCategoryModal.tsx`: replaced `autoFocus` with `ref` + iOS-only `setTimeout(TIMING.MODAL_FOCUS_DELAY)` — same Android blink prevention; added `nameInputRef` useRef and platform-guarded delayed-focus useEffect
+- `__tests__/screens/home.test.tsx`: added deduplication test — verifies `showDate` prop is `true`/`false`/`true` for two same-date items followed by a different-date item
+- `__tests__/integration/AddCategoryModal.test.tsx`: added two tests — verifies `autoFocus` prop is absent and input renders correctly with ref-based focus pattern
+
+Builds on: `2026-04-14_04-ios-ux-fixes`
+
+### 2026-04-14_11
+
+**[fix] SonarCloud PR #71: S1874, S6749, S7773 — deprecated API, redundant fragment, parseInt**
+
+- `src/utils/colorHelpers.ts`: `parseInt` → `Number.parseInt` (S7773 x3)
+- `src/components/EditProfileModal.tsx`: removed redundant single-child fragment `<>` (S6749)
+- `src/components/AddWordModal.tsx`: replaced deprecated `InteractionManager.runAfterInteractions` with `setTimeout` (S1874)
+
+### 2026-04-14_10
+
+**[fix] iOS UX fixes — faded language buttons, broken date picker, keepsake sizing, modal keyboard scroll**
+
+- `src/utils/colorHelpers.ts`: added `hexToRgba()` helper — converts hex+alpha to rgba() string, avoids iOS 8-digit hex rendering issue
+- `app/(tabs)/settings.tsx`: language button active background uses `hexToRgba` instead of `withOpacity`
+- `src/components/LanguagePicker.tsx`: same rgba fix for active button background
+- `src/components/keepsake/KeepsakePreviewModal.tsx`: `PREVIEW_SCALE` 391→352 (-10% for iPhone 16/17 fit), `actionBtnText` fontSize 15→13 (-15% for Portuguese button overflow)
+- `src/components/AddWordModal.tsx`: replaced `autoFocus` with `InteractionManager.runAfterInteractions` delayed focus — prevents KeyboardAwareScrollView overshoot on iOS
+- `src/components/EditProfileModal.tsx`: moved `WheelDatePickerModal` inside outer Modal with `renderAsOverlay`; added `Keyboard.dismiss()` before opening date picker (fixes Android double-tap)
+- `src/components/WheelDatePickerModal.tsx`: added `renderAsOverlay` prop — renders as absolute View overlay instead of nested Modal when inside another Modal
+- `__tests__/unit/colorHelpers.test.ts`: new — tests for `withOpacity` and `hexToRgba`
+- `__tests__/integration/DatePickerField.test.tsx`: added renderAsOverlay mode tests
+- `__tests__/integration/editProfileModal.test.tsx`: added keyboard dismiss + overlay date picker tests
+- `__tests__/integration/LanguagePicker.test.tsx`: added rgba background assertion
+
 ### 2026-04-14_9
 
 **[fix] Variant bubble: italic right-quote clip — trailing space after &rdquo;**

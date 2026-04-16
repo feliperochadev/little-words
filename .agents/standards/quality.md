@@ -76,6 +76,47 @@ SELECT v.id, COALESCE(ast.audio_count, 0) FROM variants v LEFT JOIN AssetStats a
 
 ---
 
+## Function Nesting Depth (S2004)
+
+SonarCloud rule **S2004** — functions must not be nested more than **4 levels deep**.
+
+Each arrow function, callback, or closure counts as one nesting level. The component function itself is level 1.
+
+```ts
+// ❌ Don't — 5 levels deep (component → async handler → Promise callback → Alert buttons → onPress)
+const withBackup = async (action) => {           // level 2
+  await new Promise<void>((resolve) => {         // level 3
+    Alert.alert('...', '...', [
+      { onPress: () => {                         // level 4
+        void Promise.resolve(action()).then(      // level 5 ← Sonar violation
+          () => resolve()
+        );
+      }},
+    ]);
+  });
+};
+
+// ✅ Do — extract the Alert into a top-level helper that returns a Promise<boolean>
+function promptBackupFailed(t): Promise<boolean> {  // level 1 (top-level)
+  return new Promise<boolean>((resolve) => {         // level 2
+    Alert.alert('...', '...', [
+      { text: t('cancel'), style: 'cancel', onPress: () => resolve(false) },  // level 3
+      { text: t('proceed'), onPress: () => resolve(true) },                   // level 3
+    ]);
+  });
+}
+
+const withBackup = async (action) => {           // level 2
+  // ...
+  const proceed = await promptBackupFailed(t);   // no extra nesting
+  if (proceed) await action();
+};
+```
+
+**Prevention:** whenever you find yourself writing `new Promise` inside an async handler that is itself inside another callback, extract the Promise into a standalone named function at the module top level.
+
+---
+
 ## Unused Props / PropTypes (S6767)
 
 Avoid defining props in a component or arguments in a callback that are never used.

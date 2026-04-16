@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { LanguagePicker } from '../../src/components/LanguagePicker';
 
 function Controlled() {
@@ -21,5 +22,12 @@ describe('LanguagePicker', () => {
     );
     fireEvent.press(getByTestId('lang-en-US'));
     expect(onSelect).toHaveBeenCalledWith('en-US');
+  });
+
+  it('active language button uses rgba background (not 8-digit hex)', () => {
+    const { getByTestId } = render(<Controlled />);
+    const activeBtnStyle = StyleSheet.flatten(getByTestId('lang-pt-BR').props.style);
+    const bg = (activeBtnStyle as Record<string, unknown>).backgroundColor as string;
+    expect(bg).toMatch(/^rgba\(/);
   });
 });

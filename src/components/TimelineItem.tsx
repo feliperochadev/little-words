@@ -122,7 +122,7 @@ function TimelineCard({ item, compact, isLeft, onPlayAudio, onViewPhoto }: Reado
   const { colors } = useTheme();
   const { t } = useI18n();
 
-  const wordFontSize = compact ? 14 : 17;
+  const wordFontSize = compact ? 11 : 14;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -139,7 +139,7 @@ function TimelineCard({ item, compact, isLeft, onPlayAudio, onViewPhoto }: Reado
         </Text>
       </View>
       {item.item_type === 'variant' && item.main_word_text && (
-        <Text style={[styles.context, { color: colors.textSecondary, textAlign: isLeft ? 'right' : 'left' }]}>
+        <Text style={[styles.context, { color: colors.textSecondary, fontSize: 13, textAlign: isLeft ? 'right' : 'left' }]}>
           {t('memories.variantOf', { word: item.main_word_text })}
         </Text>
       )}

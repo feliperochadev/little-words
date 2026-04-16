@@ -54,6 +54,31 @@ const styles = StyleSheet.create({ ... });
 
 ---
 
+## Redundant Fragments (S6749)
+
+SonarCloud rule **S6749** — a `<>...</>` fragment with only one direct child is redundant.
+
+- **When a component returns a single root element, return it directly** — no wrapper fragment needed.
+- Fragments are only justified when returning two or more siblings that cannot share a native container.
+
+```tsx
+// ❌ Don't — redundant fragment, only one child inside
+return (
+  <>
+    <Modal visible={visible}>...</Modal>
+  </>
+);
+
+// ✅ Do — return the element directly
+return (
+  <Modal visible={visible}>...</Modal>
+);
+```
+
+> This arose in `AddWordModal` after `AddCategoryModal` was moved **inside** the `<Modal>` tree (iOS overlay fix). The outer `<>` wrapper became a single-child fragment. Always remove it.
+
+---
+
 ## Exports
 
 ```ts

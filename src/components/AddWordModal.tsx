@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
-  StyleSheet, Alert, Animated, Keyboard, ScrollView,
+  StyleSheet, Alert, Animated, Keyboard, ScrollView, Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,6 +104,7 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   };
   const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, handleClose);
 
+  const wordInputRef = useRef<TextInput>(null);
   const catScrollRef = useRef<ScrollView>(null);
   const catScrollWidth = useRef(0);
   const catContentWidth = useRef(0);
@@ -144,6 +145,18 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
     setShowNewCategory(false);
     setDuplicate(null);
   }, [visible, editWord, today, prefilledWordName]);
+
+  // iOS only: delayed focus after modal spring animation settles.
+  // On iOS, auto-focus is needed for smooth keyboard scroll via KeyboardAwareScrollView.
+  // On Android, any programmatic focus after open causes a layout-resize blink
+  // (keyboard appearing post-animation shifts the window via adjustResize). Let the user tap.
+  useEffect(() => {
+    if (!visible || editWord || Platform.OS === 'android') return;
+    const timer = setTimeout(() => {
+      wordInputRef.current?.focus();
+    }, TIMING.MODAL_FOCUS_DELAY);
+    return () => clearTimeout(timer);
+  }, [visible, editWord]);
 
   // Scroll category carousel to the selected chip when editing (runs when categories load).
   useEffect(() => {
@@ -246,7 +259,6 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
   };
 
   return (
-    <>
     <Modal visible={visible} animationType="none" transparent onRequestClose={dismissModal}>
       <Animated.View style={[s.backdrop, { opacity: backdropOpacity }]}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { Keyboard.dismiss(); dismissModal(); }} testID="add-word-backdrop" />
@@ -285,12 +297,13 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
             {/* ── Word ── */}
             <Text style={[s.label, { color: colors.textSecondary }]}>{t('addWord.wordLabel')}</Text>
             <TextInput
+              ref={wordInputRef}
               testID="word-input"
               style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }, duplicate && s.inputDup]}
               value={word} onChangeText={setWord}
               placeholder={t('addWord.wordPlaceholder')}
               placeholderTextColor={colors.textMuted}
-              autoFocus={!editWord} autoCapitalize="none"
+              autoCapitalize="none"
               returnKeyType="next"
             />
 
@@ -490,30 +503,29 @@ export function AddWordModal({ visible, onClose, onSave, onDeleted, editWord, on
               />
             </View>
           </KeyboardAwareScrollView>
+
+          <AddCategoryModal
+            renderAsOverlay
+            visible={showNewCategory || !!editCategory}
+            editCategory={editCategory}
+            onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
+            onSave={async (id) => {
+              setEditCategory(null);
+              setShowNewCategory(false);
+              CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+              if (id) setSelectedCategory(id);
+              catScrollRef.current?.scrollTo({ x: 0, animated: true });
+            }}
+            onDeleted={async () => {
+              setEditCategory(null);
+              setShowNewCategory(false);
+              CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+              setSelectedCategory(null);
+            }}
+          />
         </Animated.View>
       </View>
     </Modal>
-
-    <AddCategoryModal
-      visible={showNewCategory || !!editCategory}
-      editCategory={editCategory}
-      onClose={() => { setEditCategory(null); setShowNewCategory(false); }}
-      onSave={async (id) => {
-        setEditCategory(null);
-        setShowNewCategory(false);
-        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
-        if (id) setSelectedCategory(id);
-        catScrollRef.current?.scrollTo({ x: 0, animated: true });
-      }}
-      onDeleted={async () => {
-        setEditCategory(null);
-        setShowNewCategory(false);
-        CATEGORY_MUTATION_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
-        setSelectedCategory(null);
-      }}
-    />
-
-    </>
   );
 }
 

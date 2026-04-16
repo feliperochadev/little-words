@@ -19,6 +19,7 @@ import { useI18n } from '../i18n/i18n';
 import { DEFAULT_CATEGORIES, canonicalizeCategoryName, categoryLookupKey } from '../utils/categoryKeys';
 import { parseTextInput, parseCSV, type ParsedRow } from '../utils/importHelpers';
 import { openBackupZip, importFullBackup } from '../utils/backupImport';
+import { saveFullBackupToDevice } from '../utils/backupExport';
 import { checkAndShowPriming } from '../services/notificationService';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { BackupData, BackupImportResult } from '../types/backup';
@@ -170,8 +171,21 @@ async function importRows(rows: ParsedRow[]): Promise<ImportResult> {
   return result;
 }
 
+function promptBackupFailed(t: (key: string) => string): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    Alert.alert(
+      t('backup.preImportBackupFailedTitle'),
+      t('backup.preImportBackupFailedMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('backup.preImportBackupProceed'), onPress: () => resolve(true) },
+      ]
+    );
+  });
+}
+
 export function ImportModal({ visible, onClose, onImported }: Readonly<ImportModalProps>) {
-  const { t, tc } = useI18n();
+  const { t, tc, locale } = useI18n();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
@@ -182,6 +196,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [loading, setLoading]       = useState(false);
+  const [backingUp, setBackingUp]   = useState(false);
   const [preview, setPreview]       = useState<ParsedRow[]>([]);
 
   // ZIP backup state
@@ -193,6 +208,19 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   const resetZip = () => { setZipFileName(null); setZipData(null); setZipFileMap(null); setRestoreProfile(true); };
   const reset = () => { setTextInput(''); setCsvFileName(null); setCsvContent(null); setPreview([]); resetZip(); };
   const handleClose = () => { reset(); onClose(); };
+
+  // Runs a full backup before the given action. On backup failure, alerts the user
+  // and lets them choose to cancel or proceed anyway. Silently skips if user
+  // cancelled the directory picker (error === 'cancelled').
+  const withBackup = async (action: () => void | Promise<void>): Promise<void> => {
+    setBackingUp(true);
+    const result = await saveFullBackupToDevice(t, locale);
+    setBackingUp(false);
+    if (result.success) { await action(); return; }
+    if (result.error === 'cancelled') return;
+    const proceed = await promptBackupFailed(t);
+    if (proceed) await action();
+  };
 
   // Modal animation and gesture handling
   const { translateY, backdropOpacity, dismissModal, panResponder } = useModalAnimation(visible, handleClose);
@@ -221,6 +249,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
   };
 
   const handlePickZip = async () => {
+    await withBackup(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/zip', 'application/octet-stream', '*/*'],
@@ -242,6 +271,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
       const message = e instanceof Error ? e.message : t('common.error');
       Alert.alert(t('common.error'), t('importModal.errorReadFile', { error: message }));
     }
+    });
   };
 
   const handleImportZip = async () => {
@@ -268,10 +298,10 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     }
   };
 
-  const handleImport = () => runTextCsvImport({
+  const handleImport = () => withBackup(() => runTextCsvImport({
     tab: tab as 'text' | 'csv',
     textInput, csvContent, setLoading, queryClient, reset, onImported, onClose, t,
-  });
+  }));
 
   const wordCount = (() => {
     if (tab === 'text') return parseTextInput(textInput).length;
@@ -326,7 +356,7 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
     return (
       <>
         <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('backup.zipHint')}</Text>
-        <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickZip} testID="import-zip-pick-btn">
+        <TouchableOpacity style={[styles.filePicker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handlePickZip} disabled={backingUp} testID="import-zip-pick-btn">
           <Ionicons name="archive-outline" size={22} color={colors.primary} style={styles.filePickerIcon} />
           <Text style={[styles.filePickerText, { color: colors.textSecondary }]}>{zipFileName || t('backup.pickZipFile')}</Text>
         </TouchableOpacity>
@@ -444,14 +474,14 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
                 style={[
                   styles.importBtn,
                   { backgroundColor: colors.primary, shadowColor: colors.primary },
-                  (loading || !zipData) && styles.importBtnDisabled,
-                  (loading || !zipData) && { backgroundColor: colors.primaryLight },
+                  (loading || backingUp || !zipData) && styles.importBtnDisabled,
+                  (loading || backingUp || !zipData) && { backgroundColor: colors.primaryLight },
                 ]}
                 onPress={handleImportZip}
-                disabled={loading || !zipData}
+                disabled={loading || backingUp || !zipData}
                 testID="import-zip-submit-btn"
               >
-                {loading
+                {(loading || backingUp)
                   ? <ActivityIndicator color={colors.textOnPrimary} />
                   : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{t('backup.importBtn')}</Text>
                 }
@@ -461,14 +491,14 @@ export function ImportModal({ visible, onClose, onImported }: Readonly<ImportMod
                 style={[
                   styles.importBtn,
                   { backgroundColor: colors.primary, shadowColor: colors.primary },
-                  (loading || wordCount === 0) && styles.importBtnDisabled,
-                  (loading || wordCount === 0) && { backgroundColor: colors.primaryLight },
+                  (loading || backingUp || wordCount === 0) && styles.importBtnDisabled,
+                  (loading || backingUp || wordCount === 0) && { backgroundColor: colors.primaryLight },
                 ]}
                 onPress={handleImport}
-                disabled={loading || wordCount === 0}
+                disabled={loading || backingUp || wordCount === 0}
                 testID="import-submit-btn"
               >
-                {loading
+                {(loading || backingUp)
                   ? <ActivityIndicator color={colors.textOnPrimary} />
                   : <Text style={[styles.importBtnText, { color: colors.textOnPrimary }]}>{importBtnLabel}</Text>
                 }
@@ -496,7 +526,7 @@ const styles = StyleSheet.create({
   tabs:              { flexDirection: 'row', borderRadius: 12, padding: 3, marginBottom: 18 },
   tab:               { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   tabActive:         { shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  tabText:           { fontSize: 11, fontWeight: '600' },
+  tabText:           { fontSize: 10, fontWeight: '600' },
   tabTextActive:     { fontWeight: '700' },
   hint:              { fontSize: 13, lineHeight: 18, marginBottom: 12 },
   exampleBox:        { borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1 },

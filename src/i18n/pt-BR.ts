@@ -531,6 +531,9 @@ export default {
     errorCorrupt: 'Arquivo de backup corrompido.',
     errorUnsafeFile: 'Caminhos de arquivo inseguros detectados.',
     errorImport: 'Restauração falhou. Tente novamente.',
+    preImportBackupFailedTitle: 'Backup Falhou',
+    preImportBackupFailedMessage: 'Não foi possível salvar um backup antes de importar. Continuar mesmo assim?',
+    preImportBackupProceed: 'Continuar',
   },
 
   // ── Notifications ─────────────────────────────────────────────────────────────

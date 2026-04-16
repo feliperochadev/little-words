@@ -10,7 +10,7 @@ import { formatAgeText, formatDisplayDate } from '../../src/utils/dateHelpers';
 import { getChildLabelWithArticle } from '../../src/utils/dashboardHelpers';
 import { AddCategoryModal, CategoryToEdit } from '../../src/components/AddCategoryModal';
 import { useCategoryName, useI18n, LANGUAGES } from '../../src/i18n/i18n';
-import { withOpacity } from '../../src/utils/colorHelpers';
+import { withOpacity, hexToRgba } from '../../src/utils/colorHelpers';
 import { saveCSVToDevice, shareCSV, buildCategoryResolver, buildCSVHeader } from '../../src/utils/csvExport';
 import { shareFullBackup, saveFullBackupToDevice } from '../../src/utils/backupExport';
 import { Card, Button } from '../../src/components/UIComponents';
@@ -257,7 +257,7 @@ export default function SettingsScreen() {
                   styles.langBtn,
                   { backgroundColor: colors.surface, borderColor: colors.border },
                   locale === lang.locale && styles.langBtnActive,
-                  locale === lang.locale && { borderColor: colors.primary, backgroundColor: withOpacity(colors.primary, '10') },
+                  locale === lang.locale && { borderColor: colors.primary, backgroundColor: hexToRgba(colors.primary, 0.06) },
                 ]}
                 onPress={() => setLocale(lang.locale)}
               >

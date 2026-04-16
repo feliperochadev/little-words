@@ -397,6 +397,9 @@ src/theme/
 - `src/utils/dashboardHelpers.ts` — Dashboard utility functions: `getAgeText(birth, t)`, `getGreeting(name, sex, t)`, `formatMonth(monthStr, showYear, t)` (returns localized short month label, optionally with 2-digit year suffix), and `MONTH_KEYS` constant.
 - `src/components/UIComponents.tsx` — Shared UI primitives (Button, Card, SearchBar, etc.). `StatCard` uses a compact horizontal layout: icon-bg (36×36) + label (flex:1) + value right-aligned.
 - `src/utils/importHelpers.ts` — CSV/text parsing helpers (`parseTextInput`, `parseCSV`, `parseDateStr`, `deaccent`). `parseTextInput` handles both simple line format and pasted CSV content (strips quotes, skips header rows, reads variant column).
+- `src/utils/colorHelpers.ts` — `withOpacity(hex, alphaHex)` appends 2-digit hex alpha to a color. `hexToRgba(hex, alpha)` converts hex + 0–1 fraction to `rgba()` string — use this instead of `withOpacity` when iOS renders 8-digit hex colors incorrectly on first paint (e.g., faded text inside low-opacity backgrounds).
+
+**WheelDatePickerModal `renderAsOverlay` prop:** When rendering `WheelDatePickerModal` inside another `<Modal>`, always pass `renderAsOverlay` to avoid iOS stacked-modal touch issues. The prop renders the picker as an absolute-positioned View overlay instead of a nested native Modal.
 
 ## Permanently Allowed Commands
 

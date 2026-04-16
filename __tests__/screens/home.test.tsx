@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { AddWordModal } from '../../src/components/AddWordModal';
+import { TimelineItem } from '../../src/components/TimelineItem';
 
 jest.mock('../../src/services/dashboardService', () => {
   const actual = jest.requireActual('../../src/services/dashboardService');
@@ -484,6 +485,22 @@ describe('DashboardScreen', () => {
     const { findByTestId } = renderWithProviders(<DashboardScreen />);
     const section = await findByTestId('home-timeline-section');
     expect(() => fireEvent.press(section)).not.toThrow();
+  });
+
+  it('mini-timeline deduplicates dates: first item with a date shows it, subsequent same-date items do not', async () => {
+    (db.getDashboardStats as jest.Mock).mockResolvedValue(fullStats);
+    const memoriesService = require('../../src/services/memoriesService');
+    (memoriesService.getTimelineItems as jest.Mock).mockResolvedValue([
+      { id: 1, text: 'mama', item_type: 'word', created_at: '2026-03-03T10:00:00.000Z', date_added: '2026-03-03', main_word_text: null, word_id: null, audio_count: 0, photo_count: 0, first_photo_filename: null, first_photo_mime: null },
+      { id: 2, text: 'papa', item_type: 'word', created_at: '2026-03-03T11:00:00.000Z', date_added: '2026-03-03', main_word_text: null, word_id: null, audio_count: 0, photo_count: 0, first_photo_filename: null, first_photo_mime: null },
+      { id: 3, text: 'baba', item_type: 'word', created_at: '2026-04-01T10:00:00.000Z', date_added: '2026-04-01', main_word_text: null, word_id: null, audio_count: 0, photo_count: 0, first_photo_filename: null, first_photo_mime: null },
+    ]);
+    const { findByTestId, UNSAFE_getAllByType } = renderWithProviders(<DashboardScreen />);
+    await findByTestId('timeline-item-word-1');
+    const items = UNSAFE_getAllByType(TimelineItem);
+    expect(items[0].props.showDate).toBe(true);  // first item: new date, always show
+    expect(items[1].props.showDate).toBe(false); // same date as item 0: skip
+    expect(items[2].props.showDate).toBe(true);  // new date: show
   });
 
   it('pull-to-refresh triggers refetch without error', async () => {

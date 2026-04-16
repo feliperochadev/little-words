@@ -112,7 +112,7 @@ export default function HomeScreen() {
               onPress={() => setShowAddWord(true)}
               testID="home-add-word-btn"
             >
-              <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+              <Ionicons name="add" size={15} color={colors.textOnPrimary} />
               <Text style={[styles.addWordHeaderBtnText, { color: colors.textOnPrimary }]}>{t('words.newWord')}</Text>
             </TouchableOpacity>
           )}
@@ -204,18 +204,23 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <View style={styles.miniTimeline}>
-                {recentMemories.map((item, idx) => (
-                  <TimelineItem
-                    key={`${item.item_type}-${item.id}`}
-                    item={item}
-                    index={idx}
-                    isFirst={idx === 0}
-                    isLast={idx === recentMemories.length - 1}
-                    compact
-                    onPlayAudio={handlePlayAudio}
-                    onViewPhoto={handleViewPhoto}
-                  />
-                ))}
+                {recentMemories.map((item, idx) => {
+                  const prevItem = idx > 0 ? recentMemories[idx - 1] : null;
+                  const showDate = prevItem?.date_added !== item.date_added;
+                  return (
+                    <TimelineItem
+                      key={`${item.item_type}-${item.id}`}
+                      item={item}
+                      index={idx}
+                      isFirst={idx === 0}
+                      isLast={idx === recentMemories.length - 1}
+                      compact
+                      showDate={showDate}
+                      onPlayAudio={handlePlayAudio}
+                      onViewPhoto={handleViewPhoto}
+                    />
+                  );
+                })}
               </View>
             </TouchableOpacity>
             <TouchableOpacity
@@ -308,8 +313,8 @@ const styles = StyleSheet.create({
   viewerBtnDanger: { backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,100,100,0.6)' },
   viewerBtnText: { fontSize: 15, fontWeight: '700' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  addWordHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  addWordHeaderBtnText: { fontSize: 15, fontWeight: '700' },
+  addWordHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  addWordHeaderBtnText: { fontSize: 14, fontWeight: '700' },
   addWordBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minHeight: 48 },
   addWordBtnText: { fontSize: 16, fontWeight: '700' },
   miniTimeline: { marginTop: 4 },
