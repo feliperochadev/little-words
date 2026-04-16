@@ -76,7 +76,7 @@
     "jest": "30.3.0",
     "jest-expo": "~55.0.16",
     "react-test-renderer": "19.2.0",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.2"
   },
   "overrides": {
     "http-proxy-agent": "^7.0.2",
